@@ -1,0 +1,67 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  ANDROID_SDK_ROOT: "/sdk"  # Android 빌드용 경로 (Runner에 따라 맞춤)
+
+# 1) Android APK 빌드 + S3 업로드
+build-android:
+  image: openjdk:17
+  stage: build
+  script:
+    - apt-get update && apt-get install -y wget unzip
+    # Android SDK 설치 (필요시)
+    - wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O sdk.zip
+    - mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
+    - unzip sdk.zip -d $ANDROID_SDK_ROOT/cmdline-tools
+    - yes | $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-33" "build-tools;33.0.0"
+    - cd android-app
+    - ./gradlew assembleRelease
+    - cd app/build/outputs/apk/release
+    - apk_file=$(ls *.apk)
+    # AWS CLI 설치 및 S3 업로드
+    - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+    - unzip awscliv2.zip
+    - ./aws/install
+    - aws s3 cp $apk_file s3://your-android-apk-bucket/path/$apk_file --acl public-read
+  artifacts:
+    paths:
+      - android-app/app/build/outputs/apk/release/*.apk
+  only:
+    - master
+  rules:
+    - changes:
+        - frontend/**
+
+# 2) Backend Docker 빌드 + EC2 배포
+deploy-backend:
+  image: docker:latest
+  stage: deploy
+  services:
+    - docker:dind
+  before_script:
+    # SSH 키 복원 및 권한 설정
+    - mkdir -p ~/.ssh
+    - echo "$EC2_SSH_KEY" | base64 -d > ~/.ssh/id_rsa
+    - chmod 600 ~/.ssh/id_rsa
+    - ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
+  script:
+    # Docker 이미지 빌드 (로컬 또는 EC2에서 할 수 있음)
+    - docker build -t $DOCKER_IMAGE_NAME backend/
+    # Docker 이미지 tar로 저장 후 scp 전송 (필요 시)
+    - docker save $DOCKER_IMAGE_NAME | gzip > backend_image.tar.gz
+    - scp backend_image.tar.gz $EC2_USER@$EC2_HOST:/home/$EC2_USER/
+    # EC2에 접속해 도커 이미지 로드, 컨테이너 재시작
+    - ssh $EC2_USER@$EC2_HOST "
+        docker load < /home/$EC2_USER/backend_image.tar.gz &&
+        docker stop backend-container || true &&
+        docker rm backend-container || true &&
+        docker run -d --name backend-container -p 8080:8080 $DOCKER_IMAGE_NAME
+      "
+  only:
+    - master
+  rules:
+    - changes:
+        - backend/**
+
