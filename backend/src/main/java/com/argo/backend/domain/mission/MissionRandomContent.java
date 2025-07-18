@@ -1,19 +1,18 @@
 package com.argo.backend.domain.mission;
 
+import com.argo.backend.domain.CreatedAtEntity;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "mission_random_contents")
 @Getter
 @Setter
-@NoArgsConstructor
-public class MissionRandomContent {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class MissionRandomContent extends CreatedAtEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long contentId;
@@ -24,7 +23,4 @@ public class MissionRandomContent {
 
     @Lob
     private String contentText;
-
-    @CreationTimestamp
-    private LocalDateTime createdAt;
 }

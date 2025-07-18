@@ -1,6 +1,8 @@
 package com.argo.backend.domain.location;
 
+import com.argo.backend.domain.CreatedAtEntity;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,10 +13,8 @@ import java.math.BigDecimal;
 @Table(name = "locations")
 @Getter
 @Setter
-@NoArgsConstructor
-// 얘는 큰 테마
-// ex. "경복궁" 을 의미
-public class Location {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Location extends CreatedAtEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long locationId;

@@ -2,6 +2,7 @@ package com.argo.backend.domain.location;
 
 import com.argo.backend.domain.classroom.ClassRoom;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -13,8 +14,7 @@ import java.io.Serializable;
        uniqueConstraints = @UniqueConstraint(columnNames = {"class_id", "location_id"}))
 @Getter
 @Setter
-@NoArgsConstructor
-// location과 class의 중간 테이블
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class ClassLocation {
     @EmbeddedId
     private ClassLocationId id;
@@ -31,7 +31,7 @@ public class ClassLocation {
 
     @Embeddable
     @Getter @Setter @NoArgsConstructor
-    public static class ClassLocationId implements Serializable {
+    public static class ClassLocationId implements   Serializable {
         private Long classId;
         private Long locationId;
     }

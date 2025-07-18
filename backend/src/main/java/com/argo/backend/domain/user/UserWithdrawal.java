@@ -1,20 +1,18 @@
 package com.argo.backend.domain.user;
 
+import com.argo.backend.domain.CreatedAtEntity;
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "user_withdrawals")
 @Getter
 @Setter
-@NoArgsConstructor
-// 탈퇴
-public class UserWithdrawal {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class UserWithdrawal extends CreatedAtEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long withdrawalId;
@@ -24,7 +22,4 @@ public class UserWithdrawal {
     private User user;
 
     private Boolean passwordVerified = true;
-
-    @CreationTimestamp
-    private LocalDateTime deletedAt;
 }

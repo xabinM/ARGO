@@ -1,19 +1,20 @@
 package com.argo.backend.domain.classroom;
+import com.argo.backend.domain.CreatedAtEntity;
 import com.argo.backend.domain.user.User;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "classes")
-@Getter @Setter @NoArgsConstructor
-public class ClassRoom {
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class ClassRoom extends CreatedAtEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long classId;
 
@@ -36,7 +37,4 @@ public class ClassRoom {
 
     @Enumerated(EnumType.STRING)
     private ClassStatus status = ClassStatus.ACTIVE;
-
-    @CreationTimestamp
-    private LocalDateTime createdAt;
 }

@@ -1,19 +1,19 @@
 package com.argo.backend.domain.team;
 
+import com.argo.backend.domain.CreatedAtEntity;
 import com.argo.backend.domain.classroom.ClassRoom;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.CreationTimestamp;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "teams")
-@Getter @Setter @NoArgsConstructor
-public class Team {
+@Getter
+@Setter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Team extends CreatedAtEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long teamId;
 
@@ -25,7 +25,4 @@ public class Team {
     private String teamName;
 
     private Integer maxMembers;
-
-    @CreationTimestamp
-    private LocalDateTime createdAt;
 }
