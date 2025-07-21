@@ -41,7 +41,7 @@ build_backend_job:
       - ${BACKEND_DIR}/build/libs/*.jar
     expire_in: 1 day # 아티팩트 보관 기간
   only:
-    - main # main 브랜치에 푸시될 때만 실행
+    - master # master 브랜치에 푸시될 때만 실행
   # tags: # 특정 Runner에서만 실행하려면 주석 해제 후 Runner 등록 시 지정한 태그 입력
   #   - my-backend-runner-tag
 
@@ -71,7 +71,7 @@ deploy_backend_job:
     - ssh ${SERVER_USER}@${SERVER_HOST} "sudo systemctl restart your-backend.service"
     - echo "🎉 Backend deployment complete."
   only:
-    - main
+    - master
   needs:
     - build_backend_job # build_backend_job이 성공해야 실행
   # tags: # 특정 Runner에서만 실행하려면 주석 해제
@@ -112,6 +112,6 @@ build_android_app_job:
       - ${FRONTEND_DIR}/build/outputs/bundle/release/*.aab
     expire_in: 1 week
   only:
-    - main
+    - master
   # tags:
   #   - my-android-runner-tag
