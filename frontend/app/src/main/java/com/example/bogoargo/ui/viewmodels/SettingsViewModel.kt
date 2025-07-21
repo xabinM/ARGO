@@ -1,7 +1,9 @@
 package com.example.bogoargo.ui.viewmodels
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.bogoargo.data.repository.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,46 +18,45 @@ data class SettingsUiState(
     val showLogoutDialog: Boolean = false
 )
 
-class SettingsViewModel : ViewModel() {
+class SettingsViewModel(application: Application) : AndroidViewModel(application) {
+    private val settingsRepository = SettingsRepository(application)
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
     init {
-        loadSettings()
+        observeSettings()
     }
 
-    private fun loadSettings() {
+    private fun observeSettings() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            
-            // Simulate loading settings from preferences
-            kotlinx.coroutines.delay(500)
-            
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                // Settings would be loaded from DataStore/SharedPreferences
-            )
+            settingsRepository.settingsFlow.collect { settings ->
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    notificationsEnabled = settings.notificationsEnabled,
+                    darkModeEnabled = settings.darkModeEnabled,
+                    language = settings.language
+                )
+            }
         }
     }
 
     fun toggleNotifications(enabled: Boolean) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(notificationsEnabled = enabled)
-            // Save to preferences
+            settingsRepository.updateNotificationsSetting(enabled)
         }
     }
 
     fun toggleDarkMode(enabled: Boolean) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(darkModeEnabled = enabled)
-            // Save to preferences and apply theme
+            settingsRepository.updateDarkModeSetting(enabled)
+            // TODO: Apply theme change to the app
         }
     }
 
     fun changeLanguage(language: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(language = language)
-            // Save to preferences and apply language
+            settingsRepository.updateLanguageSetting(language)
+            // TODO: Apply language change to the app
         }
     }
 
@@ -70,7 +71,9 @@ class SettingsViewModel : ViewModel() {
     fun logout() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(showLogoutDialog = false)
-            // Perform logout logic
+            // Clear settings on logout
+            settingsRepository.clearSettings()
+            // TODO: Clear user data and navigate to login
         }
     }
 }

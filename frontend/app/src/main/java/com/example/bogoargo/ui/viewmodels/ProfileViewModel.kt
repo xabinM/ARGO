@@ -1,7 +1,9 @@
 package com.example.bogoargo.ui.viewmodels
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.bogoargo.data.repository.UserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,32 +19,24 @@ data class ProfileUiState(
     val error: String? = null
 )
 
-class ProfileViewModel : ViewModel() {
+class ProfileViewModel(application: Application) : AndroidViewModel(application) {
+    private val userRepository = UserRepository(application)
     private val _uiState = MutableStateFlow(ProfileUiState())
     val uiState: StateFlow<ProfileUiState> = _uiState.asStateFlow()
 
     init {
-        loadProfile()
+        observeUserData()
     }
 
-    private fun loadProfile() {
+    private fun observeUserData() {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            
-            try {
-                // Simulate loading profile data
-                kotlinx.coroutines.delay(800)
-                
+            userRepository.userFlow.collect { user ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    userName = "John Doe",
-                    email = "john.doe@example.com",
-                    bio = "Android Developer | Kotlin Enthusiast"
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    error = "Failed to load profile"
+                    userName = user.userName,
+                    email = user.email,
+                    bio = user.bio,
+                    profilePictureUrl = user.profilePictureUrl
                 )
             }
         }
@@ -57,19 +51,17 @@ class ProfileViewModel : ViewModel() {
             _uiState.value = _uiState.value.copy(isLoading = true)
             
             try {
-                // Simulate updating profile
-                kotlinx.coroutines.delay(1000)
+                // Save to DataStore
+                userRepository.updateUserProfile(userName, bio)
                 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    userName = userName,
-                    bio = bio,
                     isEditing = false
                 )
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    error = "Failed to update profile"
+                    error = "Failed to update profile: ${e.message}"
                 )
             }
         }
