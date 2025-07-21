@@ -19,9 +19,9 @@ cache:
   paths:
     - ${BACKEND_DIR}/.gradle/wrapper # 백엔드 Gradle Wrapper 캐시
     - ${BACKEND_DIR}/.gradle/caches # 백엔드 Gradle 캐시
-    - ${ANDROID_DIR}/.gradle/wrapper # 안드로이드 Gradle Wrapper 캐시
-    - ${ANDROID_DIR}/.gradle/caches # 안드로이드 Gradle 캐시
-    - ${ANDROID_DIR}/vendor/bundle # fastlane Gem 캐시 (bundle install --path vendor/bundle 시)
+    - ${FRONTEND_DIR}/.gradle/wrapper # 안드로이드 Gradle Wrapper 캐시
+    - ${FRONTEND_DIR}/.gradle/caches # 안드로이드 Gradle 캐시
+    - ${FRONTEND_DIR}/vendor/bundle # fastlane Gem 캐시 (bundle install --path vendor/bundle 시)
   key: "$CI_COMMIT_REF_SLUG" # 브랜치별 캐시 (또는 "global"로 전체 캐시)
   policy: pull-push # 기본값, 캐시를 다운로드하고 업로드함
 
@@ -87,8 +87,8 @@ build_android_app_job:
   variables:
     ANDROID_SDK_ROOT: "/opt/android-sdk" # 대부분의 Android 빌드 이미지에서 SDK 루트 경로
   script:
-    - echo "📱 Building Android app from ${ANDROID_DIR}..."
-    - cd ${ANDROID_DIR}
+    - echo "📱 Building Android app from ${FRONTEND_DIR}..."
+    - cd ${FRONTEND_DIR}
     - bundle install --path vendor/bundle # fastlane 의존성 설치 (캐시 활용)
     # 키스토어 파일 생성 (GitLab 변수 내용을 컨테이너 내 파일로 저장)
     - echo "$ANDROID_KEYSTORE_FILE" | base64 -d > app/release-keystore.jks
@@ -97,8 +97,8 @@ build_android_app_job:
     - echo "✅ Android app build complete."
   artifacts:
     paths:
-      - ${ANDROID_DIR}/app/build/outputs/apk/release/*.apk # 빌드된 APK 파일 저장 (AAB 대신 APK)
-      - ${ANDROID_DIR}/app/build/outputs/bundle/release/*.aab # AAB도 필요하면 함께 저장
+      - ${FRONTEND_DIR}/app/build/outputs/apk/release/*.apk # 빌드된 APK 파일 저장 (AAB 대신 APK)
+      - ${FRONTEND_DIR}/app/build/outputs/bundle/release/*.aab # AAB도 필요하면 함께 저장
     expire_in: 1 week # 아티팩트 보관 기간
   only:
     - main
