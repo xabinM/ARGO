@@ -42,8 +42,8 @@ build_backend_job:
     expire_in: 1 day # 아티팩트 보관 기간
   only:
     - master # master 브랜치에 푸시될 때만 실행
-  # tags: # 특정 Runner에서만 실행하려면 주석 해제 후 Runner 등록 시 지정한 태그 입력
-  #   - my-backend-runner-tag
+  tags: # 특정 Runner에서만 실행하려면 주석 해제 후 Runner 등록 시 지정한 태그 입력
+    - mastewr
 
 deploy_backend_job:
   stage: deploy_backend
@@ -74,8 +74,8 @@ deploy_backend_job:
     - master
   needs:
     - build_backend_job # build_backend_job이 성공해야 실행
-  # tags: # 특정 Runner에서만 실행하려면 주석 해제
-  #   - my-backend-runner-tag
+  tags: # 특정 Runner에서만 실행하려면 주석 해제
+    - master
 
 # --- 안드로이드 앱 CI/CD ---
 build_android_app_job:
@@ -113,5 +113,5 @@ build_android_app_job:
     expire_in: 1 week
   only:
     - master
-  # tags:
-  #   - my-android-runner-tag
+  tags:
+    - master
