@@ -43,7 +43,7 @@ build_backend_job:
   only:
     - master # master 브랜치에 푸시될 때만 실행
   tags: # 특정 Runner에서만 실행하려면 주석 해제 후 Runner 등록 시 지정한 태그 입력
-    - mastewr
+    - master
 
 deploy_backend_job:
   stage: deploy_backend
