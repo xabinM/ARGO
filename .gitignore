@@ -1,0 +1,11 @@
+# === IDE 설정 ===
+.idea/
+*.iml
+
+# === Backend (Spring Boot) ===
+/backend/build/
+/backend/.gradle/
+*.class
+*.log
+*.jar
+*.war
