@@ -5,10 +5,10 @@ stages:
 
 simple_test_job:
   stage: test
-  image: alpine/git # 아주 가벼운 이미지
+  image: ubuntu:latest
   script:
     - echo "Hello from GitLab CI!"
   only:
-    - master # master 브랜치에만 실행되도록 설정
+    - master
   tags:
-    - master # 러너의 태그와 일치하도록 설정
+    - master
