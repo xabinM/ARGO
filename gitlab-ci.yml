@@ -1,67 +1,106 @@
+# .gitlab-ci.yml
+
+# 파이프라인의 스테이지 정의 (실행 순서)
 stages:
-  - build
-  - deploy
+  - build_backend
+  - deploy_backend
+  - build_android
 
+# 모든 잡에서 공통적으로 사용할 변수 (GitLab UI 변수 오버라이드 가능)
 variables:
-  ANDROID_SDK_ROOT: "/sdk"  # Android 빌드용 경로 (Runner에 따라 맞춤)
+  # GitLab CI/CD 변수에서 가져올 값들 (없다면 여기에 기본값을 명시)
+  # GitLab UI 변수가 우선 적용됩니다.
+  BACKEND_DIR: "backend" # 백엔드 프로젝트 폴더 경로
+  FRONTEND_DIR: "frontend" # 안드로이드 프로젝트 폴더 경로
+  JAVA_VERSION: "17" # 백엔드 빌드에 사용할 Java 버전
 
-# 1) Android APK 빌드 + S3 업로드
-build-android:
-  image: openjdk:17
-  stage: build
+# 캐싱 설정 (Gradle 및 fastlane 의존성 캐싱으로 빌드 시간 단축)
+cache:
+  paths:
+    - ${BACKEND_DIR}/.gradle/wrapper # 백엔드 Gradle Wrapper 캐시
+    - ${BACKEND_DIR}/.gradle/caches # 백엔드 Gradle 캐시
+    - ${ANDROID_DIR}/.gradle/wrapper # 안드로이드 Gradle Wrapper 캐시
+    - ${ANDROID_DIR}/.gradle/caches # 안드로이드 Gradle 캐시
+    - ${ANDROID_DIR}/vendor/bundle # fastlane Gem 캐시 (bundle install --path vendor/bundle 시)
+  key: "$CI_COMMIT_REF_SLUG" # 브랜치별 캐시 (또는 "global"로 전체 캐시)
+  policy: pull-push # 기본값, 캐시를 다운로드하고 업로드함
+
+# --- 백엔드 CI/CD (Spring Boot 가정) ---
+build_backend_job:
+  stage: build_backend
+  # 백엔드 빌드를 위한 Docker 이미지 (Java ${JAVA_VERSION} 설치)
+  image: openjdk:${JAVA_VERSION}-jdk-slim
   script:
-    - apt-get update && apt-get install -y wget unzip
-    # Android SDK 설치 (필요시)
-    - wget https://dl.google.com/android/repository/commandlinetools-linux-9477386_latest.zip -O sdk.zip
-    - mkdir -p $ANDROID_SDK_ROOT/cmdline-tools
-    - unzip sdk.zip -d $ANDROID_SDK_ROOT/cmdline-tools
-    - yes | $ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools/bin/sdkmanager --sdk_root=$ANDROID_SDK_ROOT "platform-tools" "platforms;android-33" "build-tools;33.0.0"
-    - cd android-app
-    - ./gradlew assembleRelease
-    - cd app/build/outputs/apk/release
-    - apk_file=$(ls *.apk)
-    # AWS CLI 설치 및 S3 업로드
-    - curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-    - unzip awscliv2.zip
-    - ./aws/install
-    - aws s3 cp $apk_file s3://your-android-apk-bucket/path/$apk_file --acl public-read
+    - echo "🏗️ Building backend from ${BACKEND_DIR}..."
+    - cd ${BACKEND_DIR}
+    - chmod +x gradlew # gradlew 실행 권한 부여
+    - ./gradlew clean build -x test # 테스트는 건너뛰고 빌드
+    - echo "✅ Backend build complete."
+  artifacts: # 빌드된 JAR 파일을 다음 단계로 전달하기 위해 저장
+    paths:
+      - ${BACKEND_DIR}/build/libs/*.jar
+    expire_in: 1 day # 아티팩트 보관 기간
+  only:
+    - main # main 브랜치에 푸시될 때만 실행
+  # tags: # 특정 Runner에서만 실행하려면 주석 해제 후 Runner 등록 시 지정한 태그 입력
+  #   - my-backend-runner-tag
+
+deploy_backend_job:
+  stage: deploy_backend
+  # 배포를 위한 Docker 이미지 (SSH 클라이언트 포함)
+  image: alpine/git
+  before_script:
+    - echo "🔑 Setting up SSH for deployment..."
+    - apk add --no-cache openssh-client # Alpine Linux에서 SSH 클라이언트 설치
+    - eval $(ssh-agent -s) # SSH 에이전트 시작
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - # GitLab 변수에서 SSH 키 불러오기
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts # 서버 호스트를 known_hosts에 추가
+    - chmod 644 ~/.ssh/known_hosts
+    - echo "✅ SSH setup complete."
+  script:
+    - echo "🚀 Deploying backend to ${SERVER_HOST}..."
+    # 빌드된 JAR 파일의 정확한 경로를 찾음 (artifacts에서 가져옴)
+    - JAR_FILE=$(find ${BACKEND_DIR}/build/libs/ -name "*.jar")
+    - echo "Found JAR file: $JAR_FILE"
+    # scp를 사용하여 JAR 파일을 서버로 복사
+    - scp "$JAR_FILE" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/your-backend.jar
+    - echo "🔄 Restarting backend service on ${SERVER_HOST}..."
+    # ssh를 통해 서버에 접속하여 systemd 서비스 재시작
+    - ssh ${SERVER_USER}@${SERVER_HOST} "sudo systemctl restart your-backend.service"
+    - echo "🎉 Backend deployment complete."
+  only:
+    - main
+  needs:
+    - build_backend_job # build_backend_job이 성공해야 실행
+  # tags: # 특정 Runner에서만 실행하려면 주석 해제
+  #   - my-backend-runner-tag
+
+# --- 안드로이드 앱 CI/CD ---
+build_android_app_job:
+  stage: build_android
+  # 안드로이드 빌드를 위한 Docker 이미지 (SDK, Java, Ruby(fastlane) 포함)
+  image: registry.gitlab.com/gitlab-org/gitlab-build-images:android-29-jdk8 # GitLab 공식 이미지 예시
+  # 또는 다른 대안: fabernovel/android:api-33-v1.7.0
+  # 또는 DockerHub에서 직접 생성한 안드로이드 빌드 이미지 (예: your-dockerhub-id/android-build-env:latest)
+  variables:
+    ANDROID_SDK_ROOT: "/opt/android-sdk" # 대부분의 Android 빌드 이미지에서 SDK 루트 경로
+  script:
+    - echo "📱 Building Android app from ${ANDROID_DIR}..."
+    - cd ${ANDROID_DIR}
+    - bundle install --path vendor/bundle # fastlane 의존성 설치 (캐시 활용)
+    # 키스토어 파일 생성 (GitLab 변수 내용을 컨테이너 내 파일로 저장)
+    - echo "$ANDROID_KEYSTORE_FILE" | base64 -d > app/release-keystore.jks
+    # fastlane 스크립트 실행 (Fastfile에 정의된 레인)
+    - bundle exec fastlane build_apk # Fastfile에 'build_apk' 레인이 있다고 가정 (아래 Fastfile 참고)
+    - echo "✅ Android app build complete."
   artifacts:
     paths:
-      - android-app/app/build/outputs/apk/release/*.apk
+      - ${ANDROID_DIR}/app/build/outputs/apk/release/*.apk # 빌드된 APK 파일 저장 (AAB 대신 APK)
+      - ${ANDROID_DIR}/app/build/outputs/bundle/release/*.aab # AAB도 필요하면 함께 저장
+    expire_in: 1 week # 아티팩트 보관 기간
   only:
-    - master
-  rules:
-    - changes:
-        - frontend/**
-
-# 2) Backend Docker 빌드 + EC2 배포
-deploy-backend:
-  image: docker:latest
-  stage: deploy
-  services:
-    - docker:dind
-  before_script:
-    # SSH 키 복원 및 권한 설정
-    - mkdir -p ~/.ssh
-    - echo "$EC2_SSH_KEY" | base64 -d > ~/.ssh/id_rsa
-    - chmod 600 ~/.ssh/id_rsa
-    - ssh-keyscan -H $EC2_HOST >> ~/.ssh/known_hosts
-  script:
-    # Docker 이미지 빌드 (로컬 또는 EC2에서 할 수 있음)
-    - docker build -t $DOCKER_IMAGE_NAME backend/
-    # Docker 이미지 tar로 저장 후 scp 전송 (필요 시)
-    - docker save $DOCKER_IMAGE_NAME | gzip > backend_image.tar.gz
-    - scp backend_image.tar.gz $EC2_USER@$EC2_HOST:/home/$EC2_USER/
-    # EC2에 접속해 도커 이미지 로드, 컨테이너 재시작
-    - ssh $EC2_USER@$EC2_HOST "
-        docker load < /home/$EC2_USER/backend_image.tar.gz &&
-        docker stop backend-container || true &&
-        docker rm backend-container || true &&
-        docker run -d --name backend-container -p 8080:8080 $DOCKER_IMAGE_NAME
-      "
-  only:
-    - master
-  rules:
-    - changes:
-        - backend/**
-
+    - main
+  # tags: # 특정 Runner에서만 실행하려면 주석 해제
+  #   - my-android-runner-tag
