@@ -80,27 +80,38 @@ deploy_backend_job:
 # --- 안드로이드 앱 CI/CD ---
 build_android_app_job:
   stage: build_android
-  # 안드로이드 빌드를 위한 Docker 이미지 (SDK, Java, Ruby(fastlane) 포함)
-  image: registry.gitlab.com/gitlab-org/gitlab-build-images:android-29-jdk8 # GitLab 공식 이미지 예시
-  # 또는 다른 대안: fabernovel/android:api-33-v1.7.0
-  # 또는 DockerHub에서 직접 생성한 안드로이드 빌드 이미지 (예: your-dockerhub-id/android-build-env:latest)
+  # **여기서 이미지를 Ruby/Bundler/Android SDK가 포함된 것으로 변경합니다.**
+  # 아래 이미지 중 하나를 선택하거나, 다른 적절한 이미지를 찾아 사용해 보세요.
+  # 1. CircleCI에서 제공하는 안드로이드 빌드 이미지 (Ruby/Node.js 포함)
+  image: circleci/android:api-33-node # 또는 api-30-node 등 필요한 API 레벨로 선택
+
+  # 2. fastlane에서 권장하는 이미지 (fastlane/fastlane) - Android SDK는 별도 설치 필요할 수 있음
+  # image: fastlane/fastlane:latest
+
+  # 3. 직접 Dockerfile을 만들어 생성한 이미지 (가장 안정적)
+  # image: your-dockerhub-username/android-build-env:latest # 본인이 만든 이미지
+
   variables:
-    ANDROID_SDK_ROOT: "/opt/android-sdk" # 대부분의 Android 빌드 이미지에서 SDK 루트 경로
+    # 선택한 이미지에 따라 ANDROID_SDK_ROOT 경로가 다를 수 있습니다.
+    # circleci/android 이미지의 경우 보통 /usr/local/android-sdk 입니다.
+    # 정확한 경로는 이미지 문서를 확인하거나, 컨테이너에서 `find / -name "android-sdk"` 등으로 찾아볼 수 있습니다.
+    ANDROID_SDK_ROOT: "/usr/local/android-sdk" # circleci/android 이미지의 기본 SDK 경로
   script:
     - echo "📱 Building Android app from ${FRONTEND_DIR}..."
-    - cd ${FRONTEND_DIR}
-    - bundle install --path vendor/bundle # fastlane 의존성 설치 (캐시 활용)
-    # 키스토어 파일 생성 (GitLab 변수 내용을 컨테이너 내 파일로 저장)
-    - echo "$ANDROID_KEYSTORE_FILE" | base64 -d > app/release-keystore.jks
-    # fastlane 스크립트 실행 (Fastfile에 정의된 레인)
-    - bundle exec fastlane build_apk # Fastfile에 'build_apk' 레인이 있다고 가정 (아래 Fastfile 참고)
+    - cd ${FRONTEND_DIR} # `frontend` 폴더로 진입
+    # 이 이미지들에는 Bundler가 미리 설치되어 있으므로, `bundle install`이 바로 작동합니다.
+    - bundle install --path vendor/bundle # fastlane 의존성 설치
+    # 키스토어 파일 생성
+    - echo "$ANDROID_KEYSTORE_FILE" | base64 -d > release-keystore.jks
+    # fastlane 스크립트 실행
+    - bundle exec fastlane build_apk
     - echo "✅ Android app build complete."
   artifacts:
     paths:
-      - ${FRONTEND_DIR}/app/build/outputs/apk/release/*.apk # 빌드된 APK 파일 저장 (AAB 대신 APK)
-      - ${FRONTEND_DIR}/app/build/outputs/bundle/release/*.aab # AAB도 필요하면 함께 저장
-    expire_in: 1 week # 아티팩트 보관 기간
+      - ${FRONTEND_DIR}/build/outputs/apk/release/*.apk
+      - ${FRONTEND_DIR}/build/outputs/bundle/release/*.aab
+    expire_in: 1 week
   only:
     - main
-  # tags: # 특정 Runner에서만 실행하려면 주석 해제
+  # tags:
   #   - my-android-runner-tag
