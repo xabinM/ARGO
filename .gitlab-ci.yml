@@ -7,10 +7,8 @@ stages:
 
 variables:
   JAVA_VERSION: "17"
-  # BACKEND_DIR: "backend" # 필요하다면 여기에 명시하거나 .gitlab-ci.yml 상단에서 정의 (현재 파일에는 없음)
-  # FRONTEND_DIR: "frontend" # 필요하다면 여기에 명시하거나 .gitlab-ci.yml 상단에서 정의 (현재 파일에는 없음)
-  # SERVER_USER: "your_server_username" # 실제 사용자 이름으로 변경
-  # SERVER_HOST: "your_server_ip_or_domain" # 실제 서버 IP 또는 도메인으로 변경
+  # BACKEND_DIR: "backend"   # GitLab UI Variables에 없다면 여기에 정의
+  # FRONTEND_DIR: "frontend" # GitLab UI Variables에 없다면 여기에 정의
 
 cache:
   paths:
@@ -72,7 +70,6 @@ deploy_backend_job:
     - echo "Deploying backend to ${SERVER_HOST}..."
     - JAR_FILE=$(find ${BACKEND_DIR}/build/libs/ -name "*.jar")
     - echo "Found JAR file $JAR_FILE"
-    # SCP 명령어 실행 (호스트 키 검사 우회를 제거하고, ssh-add가 잘 작동하는지 확인)
     - scp "$JAR_FILE" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/your-backend.jar
     # 전송 후 임시 Private Key 파일 삭제 (보안 강화)
     - rm ~/.ssh/id_rsa_ci
