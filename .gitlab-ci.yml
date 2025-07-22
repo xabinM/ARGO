@@ -54,7 +54,7 @@ deploy_backend_job:
         --spring.datasource.password=$DB_PASSWORD \
         --spring.datasource.url=\"$DB_URL\" \
         --spring.profiles.active=secret \
-        > /home/$SERVER_USER/your-backend.log 2>&1 < /dev/null &
+        > /tmp/your-backend.log 2>&1 < /dev/null &
       echo 'Command sent, application should be running in background.'
       exit 0
       " || { echo "SSH command failed with exit code $?"; exit 1; }
