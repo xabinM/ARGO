@@ -54,18 +54,16 @@ deploy_backend_job:
       ssh -v -o ConnectTimeout=10 -o ServerAliveInterval=15 ${SERVER_USER}@${SERVER_HOST} "\
       set -e; \
       echo 'Attempting to kill existing process...'; \
-      sudo pkill -f '${JAR_NAME}' || echo 'No existing process to kill or permission denied (check sudoers)'; \
+      sudo pkill -f '${JAR_NAME}' || echo 'No existing your-backend.jar process to kill (by pkill)'; \
+      sudo fuser -k 8080/tcp || echo 'No process using port 8080 found or fuser failed to kill.'; \
       echo 'Starting new application process...'; \
-      \
       setsid nohup sudo java -jar /home/${SERVER_USER}/${JAR_NAME} \
         --spring.datasource.username=${DB_USERNAME} \
         --spring.datasource.password=${DB_PASSWORD} \
         --spring.datasource.url=\"${DB_URL}\" \
         --spring.profiles.active=secret \
         > /home/${SERVER_USER}/${JAR_NAME}.log 2>&1 < /dev/null & \
-      \
-      sleep 1; \
-      \
+      sleep 5; \
       echo 'Application started command sent successfully (check log file for details).'; \
       " || { echo "SSH command itself failed!"; exit 1; }
 
