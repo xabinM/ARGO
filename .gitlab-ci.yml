@@ -43,21 +43,21 @@ deploy_backend_job:
     - echo "Deploying $JAR_SOURCE_PATH to $SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
     - scp "$JAR_SOURCE_PATH" "$SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
     - |
-      ssh -v -o ConnectTimeout=10 -o ServerAliveInterval=15 "$SERVER_USER@$SERVER_HOST" "\
-        set -e; \
-        echo 'Stopping existing application...'; \
-        sudo pkill -f '$JAR_NAME' || echo 'No process found to kill.'; \
-        sudo fuser -k 8080/tcp || echo 'No process using port 8080.'; \
-        echo 'Starting new application...'; \
-        sudo nohup java -jar /home/$SERVER_USER/$JAR_NAME \
-          --spring.datasource.username=$DB_USERNAME \
-          --spring.datasource.password=$DB_PASSWORD \
-          --spring.datasource.url=\"$DB_URL\" \
-          --spring.profiles.active=secret \
-          > /home/$SERVER_USER/your-backend.log 2>&1 < /dev/null & \
-        sleep 10; \
-        echo 'Application started.' \
-      " || { echo "SSH deployment failed"; exit 1; }
+      ssh -v -o ConnectTimeout=10 -o ServerAliveInterval=15 "$SERVER_USER@$SERVER_HOST" "
+      set -e
+      echo 'Stopping existing application...'
+      sudo pkill -f '$JAR_NAME' || echo 'No process found to kill.'
+      sudo fuser -k 8080/tcp || echo 'No process using port 8080.'
+      echo 'Starting new application...'
+      sudo setsid nohup java -jar /home/$SERVER_USER/$JAR_NAME \
+        --spring.datasource.username=$DB_USERNAME \
+        --spring.datasource.password=$DB_PASSWORD \
+        --spring.datasource.url=\"$DB_URL\" \
+        --spring.profiles.active=secret \
+        > /home/$SERVER_USER/your-backend.log 2>&1 < /dev/null &
+      echo 'Command sent, application should be running in background.'
+      exit 0
+      " || { echo "SSH command failed with exit code $?"; exit 1; }
   after_script:
     - rm -f ~/.ssh/id_rsa_ci
 
