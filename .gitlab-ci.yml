@@ -38,28 +38,27 @@ deploy_backend_job:
       echo "Host *" > ~/.ssh/config
       echo "    StrictHostKeyChecking no" >> ~/.ssh/config
       echo "    UserKnownHostsFile /dev/null" >> ~/.ssh/config
+
   script:
     - JAR_SOURCE_PATH=$(find "$JAR_PATH" -name "*.jar" ! -name "*-plain.jar" | head -n 1)
     - echo "Deploying $JAR_SOURCE_PATH to $SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
     - scp "$JAR_SOURCE_PATH" "$SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
     - |
-      ssh -T "$SERVER_USER@$SERVER_HOST" <<EOF
+      ssh -T "$SERVER_USER@$SERVER_HOST" <<'EOF'
         set -e
         echo 'Stopping old process...'
-        sudo pkill -f '$JAR_NAME' || echo 'No process found.'
+        sudo pkill -f 'your-backend.jar' || echo 'No process found.'
         sudo fuser -k 8080/tcp || echo 'No process using 8080.'
         echo 'Starting new process...'
-        sudo setsid nohup java -jar "/home/$SERVER_USER/$JAR_NAME" \
+        sudo setsid nohup java -jar "/home/ubuntu/your-backend.jar" \
           --spring.datasource.username=$DB_USERNAME \
           --spring.datasource.password=$DB_PASSWORD \
           --spring.datasource.url="$DB_URL" \
           --spring.profiles.active=secret \
           > /tmp/your-backend.log 2>&1 < /dev/null &
         echo 'Launch command sent.'
-        exit 0
       EOF
 
-      " || { echo "SSH command failed with exit code $?"; exit 1; }
   after_script:
     - rm -f ~/.ssh/id_rsa_ci
 
