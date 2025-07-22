@@ -3,48 +3,33 @@
 default_platform(:android)
 
 platform :android do
-  # --- before_all 블록을 완전히 제거합니다 (필요 없음) ---
-  # before_all do
-  #   Dir.chdir("../")
-  # end
-  # ---------------------------------------------------
-
-  # --- 빌드 레인: 서명된 APK 생성 ---
   desc "Build a signed APK for local testing or manual distribution."
   lane :build_apk do
-    UI.message("🚀 Building signed APK for release...")
+    UI.message("Building signed APK for release...")
 
-    # --- 기존 gradle 액션을 제거하고 직접 sh 명령어로 gradlew 호출 ---
-    sh("chmod +x ./gradlew") # gradlew 실행 권한 부여
+    # `gradle` 액션 사용, `gradlew_path` 명시
+    # Fastlane이 실행되는 위치가 `frontend/fastlane`이라고 가정하면
+    # `gradlew`는 `../gradlew` 경로에 있습니다.
+    gradle(
+      task: "assembleRelease",
+      project_dir: "../",
+      properties: {
+        "android.injected.signing.store.file" => "release-keystore.jks",
+        "android.injected.signing.store.password" => ENV['ANDROID_KEYSTORE_PASSWORD'],
+        "android.injected.signing.key.alias" => ENV['ANDROID_KEY_ALIAS'],
+        "android.injected.signing.key.password" => ENV['ANDROID_KEY_PASSWORD']
+      },
+      # gradlew_path: "../gradlew"
+    )
 
-    sh("./gradlew assembleRelease " +
-       "-Pandroid.injected.signing.store.file=release-keystore.jks " +
-       "-Pandroid.injected.signing.store.password=#{ENV['ANDROID_KEYSTORE_PASSWORD']} " +
-       "-Pandroid.injected.signing.key.alias=#{ENV['ANDROID_KEY_ALIAS']} " +
-       "-Pandroid.injected.signing.key.password=#{ENV['ANDROID_KEY_PASSWORD']}")
-    # ------------------------------------------------------------
-
-    UI.success("✅ Signed APK build complete! Look for it in frontend/build/outputs/apk/release/")
+    UI.success("Signed APK build complete! Look for it in frontend/build/outputs/apk/release/")
   end
 
-  # --- 추가 레인 (선택 사항): 서명된 AAB 생성 ---
-  # desc "Build a signed Android App Bundle (AAB)."
-  # lane :build_aab do
-  #   UI.message("📦 Building signed AAB for release...")
-  #   sh("chmod +x ./gradlew")
-  #   sh("./gradlew bundleRelease " +
-  #      "-Pandroid.injected.signing.store.file=release-keystore.jks " +
-  #      "-Pandroid.injected.signing.store.password=#{ENV['ANDROID_KEYSTORE_PASSWORD']} " +
-  #      "-Pandroid.injected.signing.key.alias=#{ENV['ANDROID_KEY_ALIAS']} " +
-  #      "-Pandroid.injected.signing.key.password=#{ENV['ANDROID_KEY_PASSWORD']}")
-  #   UI.success("✅ Signed AAB build complete! Look for it in frontend/build/outputs/bundle/release/")
-  # end
-
   after_all do |lane|
-    UI.message("🎉 Fastlane process for Android build finished.")
+    UI.message("Fastlane process for Android build finished.")
   end
 
   error do |lane, exception|
-    UI.user_error!("🚨 Fastlane encountered an error: #{exception.message}")
+    UI.user_error!("Fastlane encountered an error: #{exception.message}")
   end
 end
