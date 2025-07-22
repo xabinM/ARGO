@@ -32,7 +32,7 @@ deploy_backend_job:
   stage: deploy_backend
   image: ubuntu:latest
   before_script:
-    - apt update && apt install -y openssh-client git --no-install-recommends
+    - apt update && apt install -y openssh-client --no-install-recommends
     - eval $(ssh-agent -s)
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -44,8 +44,8 @@ deploy_backend_job:
   script:
     - JAR_FILE=$(find ${BACKEND_DIR}/build/libs/ -name "*.jar" ! -name "*-plain.jar")
     - scp "$JAR_FILE" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/your-backend.jar
+    - ssh ${SERVER_USER}@${SERVER_HOST} "pkill -f 'your-backend.jar' || true && nohup java -jar /home/${SERVER_USER}/your-backend.jar > /home/${SERVER_USER}/your-backend.log 2>&1 &"
     - rm ~/.ssh/id_rsa_ci
-    - ssh ${SERVER_USER}@${SERVER_HOST} "sudo systemctl restart your-backend.service"
   only:
     - master
   needs:
