@@ -45,7 +45,7 @@ deploy_backend_job:
     - chmod 644 ~/.ssh/known_hosts
   script:
     - JAR_SOURCE_PATH=$(find ${JAR_PATH}/ -name "*.jar" ! -name "*-plain.jar")
-    - echo "Deploying JAR: ${JAR_SOURCE_PATH} to ${SERVER_HOST}:/home/${SERVER_USER}/${JAR_NAME}"
+    - echo "Deploying JAR ${JAR_SOURCE_PATH} to ${SERVER_HOST}:/home/${SERVER_USER}/${JAR_NAME}"
     - scp "${JAR_SOURCE_PATH}" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/${JAR_NAME}
     - |
       ssh ${SERVER_USER}@${SERVER_HOST} "\
