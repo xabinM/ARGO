@@ -51,11 +51,12 @@ deploy_backend_job:
     - echo "Deploying JAR ${JAR_SOURCE_PATH} to ${SERVER_HOST}:/home/${SERVER_USER}/${JAR_NAME}"
     - scp "${JAR_SOURCE_PATH}" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/${JAR_NAME}
     - |
-      ssh -v ${SERVER_USER}@${SERVER_HOST} "\
+      ssh -v -o ConnectTimeout=10 -o ServerAliveInterval=15 ${SERVER_USER}@${SERVER_HOST} "\
       set -e; \
       echo 'Attempting to kill existing process...'; \
       sudo pkill -f '${JAR_NAME}' || echo 'No existing process to kill or permission denied (check sudoers)'; \
       echo 'Starting new application process...'; \
+      \
       nohup sudo java -jar /home/${SERVER_USER}/${JAR_NAME} \
         --spring.datasource.username=${DB_USERNAME} \
         --spring.datasource.password=${DB_PASSWORD} \
@@ -65,6 +66,9 @@ deploy_backend_job:
         --spring.data.redis.port=${REDIS_PORT} \
         --spring.data.redis.password=${REDIS_PASSWORD} \
         > /home/${SERVER_USER}/${JAR_NAME}.log 2>&1 & \
+      \
+      sleep 2; \
+      \
       echo 'Application started command sent successfully (check log file for details).'; \
       " || { echo "SSH command itself failed!"; exit 1; }
 
