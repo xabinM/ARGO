@@ -54,7 +54,7 @@ deploy_backend_job:
   script:
     - echo "Deploying backend to ${SERVER_HOST}..."
     - JAR_FILE=$(find ${BACKEND_DIR}/build/libs/ -name "*.jar")
-    - echo "Found JAR file: $JAR_FILE" # 이 라인에서 오류가 났다고 하셨죠? 다시 한번 확인
+    - echo "Found JAR file $JAR_FILE"
     - scp "$JAR_FILE" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/your-backend.jar
     - echo "Restarting backend service on ${SERVER_HOST}..."
     - ssh ${SERVER_USER}@${SERVER_HOST} "sudo systemctl restart your-backend.service"
