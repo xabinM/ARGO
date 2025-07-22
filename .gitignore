@@ -9,3 +9,5 @@
 *.log
 *.jar
 *.war
+
+!/backend/gradle/wrapper/gradle-wrapper.jar
