@@ -43,19 +43,21 @@ deploy_backend_job:
     - echo "Deploying $JAR_SOURCE_PATH to $SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
     - scp "$JAR_SOURCE_PATH" "$SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
     - |
-      ssh -v -o ConnectTimeout=10 -o ServerAliveInterval=15 "$SERVER_USER@$SERVER_HOST" "
+      ssh -T "$SERVER_USER@$SERVER_HOST" bash -c "'
       set -e
-      echo 'Stopping existing application...'
-      sudo pkill -f '$JAR_NAME' || echo 'No process found to kill.'
-      sudo fuser -k 8080/tcp || echo 'No process using port 8080.'
-      echo 'Starting new application...'
-      sudo setsid nohup java -jar /home/$SERVER_USER/$JAR_NAME \
+      echo Stopping old process...
+      sudo pkill -f \"$JAR_NAME\" || echo no old process
+      sudo fuser -k 8080/tcp || echo no process on port
+      echo Starting new process...
+      sudo setsid nohup java -jar \"/home/$SERVER_USER/$JAR_NAME\" \
         --spring.datasource.username=$DB_USERNAME \
         --spring.datasource.password=$DB_PASSWORD \
         --spring.datasource.url=\"$DB_URL\" \
         --spring.profiles.active=secret \
         > /tmp/your-backend.log 2>&1 < /dev/null &
-      echo 'Command sent, application should be running in background.'
+      echo Launch command sent.
+      '"
+
       exit 0
       " || { echo "SSH command failed with exit code $?"; exit 1; }
   after_script:
