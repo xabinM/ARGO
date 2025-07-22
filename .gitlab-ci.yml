@@ -62,9 +62,9 @@ deploy_backend_job:
         --spring.datasource.password=${DB_PASSWORD} \
         --spring.datasource.url=${DB_URL} \
         --spring.profiles.active=secret \
-        --spring.data.redis.host=${REDIS_HOST} \
-        --spring.data.redis.port=${REDIS_PORT} \
-        --spring.data.redis.password=${REDIS_PASSWORD} \
+        #--spring.data.redis.host=${REDIS_HOST} \
+        #--spring.data.redis.port=${REDIS_PORT} \
+        #--spring.data.redis.password=${REDIS_PASSWORD} \
         > /home/${SERVER_USER}/${JAR_NAME}.log 2>&1 & \
       \
       sleep 2; \
