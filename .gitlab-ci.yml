@@ -116,18 +116,38 @@ deploy_backend_job:
   tags:
     - master
 
+---
 build_android_app_job:
   stage: build_android
-  image: circleci/android:api-26-node
+  image: cimg/android:2025.04-node # Docker Hub에서 찾은 정확한 최신 'YYYY.MM-node' 태그로 변경하세요.
   variables:
     ANDROID_SDK_ROOT: "/usr/local/android-sdk"
     # ANDROID_KEYSTORE_FILE: (GitLab 변수에 Base64 인코딩된 키스토어 파일 내용 입력)
+    # ANDROID_KEYSTORE_PASSWORD: (GitLab 변수)
+    # ANDROID_KEY_ALIAS: (GitLab 변수)
+    # ANDROID_KEY_PASSWORD: (GitLab 변수)
   script:
     - echo "Building Android app from ${FRONTEND_DIR}..."
-    - cd ${FRONTEND_DIR}
-    - bundle install --path vendor/bundle
-    - echo "$ANDROID_KEYSTORE_FILE" | base64 -d > release-keystore.jks # 키스토어 파일 디코딩
-    - bundle exec fastlane build_apk
+    - cd ${FRONTEND_DIR} # frontend 디렉토리로 이동
+
+    # --- 디버깅을 위한 파일 목록 및 현재 디렉토리 출력 ---
+    - pwd # 현재 작업 디렉토리 확인 (frontend/여야 함)
+    - ls -la # frontend/ 디렉토리의 파일 목록 확인 (gradlew가 보여야 함)
+    - ls -la ./fastlane # fastlane 디렉토리의 파일 목록 확인 (Fastfile이 보여야 함)
+    # --- 디버깅 끝 ---
+
+    # 키스토어 파일 디코딩
+    - echo "$ANDROID_KEYSTORE_FILE" | base64 -d > release-keystore.jks
+    - echo "Keystore file decoded."
+
+    # gradlew 실행 권한 부여 (Fastlane이 아닌 CI/CD 스크립트에서 직접, 정확한 경로로)
+    - chmod +x ./gradlew # frontend/gradlew에 권한 부여
+    - echo "gradlew permissions set."
+
+    # Fastlane 실행 시 Fastfile 경로 명시
+    # Fastfile의 sh("chmod +x ./gradlew") 라인은 제거해야 합니다.
+    - bundle exec fastlane --config_path ./fastlane build_apk # Fastlane 실행 시 Fastfile 경로 지정
+
     - echo "Android app build complete."
   artifacts:
     paths:
