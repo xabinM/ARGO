@@ -126,7 +126,7 @@ build_android_app_job:
     - cd ${FRONTEND_DIR}
     - pwd
     - ls -la
-    - bash -c 'if [ -f "./gradlew" ]; then chmod +x "./gradlew"; else echo "gradlew not found!"; exit 1; fi'
+    # 여기 있던 `bash -c 'if [ -f "./gradlew" ]; then chmod +x "./gradlew"; else echo "gradlew not found!"; exit 1; fi'` 라인은 제거합니다.
 
   script:
     - echo "$ANDROID_KEYSTORE_FILE" | base64 -d > release-keystore.jks
