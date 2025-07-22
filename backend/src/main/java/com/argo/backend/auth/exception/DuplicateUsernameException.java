@@ -1,7 +1,9 @@
 package com.argo.backend.auth.exception;
 
+import com.argo.backend.global.enums.ResponseMessage;
+
 public class DuplicateUsernameException extends RuntimeException {
     public DuplicateUsernameException() {
-        super("이미 존재하는 사용자 이름입니다.");
+        super(ResponseMessage.SIGNUP_USERNAME_DUPLICATE_EXCEPTION.getMessage());
     }
 }

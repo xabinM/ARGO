@@ -1,7 +1,11 @@
 package com.argo.backend.auth.controller;
 
+import com.argo.backend.auth.dto.LoginRequest;
+import com.argo.backend.auth.dto.LoginResponse;
 import com.argo.backend.auth.dto.SignupRequest;
+import com.argo.backend.auth.dto.TokenDto;
 import com.argo.backend.auth.service.AuthService;
+import com.argo.backend.global.enums.ResponseMessage;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -21,6 +25,13 @@ public class AuthController {
     public ResponseEntity<?> signup(@RequestBody @Valid SignupRequest request) {
         authService.signup(request);
 
-        return ResponseEntity.ok("회원 가입에 성공하였습니다.");
+        return ResponseEntity.ok(ResponseMessage.SIGNUP_SUCCESS.getMessage());
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
+
+        TokenDto tokens = authService.login(request);
+        return ResponseEntity.ok(new LoginResponse(tokens, ResponseMessage.LOGIN_SUCCESS.getMessage()));
     }
 }
