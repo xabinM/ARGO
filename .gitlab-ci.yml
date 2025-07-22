@@ -118,7 +118,7 @@ deploy_backend_job:
 
 build_android_app_job:
   stage: build_android
-  image: circleci/android:api-33-node
+  image: circleci/android:api-26-node
   variables:
     ANDROID_SDK_ROOT: "/usr/local/android-sdk"
     # ANDROID_KEYSTORE_FILE: (GitLab 변수에 Base64 인코딩된 키스토어 파일 내용 입력)
