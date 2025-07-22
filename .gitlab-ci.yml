@@ -49,8 +49,8 @@ deploy_backend_job:
     - scp "${JAR_SOURCE_PATH}" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/${JAR_NAME}
     - |
       ssh ${SERVER_USER}@${SERVER_HOST} "\
-      pkill -f '${JAR_NAME}' || true && \
-      nohup java -jar /home/${SERVER_USER}/${JAR_NAME} \
+      sudo pkill -f '${JAR_NAME}' || true && \
+      nohup sudo java -jar /home/${SERVER_USER}/${JAR_NAME} \
         --spring.datasource.username=${DB_USERNAME} \
         --spring.datasource.password=${DB_PASSWORD} \
         --spring.datasource.url=${DB_URL} \
