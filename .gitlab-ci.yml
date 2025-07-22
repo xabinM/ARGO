@@ -116,29 +116,29 @@ deploy_backend_job:
   tags:
     - master
 
-build_android_app_job:
-  stage: build_android
-  image: cimg/android:2025.04-node
-  variables:
-    ANDROID_SDK_ROOT: "/usr/local/android-sdk"
-  before_script:
-    - echo "Changing to ${FRONTEND_DIR}..."
-    - cd ${FRONTEND_DIR}
-    - pwd
-    - ls -la
-    # 여기 있던 `bash -c 'if [ -f "./gradlew" ]; then chmod +x "./gradlew"; else echo "gradlew not found!"; exit 1; fi'` 라인은 제거합니다.
+# build_android_app_job:
+#   stage: build_android
+#   image: cimg/android:2025.04-node
+#   variables:
+#     ANDROID_SDK_ROOT: "/usr/local/android-sdk"
+#   before_script:
+#     - echo "Changing to ${FRONTEND_DIR}..."
+#     - cd ${FRONTEND_DIR}
+#     - pwd
+#     - ls -la
+#     # 여기 있던 `bash -c 'if [ -f "./gradlew" ]; then chmod +x "./gradlew"; else echo "gradlew not found!"; exit 1; fi'` 라인은 제거합니다.
 
-  script:
-    - echo "$ANDROID_KEYSTORE_FILE" | base64 -d > release-keystore.jks
-    - echo "Keystore file decoded."
-    - bundle exec fastlane build_apk
-    - echo "Android app build complete."
-  artifacts:
-    paths:
-      - ${FRONTEND_DIR}/build/outputs/apk/release/*.apk
-      - ${FRONTEND_DIR}/build/outputs/bundle/release/*.aab
-    expire_in: 1 week
-  only:
-    - master
-  tags:
-    - master
+#   script:
+#     - echo "$ANDROID_KEYSTORE_FILE" | base64 -d > release-keystore.jks
+#     - echo "Keystore file decoded."
+#     - bundle exec fastlane build_apk
+#     - echo "Android app build complete."
+#   artifacts:
+#     paths:
+#       - ${FRONTEND_DIR}/build/outputs/apk/release/*.apk
+#       - ${FRONTEND_DIR}/build/outputs/bundle/release/*.aab
+#     expire_in: 1 week
+#   only:
+#     - master
+#   tags:
+#     - master
