@@ -7,19 +7,15 @@ platform :android do
   lane :build_apk do
     UI.message("Building signed APK for release...")
 
-    # `gradle` 액션 사용, `gradlew_path` 명시
-    # Fastlane이 실행되는 위치가 `frontend/fastlane`이라고 가정하면
-    # `gradlew`는 `../gradlew` 경로에 있습니다.
     gradle(
       task: "assembleRelease",
-      project_dir: "../",
+      project_dir: ".",
       properties: {
         "android.injected.signing.store.file" => "release-keystore.jks",
         "android.injected.signing.store.password" => ENV['ANDROID_KEYSTORE_PASSWORD'],
         "android.injected.signing.key.alias" => ENV['ANDROID_KEY_ALIAS'],
         "android.injected.signing.key.password" => ENV['ANDROID_KEY_PASSWORD']
-      },
-      # gradlew_path: "../gradlew"
+      }
     )
 
     UI.success("Signed APK build complete! Look for it in frontend/build/outputs/apk/release/")
