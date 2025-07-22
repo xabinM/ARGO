@@ -22,11 +22,11 @@ build_backend_job:
   stage: build_backend
   image: openjdk:${JAVA_VERSION}-jdk-slim
   script:
-    - echo "🏗️ Building backend from ${BACKEND_DIR}..."
+    - echo "Building backend from ${BACKEND_DIR}..."
     - cd ${BACKEND_DIR}
     - chmod +x gradlew
     - ./gradlew clean build -x test
-    - echo "✅ Backend build complete."
+    - echo "Backend build complete."
   artifacts:
     paths:
       - ${BACKEND_DIR}/build/libs/*.jar
@@ -40,23 +40,23 @@ deploy_backend_job:
   stage: deploy_backend
   image: ubuntu:latest
   before_script:
-    - echo "🔑 Setting up SSH for deployment..."
-    - apt update && apt install -y openssh-client git # apt 기반 이미지에서 필요한 패키지 설치
+    - echo "Setting up SSH for deployment..."
+    - apt update && apt install -y openssh-client git
     - eval $(ssh-agent -s)
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
-    - echo "✅ SSH setup complete."
+    - echo "SSH setup complete."
   script:
-    - echo "🚀 Deploying backend to ${SERVER_HOST}..."
+    - echo "Deploying backend to ${SERVER_HOST}..."
     - JAR_FILE=$(find ${BACKEND_DIR}/build/libs/ -name "*.jar")
     - echo "Found JAR file: $JAR_FILE"
     - scp "$JAR_FILE" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/your-backend.jar
-    - echo "🔄 Restarting backend service on ${SERVER_HOST}..."
+    - echo "Restarting backend service on ${SERVER_HOST}..."
     - ssh ${SERVER_USER}@${SERVER_HOST} "sudo systemctl restart your-backend.service"
-    - echo "🎉 Backend deployment complete."
+    - echo "Backend deployment complete."
   only:
     - master
   needs:
@@ -66,16 +66,16 @@ deploy_backend_job:
 
 build_android_app_job:
   stage: build_android
-  image: circleci/android:api-33-node # 이 부분은 그대로 둡니다.
+  image: circleci/android:api-33-node
   variables:
     ANDROID_SDK_ROOT: "/usr/local/android-sdk"
   script:
-    - echo "📱 Building Android app from ${FRONTEND_DIR}..."
+    - echo "Building Android app from ${FRONTEND_DIR}..."
     - cd ${FRONTEND_DIR}
     - bundle install --path vendor/bundle
     - echo "$ANDROID_KEYSTORE_FILE" | base64 -d > release-keystore.jks
     - bundle exec fastlane build_apk
-    - echo "✅ Android app build complete."
+    - echo "Android app build complete."
   artifacts:
     paths:
       - ${FRONTEND_DIR}/build/outputs/apk/release/*.apk
