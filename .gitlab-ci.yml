@@ -49,7 +49,7 @@ deploy_backend_job:
         sudo pkill -f '$JAR_NAME' || echo 'No process found to kill.'; \
         sudo fuser -k 8080/tcp || echo 'No process using port 8080.'; \
         echo 'Starting new application...'; \
-        nohup sudo java -jar /home/$SERVER_USER/$JAR_NAME \
+        sudo nohup java -jar /home/$SERVER_USER/$JAR_NAME \
           --spring.datasource.username=$DB_USERNAME \
           --spring.datasource.password=$DB_PASSWORD \
           --spring.datasource.url=\"$DB_URL\" \
