@@ -3,7 +3,7 @@ spring:
     include: secret
 
   datasource:
-    url: jdbc:mysql://localhost:3306/mydb?serverTimezone=Asia/Seoul&useUnicode=true&characterEncoding=UTF8
+    url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
