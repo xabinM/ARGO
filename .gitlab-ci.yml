@@ -60,3 +60,9 @@ deploy_backend_job:
       " || { echo "SSH deployment failed"; exit 1; }
   after_script:
     - rm -f ~/.ssh/id_rsa_ci
+
+  only:
+    - master
+  tags:
+    - master
+
