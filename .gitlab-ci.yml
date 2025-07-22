@@ -40,7 +40,6 @@ build_backend_job:
   tags:
     - master
 
----
 # deploy_backend_job: SSH 키 로딩 문제에 대한 해결책 강화
 deploy_backend_job:
   stage: deploy_backend
@@ -88,8 +87,6 @@ deploy_backend_job:
     - build_backend_job
   tags:
     - master
-
----
 
 build_android_app_job:
   stage: build_android
