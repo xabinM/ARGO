@@ -9,9 +9,6 @@ cache:
   paths:
     - ${BACKEND_DIR}/.gradle/wrapper
     - ${BACKEND_DIR}/.gradle/caches
-    - ${FRONTEND_DIR}/.gradle/wrapper
-    - ${FRONTEND_DIR}/.gradle/caches
-    - ${FRONTEND_DIR}/vendor/bundle
   key: "$CI_COMMIT_REF_SLUG"
   policy: pull-push
 
@@ -19,11 +16,9 @@ build_backend_job:
   stage: build_backend
   image: openjdk:${JAVA_VERSION}-jdk-slim
   script:
-    - echo "Building backend from ${BACKEND_DIR}..."
     - cd ${BACKEND_DIR}
     - chmod +x gradlew
     - ./gradlew clean build -x test
-    - echo "Backend build complete."
   artifacts:
     paths:
       - ${BACKEND_DIR}/build/libs/*.jar
@@ -37,22 +32,20 @@ deploy_backend_job:
   stage: deploy_backend
   image: ubuntu:latest
   before_script:
-    - echo "Setting up SSH for deployment..."
-    - apt update && apt install -y openssh-client git -y --no-install-recommends
+    - apt update && apt install -y openssh-client git --no-install-recommends
     - eval $(ssh-agent -s)
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa_ci
+    - chmod 600 ~/.ssh/id_rsa_ci
+    - ssh-add ~/.ssh/id_rsa_ci
     - ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
-    - echo "SSH setup complete."
-
   script:
-    - echo "Deploying backend to ${SERVER_HOST}..."
     - JAR_FILE=$(find ${BACKEND_DIR}/build/libs/ -name "*.jar" ! -name "*-plain.jar")
-    - echo "Found JAR file $JAR_FILE"
     - scp "$JAR_FILE" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/your-backend.jar
     - rm ~/.ssh/id_rsa_ci
-    - echo "Restarting backend service on ${SERVER_HOST}..."
     - ssh ${SERVER_USER}@${SERVER_HOST} "sudo systemctl restart your-backend.service"
-    - echo "Backend deployment complete."
   only:
     - master
   needs:
