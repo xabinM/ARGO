@@ -44,7 +44,15 @@ deploy_backend_job:
   script:
     - JAR_FILE=$(find ${BACKEND_DIR}/build/libs/ -name "*.jar" ! -name "*-plain.jar")
     - scp "$JAR_FILE" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/your-backend.jar
-    - ssh ${SERVER_USER}@${SERVER_HOST} "pkill -f 'your-backend.jar' || true && nohup java -jar /home/${SERVER_USER}/your-backend.jar > /home/${SERVER_USER}/your-backend.log 2>&1 &"
+    - ssh ${SERVER_USER}@${SERVER_HOST} " \
+        pkill -f 'your-backend.jar' || true && \
+        nohup java -jar /home/${SERVER_USER}/your-backend.jar \
+          --spring.datasource.username=${DB_USERNAME} \
+          --spring.datasource.password=${DB_PASSWORD} \
+          --spring.datasource.url=${DB_URL} \
+          --spring.profiles.active=secret \
+          > /home/${SERVER_USER}/your-backend.log 2>&1 & \
+      "
     - rm ~/.ssh/id_rsa_ci
   only:
     - master
