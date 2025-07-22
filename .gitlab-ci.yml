@@ -116,7 +116,6 @@ deploy_backend_job:
   tags:
     - master
 
----
 build_android_app_job:
   stage: build_android
   image: cimg/android:2025.04-node # Docker Hub에서 찾은 정확한 최신 'YYYY.MM-node' 태그로 변경하세요.
