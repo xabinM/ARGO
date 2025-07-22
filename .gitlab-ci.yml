@@ -63,7 +63,9 @@ deploy_backend_job:
         --spring.datasource.url=\"${DB_URL}\" \
         --spring.profiles.active=secret \
         > /home/${SERVER_USER}/${JAR_NAME}.log 2>&1 < /dev/null & \
-      sleep 5; \
+      \
+      sleep 15; \
+      \
       echo 'Application started command sent successfully (check log file for details).'; \
       " || { echo "SSH command itself failed!"; exit 1; }
 
