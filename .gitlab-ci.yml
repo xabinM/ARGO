@@ -97,7 +97,8 @@ deploy_backend_job:
   script:
     - echo "Deploying backend to ${SERVER_HOST}..."
     # 빌드 아티팩트(JAR 파일)를 찾습니다.
-    - JAR_FILE=$(find ${BACKEND_DIR}/build/libs/ -name "*.jar")
+    # 실행 가능한 JAR 파일 (보통 `-plain` 접미사가 없는 파일)을 찾도록 수정
+    - JAR_FILE=$(find ${BACKEND_DIR}/build/libs/ -name "*.jar" ! -name "*-plain.jar")
     - echo "Found JAR file $JAR_FILE"
     # SCP 명령을 사용하여 JAR 파일을 서버로 전송합니다.
     - scp "$JAR_FILE" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/your-backend.jar
