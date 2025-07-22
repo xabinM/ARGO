@@ -20,6 +20,7 @@ platform :android do
     gradle(
       task: "assembleRelease", # 릴리스 APK를 빌드하는 Gradle 태스크
       project_dir: "",         # 현재 디렉토리 (frontend/)가 메인 앱 모듈
+      gradle_path: "./gradlew",
       properties: {
         # GitLab CI/CD 변수에서 주입된 키스토어 파일과 비밀번호를 사용합니다.
         # 'release-keystore.jks'는 .gitlab-ci.yml에서 생성될 임시 파일 이름입니다.
