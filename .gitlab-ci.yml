@@ -18,8 +18,6 @@ cache:
   key: "$CI_COMMIT_REF_SLUG"
   policy: pull-push
 
----
-
 build_backend_job:
   stage: build_backend
   image: openjdk:${JAVA_VERSION}-jdk-slim
@@ -37,8 +35,6 @@ build_backend_job:
     - master
   tags:
     - master
-
----
 
 deploy_backend_job:
   stage: deploy_backend
@@ -67,8 +63,6 @@ deploy_backend_job:
     - build_backend_job
   tags:
     - master
-
----
 
 build_android_app_job:
   stage: build_android
