@@ -1,16 +1,9 @@
 stages:
   - build_backend
   - deploy_backend
-  - build_android
 
 variables:
-  # 각 변수의 실제 값은 GitLab CI/CD > Settings > CI/CD > Variables 에서 설정해야 합니다.
   JAVA_VERSION: "17"
-  # 예시: BACKEND_DIR: "backend"
-  # 예시: FRONTEND_DIR: "frontend"
-  # 예시: SERVER_USER: "ec2-user"
-  # 예시: SERVER_HOST: "your.ec2.public.ip.or.domain"
-  # SSH_PRIVATE_KEY: (GitLab 변수에 Private Key 내용 전체를 입력)
 
 cache:
   paths:
@@ -42,103 +35,27 @@ build_backend_job:
 
 deploy_backend_job:
   stage: deploy_backend
-  image: ubuntu:latest # 최신 Ubuntu 이미지를 사용하여 SSH 관련 도구 설치
+  image: ubuntu:latest
   before_script:
     - echo "Setting up SSH for deployment..."
-    # SSH 클라이언트 및 Git 설치. 필요한 패키지만 설치하여 효율성을 높입니다.
     - apt update && apt install -y openssh-client git -y --no-install-recommends
-
-    # SSH 에이전트 시작: SSH 키를 메모리에 관리하는 데 필요합니다.
     - eval $(ssh-agent -s)
-
-    # --- SSH 키 디버깅 및 로딩 시작 (여기서 문제의 원인을 찾아야 합니다!) ---
-    # 1. SSH_PRIVATE_KEY 변수 내용의 일부를 출력하여 변수가 제대로 전달되었는지 확인합니다.
-    - echo "--- DEBUG Raw SSH_PRIVATE_KEY (first/last 5 lines) ---"
-    - echo "$SSH_PRIVATE_KEY" | head -n 5 # 변수 내용의 시작 부분
-    - echo "..."
-    - echo "$SSH_PRIVATE_KEY" | tail -n 5 # 변수 내용의 끝 부분
-
-    # 2. 캐리지 리턴(\r) 문자를 제거하고 키 내용을 KEY_CONTENT 변수에 저장합니다.
-    - echo "--- DEBUG Key content after tr -d '\\r' and its length ---"
-    - KEY_CONTENT=$(echo "$SSH_PRIVATE_KEY" | tr -d '\r')
-    - echo "$KEY_CONTENT" | head -n 5 # '\r' 제거 후의 시작 부분
-    - echo "..."
-    - echo "$KEY_CONTENT" | tail -n 5 # '\r' 제거 후의 끝 부분
-    - echo "Total bytes after tr -d '\\r' $(echo -n "$KEY_CONTENT" | wc -c)" # 최종 바이트 길이 확인
-
-    # 3. .ssh 디렉토리를 생성하고 적절한 권한을 설정합니다.
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
-
-    # 4. 정제된 키 내용을 파일로 저장합니다. 이 방법이 stdin 파이프보다 안정적입니다.
-    - echo "$KEY_CONTENT" > ~/.ssh/id_rsa_ci # 키 내용을 ~/.ssh/id_rsa_ci 파일에 씁니다.
-    - chmod 600 ~/.ssh/id_rsa_ci # Private Key 파일의 권한을 600으로 설정합니다. (필수)
-
-    # 5. 저장된 파일의 내용과 권한을 다시 확인하여 디스크에 올바르게 쓰였는지 검증합니다.
-    - echo "--- DEBUG Contents of the saved key file ~/.ssh/id_rsa_ci ---"
-    - cat ~/.ssh/id_rsa_ci | head -n 5 # 파일에 저장된 실제 내용의 시작 부분
-    - echo "..."
-    - cat ~/.ssh/id_rsa_ci | tail -n 5 # 파일에 저장된 실제 내용의 끝 부분
-    - echo "--- DEBUG Key file permissions ---"
-    - ls -l ~/.ssh/id_rsa_ci # 파일 권한 확인
-
-    # 6. ssh-agent에 Private Key를 로드합니다. 여기서 error in libcrypto 오류가 발생할 것입니다.
-    - ssh-add ~/.ssh/id_rsa_ci
-    - echo "SSH Private Key loaded into agent." # 이 메시지가 출력되면 키 로딩 성공!
-    # --- SSH 키 디버깅 및 로딩 끝 ---
-
-    # 배포 서버의 공개 호스트 키를 가져와 known_hosts에 추가합니다.
-    # 이렇게 하면 SCP/SSH 접속 시 호스트 키 검증 단계가 자동으로 처리됩니다.
     - ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts # known_hosts 파일 권한 설정
-
+    - chmod 644 ~/.ssh/known_hosts
     - echo "SSH setup complete."
 
   script:
     - echo "Deploying backend to ${SERVER_HOST}..."
-    # 빌드 아티팩트(JAR 파일)를 찾습니다.
-    # 실행 가능한 JAR 파일 (보통 `-plain` 접미사가 없는 파일)을 찾도록 수정
     - JAR_FILE=$(find ${BACKEND_DIR}/build/libs/ -name "*.jar" ! -name "*-plain.jar")
     - echo "Found JAR file $JAR_FILE"
-    # SCP 명령을 사용하여 JAR 파일을 서버로 전송합니다.
     - scp "$JAR_FILE" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/your-backend.jar
-    # 보안을 위해 사용 후 Private Key 파일을 삭제합니다.
     - rm ~/.ssh/id_rsa_ci
-
     - echo "Restarting backend service on ${SERVER_HOST}..."
-    # SSH를 통해 서버에 접속하여 백엔드 서비스를 재시작합니다.
     - ssh ${SERVER_USER}@${SERVER_HOST} "sudo systemctl restart your-backend.service"
     - echo "Backend deployment complete."
   only:
     - master
   needs:
     - build_backend_job
-  tags:
-    - master
-
-build_android_app_job:
-  stage: build_android
-  image: cimg/android:2025.04-node
-  variables:
-    ANDROID_SDK_ROOT: "/usr/local/android-sdk"
-  before_script:
-    - echo "Changing to ${FRONTEND_DIR}..."
-    - cd ${FRONTEND_DIR}
-    - pwd
-    - ls -la
-    # 여기 있던 `bash -c 'if [ -f "./gradlew" ]; then chmod +x "./gradlew"; else echo "gradlew not found!"; exit 1; fi'` 라인은 제거합니다.
-
-  script:
-    - echo "$ANDROID_KEYSTORE_FILE" | base64 -d > release-keystore.jks
-    - echo "Keystore file decoded."
-    - bundle exec fastlane build_apk
-    - echo "Android app build complete."
-  artifacts:
-    paths:
-      - ${FRONTEND_DIR}/build/outputs/apk/release/*.apk
-      - ${FRONTEND_DIR}/build/outputs/bundle/release/*.aab
-    expire_in: 1 week
-  only:
-    - master
   tags:
     - master
