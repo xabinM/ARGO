@@ -7,6 +7,8 @@ stages:
 
 variables:
   JAVA_VERSION: "17"
+  # BACKEND_DIR: "backend"   # GitLab UI Variables에 없다면 여기에 정의
+  # FRONTEND_DIR: "frontend" # GitLab UI Variables에 없다면 여기에 정의
 
 cache:
   paths:
@@ -52,7 +54,7 @@ deploy_backend_job:
   script:
     - echo "Deploying backend to ${SERVER_HOST}..."
     - JAR_FILE=$(find ${BACKEND_DIR}/build/libs/ -name "*.jar")
-    - echo "Found JAR file: $JAR_FILE"
+    - echo "Found JAR file: $JAR_FILE" # 이 라인에서 오류가 났다고 하셨죠? 다시 한번 확인
     - scp "$JAR_FILE" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/your-backend.jar
     - echo "Restarting backend service on ${SERVER_HOST}..."
     - ssh ${SERVER_USER}@${SERVER_HOST} "sudo systemctl restart your-backend.service"
