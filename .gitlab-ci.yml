@@ -53,18 +53,18 @@ deploy_backend_job:
 
     # --- SSH 키 디버깅 및 로딩 시작 (여기서 문제의 원인을 찾아야 합니다!) ---
     # 1. SSH_PRIVATE_KEY 변수 내용의 일부를 출력하여 변수가 제대로 전달되었는지 확인합니다.
-    - echo "--- DEBUG: Raw SSH_PRIVATE_KEY (first/last 5 lines) ---"
+    - echo "--- DEBUG Raw SSH_PRIVATE_KEY (first/last 5 lines) ---"
     - echo "$SSH_PRIVATE_KEY" | head -n 5 # 변수 내용의 시작 부분
     - echo "..."
     - echo "$SSH_PRIVATE_KEY" | tail -n 5 # 변수 내용의 끝 부분
 
     # 2. 캐리지 리턴(\r) 문자를 제거하고 키 내용을 KEY_CONTENT 변수에 저장합니다.
-    - echo "--- DEBUG: Key content after tr -d '\\r' and its length ---"
+    - echo "--- DEBUG Key content after tr -d '\\r' and its length ---"
     - KEY_CONTENT=$(echo "$SSH_PRIVATE_KEY" | tr -d '\r')
     - echo "$KEY_CONTENT" | head -n 5 # '\r' 제거 후의 시작 부분
     - echo "..."
     - echo "$KEY_CONTENT" | tail -n 5 # '\r' 제거 후의 끝 부분
-    - echo "Total bytes after tr -d '\\r': $(echo -n "$KEY_CONTENT" | wc -c)" # 최종 바이트 길이 확인
+    - echo "Total bytes after tr -d '\\r' $(echo -n "$KEY_CONTENT" | wc -c)" # 최종 바이트 길이 확인
 
     # 3. .ssh 디렉토리를 생성하고 적절한 권한을 설정합니다.
     - mkdir -p ~/.ssh
@@ -75,11 +75,11 @@ deploy_backend_job:
     - chmod 600 ~/.ssh/id_rsa_ci # Private Key 파일의 권한을 600으로 설정합니다. (필수)
 
     # 5. 저장된 파일의 내용과 권한을 다시 확인하여 디스크에 올바르게 쓰였는지 검증합니다.
-    - echo "--- DEBUG: Contents of the saved key file ~/.ssh/id_rsa_ci ---"
+    - echo "--- DEBUG Contents of the saved key file ~/.ssh/id_rsa_ci ---"
     - cat ~/.ssh/id_rsa_ci | head -n 5 # 파일에 저장된 실제 내용의 시작 부분
     - echo "..."
     - cat ~/.ssh/id_rsa_ci | tail -n 5 # 파일에 저장된 실제 내용의 끝 부분
-    - echo "--- DEBUG: Key file permissions ---"
+    - echo "--- DEBUG Key file permissions ---"
     - ls -l ~/.ssh/id_rsa_ci # 파일 권한 확인
 
     # 6. ssh-agent에 Private Key를 로드합니다. 여기서 error in libcrypto 오류가 발생할 것입니다.
@@ -98,7 +98,7 @@ deploy_backend_job:
     - echo "Deploying backend to ${SERVER_HOST}..."
     # 빌드 아티팩트(JAR 파일)를 찾습니다.
     - JAR_FILE=$(find ${BACKEND_DIR}/build/libs/ -name "*.jar")
-    - echo "Found JAR file: $JAR_FILE"
+    - echo "Found JAR file $JAR_FILE"
     # SCP 명령을 사용하여 JAR 파일을 서버로 전송합니다.
     - scp "$JAR_FILE" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/your-backend.jar
     # 보안을 위해 사용 후 Private Key 파일을 삭제합니다.
