@@ -1,5 +1,6 @@
 package com.argo.backend.domain.user;
 
+import com.argo.backend.auth.dto.SignupRequest;
 import com.argo.backend.domain.BaseTimeEntity;
 import com.argo.backend.domain.team.Team;
 import jakarta.persistence.*;
@@ -45,4 +46,25 @@ public class User extends BaseTimeEntity {
 
     @Column(nullable = false, precision = 10, scale = 7)
     private BigDecimal longitude;
+
+    public static User from(SignupRequest request) {
+        return new User(
+                request.getUsername(),
+                request.getPassword(),
+                request.getName(),
+                request.getRole(),
+                BigDecimal.ZERO,
+                BigDecimal.ZERO
+        );
+    }
+
+    private User(String username, String password, String name, Role role,
+                 BigDecimal latitude, BigDecimal longitude) {
+        this.username = username;
+        this.password = password;
+        this.name = name;
+        this.role = role;
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
 }
