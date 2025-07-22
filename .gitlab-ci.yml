@@ -1,4 +1,4 @@
-# .gitlab-ci.yml
+# .gitlab-ci.yml (개선된 deploy_backend_job 부분)
 
 stages:
   - build_backend
@@ -7,6 +7,10 @@ stages:
 
 variables:
   JAVA_VERSION: "17"
+  # BACKEND_DIR: "backend" # 필요하다면 여기에 명시하거나 .gitlab-ci.yml 상단에서 정의 (현재 파일에는 없음)
+  # FRONTEND_DIR: "frontend" # 필요하다면 여기에 명시하거나 .gitlab-ci.yml 상단에서 정의 (현재 파일에는 없음)
+  # SERVER_USER: "your_server_username" # 실제 사용자 이름으로 변경
+  # SERVER_HOST: "your_server_ip_or_domain" # 실제 서버 IP 또는 도메인으로 변경
 
 cache:
   paths:
@@ -36,25 +40,46 @@ build_backend_job:
   tags:
     - master
 
+---
+# deploy_backend_job: SSH 키 로딩 문제에 대한 해결책 강화
 deploy_backend_job:
   stage: deploy_backend
-  image: ubuntu:latest
+  image: ubuntu:latest # 최신 Ubuntu 이미지를 사용하여 SSH 관련 도구 설치
   before_script:
     - echo "Setting up SSH for deployment..."
-    - apt update && apt install -y openssh-client git
+    # SSH 클라이언트 및 Git 설치 (최신 버전 사용 권장)
+    - apt update && apt install -y openssh-client git -y --no-install-recommends
+
+    # SSH 에이전트 시작
     - eval $(ssh-agent -s)
-    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
-    - mkdir -p ~/.ssh
-    - chmod 700 ~/.ssh
+
+    # Private Key를 파일로 저장 후 ssh-add
+    # 이 방법이 stdin으로 직접 파이프하는 것보다 더 안정적입니다.
+    - mkdir -p ~/.ssh # .ssh 디렉토리 생성
+    - chmod 700 ~/.ssh # .ssh 디렉토리 권한 설정 (필수)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa_ci # 키를 파일로 저장
+    - chmod 600 ~/.ssh/id_rsa_ci # Private Key 파일 권한 설정 (필수)
+
+    # 저장된 파일에서 ssh-add 시도
+    - ssh-add ~/.ssh/id_rsa_ci
+    - echo "SSH Private Key loaded into agent."
+
+    # 서버의 호스트 키 스캔 및 known_hosts에 추가 (StrictHostKeyChecking=no 방지)
     - ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
-    - chmod 644 ~/.ssh/known_hosts
+    - chmod 644 ~/.ssh/known_hosts # known_hosts 파일 권한 설정
     - echo "SSH setup complete."
+
   script:
     - echo "Deploying backend to ${SERVER_HOST}..."
     - JAR_FILE=$(find ${BACKEND_DIR}/build/libs/ -name "*.jar")
     - echo "Found JAR file: $JAR_FILE"
+    # SCP 명령어 실행 (호스트 키 검사 우회를 제거하고, ssh-add가 잘 작동하는지 확인)
     - scp "$JAR_FILE" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/your-backend.jar
+    # 전송 후 임시 Private Key 파일 삭제 (보안 강화)
+    - rm ~/.ssh/id_rsa_ci
+
     - echo "Restarting backend service on ${SERVER_HOST}..."
+    # SSH로 서비스 재시작 명령 실행
     - ssh ${SERVER_USER}@${SERVER_HOST} "sudo systemctl restart your-backend.service"
     - echo "Backend deployment complete."
   only:
@@ -63,6 +88,8 @@ deploy_backend_job:
     - build_backend_job
   tags:
     - master
+
+---
 
 build_android_app_job:
   stage: build_android
