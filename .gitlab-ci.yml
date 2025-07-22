@@ -24,7 +24,7 @@ build_backend_job:
     - master
 
 deploy_backend_job:
-  stage: deploy
+  stage: deploy_backend
   image: ubuntu:latest
   before_script:
     - apt update && apt install -y openssh-client --no-install-recommends
