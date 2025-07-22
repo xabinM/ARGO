@@ -1,37 +1,5 @@
-stages:
-  - build_backend
-  - deploy_backend
-
-variables:
-  JAVA_VERSION: "17"
-  JAR_PATH: "${BACKEND_DIR}/build/libs"
-  JAR_NAME: "your-backend.jar"
-
-cache:
-  paths:
-    - ${BACKEND_DIR}/.gradle/wrapper
-    - ${BACKEND_DIR}/.gradle/caches
-  key: "$CI_COMMIT_REF_SLUG"
-  policy: pull-push
-
-build_backend_job:
-  stage: build_backend
-  image: openjdk:${JAVA_VERSION}-jdk-slim
-  script:
-    - cd ${BACKEND_DIR}
-    - chmod +x gradlew
-    - ./gradlew clean build -x test
-  artifacts:
-    paths:
-      - ${JAR_PATH}/*.jar
-    expire_in: 1 day
-  only:
-    - master
-  tags:
-    - master
-
 deploy_backend_job:
-  stage: deploy_backend
+  stage: deploy
   image: ubuntu:latest
   before_script:
     - apt update && apt install -y openssh-client --no-install-recommends
@@ -41,11 +9,12 @@ deploy_backend_job:
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa_ci
     - chmod 600 ~/.ssh/id_rsa_ci
     - ssh-add ~/.ssh/id_rsa_ci
-    # 호스트 키 검사를 건너뛰는 설정 (디버깅용, 문제 해결 후 제거 권장)
     - echo "Host *" > ~/.ssh/config
     - echo "    StrictHostKeyChecking no" >> ~/.ssh/config
     - echo "    UserKnownHostsFile /dev/null" >> ~/.ssh/config
-
+  variables:
+    JAR_PATH: backend/build/libs
+    JAR_NAME: your-backend.jar
   script:
     - JAR_SOURCE_PATH=$(find ${JAR_PATH}/ -name "*.jar" ! -name "*-plain.jar")
     - echo "Deploying JAR ${JAR_SOURCE_PATH} to ${SERVER_HOST}:/home/${SERVER_USER}/${JAR_NAME}"
@@ -54,27 +23,22 @@ deploy_backend_job:
       ssh -v -o ConnectTimeout=10 -o ServerAliveInterval=15 ${SERVER_USER}@${SERVER_HOST} "\
       set -e; \
       echo 'Attempting to kill existing process...'; \
-      sudo pkill -f '${JAR_NAME}' || echo 'No existing your-backend.jar process to kill (by pkill)'; \
-      sudo fuser -k 8080/tcp || echo 'No process using port 8080 found or fuser failed to kill.'; \
+      sudo /usr/bin/pkill -f '${JAR_NAME}' || { echo 'pkill failed or no process found.'; }; \
+      sudo /usr/bin/fuser -k 8080/tcp || { echo 'fuser failed or no process on 8080.'; }; \
       echo 'Starting new application process...'; \
-      setsid nohup sudo java -jar /home/${SERVER_USER}/${JAR_NAME} \
+      setsid nohup sudo /usr/bin/java -jar /home/${SERVER_USER}/${JAR_NAME} \
         --spring.datasource.username=${DB_USERNAME} \
         --spring.datasource.password=${DB_PASSWORD} \
         --spring.datasource.url=\"${DB_URL}\" \
         --spring.profiles.active=secret \
-        > /home/${SERVER_USER}/${JAR_NAME}.log 2>&1 < /dev/null & \
+        # --spring.data.redis.host=${REDIS_HOST} \
+        # --spring.data.redis.port=${REDIS_PORT} \
+        # --spring.data.redis.password=${REDIS_PASSWORD} \
+        > /home/${SERVER_USER}/your-backend.log 2>&1 < /dev/null & \
       \
-      sleep 15; \
+      sleep 10; \
       \
       echo 'Application started command sent successfully (check log file for details).'; \
-      " || { echo "SSH command itself failed!"; exit 1; }
-
+      " || { echo "SSH command itself failed with exit code $?"; exit 1; }
   after_script:
     - rm ~/.ssh/id_rsa_ci
-
-  only:
-    - master
-  needs:
-    - build_backend_job
-  tags:
-    - master
