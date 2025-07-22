@@ -57,17 +57,14 @@ deploy_backend_job:
       sudo pkill -f '${JAR_NAME}' || echo 'No existing process to kill or permission denied (check sudoers)'; \
       echo 'Starting new application process...'; \
       \
-      nohup sudo java -jar /home/${SERVER_USER}/${JAR_NAME} \
+      setsid nohup sudo java -jar /home/${SERVER_USER}/${JAR_NAME} \
         --spring.datasource.username=${DB_USERNAME} \
         --spring.datasource.password=${DB_PASSWORD} \
-        --spring.datasource.url=${DB_URL} \
+        --spring.datasource.url=\"${DB_URL}\" \
         --spring.profiles.active=secret \
-        #--spring.data.redis.host=${REDIS_HOST} \
-        #--spring.data.redis.port=${REDIS_PORT} \
-        #--spring.data.redis.password=${REDIS_PASSWORD} \
-        > /home/${SERVER_USER}/${JAR_NAME}.log 2>&1 & \
+        > /home/${SERVER_USER}/${JAR_NAME}.log 2>&1 < /dev/null & \
       \
-      sleep 2; \
+      sleep 1; \
       \
       echo 'Application started command sent successfully (check log file for details).'; \
       " || { echo "SSH command itself failed!"; exit 1; }
