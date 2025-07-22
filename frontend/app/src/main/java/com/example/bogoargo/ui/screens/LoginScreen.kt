@@ -100,6 +100,17 @@ fun LoginScreen(
             }
         }
         
+        Spacer(modifier = Modifier.height(16.dp))
+        
+        // 개발자용 로그인 버튼
+        OutlinedButton(
+            onClick = viewModel::devLogin,
+            modifier = Modifier.fillMaxWidth(),
+            enabled = !uiState.isLoading
+        ) {
+            Text("🛠️ 개발자 로그인 (서버 없이 테스트)")
+        }
+        
         uiState.errorMessage?.let { errorMessage ->
             Spacer(modifier = Modifier.height(16.dp))
             Card(

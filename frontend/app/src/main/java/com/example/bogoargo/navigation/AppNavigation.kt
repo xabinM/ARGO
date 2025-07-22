@@ -5,6 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.bogoargo.ui.screens.GameScreen
 import com.example.bogoargo.ui.screens.HomeScreen
 import com.example.bogoargo.ui.screens.LoginScreen
 import com.example.bogoargo.ui.screens.ProfileScreen
@@ -15,6 +16,7 @@ sealed class Screen(val route: String) {
     data object Splash : Screen("splash")
     data object Login : Screen("login")
     data object Home : Screen("home")
+    data object Game : Screen("game")
     data object Profile : Screen("profile")
     data object Settings : Screen("settings")
 }
@@ -35,6 +37,9 @@ fun AppNavigation(
         }
         composable(Screen.Home.route) {
             HomeScreen(navController = navController)
+        }
+        composable(Screen.Game.route) {
+            GameScreen(navController = navController)
         }
         composable(Screen.Profile.route) {
             ProfileScreen(navController = navController)

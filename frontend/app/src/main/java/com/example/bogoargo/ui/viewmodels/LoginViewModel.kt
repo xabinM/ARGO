@@ -109,6 +109,27 @@ class LoginViewModel(
         }
     }
     
+    fun devLogin() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                errorMessage = null
+            )
+            
+            // 임시 토큰으로 개발자 로그인
+            val dummyAccessToken = "dev_access_token_${System.currentTimeMillis()}"
+            val dummyRefreshToken = "dev_refresh_token_${System.currentTimeMillis()}"
+            
+            authRepository.saveTokens(dummyAccessToken, dummyRefreshToken)
+            
+            _uiState.value = _uiState.value.copy(
+                isLoading = false,
+                isLoggedIn = true,
+                errorMessage = null
+            )
+        }
+    }
+    
     fun clearErrorMessage() {
         _uiState.value = _uiState.value.copy(errorMessage = null)
     }
