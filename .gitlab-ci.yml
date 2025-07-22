@@ -1,3 +1,35 @@
+stages:
+  - build_backend
+  - deploy_backend
+
+variables:
+  JAVA_VERSION: "17"
+  JAR_PATH: "${BACKEND_DIR}/build/libs"
+  JAR_NAME: "your-backend.jar"
+
+cache:
+  paths:
+    - ${BACKEND_DIR}/.gradle/wrapper
+    - ${BACKEND_DIR}/.gradle/caches
+  key: "$CI_COMMIT_REF_SLUG"
+  policy: pull-push
+
+build_backend_job:
+  stage: build_backend
+  image: openjdk:${JAVA_VERSION}-jdk-slim
+  script:
+    - cd ${BACKEND_DIR}
+    - chmod +x gradlew
+    - ./gradlew clean build -x test
+  artifacts:
+    paths:
+      - ${JAR_PATH}/*.jar
+    expire_in: 1 day
+  only:
+    - master
+  tags:
+    - master
+
 deploy_backend_job:
   stage: deploy
   image: ubuntu:latest
@@ -12,9 +44,6 @@ deploy_backend_job:
     - echo "Host *" > ~/.ssh/config
     - echo "    StrictHostKeyChecking no" >> ~/.ssh/config
     - echo "    UserKnownHostsFile /dev/null" >> ~/.ssh/config
-  variables:
-    JAR_PATH: backend/build/libs
-    JAR_NAME: your-backend.jar
   script:
     - JAR_SOURCE_PATH=$(find ${JAR_PATH}/ -name "*.jar" ! -name "*-plain.jar")
     - echo "Deploying JAR ${JAR_SOURCE_PATH} to ${SERVER_HOST}:/home/${SERVER_USER}/${JAR_NAME}"
