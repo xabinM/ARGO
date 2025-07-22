@@ -4,6 +4,8 @@ stages:
 
 variables:
   JAVA_VERSION: "17"
+  JAR_PATH: "${BACKEND_DIR}/build/libs"
+  JAR_NAME: "your-backend.jar"
 
 cache:
   paths:
@@ -21,7 +23,7 @@ build_backend_job:
     - ./gradlew clean build -x test
   artifacts:
     paths:
-      - ${BACKEND_DIR}/build/libs/*.jar
+      - ${JAR_PATH}/*.jar
     expire_in: 1 day
   only:
     - master
@@ -42,15 +44,23 @@ deploy_backend_job:
     - ssh-keyscan -H "$SERVER_HOST" >> ~/.ssh/known_hosts
     - chmod 644 ~/.ssh/known_hosts
   script:
-    - JAR_FILE=$(find ${BACKEND_DIR}/build/libs/ -name "*.jar" ! -name "*-plain.jar")
-    - scp "$JAR_FILE" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/your-backend.jar
-    - ssh ${SERVER_USER}@${SERVER_HOST} "pkill -f 'your-backend.jar' || true && \
-        nohup java -jar /home/${SERVER_USER}/your-backend.jar \
-          --spring.datasource.username=${DB_USERNAME} \
-          --spring.datasource.password=${DB_PASSWORD} \
-          --spring.datasource.url=${DB_URL} \
-          --spring.profiles.active=secret \
-          > /home/${SERVER_USER}/your-backend.log 2>&1 &"
+    - JAR_SOURCE_PATH=$(find ${JAR_PATH}/ -name "*.jar" ! -name "*-plain.jar")
+    - echo "Deploying JAR: ${JAR_SOURCE_PATH} to ${SERVER_HOST}:/home/${SERVER_USER}/${JAR_NAME}"
+    - scp "${JAR_SOURCE_PATH}" ${SERVER_USER}@${SERVER_HOST}:/home/${SERVER_USER}/${JAR_NAME}
+    - |
+      ssh ${SERVER_USER}@${SERVER_HOST} "\
+      pkill -f '${JAR_NAME}' || true && \
+      nohup java -jar /home/${SERVER_USER}/${JAR_NAME} \
+        --spring.datasource.username=${DB_USERNAME} \
+        --spring.datasource.password=${DB_PASSWORD} \
+        --spring.datasource.url=${DB_URL} \
+        --spring.profiles.active=secret \
+        # --spring.data.redis.host=${REDIS_HOST} \
+        # --spring.data.redis.port=${REDIS_PORT} \
+        # --spring.data.redis.password=${REDIS_PASSWORD} \
+        > /home/${SERVER_USER}/${JAR_NAME}.log 2>&1 & \
+      "
+  after_script:
     - rm ~/.ssh/id_rsa_ci
   only:
     - master
