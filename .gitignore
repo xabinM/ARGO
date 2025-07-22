@@ -11,3 +11,20 @@
 *.war
 
 !/backend/gradle/wrapper/gradle-wrapper.jar
+
+# === Frontend (Spring Boot) ===
+/frontend/*.iml
+/frontend/.gradle
+/frontend//local.properties
+/frontend//.idea/caches
+/frontend//.idea/libraries
+/frontend//.idea/modules.xml
+/frontend//.idea/workspace.xml
+/frontend//.idea/navEditor.xml
+/frontend//.idea/assetWizardSettings.xml
+/frontend/.DS_Store
+/frontend//build
+/frontend//captures
+/frontend/.externalNativeBuild
+/frontend/.cxx
+/frontend/local.properties
