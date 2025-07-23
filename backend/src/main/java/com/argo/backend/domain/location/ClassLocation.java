@@ -2,10 +2,7 @@ package com.argo.backend.domain.location;
 
 import com.argo.backend.domain.classroom.ClassRoom;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.io.Serializable;
 
@@ -15,6 +12,8 @@ import java.io.Serializable;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor
 public class ClassLocation {
     @EmbeddedId
     private ClassLocationId id;
