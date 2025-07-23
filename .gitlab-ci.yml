@@ -50,11 +50,11 @@ deploy_backend_job:
         sudo pkill -f 'your-backend.jar' || echo 'No process found.'
         sudo fuser -k 8080/tcp || echo 'No process using 8080.'
 
-        echo '--- Environment Variables Check 2 ---' >> /tmp/your-backend-debug.log
-        echo "DB_USERNAME: ${DB_USERNAME}" >> /tmp/your-backend-debug.log
-        echo "DB_PASSWORD: ${DB_PASSWORD}" >> /tmp/your-backend-debug.log
-        echo "DB_URL: ${DB_URL}" >> /tmp/your-backend-debug.log
-        echo '--- End Environment Variables Check ---' >> /tmp/your-backend-debug.log
+        #echo '--- Environment Variables Check 2 ---' >> /tmp/your-backend-debug.log
+        #echo "DB_USERNAME: ${DB_USERNAME}" >> /tmp/your-backend-debug.log
+        #echo "DB_PASSWORD: ${DB_PASSWORD}" >> /tmp/your-backend-debug.log
+        #echo "DB_URL: ${DB_URL}" >> /tmp/your-backend-debug.log
+        #echo '--- End Environment Variables Check ---' >> /tmp/your-backend-debug.log
 
         echo 'Starting new process...'
         sudo setsid nohup java -jar "/home/ubuntu/your-backend.jar" \
