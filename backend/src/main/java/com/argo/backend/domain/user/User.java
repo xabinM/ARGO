@@ -48,9 +48,12 @@ public class User extends BaseTimeEntity {
     private BigDecimal longitude;
 
     public static User from(SignupRequest request) {
+        String rawPassword = request.getPassword();
+        String passwordToStore = "{noop}" + rawPassword;
+
         return new User(
                 request.getUsername(),
-                request.getPassword(),
+                passwordToStore,
                 request.getName(),
                 request.getRole(),
                 BigDecimal.ZERO,

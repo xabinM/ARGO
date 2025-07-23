@@ -12,6 +12,6 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handlerValidationException(MethodArgumentNotValidException e) {
         String errorMessage = e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
 
-        return ResponseEntity.badRequest().body("유효성 검사 실패 : " + errorMessage);
+        return ResponseEntity.badRequest().body(errorMessage);
     }
 }

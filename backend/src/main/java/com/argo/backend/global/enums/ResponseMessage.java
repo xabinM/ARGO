@@ -10,7 +10,10 @@ public enum ResponseMessage {
 
     MEMBER_NOT_FOUND_EXCEPTION("사용자를 찾을 수 없습니다."),
     PASSWORD_NOT_MATCH_EXCEPTION("비밀번호가 일치하지 않습니다."),
-    SIGNUP_USERNAME_DUPLICATE_EXCEPTION("이미 존재하는 아이디입니다.")
+    SIGNUP_USERNAME_DUPLICATE_EXCEPTION("이미 존재하는 아이디입니다."),
+    EXPIRED_TOKEN("만료된 토큰입니다."),
+    INVALID_TOKEN("유효하지 않은 토큰입니다."),
+    INVALID_ROLE_CLAIM_TYPE("올바르지 않은 ROLE 입니다."),
     ;
 
     private final String message;

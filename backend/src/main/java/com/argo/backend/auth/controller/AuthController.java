@@ -1,11 +1,9 @@
 package com.argo.backend.auth.controller;
 
-import com.argo.backend.auth.dto.LoginRequest;
-import com.argo.backend.auth.dto.LoginResponse;
-import com.argo.backend.auth.dto.SignupRequest;
-import com.argo.backend.auth.dto.TokenDto;
+import com.argo.backend.auth.dto.*;
 import com.argo.backend.auth.service.AuthService;
 import com.argo.backend.global.enums.ResponseMessage;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -33,5 +31,12 @@ public class AuthController {
 
         TokenDto tokens = authService.login(request);
         return ResponseEntity.ok(new LoginResponse(tokens, ResponseMessage.LOGIN_SUCCESS.getMessage()));
+    }
+
+    @PostMapping("/reissue")
+    public ResponseEntity<?> refreshToken(HttpServletRequest request) {
+        TokenDto tokens = authService.refresh(request);
+
+        return ResponseEntity.ok(new RefreshResponse(tokens));
     }
 }
