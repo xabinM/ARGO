@@ -53,7 +53,7 @@ deploy_backend_job:
         sudo setsid nohup java -jar "/home/ubuntu/your-backend.jar" \
           --spring.datasource.username=$DB_USERNAME \
           --spring.datasource.password=$DB_PASSWORD \
-          --spring.datasource.url="$DB_URL" \
+          --spring.datasource.url=$DB_URL \
           --spring.profiles.active=secret \
           > /tmp/your-backend.log 2>&1 < /dev/null &
         echo 'Launch command sent.'
