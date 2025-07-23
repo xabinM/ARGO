@@ -2,9 +2,12 @@ package com.example.bogoargo.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.bogoargo.ui.screens.ARScreen
 import com.example.bogoargo.ui.screens.GameScreen
 import com.example.bogoargo.ui.screens.HomeScreen
 import com.example.bogoargo.ui.screens.LoginScreen
@@ -19,6 +22,9 @@ sealed class Screen(val route: String) {
     data object Game : Screen("game")
     data object Profile : Screen("profile")
     data object Settings : Screen("settings")
+    data object AR : Screen("ar/{spotId}") {
+        fun createRoute(spotId: Long) = "ar/$spotId"
+    }
 }
 
 @Composable
@@ -46,6 +52,18 @@ fun AppNavigation(
         }
         composable(Screen.Settings.route) {
             SettingsScreen(navController = navController)
+        }
+        composable(
+            route = Screen.AR.route,
+            arguments = listOf(navArgument("spotId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val spotId = backStackEntry.arguments?.getLong("spotId") ?: 0L
+            ARScreen(
+                spotId = spotId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
