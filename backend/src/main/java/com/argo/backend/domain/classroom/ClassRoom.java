@@ -2,10 +2,7 @@ package com.argo.backend.domain.classroom;
 import com.argo.backend.domain.CreatedAtEntity;
 import com.argo.backend.domain.user.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.LocalDate;
 
@@ -14,6 +11,8 @@ import java.time.LocalDate;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Builder
+@AllArgsConstructor
 public class ClassRoom extends CreatedAtEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long classId;
