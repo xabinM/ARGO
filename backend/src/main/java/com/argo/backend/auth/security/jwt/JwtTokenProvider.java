@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.util.StringUtils;
 
-import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.List;
@@ -22,7 +21,7 @@ public class JwtTokenProvider {
     public JwtTokenProvider(
             @Value("${jwt.secret}") String secretKey,
             @Value("${jwt.accessTokenExpirationMs}") long accessTokenExpirationMs,
-            @Value("${jwt.refreshTokenExpiration}") long refreshTokenExpiration) {
+            @Value("${jwt.refreshTokenExpirationMs}") long refreshTokenExpiration) {
 
         System.out.println("secretKey = '" + secretKey + "', length = " + secretKey.length());
 
@@ -65,7 +64,7 @@ public class JwtTokenProvider {
                 .parseClaimsJws(token)
                 .getBody();
 
-        return claims.get("username", String.class);
+        return claims.getSubject();
     }
 
     public List<String> getRolesFromToken(String token) {

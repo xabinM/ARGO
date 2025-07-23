@@ -1,7 +1,6 @@
-package com.argo.backend.auth.service;
+package com.argo.backend.auth.security;
 
 import com.argo.backend.auth.repository.UserRepository;
-import com.argo.backend.auth.security.CustomUserDetails;
 import com.argo.backend.domain.user.User;
 import com.argo.backend.global.enums.ResponseMessage;
 import lombok.RequiredArgsConstructor;

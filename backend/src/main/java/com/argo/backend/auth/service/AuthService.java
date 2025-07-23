@@ -49,9 +49,6 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateAccessToken(authentication.getName(), getRole(authentication));
         String refreshToken = jwtTokenProvider.generateRefreshToken(authentication.getName(), getRole(authentication));
 
-//        System.out.println("username : " + authentication.getName());
-//        System.out.println(refreshToken);
-
         redisService.saveRefreshToken(request.getUsername(), refreshToken);
 
         return new TokenDto(accessToken, refreshToken);
@@ -72,19 +69,16 @@ public class AuthService {
         String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
         List<String> roles = jwtTokenProvider.getRolesFromToken(refreshToken);
 
-        // redisService에 refreshToken을 넘겨서 redis에 있는 토큰과 같은지 확인
         String savedRefreshToken = redisService.getRefreshToken(username);
         if (!refreshToken.equals(savedRefreshToken)) {
             throw new InvalidTokenException();
         }
 
-        // 통과하면 새 토큰 (access, refresh 둘다) 반환
         String newAccessToken = jwtTokenProvider.generateAccessToken(username, roles);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(username, roles);
 
-        // // 5. Redis에 새 refresh 토큰 저장 (기존 것을 덮어쓰기? 아님 삭제후 다시 저장?)
         redisService.reissueRefreshToken(username, newRefreshToken);
-        // 반환
+
         return new TokenDto(newAccessToken, newRefreshToken);
     }
 }

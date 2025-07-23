@@ -1,6 +1,5 @@
 package com.argo.backend.auth.service;
 
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -22,10 +21,6 @@ public class RedisService {
     }
 
     public void saveRefreshToken(String username, String refreshToken) {
-        System.out.println("username : " + username);
-        System.out.println("refreshToken : " + refreshToken);
-        System.out.println("tokenLength : " + refreshToken.length());
-
         redisTemplate.opsForValue().set(username, refreshToken, refreshTokenExpirationMs, TimeUnit.MILLISECONDS);
     }
 
@@ -34,7 +29,7 @@ public class RedisService {
     }
 
     public void reissueRefreshToken(String username, String newToken) {
-        redisTemplate.opsForValue().set(username, newToken, refreshTokenExpirationMs);
+        redisTemplate.opsForValue().set(username, newToken, refreshTokenExpirationMs, TimeUnit.MILLISECONDS);
     }
 
     public void deleteRefreshToken(String username) {
