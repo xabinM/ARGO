@@ -1,4 +1,4 @@
-package com.argo.backend.auth.dto;
+package com.argo.backend.auth.dto.signup;
 
 import com.argo.backend.domain.user.Role;
 import jakarta.validation.constraints.*;

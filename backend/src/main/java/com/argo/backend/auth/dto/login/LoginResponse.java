@@ -1,5 +1,6 @@
-package com.argo.backend.auth.dto;
+package com.argo.backend.auth.dto.login;
 
+import com.argo.backend.auth.dto.common.TokenDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

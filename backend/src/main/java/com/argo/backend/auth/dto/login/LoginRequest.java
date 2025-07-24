@@ -1,4 +1,4 @@
-package com.argo.backend.auth.dto;
+package com.argo.backend.auth.dto.login;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

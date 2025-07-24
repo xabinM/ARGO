@@ -1,4 +1,4 @@
-package com.argo.backend.auth.dto;
+package com.argo.backend.auth.dto.common;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
