@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import com.example.bogoargo.navigation.AppNavigation
+import com.example.bogoargo.ui.screens.TeacherMainScreen
 import com.example.bogoargo.ui.theme.BogoArgoTheme
 
 class MainActivity : ComponentActivity() {
@@ -24,6 +25,7 @@ class MainActivity : ComponentActivity() {
                     AppNavigation()
                 }
             }
+            TeacherMainScreen()
         }
     }
 }
