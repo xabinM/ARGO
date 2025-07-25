@@ -20,13 +20,18 @@ object ApiClient {
         level = HttpLoggingInterceptor.Level.BODY
     }
     
-    private val authInterceptor by lazy {
-        AuthInterceptor(authRepository)
+    private val authHeaderInterceptor by lazy {
+        AuthHeaderInterceptor(authRepository)
+    }
+    
+    private val tokenAuthenticator by lazy {
+        TokenAuthenticator(authRepository)
     }
     
     private val okHttpClient by lazy {
         OkHttpClient.Builder()
-            .addInterceptor(authInterceptor)
+            .addInterceptor(authHeaderInterceptor)
+            .authenticator(tokenAuthenticator)
             .addInterceptor(loggingInterceptor)
             .build()
     }
