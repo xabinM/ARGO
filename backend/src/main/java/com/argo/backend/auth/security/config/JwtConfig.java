@@ -1,4 +1,4 @@
-package com.argo.backend.auth.config;
+package com.argo.backend.auth.security.config;
 
 import com.argo.backend.auth.security.jwt.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Value;

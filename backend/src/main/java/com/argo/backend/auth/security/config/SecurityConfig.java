@@ -1,4 +1,4 @@
-package com.argo.backend.global.config;
+package com.argo.backend.auth.security.config;
 
 import com.argo.backend.auth.security.jwt.JwtAuthenticationFilter;
 import com.argo.backend.auth.security.jwt.JwtTokenProvider;
