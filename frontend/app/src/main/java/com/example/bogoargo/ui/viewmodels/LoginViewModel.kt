@@ -3,6 +3,8 @@ package com.example.bogoargo.ui.viewmodels
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.bogoargo.data.exception.AuthException
+import com.example.bogoargo.data.exception.toAuthException
 import com.example.bogoargo.data.repository.AuthRepository
 import com.example.bogoargo.data.repository.LoginRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,13 +35,10 @@ class LoginViewModel(
     }
     
     private fun checkLoginStatus() {
-        viewModelScope.launch {
-            authRepository.tokenFlow.collect { tokenInfo ->
-                _uiState.value = _uiState.value.copy(
-                    isLoggedIn = tokenInfo != null
-                )
-            }
-        }
+        val tokenInfo = authRepository.getTokenInfo()
+        _uiState.value = _uiState.value.copy(
+            isLoggedIn = tokenInfo != null
+        )
     }
     
     fun updateId(id: String) {
@@ -88,15 +87,21 @@ class LoginViewModel(
                         )
                     }
                 } else {
+                    val authException = when (response.code()) {
+                        401 -> AuthException.InvalidCredentials
+                        500 -> AuthException.ServerError
+                        else -> AuthException.UnknownError("HTTP ${response.code()}")
+                    }
                     _uiState.value = currentState.copy(
                         isLoading = false,
-                        errorMessage = "로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요."
+                        errorMessage = authException.message
                     )
                 }
             } catch (e: Exception) {
+                val authException = e.toAuthException()
                 _uiState.value = currentState.copy(
                     isLoading = false,
-                    errorMessage = "네트워크 오류가 발생했습니다: ${e.message}"
+                    errorMessage = authException.message
                 )
             }
         }

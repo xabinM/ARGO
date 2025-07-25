@@ -11,10 +11,9 @@ import kotlinx.coroutines.launch
 
 data class ProfileUiState(
     val isLoading: Boolean = false,
-    val userName: String = "",
-    val email: String = "",
-    val profilePictureUrl: String? = null,
-    val bio: String = "",
+    val username: String = "",
+    val name: String = "",
+    val role: String = "",
     val isEditing: Boolean = false,
     val error: String? = null
 )
@@ -33,10 +32,9 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
             userRepository.userFlow.collect { user ->
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    userName = user.userName,
-                    email = user.email,
-                    bio = user.bio,
-                    profilePictureUrl = user.profilePictureUrl
+                    username = user.username,
+                    name = user.name,
+                    role = user.role.name
                 )
             }
         }
@@ -46,13 +44,13 @@ class ProfileViewModel(application: Application) : AndroidViewModel(application)
         _uiState.value = _uiState.value.copy(isEditing = !_uiState.value.isEditing)
     }
 
-    fun updateProfile(userName: String, bio: String) {
+    fun updateProfile(username: String, name: String) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             
             try {
                 // Save to DataStore
-                userRepository.updateUserProfile(userName, bio)
+                userRepository.updateUserProfile(username, name)
                 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

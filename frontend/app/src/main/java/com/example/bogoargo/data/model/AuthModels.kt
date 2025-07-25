@@ -15,15 +15,11 @@ data class TokenInfo(
     val refreshToken: String
 )
 
-data class MissionSpot(
-    val spotId: Long,
-    val spotName: String,
-    val latitude: Double,
-    val longitude: Double
+data class RefreshTokenRequest(
+    val refreshToken: String
 )
 
-data class MissionSpotsResponse(
-    val success: Boolean,
-    val message: String,
-    val data: List<MissionSpot>
+data class RefreshTokenResponse(
+    val accessToken: String,
+    val refreshToken: String
 )

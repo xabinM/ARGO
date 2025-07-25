@@ -23,12 +23,12 @@ fun ProfileScreen(
     viewModel: ProfileViewModel = viewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var editedUsername by remember { mutableStateOf("") }
     var editedName by remember { mutableStateOf("") }
-    var editedBio by remember { mutableStateOf("") }
     
     LaunchedEffect(uiState) {
-        editedName = uiState.userName
-        editedBio = uiState.bio
+        editedUsername = uiState.username
+        editedName = uiState.name
     }
     Scaffold(
         topBar = {
@@ -86,32 +86,31 @@ fun ProfileScreen(
                     ) {
                         if (uiState.isEditing) {
                             OutlinedTextField(
-                                value = editedName,
-                                onValueChange = { editedName = it },
-                                label = { Text("Name") },
+                                value = editedUsername,
+                                onValueChange = { editedUsername = it },
+                                label = { Text("Username") },
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             OutlinedTextField(
-                                value = editedBio,
-                                onValueChange = { editedBio = it },
-                                label = { Text("Bio") },
-                                modifier = Modifier.fillMaxWidth(),
-                                minLines = 3
+                                value = editedName,
+                                onValueChange = { editedName = it },
+                                label = { Text("Full Name") },
+                                modifier = Modifier.fillMaxWidth()
                             )
                         } else {
                             Text(
-                                text = uiState.userName,
+                                text = uiState.name,
                                 style = MaterialTheme.typography.titleLarge
                             )
                             Text(
-                                text = uiState.email,
+                                text = "@${uiState.username}",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = uiState.bio,
+                                text = "Role: ${uiState.role}",
                                 style = MaterialTheme.typography.bodyLarge
                             )
                         }
@@ -131,7 +130,7 @@ fun ProfileScreen(
                             Text("Cancel")
                         }
                         Button(
-                            onClick = { viewModel.updateProfile(editedName, editedBio) },
+                            onClick = { viewModel.updateProfile(editedUsername, editedName) },
                             modifier = Modifier.weight(1f)
                         ) {
                             Text("Save")
