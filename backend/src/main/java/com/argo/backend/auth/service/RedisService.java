@@ -11,13 +11,16 @@ public class RedisService {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final long refreshTokenExpirationMs;
+    private final long blacklistExpirationMs;
 
     public RedisService(
             RedisTemplate<String, String> redisTemplate,
-            @Value("${jwt.refreshTokenExpirationMs}") long refreshTokenExpirationMs
+            @Value("${jwt.refreshTokenExpirationMs}") long refreshTokenExpirationMs,
+            @Value("${jwt.accessTokenExpirationMs}") long accessTokenExpirationMs
     ) {
         this.redisTemplate = redisTemplate;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
+        this.blacklistExpirationMs = accessTokenExpirationMs;
     }
 
     public void saveRefreshToken(String username, String refreshToken) {
@@ -30,6 +33,14 @@ public class RedisService {
 
     public void reissueRefreshToken(String username, String newToken) {
         redisTemplate.opsForValue().set(username, newToken, refreshTokenExpirationMs, TimeUnit.MILLISECONDS);
+    }
+
+    public void addToBlacklist(String token) {
+        redisTemplate.opsForValue().set("BL:" + token, "logout", blacklistExpirationMs, TimeUnit.MILLISECONDS);
+    }
+
+    public boolean isBlacklisted(String token) {
+        return redisTemplate.hasKey("BL:" + token);
     }
 
     public void deleteRefreshToken(String username) {

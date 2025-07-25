@@ -1,8 +1,11 @@
 package com.argo.backend.auth.security.jwt;
 
+import com.argo.backend.auth.exception.ExpiredTokenException;
 import com.argo.backend.auth.exception.InvalidRoleClaimType;
+import com.argo.backend.auth.exception.InvalidTokenException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import io.jsonwebtoken.security.SecurityException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 
@@ -85,27 +88,17 @@ public class JwtTokenProvider {
                 .collect(Collectors.toList());
     }
 
-    // 유효 토큰 검증
-    // todo 에러 다시 처리
-    public boolean validateToken(String token) {
+    public void validateToken(String token) {
         try {
             Jwts.parserBuilder()
                     .setSigningKey(key)
                     .build()
                     .parseClaimsJws(token);
-            return true;
+        } catch (SecurityException | MalformedJwtException | UnsupportedJwtException | IllegalArgumentException e) {
+            throw new InvalidTokenException();
         } catch (ExpiredJwtException e) {
-            System.out.println("Token expired");
-        } catch (UnsupportedJwtException e) {
-            System.out.println("Unsupported JWT");
-        } catch (MalformedJwtException e) {
-            System.out.println("Malformed JWT");
-        } catch (SignatureException e) {
-            System.out.println("Invalid signature");
-        } catch (IllegalArgumentException e) {
-            System.out.println("Empty claims string");
+            throw new ExpiredTokenException();
         }
-        return false;
     }
 
     public String resolveToken(HttpServletRequest request) {

@@ -1,8 +1,9 @@
 package com.argo.backend.auth.security.config;
 
+import com.argo.backend.auth.security.JwtAuthenticationEntryPoint;
 import com.argo.backend.auth.security.jwt.JwtAuthenticationFilter;
 import com.argo.backend.auth.security.jwt.JwtTokenProvider;
-import com.argo.backend.auth.security.CustomUserDetailsService;
+import com.argo.backend.auth.service.RedisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,7 +22,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final CustomUserDetailsService userDetailsService;
+    private final RedisService redisService;
+    private final JwtAuthenticationEntryPoint entryPoint;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -33,7 +35,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, userDetailsService), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, redisService, entryPoint), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
