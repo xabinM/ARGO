@@ -1,7 +1,5 @@
 package com.argo.backend.auth.security.jwt;
 
-import com.argo.backend.auth.exception.LoggedOutTokenException;
-import com.argo.backend.auth.service.RedisService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,7 +26,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     );
 
     private final JwtTokenProvider jwtTokenProvider;
-    private final RedisService redisService;
     private final AuthenticationEntryPoint entryPoint;
 
     @Override
@@ -42,16 +39,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-
         try {
             String token = jwtTokenProvider.resolveToken(request);
 
             if (StringUtils.hasText(token)) {
                 jwtTokenProvider.validateToken(token);
-
-                if (redisService.isBlacklisted(token)) {
-                    throw new LoggedOutTokenException();
-                }
 
                 String username = jwtTokenProvider.getUsernameFromToken(token);
                 List<String> roles = jwtTokenProvider.getRolesFromToken(token);

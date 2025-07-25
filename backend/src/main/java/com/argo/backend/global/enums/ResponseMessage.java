@@ -16,6 +16,7 @@ public enum ResponseMessage {
     INVALID_TOKEN("유효하지 않은 토큰입니다."),
     LOGGED_OUT_TOKEN("로그 아웃된 토큰입니다."),
     INVALID_ROLE_CLAIM_TYPE("올바르지 않은 ROLE 입니다."),
+    ALREADY_WITHDRAW_USER("이미 탈퇴한 회원입니다."),
     ;
 
     private final String message;

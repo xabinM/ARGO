@@ -4,6 +4,7 @@ import com.argo.backend.auth.dto.login.LoginRequest;
 import com.argo.backend.auth.dto.signup.SignupRequest;
 import com.argo.backend.auth.dto.common.TokenDto;
 import com.argo.backend.auth.dto.withdraw.WithdrawalRequest;
+import com.argo.backend.auth.exception.AlreadyWithdrawUser;
 import com.argo.backend.auth.exception.DuplicateUsernameException;
 import com.argo.backend.auth.exception.InvalidTokenException;
 import com.argo.backend.auth.exception.WrongPasswordException;
@@ -61,8 +62,6 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateAccessToken(authentication.getName(), getRole(authentication));
         String refreshToken = jwtTokenProvider.generateRefreshToken(authentication.getName(), getRole(authentication));
 
-        redisService.saveRefreshToken(request.getUsername(), refreshToken);
-
         return new TokenDto(accessToken, refreshToken);
     }
 
@@ -72,23 +71,22 @@ public class AuthService {
                 .collect(Collectors.toList());
     }
 
+    // 리프레시 토큰(블랙리스트)이 redis에 없다면 토큰을 발급한다. 그리고 리프레스 토큰을 블랙리스트로 등록한다.
     public TokenDto refresh(HttpServletRequest request) {
         String refreshToken = jwtTokenProvider.resolveToken(request);
 
         jwtTokenProvider.validateToken(refreshToken);
 
+        if (redisService.isBlacklisted(refreshToken)) {
+            throw new InvalidTokenException();
+        }
+        redisService.addToBlacklist(refreshToken);
+
         String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
         List<String> roles = jwtTokenProvider.getRolesFromToken(refreshToken);
 
-        String savedRefreshToken = redisService.getRefreshToken(username);
-        if (!refreshToken.equals(savedRefreshToken)) {
-            throw new InvalidTokenException();
-        }
-
         String newAccessToken = jwtTokenProvider.generateAccessToken(username, roles);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(username, roles);
-
-        redisService.reissueRefreshToken(username, newRefreshToken);
 
         return new TokenDto(newAccessToken, newRefreshToken);
     }
@@ -96,10 +94,13 @@ public class AuthService {
     @Transactional
     public void withdraw(String username, WithdrawalRequest request) {
         User user = userRepository.findByUsername(username);
+        if (!user.checkStatus()) {
+            throw new AlreadyWithdrawUser();
+        }
+
         if (!user.isPasswordMatching(passwordEncoder, request.getPassword())) {
             throw new WrongPasswordException();
         }
-
 
         user.updateStatusByWithdraw();
         UserWithdrawal userWithdrawal = UserWithdrawal.from(user);
