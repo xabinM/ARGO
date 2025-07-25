@@ -10,9 +10,13 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create   # 개발 초기엔 create, update 사용 가능
     show-sql: true
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.MySQL8Dialect
+  data:
+    redis:
+      host: 172.19.64.149
+      port: 6379
+

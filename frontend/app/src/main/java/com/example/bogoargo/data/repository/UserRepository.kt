@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.bogoargo.data.model.User
+import com.example.bogoargo.data.model.UserRole
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -19,40 +20,35 @@ class UserRepository(private val context: Context) {
     private companion object {
         val USER_ID = stringPreferencesKey("user_id")
         val USER_NAME = stringPreferencesKey("user_name")
-        val USER_EMAIL = stringPreferencesKey("user_email")
-        val USER_BIO = stringPreferencesKey("user_bio")
-        val USER_PROFILE_PICTURE = stringPreferencesKey("user_profile_picture")
+        val USER_FULL_NAME = stringPreferencesKey("user_full_name")
+        val USER_ROLE = stringPreferencesKey("user_role")
     }
     
     // Get user data as Flow
     val userFlow: Flow<User> = context.dataStore.data.map { preferences ->
         User(
-            id = preferences[USER_ID] ?: "user_123",
-            userName = preferences[USER_NAME] ?: "John Doe",
-            email = preferences[USER_EMAIL] ?: "john.doe@example.com",
-            bio = preferences[USER_BIO] ?: "Android Developer | Kotlin Enthusiast",
-            profilePictureUrl = preferences[USER_PROFILE_PICTURE]
+            userId = preferences[USER_ID]?.toLongOrNull() ?: 0L,
+            username = preferences[USER_NAME] ?: "user123",
+            name = preferences[USER_FULL_NAME] ?: "John Doe",
+            role = preferences[USER_ROLE]?.let { UserRole.valueOf(it) } ?: UserRole.STUDENT
         )
     }
     
     // Save user data
     suspend fun saveUser(user: User) {
         context.dataStore.edit { preferences ->
-            preferences[USER_ID] = user.id
-            preferences[USER_NAME] = user.userName
-            preferences[USER_EMAIL] = user.email
-            preferences[USER_BIO] = user.bio
-            user.profilePictureUrl?.let {
-                preferences[USER_PROFILE_PICTURE] = it
-            }
+            preferences[USER_ID] = user.userId.toString()
+            preferences[USER_NAME] = user.username
+            preferences[USER_FULL_NAME] = user.name
+            preferences[USER_ROLE] = user.role.name
         }
     }
     
     // Update specific user fields
-    suspend fun updateUserProfile(userName: String, bio: String) {
+    suspend fun updateUserProfile(username: String, name: String) {
         context.dataStore.edit { preferences ->
-            preferences[USER_NAME] = userName
-            preferences[USER_BIO] = bio
+            preferences[USER_NAME] = username
+            preferences[USER_FULL_NAME] = name
         }
     }
     

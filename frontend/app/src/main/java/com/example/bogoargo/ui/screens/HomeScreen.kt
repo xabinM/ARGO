@@ -53,28 +53,72 @@ fun HomeScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // 메인 게임 버튼
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "🗺️ Argo Game",
+                            style = MaterialTheme.typography.headlineSmall
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "지도를 활용한 위치 기반 게임",
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { navController.navigate(Screen.Game.route) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("게임 시작", style = MaterialTheme.typography.labelLarge)
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(24.dp))
+                
+                // 네비게이션 버튼들
+                Text(
+                    text = "메뉴",
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
                 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(
-                        onClick = { navController.navigate(Screen.Profile.route) }
+                    OutlinedButton(
+                        onClick = { navController.navigate(Screen.Profile.route) },
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Text("Profile")
+                        Text("프로필")
                     }
                     
-                    Button(
-                        onClick = { navController.navigate(Screen.Settings.route) }
+                    OutlinedButton(
+                        onClick = { navController.navigate(Screen.Settings.route) },
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Text("Settings")
+                        Text("설정")
                     }
                     
-                    Button(
-                        onClick = { viewModel.refreshData() }
+                    OutlinedButton(
+                        onClick = { viewModel.refreshData() },
+                        modifier = Modifier.weight(1f)
                     ) {
-                        Text("Refresh")
+                        Text("새로고침")
                     }
                 }
                 

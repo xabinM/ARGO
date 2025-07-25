@@ -22,4 +22,12 @@ public class UserWithdrawal extends CreatedAtEntity {
     private User user;
 
     private Boolean passwordVerified = true;
+
+    private UserWithdrawal(User user) {
+        this.user = user;
+    }
+
+    public static UserWithdrawal from(User user) {
+        return new UserWithdrawal(user);
+    }
 }
