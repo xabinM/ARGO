@@ -1,21 +1,26 @@
 package com.argo.backend.auth.service;
 
-import com.argo.backend.auth.dto.LoginRequest;
-import com.argo.backend.auth.dto.SignupRequest;
-import com.argo.backend.auth.dto.TokenDto;
+import com.argo.backend.auth.dto.login.LoginRequest;
+import com.argo.backend.auth.dto.signup.SignupRequest;
+import com.argo.backend.auth.dto.common.TokenDto;
+import com.argo.backend.auth.dto.withdraw.WithdrawalRequest;
 import com.argo.backend.auth.exception.DuplicateUsernameException;
-import com.argo.backend.auth.exception.ExpiredTokenException;
 import com.argo.backend.auth.exception.InvalidTokenException;
+import com.argo.backend.auth.exception.WrongPasswordException;
 import com.argo.backend.auth.repository.UserRepository;
+import com.argo.backend.auth.repository.UserWithdrawalRepository;
 import com.argo.backend.auth.security.jwt.JwtTokenProvider;
 import com.argo.backend.domain.user.User;
+import com.argo.backend.domain.user.UserWithdrawal;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -26,6 +31,9 @@ import java.util.stream.Collectors;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final UserWithdrawalRepository userWithdrawalRepository;
+    private final PasswordEncoder passwordEncoder;
+
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisService redisService;
@@ -34,8 +42,12 @@ public class AuthService {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new DuplicateUsernameException();
         }
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
 
-        User user = User.from(request);
+        User user = User.from(request.getUsername(),
+                encodedPassword,
+                request.getName(),
+                request.getRole());
         userRepository.save(user);
     }
 
@@ -63,9 +75,8 @@ public class AuthService {
     public TokenDto refresh(HttpServletRequest request) {
         String refreshToken = jwtTokenProvider.resolveToken(request);
 
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
-            throw new ExpiredTokenException();
-        }
+        jwtTokenProvider.validateToken(refreshToken);
+
         String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
         List<String> roles = jwtTokenProvider.getRolesFromToken(refreshToken);
 
@@ -80,5 +91,18 @@ public class AuthService {
         redisService.reissueRefreshToken(username, newRefreshToken);
 
         return new TokenDto(newAccessToken, newRefreshToken);
+    }
+
+    @Transactional
+    public void withdraw(String username, WithdrawalRequest request) {
+        User user = userRepository.findByUsername(username);
+        if (!user.isPasswordMatching(passwordEncoder, request.getPassword())) {
+            throw new WrongPasswordException();
+        }
+
+
+        user.updateStatusByWithdraw();
+        UserWithdrawal userWithdrawal = UserWithdrawal.from(user);
+        userWithdrawalRepository.save(userWithdrawal);
     }
 }

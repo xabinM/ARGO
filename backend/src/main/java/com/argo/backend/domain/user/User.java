@@ -1,6 +1,7 @@
 package com.argo.backend.domain.user;
 
 import com.argo.backend.auth.dto.signup.SignupRequest;
+import com.argo.backend.auth.exception.WrongPasswordException;
 import com.argo.backend.domain.BaseTimeEntity;
 import com.argo.backend.domain.team.Team;
 import jakarta.persistence.*;
@@ -8,6 +9,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 
@@ -47,15 +49,12 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false, precision = 10, scale = 7)
     private BigDecimal longitude;
 
-    public static User from(SignupRequest request) {
-        String rawPassword = request.getPassword();
-        String passwordToStore = "{noop}" + rawPassword;
-
+    public static User from(String username, String encodedPassword, String name, Role role) {
         return new User(
-                request.getUsername(),
-                passwordToStore,
-                request.getName(),
-                request.getRole(),
+                username,
+                encodedPassword,
+                name,
+                role,
                 BigDecimal.ZERO,
                 BigDecimal.ZERO
         );
@@ -69,5 +68,13 @@ public class User extends BaseTimeEntity {
         this.role = role;
         this.latitude = latitude;
         this.longitude = longitude;
+    }
+
+    public boolean isPasswordMatching(PasswordEncoder encoder, String rawPassword) {
+        return encoder.matches(rawPassword, this.password);
+    }
+
+    public void updateStatusByWithdraw() {
+        this.status = UserStatus.INACTIVE;
     }
 }
