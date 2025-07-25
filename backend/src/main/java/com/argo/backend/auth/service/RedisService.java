@@ -9,18 +9,17 @@ import java.util.concurrent.TimeUnit;
 @Service
 public class RedisService {
 
+    private static final String BLACKLIST_PREFIX = "BL:";
+
     private final RedisTemplate<String, String> redisTemplate;
     private final long refreshTokenExpirationMs;
-    private final long blacklistExpirationMs;
 
     public RedisService(
             RedisTemplate<String, String> redisTemplate,
-            @Value("${jwt.refreshTokenExpirationMs}") long refreshTokenExpirationMs,
-            @Value("${jwt.accessTokenExpirationMs}") long accessTokenExpirationMs
+            @Value("${jwt.refreshTokenExpirationMs}") long refreshTokenExpirationMs
     ) {
         this.redisTemplate = redisTemplate;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
-        this.blacklistExpirationMs = accessTokenExpirationMs;
     }
 
     public void saveRefreshToken(String username, String refreshToken) {
@@ -35,12 +34,12 @@ public class RedisService {
         redisTemplate.opsForValue().set(username, newToken, refreshTokenExpirationMs, TimeUnit.MILLISECONDS);
     }
 
-    public void addToBlacklist(String token) {
-        redisTemplate.opsForValue().set("BL:" + token, "logout", blacklistExpirationMs, TimeUnit.MILLISECONDS);
+    public void addToBlacklist(String token, String value) {
+        redisTemplate.opsForValue().set(BLACKLIST_PREFIX + token, value, refreshTokenExpirationMs, TimeUnit.MILLISECONDS);
     }
 
     public boolean isBlacklisted(String token) {
-        return redisTemplate.hasKey("BL:" + token);
+        return redisTemplate.hasKey(BLACKLIST_PREFIX + token);
     }
 
     public void deleteRefreshToken(String username) {

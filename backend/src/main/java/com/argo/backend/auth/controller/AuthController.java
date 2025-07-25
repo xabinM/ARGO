@@ -6,7 +6,6 @@ import com.argo.backend.auth.dto.login.LoginResponse;
 import com.argo.backend.auth.dto.reissue.ReissueResponse;
 import com.argo.backend.auth.dto.signup.SignupRequest;
 import com.argo.backend.auth.dto.withdraw.WithdrawalRequest;
-import com.argo.backend.auth.security.CustomUserDetails;
 import com.argo.backend.auth.service.AuthService;
 import com.argo.backend.global.enums.ResponseMessage;
 import jakarta.servlet.http.HttpServletRequest;
@@ -50,5 +49,12 @@ public class AuthController {
         authService.withdraw(username, request);
 
         return ResponseEntity.ok(ResponseMessage.WITHDRAW_SUCCESS.getMessage());
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(@RequestHeader("RefreshToken") String refreshToken) {
+        authService.logout(refreshToken);
+
+        return ResponseEntity.ok(ResponseMessage.SUCCESS_LOGOUT.getMessage());
     }
 }

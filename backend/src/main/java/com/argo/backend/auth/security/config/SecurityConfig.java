@@ -3,7 +3,6 @@ package com.argo.backend.auth.security.config;
 import com.argo.backend.auth.security.JwtAuthenticationEntryPoint;
 import com.argo.backend.auth.security.jwt.JwtAuthenticationFilter;
 import com.argo.backend.auth.security.jwt.JwtTokenProvider;
-import com.argo.backend.auth.service.RedisService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

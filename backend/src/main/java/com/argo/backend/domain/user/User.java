@@ -1,7 +1,5 @@
 package com.argo.backend.domain.user;
 
-import com.argo.backend.auth.dto.signup.SignupRequest;
-import com.argo.backend.auth.exception.WrongPasswordException;
 import com.argo.backend.domain.BaseTimeEntity;
 import com.argo.backend.domain.team.Team;
 import jakarta.persistence.*;

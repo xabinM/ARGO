@@ -8,6 +8,7 @@ public enum ResponseMessage {
     SIGNUP_SUCCESS("회원 가입에 성공하였습니다."),
     LOGIN_SUCCESS("로그인에 성공했습니다."),
     WITHDRAW_SUCCESS("회원 탈퇴되었습니다."),
+    SUCCESS_LOGOUT("로그아웃 되었습니다."),
 
     MEMBER_NOT_FOUND_EXCEPTION("사용자를 찾을 수 없습니다."),
     PASSWORD_NOT_MATCH_EXCEPTION("비밀번호가 일치하지 않습니다."),

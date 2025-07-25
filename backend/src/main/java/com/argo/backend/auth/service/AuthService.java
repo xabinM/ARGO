@@ -31,6 +31,9 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthService {
 
+    private static final String BLACKLIST_STATUS_REISSUE = "reissued";
+    private static final String BLACKLIST_STATUS_LOGOUT = "logout";
+
     private final UserRepository userRepository;
     private final UserWithdrawalRepository userWithdrawalRepository;
     private final PasswordEncoder passwordEncoder;
@@ -71,7 +74,6 @@ public class AuthService {
                 .collect(Collectors.toList());
     }
 
-    // 리프레시 토큰(블랙리스트)이 redis에 없다면 토큰을 발급한다. 그리고 리프레스 토큰을 블랙리스트로 등록한다.
     public TokenDto refresh(HttpServletRequest request) {
         String refreshToken = jwtTokenProvider.resolveToken(request);
 
@@ -80,7 +82,7 @@ public class AuthService {
         if (redisService.isBlacklisted(refreshToken)) {
             throw new InvalidTokenException();
         }
-        redisService.addToBlacklist(refreshToken);
+        redisService.addToBlacklist(refreshToken, BLACKLIST_STATUS_REISSUE);
 
         String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
         List<String> roles = jwtTokenProvider.getRolesFromToken(refreshToken);
@@ -105,5 +107,11 @@ public class AuthService {
         user.updateStatusByWithdraw();
         UserWithdrawal userWithdrawal = UserWithdrawal.from(user);
         userWithdrawalRepository.save(userWithdrawal);
+    }
+
+    public void logout(String refreshToken) {
+        jwtTokenProvider.validateToken(refreshToken);
+
+        redisService.addToBlacklist(refreshToken, BLACKLIST_STATUS_LOGOUT);
     }
 }
