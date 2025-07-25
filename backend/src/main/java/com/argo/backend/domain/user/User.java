@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
 
@@ -45,4 +46,37 @@ public class User extends BaseTimeEntity {
 
     @Column(nullable = false, precision = 10, scale = 7)
     private BigDecimal longitude;
+
+    public static User from(String username, String encodedPassword, String name, Role role) {
+        return new User(
+                username,
+                encodedPassword,
+                name,
+                role,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO
+        );
+    }
+
+    private User(String username, String password, String name, Role role,
+                 BigDecimal latitude, BigDecimal longitude) {
+        this.username = username;
+        this.password = password;
+        this.name = name;
+        this.role = role;
+        this.latitude = latitude;
+        this.longitude = longitude;
+    }
+
+    public boolean isPasswordMatching(PasswordEncoder encoder, String rawPassword) {
+        return encoder.matches(rawPassword, this.password);
+    }
+
+    public void updateStatusByWithdraw() {
+        this.status = UserStatus.INACTIVE;
+    }
+
+    public boolean checkStatus() {
+        return this.status == UserStatus.ACTIVE;
+    }
 }
