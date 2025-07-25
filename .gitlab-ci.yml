@@ -27,7 +27,7 @@ deploy_backend_job:
   stage: deploy_backend
   image: ubuntu:latest
   before_script:
-    - apt update && apt install -y openssh-client curl --no-install-recommends
+    - apt update && apt install -y openssh-client curl ca-certificates --no-install-recommends
     - eval "$(ssh-agent -s)"
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
