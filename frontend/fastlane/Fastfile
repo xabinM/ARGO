@@ -1,0 +1,29 @@
+default_platform(:android)
+
+platform :android do
+  desc "Build a signed APK for local testing or manual distribution."
+  lane :build_apk do
+    UI.message("Building signed APK for release...")
+
+    gradle(
+      task: "assembleRelease",
+      project_dir: ".",
+      properties: {
+        "android.injected.signing.store.file" => "release-keystore.jks",
+        "android.injected.signing.store.password" => ENV['ANDROID_KEYSTORE_PASSWORD'],
+        "android.injected.signing.key.alias" => ENV['ANDROID_KEY_ALIAS'],
+        "android.injected.signing.key.password" => ENV['ANDROID_KEY_PASSWORD']
+      }
+    )
+
+    UI.success("Signed APK build complete! Look for it in frontend/build/outputs/apk/release/")
+  end
+
+  after_all do |lane|
+    UI.message("Fastlane process for Android build finished.")
+  end
+
+  error do |lane, exception|
+    UI.user_error!("Fastlane encountered an error: #{exception.message}")
+  end
+end
