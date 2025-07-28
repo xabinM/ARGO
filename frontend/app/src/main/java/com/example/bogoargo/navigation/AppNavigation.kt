@@ -13,6 +13,7 @@ import com.example.bogoargo.ui.screens.ClassManagementScreen
 import com.example.bogoargo.ui.screens.ClassMemberManagementScreen
 import com.example.bogoargo.ui.screens.ClassTeamManagementScreen
 import com.example.bogoargo.ui.screens.CreateClassScreen
+import com.example.bogoargo.ui.screens.CreateTeamScreen
 import com.example.bogoargo.ui.screens.GameScreen
 import com.example.bogoargo.ui.screens.HomeScreen
 import com.example.bogoargo.ui.screens.LoginScreen
@@ -40,6 +41,9 @@ sealed class Screen(val route: String) {
     }
     data object ClassTeamManagement : Screen("classTeamManagement/{classId}") {
         fun createRoute(classId: String) = "classTeamManagement/$classId"
+    }
+    data object CreateTeam : Screen("createTeam/{classId}") {
+        fun createRoute(classId: String) = "createTeam/$classId"
     }
     data object AR : Screen("ar/{spotId}") {
         fun createRoute(spotId: Long) = "ar/$spotId"
@@ -125,6 +129,16 @@ fun AppNavigation(
         ) { backStackEntry ->
             val classId = backStackEntry.arguments?.getString("classId") ?: ""
             ClassTeamManagementScreen(
+                navController = navController,
+                classId = classId
+            )
+        }
+        composable(
+            route = Screen.CreateTeam.route,
+            arguments = listOf(navArgument("classId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val classId = backStackEntry.arguments?.getString("classId") ?: ""
+            CreateTeamScreen(
                 navController = navController,
                 classId = classId
             )

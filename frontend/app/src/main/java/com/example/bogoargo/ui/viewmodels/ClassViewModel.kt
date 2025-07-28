@@ -3,8 +3,10 @@ package com.example.bogoargo.ui.viewmodels
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bogoargo.data.model.Class
+import com.example.bogoargo.data.model.Mission
 import com.example.bogoargo.data.model.Program
 import com.example.bogoargo.data.model.Team
+import com.example.bogoargo.data.model.TeamMissionProgress
 import com.example.bogoargo.data.model.User
 import com.example.bogoargo.data.repository.ClassRepository
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,6 +29,12 @@ class ClassViewModel(
 
     private val _teams = MutableStateFlow<List<Team>>(emptyList())
     val teams: StateFlow<List<Team>> = _teams.asStateFlow()
+
+    private val _missions = MutableStateFlow<List<Mission>>(emptyList())
+    val missions: StateFlow<List<Mission>> = _missions.asStateFlow()
+
+    private val _teamProgress = MutableStateFlow<List<TeamMissionProgress>>(emptyList())
+    val teamProgress: StateFlow<List<TeamMissionProgress>> = _teamProgress.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -167,6 +175,39 @@ class ClassViewModel(
                 }
             } catch (e: Exception) {
                 _error.value = "팀 삭제에 실패했습니다: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    // 미션 관련 메소드
+    fun loadMissionsByProgramId(programId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            try {
+                val missionsFromServer = repository.getMissionsByProgramId(programId)
+                _missions.value = missionsFromServer
+            } catch (e: Exception) {
+                _error.value = "미션 목록을 불러오는데 실패했습니다: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun loadTeamProgressByProgramId(programId: String) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _error.value = null
+
+            try {
+                val progressFromServer = repository.getTeamProgressByProgramId(programId)
+                _teamProgress.value = progressFromServer
+            } catch (e: Exception) {
+                _error.value = "팀 진행도를 불러오는데 실패했습니다: ${e.message}"
             } finally {
                 _isLoading.value = false
             }
