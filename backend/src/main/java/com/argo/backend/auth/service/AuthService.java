@@ -4,10 +4,7 @@ import com.argo.backend.auth.dto.login.LoginRequest;
 import com.argo.backend.auth.dto.signup.SignupRequest;
 import com.argo.backend.auth.dto.common.TokenDto;
 import com.argo.backend.auth.dto.withdraw.WithdrawalRequest;
-import com.argo.backend.auth.exception.AlreadyWithdrawUser;
-import com.argo.backend.auth.exception.DuplicateUsernameException;
-import com.argo.backend.auth.exception.InvalidTokenException;
-import com.argo.backend.auth.exception.WrongPasswordException;
+import com.argo.backend.auth.exception.*;
 import com.argo.backend.auth.repository.UserRepository;
 import com.argo.backend.auth.repository.UserWithdrawalRepository;
 import com.argo.backend.auth.security.jwt.JwtTokenProvider;
@@ -17,14 +14,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 @Service
@@ -56,14 +53,20 @@ public class AuthService {
     }
 
     public TokenDto login(LoginRequest request) {
-        UsernamePasswordAuthenticationToken authenticationToken =
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword());
+        User user = userRepository.findByUsername(request.getUsername());
+        if (Objects.equals(user, null)) {
+            throw new NotFoundUsernameException();
+        }
 
-        Authentication authentication = authenticationManager.authenticate(authenticationToken);
-        SecurityContextHolder.getContext().setAuthentication(authentication);
+        if (!user.isPasswordMatching(passwordEncoder, request.getPassword())) {
+            throw new WrongPasswordException();
+        }
 
-        String accessToken = jwtTokenProvider.generateAccessToken(authentication.getName(), getRole(authentication));
-        String refreshToken = jwtTokenProvider.generateRefreshToken(authentication.getName(), getRole(authentication));
+        List<String> roles = new ArrayList<>();
+        roles.add(user.getRole().toString());
+
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), roles);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername(), roles);
 
         return new TokenDto(accessToken, refreshToken);
     }
@@ -97,7 +100,7 @@ public class AuthService {
     public void withdraw(String username, WithdrawalRequest request) {
         User user = userRepository.findByUsername(username);
         if (!user.checkStatus()) {
-            throw new AlreadyWithdrawUser();
+            throw new AlreadyWithdrawUserException();
         }
 
         if (!user.isPasswordMatching(passwordEncoder, request.getPassword())) {
