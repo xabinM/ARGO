@@ -3,15 +3,15 @@ package com.argo.backend.auth.exception;
 import com.argo.backend.global.enums.ResponseMessage;
 import org.springframework.http.HttpStatus;
 
-public class InvalidRoleClaimTypeException extends AuthorizationException{
+public class InvalidClaimTypeException extends AuthorizationException{
 
     private static final String FAIL_CODE = "4008";
 
-    public InvalidRoleClaimTypeException() {
+    public InvalidClaimTypeException() {
         super(FAIL_CODE, HttpStatus.UNAUTHORIZED);
     }
 
     public String getMessage() {
-        return ResponseMessage.INVALID_ROLE_CLAIM_TYPE.getMessage();
+        return ResponseMessage.INVALID_CLAIM_TYPE.getMessage();
     }
 }

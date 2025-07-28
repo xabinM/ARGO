@@ -1,5 +1,6 @@
 package com.argo.backend.auth.security.jwt;
 
+import com.argo.backend.auth.security.CustomUserDetails;
 import com.argo.backend.global.exception.BusinessException;
 import com.argo.backend.global.exception.ErrorResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -49,6 +50,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (StringUtils.hasText(token)) {
                 jwtTokenProvider.validateToken(token);
 
+                Long userId = jwtTokenProvider.getUserIdFromToken(token);
                 String username = jwtTokenProvider.getUsernameFromToken(token);
                 List<String> roles = jwtTokenProvider.getRolesFromToken(token);
 
@@ -57,7 +59,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         .collect(Collectors.toList());
 
                 UsernamePasswordAuthenticationToken authentication =
-                        new UsernamePasswordAuthenticationToken(username, null, authorities);
+                        new UsernamePasswordAuthenticationToken(userId, null, authorities);
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
