@@ -1,10 +1,16 @@
 package com.argo.backend.domain.classroom;
 import com.argo.backend.domain.CreatedAtEntity;
+import com.argo.backend.domain.location.ClassLocation;
+import com.argo.backend.domain.location.Location;
+import com.argo.backend.domain.team.Team;
 import com.argo.backend.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "classes")
@@ -36,4 +42,22 @@ public class ClassRoom extends CreatedAtEntity {
 
     @Enumerated(EnumType.STRING)
     private ClassStatus status = ClassStatus.ACTIVE;
+
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location_id")
+    private Location location;
+
+    @OneToMany(mappedBy = "classRoom", fetch = FetchType.LAZY)
+    @BatchSize(size = 100)
+    private List<ClassApplication> applications = new ArrayList<>();
+
+    @OneToMany(mappedBy = "classRoom", fetch = FetchType.LAZY)
+    @BatchSize(size = 50)
+    private List<Team> teams = new ArrayList<>();
+
+    @OneToMany(mappedBy = "classRoom", fetch = FetchType.LAZY)
+    @BatchSize(size = 20)
+    private List<ClassLocation> classLocations = new ArrayList<>();
+
 }

@@ -3,10 +3,7 @@ package com.argo.backend.domain.mission;
 import com.argo.backend.domain.CreatedAtEntity;
 import com.argo.backend.domain.location.Location;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 
@@ -15,6 +12,8 @@ import java.math.BigDecimal;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class MissionSpot extends CreatedAtEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -38,6 +37,7 @@ public class MissionSpot extends CreatedAtEntity {
     private Integer radius = 30;
 
     @Enumerated(EnumType.STRING)
-    private MissionStatus status;
+    @Column(nullable = false)
+    private MissionStatus status = MissionStatus.ACTIVE;
 }
 
