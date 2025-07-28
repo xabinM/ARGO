@@ -3,16 +3,17 @@ package com.argo.backend.domain.mission;
 import com.argo.backend.domain.CreatedAtEntity;
 import com.argo.backend.domain.team.Team;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "mission_sessions")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class MissionSession extends CreatedAtEntity {
     
     @Id
@@ -28,7 +29,8 @@ public class MissionSession extends CreatedAtEntity {
     private Team team;
 
     @Enumerated(EnumType.STRING)
-    private MissionSessionStatus status;
+    @Column(nullable = false)
+    private MissionSessionStatus status = MissionSessionStatus.STARTED;
 
     @Enumerated(EnumType.STRING)
     private ResultType resultType;
