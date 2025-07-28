@@ -1,7 +1,7 @@
 package com.argo.backend.auth.security.jwt;
 
 import com.argo.backend.auth.exception.ExpiredTokenException;
-import com.argo.backend.auth.exception.InvalidRoleClaimTypeException;
+import com.argo.backend.auth.exception.InvalidClaimTypeException;
 import com.argo.backend.auth.exception.InvalidTokenException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -22,23 +22,24 @@ public class JwtTokenProvider {
     private final long refreshTokenExpirationMs;
 
     public JwtTokenProvider(
-            @Value("${jwt.secret}") String secretKey,
+            @Value("${jwt.secretAccess}") String accessKey,
             @Value("${jwt.accessTokenExpirationMs}") long accessTokenExpirationMs,
             @Value("${jwt.refreshTokenExpirationMs}") long refreshTokenExpiration) {
 
-        System.out.println("secretKey = '" + secretKey + "', length = " + secretKey.length());
+        System.out.println("secretKey = '" + accessKey + "', length = " + accessKey.length());
 
-        this.key = Keys.hmacShaKeyFor(secretKey.getBytes());    // 비밀키 주입
+        this.key = Keys.hmacShaKeyFor(accessKey.getBytes());    // 비밀키 주입
         this.accessTokenExpirationMs = accessTokenExpirationMs;
         this.refreshTokenExpirationMs = refreshTokenExpiration; // 만료시간 주입
     }
 
-    public String generateAccessToken(String username, List<String> roles) {
+    public String generateAccessToken(Long userId, String username, List<String> roles) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessTokenExpirationMs);
 
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(userId.toString())
+                .claim("username", username)
                 .claim("role", roles)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
@@ -46,12 +47,13 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public String generateRefreshToken(String username, List<String> roles) {
+    public String generateRefreshToken(Long userId, String username, List<String> roles) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + refreshTokenExpirationMs);
 
         return Jwts.builder()
-                .setSubject(username)
+                .setSubject(userId.toString())
+                .claim("username", username)
                 .claim("role", roles)
                 .setIssuedAt(now)
                 .setExpiration(expiryDate)
@@ -59,33 +61,44 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    // 토큰에서 사용자 name 추출
-    public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+    public Long getUserIdFromToken(String token) {
+        Claims claims = getClaims(token);
+        String subject = claims.getSubject();
 
-        return claims.getSubject();
+        return Long.parseLong(subject);
+    }
+
+    public String getUsernameFromToken(String token) {
+        Claims claims = getClaims(token);
+
+        Object usernameObj = claims.get("username");
+        if (!(usernameObj instanceof String username)) {
+            throw new InvalidClaimTypeException();
+        }
+
+        return username;
     }
 
     public List<String> getRolesFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(key)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+        Claims claims = getClaims(token);
 
         Object roleClaim = claims.get("role");
 
         if (!(roleClaim instanceof List<?> roles)) {
-            throw new InvalidRoleClaimTypeException();
+            throw new InvalidClaimTypeException();
         }
 
         return roles.stream()
                 .map(Object::toString)
                 .collect(Collectors.toList());
+    }
+
+    private Claims getClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     public void validateToken(String token) {

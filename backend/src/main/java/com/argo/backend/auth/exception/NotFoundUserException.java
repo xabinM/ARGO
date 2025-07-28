@@ -6,11 +6,11 @@ import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
 @Getter
-public class NotFoundUsernameException extends BusinessException {
+public class NotFoundUserException extends BusinessException {
 
     private static final String FAIL_CODE = "4000";
 
-    public NotFoundUsernameException() {
+    public NotFoundUserException() {
         super(FAIL_CODE, HttpStatus.NOT_FOUND);
     }
 

@@ -55,18 +55,19 @@ public class AuthService {
     public TokenDto login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername());
         if (Objects.equals(user, null)) {
-            throw new NotFoundUsernameException();
+            throw new NotFoundUserException();
         }
 
         if (!user.isPasswordMatching(passwordEncoder, request.getPassword())) {
             throw new WrongPasswordException();
         }
 
+        // todo 현재는 Role 이 한 가지이기에 이후 변경 필요시 변경
         List<String> roles = new ArrayList<>();
         roles.add(user.getRole().toString());
 
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getUsername(), roles);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUsername(), roles);
+        String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId(), user.getUsername(), roles);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUserId(), user.getUsername(), roles);
 
         return new TokenDto(accessToken, refreshToken);
     }
@@ -87,18 +88,20 @@ public class AuthService {
         }
         redisService.addToBlacklist(refreshToken, BLACKLIST_STATUS_REISSUE);
 
+        Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
         String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
         List<String> roles = jwtTokenProvider.getRolesFromToken(refreshToken);
 
-        String newAccessToken = jwtTokenProvider.generateAccessToken(username, roles);
-        String newRefreshToken = jwtTokenProvider.generateRefreshToken(username, roles);
+        String newAccessToken = jwtTokenProvider.generateAccessToken(userId, username, roles);
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId, username, roles);
 
         return new TokenDto(newAccessToken, newRefreshToken);
     }
 
     @Transactional
-    public void withdraw(String username, WithdrawalRequest request) {
-        User user = userRepository.findByUsername(username);
+    public void withdraw(Long userId, WithdrawalRequest request) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(NotFoundUserException::new);
         if (!user.checkStatus()) {
             throw new AlreadyWithdrawUserException();
         }
@@ -114,6 +117,10 @@ public class AuthService {
 
     public void logout(String refreshToken) {
         jwtTokenProvider.validateToken(refreshToken);
+
+        if (redisService.isBlacklisted(refreshToken)) {
+            throw new InvalidTokenException();
+        }
 
         redisService.addToBlacklist(refreshToken, BLACKLIST_STATUS_LOGOUT);
     }

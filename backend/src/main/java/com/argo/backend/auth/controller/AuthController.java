@@ -44,9 +44,9 @@ public class AuthController {
     }
 
     @DeleteMapping("/withdraw")
-    public ResponseEntity<?> withdraw(@AuthenticationPrincipal String username,
+    public ResponseEntity<?> withdraw(@AuthenticationPrincipal Long userId,
                                       @RequestBody @Valid WithdrawalRequest request) {
-        authService.withdraw(username, request);
+        authService.withdraw(userId, request);
 
         return ResponseEntity.ok(ResponseMessage.WITHDRAW_SUCCESS.getMessage());
     }
