@@ -1,33 +1,62 @@
 package com.example.bogoargo.ui.screens
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import java.util.UUID // 초대 코드 생성을 위해 UUID 임포트
-
-// 초대 코드 생성 유틸리티 (이전 답변에서 설명된 무작위 문자열 생성 로직을 간소화)
-// 실제 앱에서는 이 로직은 서버에서 안전하게 수행되어야 합니다.
-
 import kotlin.random.Random
 
 
 object InvitationCodeGenerator {
-    private val CHAR_POOL: CharArray = (('A'..'Z').toList() + ('2'..'9').toList()) // ✨ 두 CharRange를 List로 변환 후 합칩니다.
-        .filter { // ✨ 이제 List에 대해 filter를 사용할 수 있습니다.
+    private val CHAR_POOL: CharArray = (('A'..'Z').toList() + ('2'..'9').toList())
+        .filter {
             it != 'O' && it != 'I' && it != '0' && it != '1'
         }
-        .toCharArray() // 다시 CharArray로 변환합니다.
+        .toCharArray()
 
-    fun generateSimpleCode(length: Int = 8): String { // 8자리 코드로 변경
+    fun generateSimpleCode(length: Int = 8): String {
         return (1..length)
             .map { Random.nextInt(0, CHAR_POOL.size) }
             .map(CHAR_POOL::get)
@@ -41,9 +70,20 @@ object InvitationCodeGenerator {
 fun CreateClassScreen(navController: NavController) {
     var schoolName by remember { mutableStateOf("") }
     var className by remember { mutableStateOf("") }
-    var maxStudents by remember { mutableStateOf("") } // Int로 바로 받지 않고 String으로 받아서 파싱
+    var maxStudents by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var region by remember { mutableStateOf("") }
+    var expanded by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+    
+
+    val regions = remember {
+        listOf(
+            "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기",
+            "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -57,9 +97,21 @@ fun CreateClassScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(paddingValues)
                 .padding(horizontal = 16.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp) // 각 입력 필드 사이 간격
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // 학교명 입력
+            if (errorMessage.isNotEmpty()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+                ) {
+                    Text(
+                        text = errorMessage,
+                        modifier = Modifier.padding(16.dp),
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
             OutlinedTextField(
                 value = schoolName,
                 onValueChange = { schoolName = it },
@@ -68,7 +120,6 @@ fun CreateClassScreen(navController: NavController) {
                 singleLine = true
             )
 
-            // 반 이름 입력
             OutlinedTextField(
                 value = className,
                 onValueChange = { className = it },
@@ -77,147 +128,163 @@ fun CreateClassScreen(navController: NavController) {
                 singleLine = true
             )
 
-            // 최대 인원 입력 (숫자만)
             OutlinedTextField(
                 value = maxStudents,
                 onValueChange = { newValue ->
-                    // 숫자가 아닌 문자 제거
-                    maxStudents = newValue.filter { it.isDigit() }
+                    val filteredValue = newValue.filter { it.isDigit() }
+                    if (filteredValue.length <= 3) {
+                        maxStudents = filteredValue
+                    }
                 },
-                label = { Text("최대 인원") },
+                label = { Text("최대 인원 (1-999명)") },
                 modifier = Modifier.fillMaxWidth(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true
+                singleLine = true,
+                supportingText = {
+                    Text("1명 이상 999명 이하로 입력해주세요")
+                }
             )
 
-            // 설명 입력 (여러 줄)
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
                 label = { Text("설명 (선택 사항)") },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp), // 최소 높이 지정
-                maxLines = 5 // 최대 5줄
+                modifier = Modifier.fillMaxWidth().heightIn(min = 100.dp),
+                maxLines = 5
             )
 
-            var region by remember { mutableStateOf("") } // 선택된 지역
-            var expanded by remember { mutableStateOf(false) } // 드롭다운 메뉴 확장 상태
-            val focusRequester = remember { FocusRequester() } // TextField 포커스 제어
-
-            // 예시 지역 목록 (실제 앱에서는 API에서 가져오거나 미리 정의된 전체 목록)
-            val regions = remember {
-                listOf(
-                    "서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "경기",
-                    "강원", "충북", "충남", "전북", "전남", "경북", "경남", "제주"
-                )
-            }
-
-            // ... (Scaffold 및 Column 시작 부분) ...
-
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 16.dp, vertical = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // ... (학교명, 반 이름, 최대 인원, 설명 필드) ...
-
-                // 지역 선택 드롭다운
-                ExposedDropdownMenuBox( // ExposedDropdownMenuBox 사용
-                    expanded = expanded,
-                    onExpandedChange = { expanded = !expanded },
-                    modifier = Modifier.fillMaxWidth()
+            Column {
+                Button(
+                    onClick = { expanded = !expanded },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
                 ) {
-                    OutlinedTextField(
-                        value = region,
-                        onValueChange = { }, // 사용자가 직접 입력 못하게 비활성화
-                        readOnly = true, // 읽기 전용으로 설정
-                        label = { Text("지역 선택") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                        },
-                        modifier = Modifier
-                            .menuAnchor() // ExposedDropdownMenuBox의 앵커 역할
-                            .fillMaxWidth()
-                    )
-
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        regions.forEach { selectionOption ->
-                            DropdownMenuItem(
-                                text = { Text(selectionOption) },
-                                onClick = {
-                                    region = selectionOption
-                                    expanded = false
-                                },
-                                contentPadding = ExposedDropdownMenuDefaults.DropdownMenuItemContentPadding
-                            )
-                        }
+                        Text(
+                            text = if (region.isEmpty()) "지역 선택" else region,
+                            color = if (region.isEmpty()) 
+                                MaterialTheme.colorScheme.onSurfaceVariant 
+                            else 
+                                MaterialTheme.colorScheme.onSurface
+                        )
+                        Icon(
+                            imageVector = Icons.Default.ArrowDropDown,
+                            contentDescription = "드롭다운"
+                        )
                     }
                 }
 
-                // ... (생성 완료 버튼 및 나머지 코드) ...
+                if (expanded) {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 200.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    ) {
+                        LazyColumn {
+                            items(regions) { selectionOption ->
+                                TextButton(
+                                    onClick = {
+                                        region = selectionOption
+                                        expanded = false
+                                    },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = selectionOption,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        textAlign = TextAlign.Start
+                                    )
+                                }
+                                if (selectionOption != regions.last()) {
+                                    HorizontalDivider(thickness = 1.dp)
+                                }
+                            }
+                        }
+                    }
+                }
             }
-            // ... (Scaffold 및 Column 끝 부분) ...
 
-            Spacer(modifier = Modifier.height(8.dp)) // 버튼 위 여백
+            Spacer(modifier = Modifier.height(8.dp))
 
-            // 생성 완료 버튼
             Button(
                 onClick = {
-                    // 유효성 검사 (필수 필드 확인)
-                    if (schoolName.isBlank() || className.isBlank() || maxStudents.isBlank() || region.isBlank()) {
-                        // TODO: 사용자에게 오류 메시지 표시 (예: Toast, Snackbar)
-                        println("모든 필수 정보를 입력해주세요.")
-                        return@Button
+                    errorMessage = ""
+                    
+                    when {
+                        schoolName.isBlank() -> {
+                            errorMessage = "학교명을 입력해주세요."
+                            return@Button
+                        }
+                        className.isBlank() -> {
+                            errorMessage = "반 이름을 입력해주세요."
+                            return@Button
+                        }
+                        maxStudents.isBlank() -> {
+                            errorMessage = "최대 인원을 입력해주세요."
+                            return@Button
+                        }
+                        region.isBlank() -> {
+                            errorMessage = "지역을 선택해주세요."
+                            return@Button
+                        }
                     }
 
-                    // 최대 인원 파싱
                     val maxStudentsInt = maxStudents.toIntOrNull()
-                    if (maxStudentsInt == null || maxStudentsInt <= 0) {
-                        // TODO: 유효하지 않은 인원수 오류 메시지 표시
-                        println("유효한 최대 인원수를 입력해주세요.")
+                    if (maxStudentsInt == null || maxStudentsInt <= 0 || maxStudentsInt > 999) {
+                        errorMessage = "최대 인원은 1명 이상 999명 이하로 입력해주세요."
                         return@Button
                     }
 
-                    // 더미 초대 코드 생성 (실제는 서버에서 받아와야 함)
-                    val invitationCode = InvitationCodeGenerator.generateSimpleCode()
-                    println("생성된 초대 코드: $invitationCode")
-
-                    // 여기서 실제 서버 API 호출하여 반 정보 저장 및 초대 코드 발급 로직 수행
-                    // 예: yourClassRepository.createClass(schoolName, className, maxStudentsInt, description, region)
-                    //     .onSuccess { response ->
-                    //         val actualInvitationCode = response.invitationCode
-                    //         navController.navigate("classInfoPage/$classId?code=$actualInvitationCode")
-                    //     }
-                    //     .onFailure { error -> /* 오류 처리 */ }
-
-                    // 생성이 완료되면 현재 반 정보 페이지로 이동 (초대 코드 전달)
-                    // "currentClassInfo"는 다음 페이지의 라우트 이름이 됩니다.
-                    // 쿼리 파라미터로 초대 코드와 반 정보를 함께 전달합니다.
-                    navController.navigate(
-                        "currentClassInfo/" +
-                                "$schoolName/" +
-                                "$className/" +
-                                "$maxStudents/" +
-                                "$description/" +
-                                "$region/" +
-                                "$invitationCode"
-                    )
+                    isLoading = true
+                    
+                    try {
+                        val invitationCode = InvitationCodeGenerator.generateSimpleCode()
+                        
+                        navController.navigate(
+                            "currentClassInfo/" +
+                                    "${schoolName.trim()}/" +
+                                    "${className.trim()}/" +
+                                    "$maxStudents/" +
+                                    "${description.trim()}/" +
+                                    "$region/" +
+                                    "$invitationCode"
+                        )
+                    } catch (e: Exception) {
+                        errorMessage = "반 생성 중 오류가 발생했습니다. 다시 시도해주세요."
+                    } finally {
+                        isLoading = false
+                    }
                 },
-                modifier = Modifier.fillMaxWidth().height(56.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                enabled = !isLoading
             ) {
-                Text("반 생성 완료", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                if (isLoading) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("생성 중...", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    }
+                } else {
+                    Text("반 생성 완료", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
-}
-
-@Composable
-fun FocusRequester() {
-    TODO("Not yet implemented")
 }
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 720)

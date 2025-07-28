@@ -88,8 +88,7 @@ fun TeacherMainScreen(navController: NavController) {
             ) {
                 Button(
                     onClick = {
-                        // "우리 반 관리" 페이지로 이동하는 로직
-                        navController.navigate("ourClassManagement")
+                        navController.navigate("classManagement")
                     },
                     modifier = Modifier
                         .weight(1f) // 남은 공간을 균등하게 차지

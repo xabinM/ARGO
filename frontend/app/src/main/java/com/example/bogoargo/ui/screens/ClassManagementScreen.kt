@@ -8,9 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,32 +16,31 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-
-
-// 데이터 클래스: 반 정보를 정의합니다.
-data class ClassInfo(
-    val id: Int,
-    val year: Int,
-    val school: String,
-    val className: String
-)
+import com.example.bogoargo.data.model.Class
+import com.example.bogoargo.ui.viewmodels.ClassViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ClassManagementScreen(navController: NavController) {
-    // 더미 데이터 (실제 앱에서는 ViewModel 등에서 데이터를 가져올 것입니다.)
-    val classList = remember {
-        mutableStateListOf(
-            ClassInfo(1, 2023, "싸피 초등학교", "1학년 1반"),
-            ClassInfo(2, 2024, "싸피 중학교", "2학년 3반"),
-            ClassInfo(3, 2023, "싸피 고등학교", "3학년 5반"),
-            ClassInfo(4, 2025, "싸피 초등학교", "4학년 2반"),
-            ClassInfo(5, 2024, "싸피 중학교", "1학년 1반"),
-            ClassInfo(6, 2025, "싸피 고등학교", "2학년 4반"),
-            ClassInfo(7, 2023, "행복 초등학교", "5학년 3반")
-        )
+fun ClassManagementScreen(
+    navController: NavController,
+    viewModel: ClassViewModel = viewModel()
+) {
+    // ViewModel에서 상태를 구독
+    val classes by viewModel.classes.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+    
+    // 에러 처리
+    error?.let { errorMessage ->
+        LaunchedEffect(errorMessage) {
+            // 실제 앱에서는 Snackbar나 Toast로 에러 표시
+            // 지금은 콘솔에 로그만 출력
+            println("Error: $errorMessage")
+            viewModel.clearError()
+        }
     }
 
     Scaffold(
@@ -52,14 +49,14 @@ fun ClassManagementScreen(navController: NavController) {
                 title = { Text("우리반 관리", fontWeight = FontWeight.Bold) }
             )
         },
-        bottomBar = @androidx.compose.runtime.Composable { // ✨ bottomBar 슬롯에 커스텀 버튼을 넣습니다.
+        bottomBar = @Composable { // ✨ bottomBar 슬롯에 커스텀 버튼을 넣습니다.
             BottomAppBar( // BottomAppBar를 사용하여 버튼 영역을 구성
                 modifier = Modifier.fillMaxWidth(),
                 containerColor = MaterialTheme.colorScheme.surfaceContainerHigh // 바닥 색상 (테마에 맞게 조정)
             ) {
                 Button(
                     onClick = {
-                        navController.navigate("createGroupScreen") // "반 생성 페이지"로 이동
+                        navController.navigate("createClass") // "반 생성 페이지"로 이동
                     },
                     modifier = Modifier
                         .fillMaxWidth() // 바닥 바의 전체 너비를 차지
@@ -95,16 +92,47 @@ fun ClassManagementScreen(navController: NavController) {
                 .padding(paddingValues) // Scaffold의 패딩 적용
                 .padding(horizontal = 16.dp) // 좌우 여백
         ) {
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                                   //.fillMaxHeight(0.85f),
-                contentPadding = PaddingValues(vertical = 20.dp), // 리스트 상하 여백
-                verticalArrangement = Arrangement.spacedBy(12.dp) // 아이템 간 간격
-            ) {
-                items(classList) { classInfo ->
-                    ClassInfoCard(classInfo = classInfo) {
-                        // 각 반 카드를 클릭했을 때 해당 반의 상세 페이지로 이동
-                        navController.navigate("classDetail/${classInfo.id}")
+            if (isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            } else if (classes.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "등록된 반이 없습니다",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "새로운 반을 추가해보세요",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentPadding = PaddingValues(vertical = 20.dp), // 리스트 상하 여백
+                    verticalArrangement = Arrangement.spacedBy(12.dp) // 아이템 간 간격
+                ) {
+                    items(classes) { classInfo ->
+                        ClassInfoCard(classInfo = classInfo) {
+                            // 각 반 카드를 클릭했을 때 ClassInfoScreen으로 이동
+                            navController.navigate(
+                                "classInfo/${classInfo.id}/${classInfo.school}/${classInfo.className}/${classInfo.description}/${classInfo.region}/${classInfo.invitationCode}"
+                            )
+                        }
                     }
                 }
             }
@@ -113,7 +141,7 @@ fun ClassManagementScreen(navController: NavController) {
 }
 
 @Composable
-fun ClassInfoCard(classInfo: ClassInfo, onClick: () -> Unit) {
+fun ClassInfoCard(classInfo: Class, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
