@@ -1,7 +1,7 @@
 package com.argo.backend.auth.security.jwt;
 
 import com.argo.backend.auth.exception.ExpiredTokenException;
-import com.argo.backend.auth.exception.InvalidRoleClaimType;
+import com.argo.backend.auth.exception.InvalidRoleClaimTypeException;
 import com.argo.backend.auth.exception.InvalidTokenException;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -80,7 +80,7 @@ public class JwtTokenProvider {
         Object roleClaim = claims.get("role");
 
         if (!(roleClaim instanceof List<?> roles)) {
-            throw new InvalidRoleClaimType();
+            throw new InvalidRoleClaimTypeException();
         }
 
         return roles.stream()

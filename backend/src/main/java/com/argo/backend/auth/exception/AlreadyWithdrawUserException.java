@@ -4,16 +4,16 @@ import com.argo.backend.global.enums.ResponseMessage;
 import com.argo.backend.global.exception.BusinessException;
 import org.springframework.http.HttpStatus;
 
-public class WrongPasswordException extends BusinessException {
+public class AlreadyWithdrawUserException extends BusinessException {
 
-    private static final String FAIL_CODE = "4002";
+    private static final String FAIL_CODE = "4005";
 
-    public WrongPasswordException() {
+    public AlreadyWithdrawUserException() {
         super(FAIL_CODE, HttpStatus.NOT_FOUND);
     }
 
     @Override
     public String getMessage() {
-        return ResponseMessage.PASSWORD_NOT_MATCH_EXCEPTION.getMessage();
+        return ResponseMessage.ALREADY_WITHDRAW_USER.getMessage();
     }
 }

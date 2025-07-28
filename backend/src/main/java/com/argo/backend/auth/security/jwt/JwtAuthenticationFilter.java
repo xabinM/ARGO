@@ -1,10 +1,14 @@
 package com.argo.backend.auth.security.jwt;
 
+import com.argo.backend.global.exception.BusinessException;
+import com.argo.backend.global.exception.ErrorResponse;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
@@ -59,9 +63,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             filterChain.doFilter(request, response);
-        } catch (AuthenticationException ex) {
+        } catch (AuthenticationException e) {
             SecurityContextHolder.clearContext();
-            entryPoint.commence(request, response, ex);
+            entryPoint.commence(request, response, e);
+        } catch (BusinessException e) {
+            SecurityContextHolder.clearContext();
+            setErrorResponse(response, e.getHttpStatus(), e.getCode(), e.getMessage());
         }
+    }
+
+    private void setErrorResponse(HttpServletResponse response, HttpStatus status, String code, String message)
+            throws IOException {
+        response.setStatus(status.value());
+        response.setContentType("application/json;charset=UTF-8");
+
+        ErrorResponse errorResponse = new ErrorResponse(code, message);
+        String json = new ObjectMapper().writeValueAsString(errorResponse);
+        response.getWriter().write(json);
     }
 }

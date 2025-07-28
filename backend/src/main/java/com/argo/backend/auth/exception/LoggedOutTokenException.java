@@ -1,10 +1,17 @@
 package com.argo.backend.auth.exception;
 
 import com.argo.backend.global.enums.ResponseMessage;
-import org.springframework.security.core.AuthenticationException;
+import org.springframework.http.HttpStatus;
 
-public class LoggedOutTokenException extends AuthenticationException {
+public class LoggedOutTokenException extends AuthorizationException {
+
+    private static final String FAIL_CODE = "4009";
+
     public LoggedOutTokenException() {
-        super(ResponseMessage.LOGGED_OUT_TOKEN.getMessage());
+        super(FAIL_CODE, HttpStatus.FORBIDDEN);
+    }
+
+    public String getMessage() {
+        return ResponseMessage.LOGGED_OUT_TOKEN.getMessage();
     }
 }

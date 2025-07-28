@@ -2,18 +2,19 @@ package com.argo.backend.auth.exception;
 
 import com.argo.backend.global.enums.ResponseMessage;
 import com.argo.backend.global.exception.BusinessException;
+import lombok.Getter;
 import org.springframework.http.HttpStatus;
 
-public class WrongPasswordException extends BusinessException {
+@Getter
+public class NotFoundUsernameException extends BusinessException {
 
-    private static final String FAIL_CODE = "4002";
+    private static final String FAIL_CODE = "4000";
 
-    public WrongPasswordException() {
+    public NotFoundUsernameException() {
         super(FAIL_CODE, HttpStatus.NOT_FOUND);
     }
 
-    @Override
     public String getMessage() {
-        return ResponseMessage.PASSWORD_NOT_MATCH_EXCEPTION.getMessage();
+        return ResponseMessage.USER_NOT_FOUND_EXCEPTION.getMessage();
     }
 }
