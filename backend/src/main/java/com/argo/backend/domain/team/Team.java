@@ -14,8 +14,8 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor // Builder 패턴 지원을 위한 어노테이션 추가
-@Builder // Builder 패턴 지원을 위한 어노테이션 추가
+@AllArgsConstructor
+@Builder
 public class Team extends CreatedAtEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long teamId;

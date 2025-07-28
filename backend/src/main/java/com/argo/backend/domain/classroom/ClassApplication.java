@@ -33,6 +33,5 @@ public class ClassApplication extends BaseTimeEntity {
     @Enumerated(EnumType.STRING)
     private ApplicationStatus status = ApplicationStatus.PENDING;
 
-    // 처리 시간 (승인/거절 시점)
     private LocalDateTime processedAt;
 }
