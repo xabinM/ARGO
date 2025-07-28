@@ -31,30 +31,36 @@ class MapViewModel(
             val testSpots = listOf(
                 MissionSpot(
                     spotId = 1,
+                    spotName = "테스트 미션 지점",
+                    latitude = 37.501365,
+                    longitude = 127.039478
+                ),
+                MissionSpot(
+                    spotId = 2,
                     spotName = "광화문",
                     latitude = 37.571,
                     longitude = 126.976
                 ),
                 MissionSpot(
-                    spotId = 2,
+                    spotId = 3,
                     spotName = "덕수궁",
                     latitude = 37.565,
                     longitude = 126.975
                 ),
                 MissionSpot(
-                    spotId = 3,
+                    spotId = 4,
                     spotName = "명동",
                     latitude = 37.563,
                     longitude = 126.982
                 ),
                 MissionSpot(
-                    spotId = 4,
+                    spotId = 5,
                     spotName = "남산타워",
                     latitude = 37.551,
                     longitude = 126.988
                 ),
                 MissionSpot(
-                    spotId = 5,
+                    spotId = 6,
                     spotName = "서울 시청",
                     latitude = 37.5664,
                     longitude = 126.9779
