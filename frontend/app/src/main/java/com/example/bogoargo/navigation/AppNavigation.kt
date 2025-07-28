@@ -21,6 +21,10 @@ import com.example.bogoargo.ui.screens.ProfileScreen
 import com.example.bogoargo.ui.screens.SettingsScreen
 import com.example.bogoargo.ui.screens.SplashScreen
 import com.example.bogoargo.ui.screens.TeacherMainScreen
+import com.example.bogoargo.ui.screens.ExperienceLearningManagementScreen
+import com.example.bogoargo.ui.screens.AddProgramScreen
+import com.example.bogoargo.ui.screens.ProgramDetailScreen
+import com.example.bogoargo.ui.screens.CurrentClassInfoScreen
 
 sealed class Screen(val route: String) {
     data object Splash : Screen("splash")
@@ -46,7 +50,16 @@ sealed class Screen(val route: String) {
         fun createRoute(classId: String) = "createTeam/$classId"
     }
     data object AR : Screen("ar/{spotId}") {
-        fun createRoute(spotId: Long) = "ar/$spotId"
+        fun createRoute(spotId: Long) = "ar/$spotId"  
+    }
+    data object ExperienceLearningManagement : Screen("experienceLearningManagement")
+    data object AddProgram : Screen("addProgram")
+    data object ProgramDetail : Screen("programDetail/{programId}") {
+        fun createRoute(programId: String) = "programDetail/$programId"
+    }
+    data object CurrentClassInfo : Screen("currentClassInfo/{schoolName}/{className}/{maxStudents}/{description}/{region}/{invitationCode}") {
+        fun createRoute(schoolName: String, className: String, maxStudents: String, description: String, region: String, invitationCode: String) = 
+            "currentClassInfo/$schoolName/$className/$maxStudents/$description/$region/$invitationCode"
     }
 }
 
@@ -153,6 +166,50 @@ fun AppNavigation(
                 onNavigateBack = {
                     navController.popBackStack()
                 }
+            )
+        }
+        composable(Screen.ExperienceLearningManagement.route) {
+            ExperienceLearningManagementScreen(navController = navController)
+        }
+        composable(Screen.AddProgram.route) {
+            AddProgramScreen(navController = navController)
+        }
+        composable(
+            route = Screen.ProgramDetail.route,
+            arguments = listOf(navArgument("programId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val programId = backStackEntry.arguments?.getString("programId") ?: ""
+            ProgramDetailScreen(
+                navController = navController,
+                programId = programId
+            )
+        }
+        composable(
+            route = Screen.CurrentClassInfo.route,
+            arguments = listOf(
+                navArgument("schoolName") { type = NavType.StringType },
+                navArgument("className") { type = NavType.StringType },
+                navArgument("maxStudents") { type = NavType.StringType },
+                navArgument("description") { type = NavType.StringType },
+                navArgument("region") { type = NavType.StringType },
+                navArgument("invitationCode") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val schoolName = backStackEntry.arguments?.getString("schoolName") ?: ""
+            val className = backStackEntry.arguments?.getString("className") ?: ""
+            val maxStudents = backStackEntry.arguments?.getString("maxStudents") ?: ""
+            val description = backStackEntry.arguments?.getString("description") ?: ""
+            val region = backStackEntry.arguments?.getString("region") ?: ""
+            val invitationCode = backStackEntry.arguments?.getString("invitationCode") ?: ""
+            
+            CurrentClassInfoScreen(
+                navController = navController,
+                schoolName = schoolName,
+                className = className,
+                maxStudents = maxStudents,
+                description = description,
+                region = region,
+                invitationCode = invitationCode
             )
         }
     }

@@ -15,8 +15,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.bogoargo.ui.viewmodels.TeacherMainViewModel
 // R.drawable.profile_placeholder와 같은 리소스 ID를 사용하려면
 // res/drawable 폴더에 이미지를 추가해야 합니다.
 // 예시를 위해 임시로 안드로이드 아이콘을 사용합니다. 실제 앱에서는 자신의 이미지를 사용하세요.
@@ -24,7 +26,13 @@ import androidx.navigation.compose.rememberNavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TeacherMainScreen(navController: NavController) {
+fun TeacherMainScreen(
+    navController: NavController,
+    viewModel: TeacherMainViewModel = viewModel()
+) {
+    val user by viewModel.user
+    val isLoading by viewModel.isLoading
+    val uiState by viewModel.uiState
     Scaffold(
         topBar = {
             TopAppBar(
@@ -70,7 +78,7 @@ fun TeacherMainScreen(navController: NavController) {
                         color = Color.DarkGray
                     )
                     Text(
-                        text = "김싸피 님",
+                        text = user?.userName?.let { "$it 님" } ?: "로딩중...",
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color.Black
@@ -130,9 +138,26 @@ fun TeacherMainScreen(navController: NavController) {
                 )
                 Divider(thickness = 1.dp, color = Color.Gray) // 구분선
                 Spacer(modifier = Modifier.height(8.dp))
-                Text(text = "총 등록 학생 수: 30명", fontSize = 16.sp)
-                Text(text = "오늘 진행 예정 체험 학습: 과학 실험실 견학", fontSize = 16.sp)
-                Text(text = "최근 공지사항 확인일: 2025-07-25", fontSize = 16.sp)
+                when (uiState) {
+                    is TeacherMainViewModel.UiState.Loading -> {
+                        CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                    }
+                    is TeacherMainViewModel.UiState.Authenticated -> {
+                        Text(text = "이메일: ${user?.email ?: "정보 없음"}", fontSize = 16.sp)
+                        Text(text = "학번: ${user?.studentId?.takeIf { it.isNotEmpty() } ?: "정보 없음"}", fontSize = 16.sp)
+                        Text(text = "연락처: ${user?.phoneNumber?.takeIf { it.isNotEmpty() } ?: "정보 없음"}", fontSize = 16.sp)
+                    }
+                    is TeacherMainViewModel.UiState.Error -> {
+                        Text(
+                            text = "오류: ${uiState.message}",
+                            fontSize = 16.sp,
+                            color = Color.Red
+                        )
+                    }
+                    else -> {
+                        Text(text = "사용자 정보를 불러올 수 없습니다.", fontSize = 16.sp)
+                    }
+                }
                 // 여기에 더 많은 상세 정보를 추가할 수 있습니다.
             }
         }
