@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.Map
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -28,12 +29,31 @@ fun ProgramCreateScreen(
     var title by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
+    var latitude by remember { mutableStateOf<Double?>(null) }
+    var longitude by remember { mutableStateOf<Double?>(null) }
     var date by remember { mutableStateOf("") }
     var maxParticipants by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
     val uiState by viewModel.uiState.collectAsState()
+
+    // 지도에서 선택된 위치 정보 받기
+    LaunchedEffect(navController.currentBackStackEntry) {
+        navController.currentBackStackEntry?.savedStateHandle?.getLiveData<com.google.android.gms.maps.model.LatLng>("selectedLocation")?.observeForever { selectedLatLng ->
+            selectedLatLng?.let {
+                latitude = it.latitude
+                longitude = it.longitude
+            }
+        }
+        navController.currentBackStackEntry?.savedStateHandle?.getLiveData<String>("selectedAddress")?.observeForever { address ->
+            address?.let {
+                if (it.isNotEmpty()) {
+                    location = it
+                }
+            }
+        }
+    }
 
     LaunchedEffect(uiState) {
         when (uiState) {
@@ -97,14 +117,54 @@ fun ProgramCreateScreen(
                 maxLines = 3
             )
 
-            OutlinedTextField(
-                value = location,
-                onValueChange = { location = it },
-                label = { Text("장소") },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
-                singleLine = true
-            )
+            // 장소 입력 및 지도 버튼
+            Column {
+                OutlinedTextField(
+                    value = location,
+                    onValueChange = { location = it },
+                    label = { Text("장소") },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
+                    singleLine = true
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            navController.navigate("programSpotCreate/$classId")
+                        },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            Icons.Default.Map,
+                            contentDescription = "지도에서 선택",
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("지도에서 선택")
+                    }
+                    
+                    if (latitude != null && longitude != null) {
+                        Card(
+                            modifier = Modifier.weight(1f),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            )
+                        ) {
+                            Text(
+                                text = "위치 선택됨",
+                                modifier = Modifier.padding(12.dp),
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                }
+            }
 
             OutlinedTextField(
                 value = date,

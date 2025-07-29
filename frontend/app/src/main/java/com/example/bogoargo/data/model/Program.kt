@@ -6,6 +6,8 @@ data class Program(
     val title: String = "",
     val description: String = "",
     val location: String = "",
+    val latitude: Double? = null,
+    val longitude: Double? = null,
     val date: String = "",
     val startTime: String = "",
     val endTime: String = "",
