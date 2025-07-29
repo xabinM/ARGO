@@ -7,7 +7,6 @@ import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SecurityException;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Value;
 
 import org.springframework.util.StringUtils;
 
@@ -22,13 +21,11 @@ public class JwtTokenProvider {
     private final long refreshTokenExpirationMs;
 
     public JwtTokenProvider(
-            @Value("${jwt.secretAccess}") String accessKey,
-            @Value("${jwt.accessTokenExpirationMs}") long accessTokenExpirationMs,
-            @Value("${jwt.refreshTokenExpirationMs}") long refreshTokenExpiration) {
+            String key,
+            long accessTokenExpirationMs,
+            long refreshTokenExpiration) {
 
-        System.out.println("secretKey = '" + accessKey + "', length = " + accessKey.length());
-
-        this.key = Keys.hmacShaKeyFor(accessKey.getBytes());    // 비밀키 주입
+        this.key = Keys.hmacShaKeyFor(key.getBytes());    // 비밀키 주입
         this.accessTokenExpirationMs = accessTokenExpirationMs;
         this.refreshTokenExpirationMs = refreshTokenExpiration; // 만료시간 주입
     }

@@ -10,10 +10,10 @@ public class JwtConfig {
 
     @Bean
     public JwtTokenProvider jwtTokenProvider(
-            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.secret}") String key,
             @Value("${jwt.accessTokenExpirationMs}") long accessTokenExpirationMs,
             @Value("${jwt.refreshTokenExpirationMs}") long refreshTokenExpiration
     ) {
-        return new JwtTokenProvider(secret, accessTokenExpirationMs, refreshTokenExpiration);
+        return new JwtTokenProvider(key, accessTokenExpirationMs, refreshTokenExpiration);
     }
 }
