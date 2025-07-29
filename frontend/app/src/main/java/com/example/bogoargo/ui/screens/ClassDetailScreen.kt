@@ -1,13 +1,10 @@
 package com.example.bogoargo.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Groups
@@ -15,8 +12,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,6 +23,11 @@ import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.data.model.Program
 import com.example.bogoargo.data.model.ProgramStatus
 import com.example.bogoargo.ui.viewmodels.ClassViewModel
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NatureElevation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,286 +61,238 @@ fun ClassDetailScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("반 정보", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
+            NatureComponents.NatureTopAppBar(
+                title = "우리반 정보",
+                emoji = "🏫"
+            ) { 
+                navController.popBackStack() 
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { 
                     navController.navigate("programCreate/$classId")
                 },
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = NatureColors.leafGreen,
+                contentColor = androidx.compose.ui.graphics.Color.White,
+                shape = NatureShapes.medium
             ) {
                 Icon(Icons.Default.Add, contentDescription = "프로그램 추가")
             }
         }
     ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // 헤더 카드 (학교 + 반 정보)
-            item {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                ) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    colors = listOf(
-                                        MaterialTheme.colorScheme.primaryContainer,
-                                        MaterialTheme.colorScheme.surface
-                                    )
-                                )
-                            )
-                            .padding(24.dp)
+        NatureComponents.NatureBackground {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(20.dp),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                // 헤더 카드 (학교 + 반 정보)
+                item {
+                    NatureComponents.NatureCard(
+                        elevation = NatureElevation.extraLarge,
+                        shape = NatureShapes.extraLarge
                     ) {
-                        Column {
+                        Column(
+                            modifier = Modifier.padding(24.dp)
+                        ) {
                             // 학교 + 반 제목
                             Text(
                                 text = "$schoolName $className",
-                                style = MaterialTheme.typography.headlineMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                                style = NatureTypography.titleLarge.copy(fontSize = 24.sp),
+                                modifier = Modifier.padding(bottom = 8.dp)
                             )
-                            
-                            Spacer(modifier = Modifier.height(8.dp))
                             
                             // 지역 정보
                             Row(
-                                verticalAlignment = Alignment.CenterVertically
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(bottom = 16.dp)
                             ) {
-                                Icon(
-                                    Icons.Default.LocationOn,
-                                    contentDescription = "위치",
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
+                                Text(
+                                    text = "📍",
+                                    fontSize = 16.sp
                                 )
-                                Spacer(modifier = Modifier.width(4.dp))
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = region,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    style = NatureTypography.bodyMedium
                                 )
                             }
-                            
-                            Spacer(modifier = Modifier.height(12.dp))
                             
                             // 설명
                             Text(
                                 text = description,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                lineHeight = 20.sp
+                                style = NatureTypography.bodyMedium.copy(
+                                    color = NatureColors.earthBrown.copy(alpha = 0.8f),
+                                    lineHeight = 22.sp
+                                ),
+                                modifier = Modifier.padding(bottom = 20.dp)
                             )
                             
-                            Spacer(modifier = Modifier.height(16.dp))
-                            
                             // 초대 코드
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                shape = RoundedCornerShape(8.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                                )
+                            NatureComponents.NatureCard(
+                                shape = NatureShapes.medium,
+                                containerColor = NatureColors.forestGreen.copy(alpha = 0.1f)
                             ) {
                                 Column(
                                     modifier = Modifier.padding(16.dp),
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(
-                                        text = "초대 코드",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        text = "🎫 초대 코드",
+                                        style = NatureTypography.labelMedium.copy(
+                                            color = NatureColors.forestGreen
+                                        )
                                     )
+                                    Spacer(modifier = Modifier.height(4.dp))
                                     Text(
                                         text = invitationCode,
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.primary,
-                                        letterSpacing = 2.sp
+                                        style = NatureTypography.titleMedium.copy(
+                                            fontSize = 20.sp,
+                                            letterSpacing = 2.sp,
+                                            color = NatureColors.forestGreen
+                                        )
                                     )
                                 }
                             }
                         }
                     }
                 }
-            }
 
-            // 관리 버튼들
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // 구성원 관리 버튼
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(80.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer
-                        ),
-                        onClick = {
-                            navController.navigate("classMemberManagement/$classId")
-                        }
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(12.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                Icons.Default.People,
-                                contentDescription = "구성원 관리",
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "구성원 관리",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        }
-                    }
-                    
-                    // 팀 관리 버튼
-                    Card(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(80.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer
-                        ),
-                        onClick = {
-                            navController.navigate("teamManagement/$classId")
-                        }
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(12.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                Icons.Default.Groups,
-                                contentDescription = "팀 관리",
-                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "팀 관리",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer
-                            )
-                        }
-                    }
-                }
-            }
-
-            // 프로그램 목록 섹션 헤더
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "체험 프로그램 목록",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "${programs.size}개 프로그램",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-            
-            // 로딩 또는 프로그램 목록 표시
-            if (isLoading) {
+                // 관리 버튼들
                 item {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(200.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-            } else if (programs.isEmpty()) {
-                item {
-                    Card(
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Column(
+                        // 구성원 관리 버튼
+                        NatureComponents.NatureCard(
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                                .weight(1f)
+                                .height(100.dp),
+                            shape = NatureShapes.large,
+                            containerColor = NatureColors.sunnyYellow.copy(alpha = 0.2f)
                         ) {
-                            Text(
-                                text = "등록된 프로그램이 없습니다",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = "새로운 프로그램을 추가해보세요",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Button(
+                                onClick = {
+                                    navController.navigate("classMemberManagement/$classId")
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                    contentColor = NatureColors.earthBrown
+                                ),
+                                shape = NatureShapes.large
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = "👥",
+                                        fontSize = 28.sp
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "구성원 관리",
+                                        style = NatureTypography.bodyMedium,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
+                        
+                        // 팀 관리 버튼
+                        NatureComponents.NatureCard(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(100.dp),
+                            shape = NatureShapes.large,
+                            containerColor = NatureColors.leafGreen.copy(alpha = 0.2f)
+                        ) {
+                            Button(
+                                onClick = {
+                                    navController.navigate("teamManagement/$classId")
+                                },
+                                modifier = Modifier.fillMaxSize(),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                                    contentColor = NatureColors.earthBrown
+                                ),
+                                shape = NatureShapes.large
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = "🏆",
+                                        fontSize = 28.sp
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "팀 관리",
+                                        style = NatureTypography.bodyMedium,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
                         }
                     }
                 }
-            } else {
-                // 프로그램 목록
-                items(programs) { program ->
-                    ProgramCard(
-                        program = program,
-                        onClick = {
-                            navController.navigate("programDetail/${program.id}")
-                        }
-                    )
+
+                // 프로그램 목록 섹션 헤더
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        NatureComponents.SectionHeader(
+                            text = "체험 프로그램",
+                            emoji = "🎒"
+                        )
+                        NatureComponents.StatusBadge(
+                            text = "${programs.size}개",
+                            backgroundColor = NatureColors.forestGreen.copy(alpha = 0.15f),
+                            textColor = NatureColors.forestGreen
+                        )
+                    }
                 }
-            }
-            
-            // 빈 공간 추가 (FAB와의 겹침 방지)
-            item {
-                Spacer(modifier = Modifier.height(80.dp))
+                
+                // 로딩 또는 프로그램 목록 표시
+                if (isLoading) {
+                    item {
+                        NatureComponents.NatureLoadingIndicator(
+                            modifier = Modifier.height(200.dp)
+                        )
+                    }
+                } else if (programs.isEmpty()) {
+                    item {
+                        NatureComponents.EmptyStateCard(
+                            emoji = "🌱",
+                            title = "아직 프로그램이 없어요",
+                            description = "새로운 체험 프로그램을\n추가해서 시작해보세요!"
+                        )
+                    }
+                } else {
+                    // 프로그램 목록
+                    items(programs) { program ->
+                        ProgramCard(
+                            program = program,
+                            onClick = {
+                                navController.navigate("programDetail/${program.id}")
+                            }
+                        )
+                    }
+                }
+                
+                // 빈 공간 추가 (FAB와의 겹침 방지)
+                item {
+                    Spacer(modifier = Modifier.height(80.dp))
+                }
             }
         }
     }
@@ -349,76 +303,85 @@ fun ProgramCard(
     program: Program,
     onClick: () -> Unit
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        onClick = onClick
+    NatureComponents.NatureCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = NatureShapes.card
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+        Button(
+            onClick = onClick,
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = androidx.compose.ui.graphics.Color.Transparent,
+                contentColor = NatureColors.earthBrown
+            ),
+            shape = NatureShapes.card
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+            Column(
+                modifier = Modifier.padding(20.dp)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = program.title,
+                            style = NatureTypography.bodyLarge.copy(fontSize = 18.sp),
+                            textAlign = TextAlign.Start
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = program.description,
+                            style = NatureTypography.bodyMedium.copy(
+                                color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                            ),
+                            textAlign = TextAlign.Start
+                        )
+                    }
+                    
+                    // 상태 배지
+                    StatusBadge(status = program.status)
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // 위치 정보
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(
-                        text = program.title,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        text = "📍",
+                        fontSize = 16.sp
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = program.description,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = program.location,
+                        style = NatureTypography.bodySmall.copy(
+                            color = NatureColors.forestGreen
+                        )
                     )
                 }
                 
-                // 상태 배지
-                StatusBadge(status = program.status)
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            // 위치 정보
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    Icons.Default.LocationOn,
-                    contentDescription = "위치",
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(16.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = program.location,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            // 날짜 및 참가자 정보
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = program.date,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "${program.participants}/${program.maxParticipants}명",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                Spacer(modifier = Modifier.height(12.dp))
+                
+                // 날짜 및 참가자 정보
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    NatureComponents.StatusBadge(
+                        text = "📅 ${program.date}",
+                        backgroundColor = NatureColors.sunnyYellow.copy(alpha = 0.2f),
+                        textColor = NatureColors.earthBrown
+                    )
+                    NatureComponents.StatusBadge(
+                        text = "👥 ${program.participants}/${program.maxParticipants}명",
+                        backgroundColor = NatureColors.leafGreen.copy(alpha = 0.2f),
+                        textColor = NatureColors.leafGreen
+                    )
+                }
             }
         }
     }
@@ -426,37 +389,36 @@ fun ProgramCard(
 
 @Composable
 fun StatusBadge(status: ProgramStatus) {
-    val (text, containerColor, contentColor) = when (status) {
-        ProgramStatus.UPCOMING -> Triple(
+    val (text, emoji, backgroundColor, textColor) = when (status) {
+        ProgramStatus.UPCOMING -> Tuple4(
             "예정",
-            MaterialTheme.colorScheme.primaryContainer,
-            MaterialTheme.colorScheme.onPrimaryContainer
+            "⏰",
+            NatureColors.sunnyYellow.copy(alpha = 0.2f),
+            NatureColors.earthBrown
         )
-        ProgramStatus.ONGOING -> Triple(
+        ProgramStatus.ONGOING -> Tuple4(
             "진행중",
-            MaterialTheme.colorScheme.tertiaryContainer,
-            MaterialTheme.colorScheme.onTertiaryContainer
+            "🚀",
+            NatureColors.leafGreen.copy(alpha = 0.2f),
+            NatureColors.leafGreen
         )
-        ProgramStatus.COMPLETED -> Triple(
+        ProgramStatus.COMPLETED -> Tuple4(
             "완료",
-            MaterialTheme.colorScheme.surfaceVariant,
-            MaterialTheme.colorScheme.onSurfaceVariant
+            "✅",
+            NatureColors.forestGreen.copy(alpha = 0.2f),
+            NatureColors.forestGreen
         )
     }
     
-    Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = containerColor
-    ) {
-        Text(
-            text = text,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            style = MaterialTheme.typography.labelSmall,
-            color = contentColor,
-            fontWeight = FontWeight.Medium
-        )
-    }
+    NatureComponents.StatusBadge(
+        text = "$emoji $text",
+        backgroundColor = backgroundColor,
+        textColor = textColor
+    )
 }
+
+// Helper data class for multiple return values
+data class Tuple4<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
 @Preview(showBackground = true)
 @Composable

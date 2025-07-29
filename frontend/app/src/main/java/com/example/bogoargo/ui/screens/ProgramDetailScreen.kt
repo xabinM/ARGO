@@ -13,6 +13,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -22,47 +26,93 @@ fun ProgramDetailScreen(
 ) {
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("프로그램 상세", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
-                    }
-                }
+            NatureComponents.NatureTopAppBar(
+                title = "프로그램 상세",
+                emoji = "🌿",
+                onNavigationClick = { navController.popBackStack() }
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "프로그램 상세 정보",
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "프로그램 ID: $programId",
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "프로그램의 상세 정보를 표시하는 페이지입니다.",
-                fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "현재 개발 중입니다.",
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.error
-            )
+        NatureComponents.NatureBackground {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(20.dp)
+            ) {
+                NatureComponents.NatureCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "🌿 프로그램 상세 정보",
+                            style = NatureTypography.titleLarge
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        NatureComponents.NatureCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            containerColor = NatureColors.lightBeige
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp)
+                            ) {
+                                Text(
+                                    text = "🏷️ 프로그램 ID",
+                                    style = NatureTypography.bodyMedium
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = programId,
+                                    style = NatureTypography.headlineSmall
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        NatureComponents.NatureCard(
+                            modifier = Modifier.fillMaxWidth(),
+                            containerColor = NatureColors.warmBeige.copy(alpha = 0.3f)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "🌱",
+                                    fontSize = 32.sp
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "자연 학습 프로그램",
+                                    style = NatureTypography.titleMedium
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "아이들과 함께 자연을 탐험하고\n재미있는 학습 경험을 만들어요!",
+                                    style = NatureTypography.bodyMedium.copy(
+                                        color = NatureColors.earthBrown.copy(alpha = 0.8f)
+                                    ),
+                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(24.dp))
+                        
+                        Text(
+                            text = "🚧 현재 개발 중이에요!",
+                            style = NatureTypography.bodyMedium.copy(
+                                color = NatureColors.softOrange
+                            )
+                        )
+                    }
+                }
+            }
         }
     }
 }

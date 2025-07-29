@@ -21,6 +21,10 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.data.model.Class
 import com.example.bogoargo.ui.viewmodels.ClassViewModel
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,7 +36,7 @@ fun ClassManagementScreen(
     val classes by viewModel.classes.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
-    
+
     // 에러 처리
     error?.let { errorMessage ->
         LaunchedEffect(errorMessage) {
@@ -45,92 +49,80 @@ fun ClassManagementScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("우리반 관리", fontWeight = FontWeight.Bold) }
+            NatureComponents.NatureTopAppBar(
+                title = "우리반 관리",
+                emoji = "🏠",
+                onNavigationClick = { navController.popBackStack() }
             )
         },
-        bottomBar = {
-            BottomAppBar(
-                modifier = Modifier.fillMaxWidth(),
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = {
+                    navController.navigate("classCreate")
+                },
+                containerColor = NatureColors.leafGreen,
+                shape = NatureShapes.large
             ) {
-                Button(
-                    onClick = {
-                        navController.navigate("classCreate")
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(horizontal = 16.dp),
-                    shape = RoundedCornerShape(8.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.Start,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(
-                            Icons.Filled.Add,
-                            contentDescription = "새로운 그룹 생성",
-                            modifier = Modifier.size(24.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = "새로운 반 추가",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
-                }
+                Icon(
+                    Icons.Default.Add,
+                    contentDescription = "반 추가",
+                    tint = androidx.compose.ui.graphics.Color.White
+                )
             }
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp)
-        ) {
-            if (isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else if (classes.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "등록된 반이 없습니다",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "새로운 반을 추가해보세요",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            } else {
-                LazyColumn(
+        NatureComponents.NatureBackground {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(20.dp)
+            ) {
+                // Statistics Card
+                NatureComponents.StatsCard(
                     modifier = Modifier.fillMaxWidth(),
-                    contentPadding = PaddingValues(vertical = 20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    title = "반 현황",
+                    emoji = "🌟"
                 ) {
-                    items(classes) { classInfo ->
-                        ClassInfoCard(classInfo = classInfo) {
-                            navController.navigate(
-                                "classDetail/${classInfo.id}/${classInfo.schoolName}/${classInfo.className}/${classInfo.description}/${classInfo.region}/${classInfo.invitationCode}"
-                            )
+                    NatureComponents.StatItem(
+                        label = "전체 반",
+                        value = classes.size.toString(),
+                        emoji = "🏠",
+                        color = NatureColors.forestGreen
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                NatureComponents.SectionHeader(
+                    text = "내 반 목록",
+                    emoji = "🏠"
+                )
+
+                if (isLoading) {
+                    NatureComponents.NatureLoadingIndicator()
+                } else if (classes.isEmpty()) {
+                    NatureComponents.EmptyStateCard(
+                        emoji = "🏠",
+                        title = "등록된 반이 없어요",
+                        description = "새로운 반을 만들어\n아이들과 함께 재미있는 학습을 시작해보세요!"
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        items(classes) { classInfo ->
+                            ClassInfoCard(classInfo = classInfo) {
+                                navController.navigate(
+                                    "classDetail/${classInfo.id}/${classInfo.schoolName}/${classInfo.className}/${classInfo.description}/${classInfo.region}/${classInfo.invitationCode}"
+                                )
+                            }
+                        }
+                        // 빈 공간 추가 (FAB와의 겹침 방지)
+                        item {
+                            Spacer(modifier = Modifier.height(80.dp))
                         }
                     }
                 }
@@ -141,35 +133,63 @@ fun ClassManagementScreen(
 
 @Composable
 fun ClassInfoCard(classInfo: Class, onClick: () -> Unit) {
-    Card(
+    NatureComponents.NatureCard(
         modifier = Modifier
             .fillMaxWidth()
-            .height(120.dp)
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        shape = NatureShapes.card
     ) {
-        Column(
+        Row(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.Center
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "${classInfo.year}년 생성",
-                fontSize = 12.sp,
-                color = Color.Gray,
-                modifier = Modifier.align(Alignment.End)
+            // Class Icon
+            NatureComponents.ProfileAvatar(
+                emoji = "🏠",
+                backgroundColor = NatureColors.sunnyYellow,
+                size = 60.dp
             )
-            Spacer(modifier = Modifier.height(4.dp))
 
-            Text(
-                text = "${classInfo.schoolName} ${classInfo.className}",
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Class Info
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "🏠 ${classInfo.schoolName}",
+                    style = NatureTypography.bodyMedium.copy(
+                        color = NatureColors.earthBrown.copy(alpha = 0.8f)
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = classInfo.className,
+                    style = NatureTypography.titleMedium
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    NatureComponents.StatusBadge(
+                        text = "📅 ${classInfo.year}년",
+                        backgroundColor = NatureColors.forestGreen.copy(alpha = 0.2f),
+                        textColor = NatureColors.forestGreen
+                    )
+
+                    NatureComponents.StatusBadge(
+                        text = "🗺️ ${classInfo.region}",
+                        backgroundColor = NatureColors.leafGreen.copy(alpha = 0.2f),
+                        textColor = NatureColors.leafGreen
+                    )
+                }
+            }
         }
     }
 }

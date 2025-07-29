@@ -1,14 +1,11 @@
 package com.example.bogoargo.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Groups
-import androidx.compose.material.icons.filled.People
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +18,10 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.data.model.Team
 import com.example.bogoargo.ui.viewmodels.TeamViewModel
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,118 +47,91 @@ fun TeamManagementScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("팀 관리", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
-                    }
-                }
+            NatureComponents.NatureTopAppBar(
+                title = "팀 관리",
+                emoji = "👥",
+                onNavigationClick = { navController.popBackStack() }
             )
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = { 
+                onClick = {
                     navController.navigate("teamCreate/$classId")
                 },
-                containerColor = MaterialTheme.colorScheme.primary
+                containerColor = NatureColors.leafGreen,
+                shape = NatureShapes.large
             ) {
-                Icon(Icons.Default.Add, contentDescription = "팀 추가")
+                Icon(Icons.Default.Add, contentDescription = "팀 추가", tint = androidx.compose.ui.graphics.Color.White)
             }
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-        ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
-                )
+        NatureComponents.NatureBackground {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(20.dp)
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                // Statistics Card
+                NatureComponents.StatsCard(
+                    modifier = Modifier.fillMaxWidth(),
+                    title = "팀 현황",
+                    emoji = "👥"
                 ) {
-                    Column {
-                        Text(
-                            text = "전체 팀 수",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            text = "${teams.size}개 팀",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-                    Icon(
-                        Icons.Default.Groups,
-                        contentDescription = "팀",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (isLoading) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else if (teams.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        Icon(
-                            Icons.Default.Groups,
-                            contentDescription = null,
-                            modifier = Modifier.size(64.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        NatureComponents.StatItem(
+                            label = "전체",
+                            value = teams.size.toString(),
+                            emoji = "🌿",
+                            color = NatureColors.forestGreen
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "등록된 팀이 없습니다",
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        NatureComponents.StatItem(
+                            label = "활성",
+                            value = teams.count { it.currentMembers < it.maxMembers }.toString(),
+                            emoji = "🌱",
+                            color = NatureColors.leafGreen
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "새로운 팀을 추가해보세요",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        NatureComponents.StatItem(
+                            label = "완성",
+                            value = teams.count { it.currentMembers >= it.maxMembers }.toString(),
+                            emoji = "🌳",
+                            color = NatureColors.earthBrown
                         )
                     }
                 }
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                    contentPadding = PaddingValues(bottom = 80.dp)
-                ) {
-                    items(teams) { team ->
-                        TeamCard(
-                            team = team,
-                            onClick = {
-                                navController.navigate("teamDetail/${team.id}")
-                            }
-                        )
+                
+                Spacer(modifier = Modifier.height(20.dp))
+                
+                NatureComponents.SectionHeader(
+                    text = "팀 목록",
+                    emoji = "👥"
+                )
+
+                if (isLoading) {
+                    NatureComponents.NatureLoadingIndicator()
+                } else if (teams.isEmpty()) {
+                    NatureComponents.EmptyStateCard(
+                        emoji = "👥",
+                        title = "등록된 팀이 없어요",
+                        description = "새로운 팀을 만들어\n친구들과 함께 모험을 떠나보세요!"
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(top = 8.dp, bottom = 80.dp)
+                    ) {
+                        items(teams) { team ->
+                            TeamCard(
+                                team = team,
+                                onClick = {
+                                    navController.navigate("teamDetail/${team.id}")
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -170,81 +144,75 @@ fun TeamCard(
     team: Team,
     onClick: () -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        onClick = onClick
+    NatureComponents.NatureCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = NatureShapes.card
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
+            // Team Icon
+            NatureComponents.ProfileAvatar(
+                emoji = "👥",
+                backgroundColor = if (team.currentMembers < team.maxMembers) NatureColors.leafGreen else NatureColors.earthBrown,
+                size = 60.dp
+            )
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            // Team Info
+            Column(
+                modifier = Modifier.weight(1f)
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = team.name,
+                    style = NatureTypography.titleMedium
+                )
+
+                if (team.description.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = team.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        text = team.description,
+                        style = NatureTypography.bodySmall.copy(
+                            color = NatureColors.earthBrown.copy(alpha = 0.8f)
+                        )
                     )
-                    if (team.description.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = team.description,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
                 }
-                
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.secondaryContainer
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.People,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(
-                            text = "${team.currentMembers}/${team.maxMembers}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+                    NatureComponents.StatusBadge(
+                        text = "👥 ${team.currentMembers}/${team.maxMembers}",
+                        backgroundColor = NatureColors.sunnyYellow.copy(alpha = 0.2f),
+                        textColor = NatureColors.earthBrown
+                    )
+
+                    NatureComponents.StatusBadge(
+                        text = if (team.currentMembers < team.maxMembers) "🟢 모집중" else "🔴 모집완료",
+                        backgroundColor = if (team.currentMembers < team.maxMembers)
+                            NatureColors.leafGreen.copy(alpha = 0.2f)
+                        else
+                            NatureColors.earthBrown.copy(alpha = 0.2f),
+                        textColor = if (team.currentMembers < team.maxMembers)
+                            NatureColors.leafGreen
+                        else
+                            NatureColors.earthBrown
+                    )
+
+                    NatureComponents.StatusBadge(
+                        text = "📅 ${team.createdAt}",
+                        backgroundColor = NatureColors.softOrange.copy(alpha = 0.2f),
+                        textColor = NatureColors.earthBrown
+                    )
                 }
-            }
-            
-            Spacer(modifier = Modifier.height(12.dp))
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = "생성일: ${team.createdAt}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = if (team.currentMembers < team.maxMembers) "모집중" else "모집완료",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    color = if (team.currentMembers < team.maxMembers) 
-                        MaterialTheme.colorScheme.primary 
-                    else 
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

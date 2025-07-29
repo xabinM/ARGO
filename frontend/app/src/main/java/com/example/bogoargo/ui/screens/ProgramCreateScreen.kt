@@ -1,5 +1,6 @@
 package com.example.bogoargo.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -18,6 +19,12 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.ui.viewmodels.ProgramViewModel
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,12 +38,16 @@ fun ProgramCreateScreen(
     var location by remember { mutableStateOf("") }
     var latitude by remember { mutableStateOf<Double?>(null) }
     var longitude by remember { mutableStateOf<Double?>(null) }
-    var date by remember { mutableStateOf("") }
+    var startDate by remember { mutableStateOf("") }
+    var endDate by remember { mutableStateOf("") }
+    var showStartDatePicker by remember { mutableStateOf(false) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
     var maxParticipants by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
     val uiState by viewModel.uiState.collectAsState()
+    val dateFormatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
 
     // 지도에서 선택된 위치 정보 받기
     LaunchedEffect(navController.currentBackStackEntry) {
@@ -71,134 +82,229 @@ fun ProgramCreateScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("프로그램 생성", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
-                    }
-                }
+            NatureComponents.NatureTopAppBar(
+                title = "체험 학습 만들기",
+                emoji = "🌱",
+                onNavigationClick = { navController.popBackStack() }
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            if (errorMessage.isNotEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
-                ) {
-                    Text(
-                        text = errorMessage,
-                        modifier = Modifier.padding(16.dp),
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
+        NatureComponents.NatureBackground {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                if (errorMessage.isNotEmpty()) {
+                    NatureComponents.NatureCard(
+                        modifier = Modifier.fillMaxWidth(),
+                        containerColor = NatureColors.softOrange.copy(alpha = 0.3f)
+                    ) {
+                        Text(
+                            text = "⚠️ $errorMessage",
+                            modifier = Modifier.padding(16.dp),
+                            style = NatureTypography.bodyMedium.copy(color = NatureColors.earthBrown)
+                        )
+                    }
                 }
-            }
 
-            OutlinedTextField(
-                value = title,
-                onValueChange = { title = it },
-                label = { Text("프로그램 제목") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("체험 학습 제목", style = NatureTypography.bodyMedium) },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = NatureShapes.medium,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = NatureColors.forestGreen,
+                        focusedLabelColor = NatureColors.forestGreen,
+                        unfocusedBorderColor = NatureColors.earthBrown.copy(alpha = 0.5f)
+                    )
+                )
 
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("프로그램 설명") },
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = 3
-            )
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("체험 학습 설명", style = NatureTypography.bodyMedium) },
+                    modifier = Modifier.fillMaxWidth(),
+                    maxLines = 4,
+                    shape = NatureShapes.medium,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = NatureColors.forestGreen,
+                        focusedLabelColor = NatureColors.forestGreen,
+                        unfocusedBorderColor = NatureColors.earthBrown.copy(alpha = 0.5f)
+                    )
+                )
 
-            // 장소 입력 및 지도 버튼
-            Column {
+                // 장소 선택 (지도에서만)
                 OutlinedTextField(
                     value = location,
-                    onValueChange = { location = it },
-                    label = { Text("장소") },
-                    modifier = Modifier.fillMaxWidth(),
-                    leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
-                    singleLine = true
-                )
-                
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = {
-                            navController.navigate("programSpotCreate/$classId")
-                        },
-                        modifier = Modifier.weight(1f)
-                    ) {
+                    onValueChange = { },
+                    label = { Text("체험 장소", style = NatureTypography.bodyMedium) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { navController.navigate("programSpotCreate/$classId") },
+                    leadingIcon = { 
                         Icon(
-                            Icons.Default.Map,
-                            contentDescription = "지도에서 선택",
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("지도에서 선택")
-                    }
-                    
-                    if (latitude != null && longitude != null) {
-                        Card(
-                            modifier = Modifier.weight(1f),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                            Icons.Default.LocationOn, 
+                            contentDescription = null,
+                            tint = NatureColors.forestGreen
+                        ) 
+                    },
+                    singleLine = true,
+                    readOnly = true,
+                    shape = NatureShapes.medium,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = NatureColors.forestGreen,
+                        focusedLabelColor = NatureColors.forestGreen,
+                        unfocusedBorderColor = NatureColors.earthBrown.copy(alpha = 0.5f)
+                    ),
+                    placeholder = {
+                        Text(
+                            "지도에서 장소를 선택해주세요",
+                            style = NatureTypography.bodyMedium.copy(
+                                color = NatureColors.earthBrown.copy(alpha = 0.6f)
                             )
-                        ) {
-                            Text(
-                                text = "위치 선택됨",
-                                modifier = Modifier.padding(12.dp),
-                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    },
+                    trailingIcon = {
+                        if (latitude != null && longitude != null) {
+                            Icon(
+                                Icons.Default.Map,
+                                contentDescription = "위치 선택됨",
+                                tint = NatureColors.leafGreen
                             )
                         }
                     }
-                }
-            }
+                )
 
-            OutlinedTextField(
-                value = date,
-                onValueChange = { date = it },
-                label = { Text("날짜 (YYYY-MM-DD)") },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.DateRange, contentDescription = null) },
-                singleLine = true
-            )
-
-            OutlinedTextField(
-                value = maxParticipants,
-                onValueChange = { newValue ->
-                    if (newValue.all { it.isDigit() } && newValue.length <= 3) {
-                        maxParticipants = newValue
+                // 시작 날짜
+                OutlinedTextField(
+                    value = startDate,
+                    onValueChange = { },
+                    label = { Text("시작 날짜", style = NatureTypography.bodyMedium) },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { 
+                        IconButton(onClick = { showStartDatePicker = true }) {
+                            Icon(
+                                Icons.Default.DateRange, 
+                                contentDescription = "시작 날짜 선택",
+                                tint = NatureColors.forestGreen
+                            )
+                        }
+                    },
+                    singleLine = true,
+                    readOnly = true,
+                    shape = NatureShapes.medium,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = NatureColors.forestGreen,
+                        focusedLabelColor = NatureColors.forestGreen,
+                        unfocusedBorderColor = NatureColors.earthBrown.copy(alpha = 0.5f)
+                    ),
+                    placeholder = {
+                        Text(
+                            "시작 날짜를 선택해주세요",
+                            style = NatureTypography.bodyMedium.copy(
+                                color = NatureColors.earthBrown.copy(alpha = 0.6f)
+                            )
+                        )
+                    },
+                    trailingIcon = {
+                        TextButton(onClick = { showStartDatePicker = true }) {
+                            Text(
+                                "선택",
+                                style = NatureTypography.bodyMedium.copy(
+                                    color = NatureColors.forestGreen
+                                )
+                            )
+                        }
                     }
-                },
-                label = { Text("최대 참가자 수") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true
-            )
+                )
+
+                // 완료 날짜
+                OutlinedTextField(
+                    value = endDate,
+                    onValueChange = { },
+                    label = { Text("완료 날짜", style = NatureTypography.bodyMedium) },
+                    modifier = Modifier.fillMaxWidth(),
+                    leadingIcon = { 
+                        IconButton(onClick = { showEndDatePicker = true }) {
+                            Icon(
+                                Icons.Default.DateRange, 
+                                contentDescription = "완료 날짜 선택",
+                                tint = NatureColors.forestGreen
+                            )
+                        }
+                    },
+                    singleLine = true,
+                    readOnly = true,
+                    shape = NatureShapes.medium,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = NatureColors.forestGreen,
+                        focusedLabelColor = NatureColors.forestGreen,
+                        unfocusedBorderColor = NatureColors.earthBrown.copy(alpha = 0.5f)
+                    ),
+                    placeholder = {
+                        Text(
+                            "완료 날짜를 선택해주세요",
+                            style = NatureTypography.bodyMedium.copy(
+                                color = NatureColors.earthBrown.copy(alpha = 0.6f)
+                            )
+                        )
+                    },
+                    trailingIcon = {
+                        TextButton(onClick = { showEndDatePicker = true }) {
+                            Text(
+                                "선택",
+                                style = NatureTypography.bodyMedium.copy(
+                                    color = NatureColors.forestGreen
+                                )
+                            )
+                        }
+                    }
+                )
+
+                OutlinedTextField(
+                    value = maxParticipants,
+                    onValueChange = { newValue ->
+                        if (newValue.all { it.isDigit() } && newValue.length <= 3) {
+                            maxParticipants = newValue
+                        }
+                    },
+                    label = { Text("최대 참가자 수", style = NatureTypography.bodyMedium) },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    shape = NatureShapes.medium,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = NatureColors.forestGreen,
+                        focusedLabelColor = NatureColors.forestGreen,
+                        unfocusedBorderColor = NatureColors.earthBrown.copy(alpha = 0.5f)
+                    ),
+                    placeholder = {
+                        Text(
+                            "예: 30",
+                            style = NatureTypography.bodyMedium.copy(
+                                color = NatureColors.earthBrown.copy(alpha = 0.6f)
+                            )
+                        )
+                    }
+                )
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
+            NatureComponents.NatureButton(
                 onClick = {
                     errorMessage = ""
                     
                     when {
-                        title.isBlank() -> errorMessage = "프로그램 제목을 입력해주세요."
-                        description.isBlank() -> errorMessage = "프로그램 설명을 입력해주세요."
-                        location.isBlank() -> errorMessage = "장소를 입력해주세요."
-                        date.isBlank() -> errorMessage = "날짜를 입력해주세요."
+                        title.isBlank() -> errorMessage = "체험 학습 제목을 입력해주세요."
+                        description.isBlank() -> errorMessage = "체험 학습 설명을 입력해주세요."
+                        location.isBlank() -> errorMessage = "지도에서 장소를 선택해주세요."
+                        startDate.isBlank() -> errorMessage = "시작 날짜를 선택해주세요."
+                        endDate.isBlank() -> errorMessage = "완료 날짜를 선택해주세요."
                         maxParticipants.isBlank() -> errorMessage = "최대 참가자 수를 입력해주세요."
                         else -> {
                             viewModel.createProgram(
@@ -206,27 +312,99 @@ fun ProgramCreateScreen(
                                 title = title.trim(),
                                 description = description.trim(),
                                 location = location.trim(),
-                                date = date.trim(),
-                                startTime = "",
-                                endTime = "",
+                                date = startDate.trim(),
+                                startTime = startDate.trim(),
+                                endTime = endDate.trim(),
                                 maxParticipants = maxParticipants.toIntOrNull() ?: 0
                             )
                         }
                     }
                 },
+                text = if (isLoading) "만드는 중..." else "🌱 체험 학습 만들기",
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
-                enabled = !isLoading
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        color = MaterialTheme.colorScheme.onPrimary
+                enabled = !isLoading,
+                backgroundColor = NatureColors.leafGreen
+            )
+            }
+        }
+
+        // Start Date Picker Dialog
+        if (showStartDatePicker) {
+            val startDatePickerState = rememberDatePickerState()
+            
+            DatePickerDialog(
+                onDismissRequest = { showStartDatePicker = false },
+                confirmButton = {
+                    NatureComponents.NatureButton(
+                        onClick = {
+                            startDatePickerState.selectedDateMillis?.let { millis ->
+                                startDate = dateFormatter.format(Date(millis))
+                            }
+                            showStartDatePicker = false
+                        },
+                        text = "선택",
+                        backgroundColor = NatureColors.leafGreen
                     )
-                } else {
-                    Text("프로그램 생성", fontWeight = FontWeight.Bold)
-                }
+                },
+                dismissButton = {
+                    NatureComponents.NatureOutlinedButton(
+                        onClick = { showStartDatePicker = false },
+                        text = "취소"
+                    )
+                },
+                colors = DatePickerDefaults.colors(
+                    containerColor = NatureColors.whiteTransparent
+                )
+            ) {
+                DatePicker(
+                    state = startDatePickerState,
+                    colors = DatePickerDefaults.colors(
+                        selectedDayContainerColor = NatureColors.leafGreen,
+                        todayContentColor = NatureColors.forestGreen,
+                        todayDateBorderColor = NatureColors.forestGreen
+                    )
+                )
+            }
+        }
+
+        // End Date Picker Dialog
+        if (showEndDatePicker) {
+            val endDatePickerState = rememberDatePickerState()
+            
+            DatePickerDialog(
+                onDismissRequest = { showEndDatePicker = false },
+                confirmButton = {
+                    NatureComponents.NatureButton(
+                        onClick = {
+                            endDatePickerState.selectedDateMillis?.let { millis ->
+                                endDate = dateFormatter.format(Date(millis))
+                            }
+                            showEndDatePicker = false
+                        },
+                        text = "선택",
+                        backgroundColor = NatureColors.leafGreen
+                    )
+                },
+                dismissButton = {
+                    NatureComponents.NatureOutlinedButton(
+                        onClick = { showEndDatePicker = false },
+                        text = "취소"
+                    )
+                },
+                colors = DatePickerDefaults.colors(
+                    containerColor = NatureColors.whiteTransparent
+                )
+            ) {
+                DatePicker(
+                    state = endDatePickerState,
+                    colors = DatePickerDefaults.colors(
+                        selectedDayContainerColor = NatureColors.leafGreen,
+                        todayContentColor = NatureColors.forestGreen,
+                        todayDateBorderColor = NatureColors.forestGreen
+                    )
+                )
             }
         }
     }

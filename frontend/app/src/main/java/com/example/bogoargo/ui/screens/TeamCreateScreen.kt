@@ -17,6 +17,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.ui.viewmodels.TeamViewModel
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,101 +53,130 @@ fun TeamCreateScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("팀 생성", fontWeight = FontWeight.Bold) },
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
-                    }
-                }
+            NatureComponents.NatureTopAppBar(
+                title = "팀 만들기",
+                emoji = "🏆",
+                onNavigationClick = { navController.popBackStack() }
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-
-            OutlinedTextField(
-                value = teamName,
-                onValueChange = { teamName = it },
-                label = { Text("팀 이름") },
-                modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.People, contentDescription = null) },
-                singleLine = true
-            )
-
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("팀 설명 (선택사항)") },
-                modifier = Modifier.fillMaxWidth(),
-                maxLines = 3
-            )
-
-            OutlinedTextField(
-                value = maxMembers,
-                onValueChange = { newValue ->
-                    if (newValue.all { it.isDigit() } && newValue.length <= 2) {
-                        maxMembers = newValue
-                    }
-                },
-                label = { Text("최대 인원 (1-99명)") },
-                modifier = Modifier.fillMaxWidth(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-                supportingText = {
-                    Text("팀의 최대 인원을 설정해주세요")
-                }
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = {
-                    errorMessage = ""
-                    
-                    when {
-                        teamName.isBlank() -> errorMessage = "팀 이름을 입력해주세요."
-                        maxMembers.isBlank() -> errorMessage = "최대 인원을 입력해주세요."
-                        maxMembers.toIntOrNull()?.let { it < 1 || it > 99 } == true -> 
-                            errorMessage = "최대 인원은 1명 이상 99명 이하로 입력해주세요."
-                        else -> {
-                            viewModel.createTeam(
-                                classId = classId,
-                                name = teamName.trim(),
-                                description = description.trim(),
-                                maxMembers = maxMembers.toIntOrNull() ?: 1,
-                                color = "#6200EE"
-                            )
-                        }
-                    }
-                },
+        NatureComponents.NatureBackground {
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(56.dp),
-                enabled = !isLoading
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                if (isLoading) {
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                NatureComponents.NatureCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = MaterialTheme.colorScheme.onPrimary
+                        NatureComponents.SectionHeader(
+                            text = "새로운 팀 만들기",
+                            emoji = "🌟"
                         )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("생성 중...", fontWeight = FontWeight.Bold)
+                        
+                        OutlinedTextField(
+                            value = teamName,
+                            onValueChange = { teamName = it },
+                            label = { Text("🏆 팀 이름", style = NatureTypography.bodyMedium) },
+                            modifier = Modifier.fillMaxWidth(),
+                            leadingIcon = { Icon(Icons.Default.People, contentDescription = null, tint = NatureColors.forestGreen) },
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = NatureColors.forestGreen,
+                                focusedLabelColor = NatureColors.forestGreen
+                            ),
+                            shape = NatureShapes.medium
+                        )
+
+                        OutlinedTextField(
+                            value = description,
+                            onValueChange = { description = it },
+                            label = { Text("📝 팀 설명 (선택사항)", style = NatureTypography.bodyMedium) },
+                            modifier = Modifier.fillMaxWidth(),
+                            maxLines = 3,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = NatureColors.forestGreen,
+                                focusedLabelColor = NatureColors.forestGreen
+                            ),
+                            shape = NatureShapes.medium
+                        )
+
+                        OutlinedTextField(
+                            value = maxMembers,
+                            onValueChange = { newValue ->
+                                if (newValue.all { it.isDigit() } && newValue.length <= 2) {
+                                    maxMembers = newValue
+                                }
+                            },
+                            label = { Text("👥 최대 인원 (1-99명)", style = NatureTypography.bodyMedium) },
+                            modifier = Modifier.fillMaxWidth(),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            singleLine = true,
+                            supportingText = {
+                                Text("🌱 팀의 최대 인원을 설정해주세요", style = NatureTypography.bodySmall)
+                            },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = NatureColors.forestGreen,
+                                focusedLabelColor = NatureColors.forestGreen
+                            ),
+                            shape = NatureShapes.medium
+                        )
+
+                        if (errorMessage.isNotEmpty()) {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = NatureColors.softOrange.copy(alpha = 0.1f)
+                                ),
+                                shape = NatureShapes.medium
+                            ) {
+                                Text(
+                                    text = "⚠️ $errorMessage",
+                                    style = NatureTypography.bodyMedium.copy(color = NatureColors.earthBrown),
+                                    modifier = Modifier.padding(12.dp)
+                                )
+                            }
+                        }
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        NatureComponents.NatureButton(
+                            onClick = {
+                                errorMessage = ""
+                                
+                                when {
+                                    teamName.isBlank() -> errorMessage = "팀 이름을 입력해주세요."
+                                    maxMembers.isBlank() -> errorMessage = "최대 인원을 입력해주세요."
+                                    maxMembers.toIntOrNull()?.let { it < 1 || it > 99 } == true -> 
+                                        errorMessage = "최대 인원은 1명 이상 99명 이하로 입력해주세요."
+                                    else -> {
+                                        viewModel.createTeam(
+                                            classId = classId,
+                                            name = teamName.trim(),
+                                            description = description.trim(),
+                                            maxMembers = maxMembers.toIntOrNull() ?: 1,
+                                            color = "#66BB6A"
+                                        )
+                                    }
+                                }
+                            },
+                            text = if (isLoading) "🌱 생성 중..." else "🏆 팀 만들기",
+                            modifier = Modifier.fillMaxWidth(),
+                            backgroundColor = NatureColors.leafGreen,
+                            enabled = !isLoading
+                        )
                     }
-                } else {
-                    Text("팀 생성", fontWeight = FontWeight.Bold)
                 }
             }
         }
+
     }
 }
 
