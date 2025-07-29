@@ -9,18 +9,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -33,7 +29,7 @@ import com.example.bogoargo.ui.viewmodels.ClassViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ClassInfoScreen(
+fun ClassDetailScreen(
     navController: NavController,
     classId: String = "class_1",
     schoolName: String = "싸피 초등학교",
@@ -80,8 +76,7 @@ fun ClassInfoScreen(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { 
-                    // 새 프로그램 추가 화면으로 이동
-                    navController.navigate("addProgram")
+                    navController.navigate("programCreate/$classId")
                 },
                 containerColor = MaterialTheme.colorScheme.primary
             ) {
@@ -240,7 +235,7 @@ fun ClassInfoScreen(
                             containerColor = MaterialTheme.colorScheme.secondaryContainer
                         ),
                         onClick = {
-                            navController.navigate("classTeamManagement/$classId")
+                            navController.navigate("teamManagement/$classId")
                         }
                     ) {
                         Column(
@@ -465,8 +460,8 @@ fun StatusBadge(status: ProgramStatus) {
 
 @Preview(showBackground = true)
 @Composable
-fun ClassInfoScreenPreview() {
+fun ClassDetailScreenPreview() {
     MaterialTheme {
-        ClassInfoScreen(navController = rememberNavController())
+        ClassDetailScreen(navController = rememberNavController())
     }
 }

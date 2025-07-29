@@ -16,11 +16,11 @@ import androidx.navigation.compose.rememberNavController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddProgramScreen(navController: NavController) {
+fun ProgramManagementScreen(navController: NavController) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("프로그램 추가", fontWeight = FontWeight.Bold) },
+                title = { Text("체험 학습 관리", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
@@ -38,21 +38,15 @@ fun AddProgramScreen(navController: NavController) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "프로그램 추가",
+                text = "프로그램 관리 페이지",
                 fontSize = 24.sp,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                text = "새로운 체험 프로그램을 추가하는 기능입니다.",
+                text = "이 기능은 현재 개발 중입니다.",
                 fontSize = 16.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "현재 개발 중입니다.",
-                fontSize = 14.sp,
-                color = MaterialTheme.colorScheme.error
             )
         }
     }
@@ -60,8 +54,8 @@ fun AddProgramScreen(navController: NavController) {
 
 @Preview(showBackground = true)
 @Composable
-fun AddProgramScreenPreview() {
+fun ProgramManagementScreenPreview() {
     MaterialTheme {
-        AddProgramScreen(navController = rememberNavController())
+        ProgramManagementScreen(navController = rememberNavController())
     }
 }

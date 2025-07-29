@@ -16,7 +16,8 @@ class ClassRepository {
             region = "서울",
             invitationCode = "ABC12DEF",
             maxStudents = 30,
-            currentStudents = 25
+            currentStudents = 25,
+            schoolName = "싸피 초등학교",
         ),
         Class(
             id = "class_2",
@@ -27,7 +28,8 @@ class ClassRepository {
             region = "서울",
             invitationCode = "XYZ98GHI",
             maxStudents = 28,
-            currentStudents = 28
+            currentStudents = 28,
+            schoolName = "싸피 초등학교",
         )
     )
     
@@ -124,7 +126,7 @@ class ClassRepository {
     suspend fun createClass(classData: Class): Class {
         delay(800)
         val newClass = classData.copy(
-            id = "class_${System.currentTimeMillis()}"
+            id = "class_${System.currentTimeMillis()}",
         )
         mockClasses.add(newClass)
         return newClass

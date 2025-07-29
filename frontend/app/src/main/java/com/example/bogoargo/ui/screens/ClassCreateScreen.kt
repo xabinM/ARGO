@@ -36,6 +36,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +48,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.bogoargo.ui.viewmodels.ClassViewModel
 import kotlin.random.Random
 
 
@@ -67,7 +71,10 @@ object InvitationCodeGenerator {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateClassScreen(navController: NavController) {
+fun ClassCreateScreen(
+    navController: NavController,
+    viewModel: ClassViewModel = viewModel()
+) {
     var schoolName by remember { mutableStateOf("") }
     var className by remember { mutableStateOf("") }
     var maxStudents by remember { mutableStateOf("") }
@@ -76,6 +83,22 @@ fun CreateClassScreen(navController: NavController) {
     var expanded by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    
+    val uiState by viewModel.uiState.collectAsState()
+    
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            is ClassViewModel.UiState.Success -> {
+                navController.popBackStack()
+            }
+            is ClassViewModel.UiState.Loading -> {
+                isLoading = true
+            }
+            else -> {
+                isLoading = false
+            }
+        }
+    }
     
 
     val regions = remember {
@@ -241,25 +264,13 @@ fun CreateClassScreen(navController: NavController) {
                         return@Button
                     }
 
-                    isLoading = true
-                    
-                    try {
-                        val invitationCode = InvitationCodeGenerator.generateSimpleCode()
-                        
-                        navController.navigate(
-                            "currentClassInfo/" +
-                                    "${schoolName.trim()}/" +
-                                    "${className.trim()}/" +
-                                    "$maxStudents/" +
-                                    "${description.trim()}/" +
-                                    "$region/" +
-                                    "$invitationCode"
-                        )
-                    } catch (e: Exception) {
-                        errorMessage = "반 생성 중 오류가 발생했습니다. 다시 시도해주세요."
-                    } finally {
-                        isLoading = false
-                    }
+                    viewModel.createClass(
+                        schoolName = schoolName.trim(),
+                        className = className.trim(),
+                        maxStudents = maxStudentsInt,
+                        description = description.trim(),
+                        region = region
+                    )
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -289,7 +300,7 @@ fun CreateClassScreen(navController: NavController) {
 
 @Preview(showBackground = true, widthDp = 360, heightDp = 720)
 @Composable
-fun PreviewCreateClassScreen() {
+fun PreviewClassCreateScreen() {
     val navController = rememberNavController()
-    CreateClassScreen(navController = navController)
+    ClassCreateScreen(navController = navController)
 }

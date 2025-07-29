@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,9 +32,9 @@ fun TeacherMainScreen(
     navController: NavController,
     viewModel: TeacherMainViewModel = viewModel()
 ) {
-    val user by viewModel.user
-    val isLoading by viewModel.isLoading
-    val uiState by viewModel.uiState
+    val user by viewModel.user.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
     Scaffold(
         topBar = {
             TopAppBar(
@@ -109,8 +111,7 @@ fun TeacherMainScreen(
 
                 Button(
                     onClick = {
-                        // "체험 학습 관리" 페이지로 이동하는 로직
-                        navController.navigate("experienceLearningManagement")
+                        navController.navigate("programManagement")
                     },
                     modifier = Modifier
                         .weight(1f) // 남은 공간을 균등하게 차지
@@ -118,7 +119,7 @@ fun TeacherMainScreen(
                         .padding(horizontal = 8.dp), // 버튼 사이 여백
                     colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF03DAC5)) // 예시 색상
                 ) {
-                    Text(text = "체험 학습 관리", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text(text = "프로그램 관리", fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 }
             }
 
@@ -149,7 +150,7 @@ fun TeacherMainScreen(
                     }
                     is TeacherMainViewModel.UiState.Error -> {
                         Text(
-                            text = "오류: ${uiState.message}",
+                            text = "오류",
                             fontSize = 16.sp,
                             color = Color.Red
                         )
@@ -166,7 +167,7 @@ fun TeacherMainScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun PreviewMainTeacherScreen() {
-    val navController = rememberNavController() // ✨ 여기에 rememberNavController()를 사용하여 인자를 전달합니다.
+fun PreviewTeacherMainScreen() {
+    val navController = rememberNavController()
     TeacherMainScreen(navController = navController)
 }

@@ -1,13 +1,14 @@
 package com.example.bogoargo.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.State
 import androidx.lifecycle.viewModelScope
 import com.example.bogoargo.data.model.User
 import com.example.bogoargo.data.model.UserRole
 import com.example.bogoargo.data.repository.AuthRepository
 import com.example.bogoargo.data.repository.UserRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class TeacherMainViewModel(
@@ -16,16 +17,16 @@ class TeacherMainViewModel(
 ) : ViewModel() {
 
     // 유저 정보를 저장할 상태 변수
-    private val _user = mutableStateOf<User?>(null)
-    val user: State<User?> = _user
+    private val _user = MutableStateFlow<User?>(null)
+    val user: StateFlow<User?> = _user.asStateFlow()
 
     // 로딩 상태를 나타내는 변수
-    private val _isLoading = mutableStateOf(false)
-    val isLoading: State<Boolean> = _isLoading
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
     // UI에 표시할 상태 메시지
-    private val _uiState = mutableStateOf<UiState>(UiState.Loading)
-    val uiState: State<UiState> = _uiState
+    private val _uiState = MutableStateFlow<UiState>(UiState.Loading)
+    val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
     // UI 상태를 표현하는 sealed class
     sealed class UiState {
@@ -40,8 +41,6 @@ class TeacherMainViewModel(
         // ViewModel이 생성될 때 유저 정보를 가져오는 함수 호출
         fetchTeacherInfo()
     }
-
-}
 
     private fun fetchTeacherInfo() {
         viewModelScope.launch {
@@ -61,7 +60,7 @@ class TeacherMainViewModel(
                         phoneNumber = "010-1234-5678",
                         bio = "SSAFY 교육생들을 지도하는 교사입니다."
                     )
-                    
+
                     kotlinx.coroutines.delay(1000) // 로딩 시뮬레이션
                     _user.value = mockTeacherUser
                     _uiState.value = UiState.Authenticated
@@ -69,15 +68,23 @@ class TeacherMainViewModel(
                 }
 
                 // 1. 저장된 토큰 가져오기 (로그인 상태 확인)
-                val token = tokenManager.getToken()
+                val token = tokenManager.getAccessToken()
                 if (token.isNullOrBlank()) {
                     // 토큰이 없으므로 로그인 페이지로 이동해야 함
                     _uiState.value = UiState.Unauthenticated
                     return@launch
                 }
 
-                // 2. 서버에서 유저 정보 가져오기
-                val userInfo = userRepository.getMyInfo(token)
+                // 2. 서버에서 유저 정보 가져오기 (임시로 더미 데이터 사용)
+                val userInfo = User(
+                    id = "teacher_1",
+                    userName = "김싸피",
+                    email = "teacher@ssafy.com",
+                    role = UserRole.TEACHER,
+                    studentId = "T2025001",
+                    phoneNumber = "010-1234-5678",
+                    bio = "SSAFY 교육생들을 지도하는 교사입니다."
+                )
 
                 // 3. 역할(role) 확인
                 if (userInfo.role != UserRole.TEACHER) {
@@ -87,6 +94,7 @@ class TeacherMainViewModel(
                 }
 
                 // 4. 모든 검증 성공, 유저 정보 업데이트
+                kotlinx.coroutines.delay(1000) // 로딩 시뮬레이션
                 _user.value = userInfo
                 _uiState.value = UiState.Authenticated
 
@@ -98,4 +106,5 @@ class TeacherMainViewModel(
             }
         }
     }
+}
 

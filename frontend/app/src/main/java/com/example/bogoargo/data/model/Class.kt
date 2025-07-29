@@ -9,5 +9,6 @@ data class Class(
     val region: String = "",
     val invitationCode: String = "",
     val maxStudents: Int = 0,
-    val currentStudents: Int = 0
+    val currentStudents: Int = 0,
+    val schoolName: String
 )

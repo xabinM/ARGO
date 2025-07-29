@@ -18,6 +18,16 @@ class ClassViewModel(
     private val repository: ClassRepository = ClassRepository()
 ) : ViewModel() {
 
+    sealed class UiState {
+        object Idle : UiState()
+        object Loading : UiState()
+        object Success : UiState()
+        data class Error(val message: String) : UiState()
+    }
+
+    private val _uiState = MutableStateFlow<UiState>(UiState.Idle)
+    val uiState: StateFlow<UiState> = _uiState.asStateFlow()
+
     private val _classes = MutableStateFlow<List<Class>>(emptyList())
     val classes: StateFlow<List<Class>> = _classes.asStateFlow()
 
@@ -78,19 +88,33 @@ class ClassViewModel(
         }
     }
 
-    fun createClass(classData: Class) {
+    fun createClass(
+        schoolName: String,
+        className: String,
+        maxStudents: Int,
+        description: String,
+        region: String
+    ) {
         viewModelScope.launch {
-            _isLoading.value = true
-            _error.value = null
+            _uiState.value = UiState.Loading
 
             try {
+                val classData = Class(
+                    id = "",
+                    year = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR),
+                    schoolName = schoolName,
+                    className = className,
+                    description = description,
+                    region = region,
+                    invitationCode = "",
+                    maxStudents = maxStudents,
+                    currentStudents = 0
+                )
                 val createdClass = repository.createClass(classData)
-                // 새로 생성된 반을 목록에 추가
                 _classes.value = _classes.value + createdClass
+                _uiState.value = UiState.Success
             } catch (e: Exception) {
-                _error.value = "반 생성에 실패했습니다: ${e.message}"
-            } finally {
-                _isLoading.value = false
+                _uiState.value = UiState.Error("반 생성에 실패했습니다: ${e.message}")
             }
         }
     }

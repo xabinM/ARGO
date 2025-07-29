@@ -7,13 +7,20 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material3.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.example.bogoargo.ui.screens.ARScreen
-import com.example.bogoargo.ui.screens.ClassInfoScreen
+import com.example.bogoargo.ui.screens.ClassDetailScreen
 import com.example.bogoargo.ui.screens.ClassManagementScreen
-import com.example.bogoargo.ui.screens.ClassMemberManagementScreen
-import com.example.bogoargo.ui.screens.ClassTeamManagementScreen
-import com.example.bogoargo.ui.screens.CreateClassScreen
-import com.example.bogoargo.ui.screens.CreateTeamScreen
+import com.example.bogoargo.ui.screens.ClassCreateScreen
 import com.example.bogoargo.ui.screens.GameScreen
 import com.example.bogoargo.ui.screens.HomeScreen
 import com.example.bogoargo.ui.screens.LoginScreen
@@ -21,10 +28,12 @@ import com.example.bogoargo.ui.screens.ProfileScreen
 import com.example.bogoargo.ui.screens.SettingsScreen
 import com.example.bogoargo.ui.screens.SplashScreen
 import com.example.bogoargo.ui.screens.TeacherMainScreen
-import com.example.bogoargo.ui.screens.ExperienceLearningManagementScreen
-import com.example.bogoargo.ui.screens.AddProgramScreen
+import com.example.bogoargo.ui.screens.ProgramManagementScreen
+import com.example.bogoargo.ui.screens.ProgramCreateScreen
+import com.example.bogoargo.ui.screens.TeamCreateScreen
+import com.example.bogoargo.ui.screens.TeamManagementScreen
 import com.example.bogoargo.ui.screens.ProgramDetailScreen
-import com.example.bogoargo.ui.screens.CurrentClassInfoScreen
+import com.example.bogoargo.ui.screens.ClassMemberManagementScreen
 
 sealed class Screen(val route: String) {
     data object Splash : Screen("splash")
@@ -34,32 +43,30 @@ sealed class Screen(val route: String) {
     data object Profile : Screen("profile")
     data object Settings : Screen("settings")
     data object TeacherMain : Screen("teacherMain")
-    data object CreateClass : Screen("createClass")
+    data object ClassCreate : Screen("classCreate")
     data object ClassManagement : Screen("classManagement")
-    data object ClassInfo : Screen("classInfo/{classId}/{schoolName}/{className}/{description}/{region}/{invitationCode}") {
+    data object ClassDetail : Screen("classDetail/{classId}/{schoolName}/{className}/{description}/{region}/{invitationCode}") {
         fun createRoute(classId: String, schoolName: String, className: String, description: String, region: String, invitationCode: String) = 
-            "classInfo/$classId/$schoolName/$className/$description/$region/$invitationCode"
+            "classDetail/$classId/$schoolName/$className/$description/$region/$invitationCode"
     }
-    data object ClassMemberManagement : Screen("classMemberManagement/{classId}") {
-        fun createRoute(classId: String) = "classMemberManagement/$classId"
-    }
-    data object ClassTeamManagement : Screen("classTeamManagement/{classId}") {
-        fun createRoute(classId: String) = "classTeamManagement/$classId"
-    }
-    data object CreateTeam : Screen("createTeam/{classId}") {
-        fun createRoute(classId: String) = "createTeam/$classId"
+    data object TeamCreate : Screen("teamCreate/{classId}") {
+        fun createRoute(classId: String) = "teamCreate/$classId"
     }
     data object AR : Screen("ar/{spotId}") {
         fun createRoute(spotId: Long) = "ar/$spotId"  
     }
-    data object ExperienceLearningManagement : Screen("experienceLearningManagement")
-    data object AddProgram : Screen("addProgram")
+    data object ProgramManagement : Screen("programManagement")
+    data object ProgramCreate : Screen("programCreate/{classId}") {
+        fun createRoute(classId: String) = "programCreate/$classId"
+    }
     data object ProgramDetail : Screen("programDetail/{programId}") {
         fun createRoute(programId: String) = "programDetail/$programId"
     }
-    data object CurrentClassInfo : Screen("currentClassInfo/{schoolName}/{className}/{maxStudents}/{description}/{region}/{invitationCode}") {
-        fun createRoute(schoolName: String, className: String, maxStudents: String, description: String, region: String, invitationCode: String) = 
-            "currentClassInfo/$schoolName/$className/$maxStudents/$description/$region/$invitationCode"
+    data object TeamManagement : Screen("teamManagement/{classId}") {
+        fun createRoute(classId: String) = "teamManagement/$classId"
+    }
+    data object ClassMemberManagement : Screen("classMemberManagement/{classId}") {
+        fun createRoute(classId: String) = "classMemberManagement/$classId"
     }
 }
 
@@ -92,14 +99,14 @@ fun AppNavigation(
         composable(Screen.TeacherMain.route) {
             TeacherMainScreen(navController = navController)
         }
-        composable(Screen.CreateClass.route) {
-            CreateClassScreen(navController = navController)
+        composable(Screen.ClassCreate.route) {
+            ClassCreateScreen(navController = navController)
         }
         composable(Screen.ClassManagement.route) {
             ClassManagementScreen(navController = navController)
         }
         composable(
-            route = Screen.ClassInfo.route,
+            route = Screen.ClassDetail.route,
             arguments = listOf(
                 navArgument("classId") { type = NavType.StringType },
                 navArgument("schoolName") { type = NavType.StringType },
@@ -116,7 +123,7 @@ fun AppNavigation(
             val region = backStackEntry.arguments?.getString("region") ?: ""
             val invitationCode = backStackEntry.arguments?.getString("invitationCode") ?: ""
             
-            ClassInfoScreen(
+            ClassDetailScreen(
                 navController = navController,
                 classId = classId,
                 schoolName = schoolName,
@@ -127,31 +134,11 @@ fun AppNavigation(
             )
         }
         composable(
-            route = Screen.ClassMemberManagement.route,
+            route = Screen.TeamCreate.route,
             arguments = listOf(navArgument("classId") { type = NavType.StringType })
         ) { backStackEntry ->
             val classId = backStackEntry.arguments?.getString("classId") ?: ""
-            ClassMemberManagementScreen(
-                navController = navController,
-                classId = classId
-            )
-        }
-        composable(
-            route = Screen.ClassTeamManagement.route,
-            arguments = listOf(navArgument("classId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val classId = backStackEntry.arguments?.getString("classId") ?: ""
-            ClassTeamManagementScreen(
-                navController = navController,
-                classId = classId
-            )
-        }
-        composable(
-            route = Screen.CreateTeam.route,
-            arguments = listOf(navArgument("classId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val classId = backStackEntry.arguments?.getString("classId") ?: ""
-            CreateTeamScreen(
+            TeamCreateScreen(
                 navController = navController,
                 classId = classId
             )
@@ -168,11 +155,40 @@ fun AppNavigation(
                 }
             )
         }
-        composable(Screen.ExperienceLearningManagement.route) {
-            ExperienceLearningManagementScreen(navController = navController)
+        composable(Screen.ProgramManagement.route) {
+            ProgramManagementScreen(navController = navController)
         }
-        composable(Screen.AddProgram.route) {
-            AddProgramScreen(navController = navController)
+        composable(
+            route = Screen.ProgramCreate.route,
+            arguments = listOf(navArgument("classId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val classId = backStackEntry.arguments?.getString("classId") ?: ""
+            ProgramCreateScreen(
+                navController = navController,
+                classId = classId
+            )
+        }
+        composable(
+            route = Screen.TeamManagement.route,
+            arguments = listOf(navArgument("classId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val classId = backStackEntry.arguments?.getString("classId") ?: ""
+            TeamManagementScreen(
+                navController = navController,
+                classId = classId
+            )
+        }
+        composable(
+            route = Screen.AR.route,
+            arguments = listOf(navArgument("spotId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val spotId = backStackEntry.arguments?.getLong("spotId") ?: 0L
+            ARScreen(
+                spotId = spotId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
         composable(
             route = Screen.ProgramDetail.route,
@@ -185,32 +201,16 @@ fun AppNavigation(
             )
         }
         composable(
-            route = Screen.CurrentClassInfo.route,
-            arguments = listOf(
-                navArgument("schoolName") { type = NavType.StringType },
-                navArgument("className") { type = NavType.StringType },
-                navArgument("maxStudents") { type = NavType.StringType },
-                navArgument("description") { type = NavType.StringType },
-                navArgument("region") { type = NavType.StringType },
-                navArgument("invitationCode") { type = NavType.StringType }
-            )
+            route = Screen.ClassMemberManagement.route,
+            arguments = listOf(navArgument("classId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val schoolName = backStackEntry.arguments?.getString("schoolName") ?: ""
-            val className = backStackEntry.arguments?.getString("className") ?: ""
-            val maxStudents = backStackEntry.arguments?.getString("maxStudents") ?: ""
-            val description = backStackEntry.arguments?.getString("description") ?: ""
-            val region = backStackEntry.arguments?.getString("region") ?: ""
-            val invitationCode = backStackEntry.arguments?.getString("invitationCode") ?: ""
-            
-            CurrentClassInfoScreen(
+            val classId = backStackEntry.arguments?.getString("classId") ?: ""
+            ClassMemberManagementScreen(
                 navController = navController,
-                schoolName = schoolName,
-                className = className,
-                maxStudents = maxStudents,
-                description = description,
-                region = region,
-                invitationCode = invitationCode
+                classId = classId
             )
         }
     }
 }
+
+
