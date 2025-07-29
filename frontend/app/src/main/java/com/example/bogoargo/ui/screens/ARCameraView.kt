@@ -18,9 +18,10 @@ import javax.microedition.khronos.opengles.GL10
  * - AR 세션 생명주기 관리
  */
 class ARCameraView(
-
     context: Context,
     private val session: Session,
+    private val targetLatitude: Double,
+    private val targetLongitude: Double,
     private val onMissionComplete: (Boolean) -> Unit
 ) : GLSurfaceView(context) {
     
@@ -30,12 +31,23 @@ class ARCameraView(
     
     // 렌더링 상태
     private var isSessionActive = false
-    private var hasFoundPlane = false
     private var missionCompleted = false
-    private val anchors = mutableListOf<Anchor>()
+    
+    // Geospatial 관련 상태
+    private var earth: Earth? = null
+    private var geospatialAnchor: Anchor? = null
+    private var isEarthTracking = false
+    private var currentGeospatialPose: GeospatialPose? = null
+    private var earthState: Earth.EarthState? = null
+    private var lastTrackingFailureReason: String? = null
+    
+    // 상태 콜백
+    var onEarthStateChanged: ((Boolean, GeospatialPose?) -> Unit)? = null
+    var onGeospatialError: ((String) -> Unit)? = null
     
     // 렌더러
     private val backgroundRenderer = BackgroundRenderer()
+    private val objectRenderer = ObjectRenderer()
     
     init {
         setupOpenGL()
@@ -53,52 +65,22 @@ class ARCameraView(
     }
     
     /**
-     * 터치 이벤트 처리 - 평면에 3D 객체 배치
+     * 터치 이벤트 처리 - Geospatial 앵커 터치 감지
      */
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.action == MotionEvent.ACTION_DOWN && 
-            hasFoundPlane && 
-            !missionCompleted &&
-            isSessionActive) {
-            
-            queueEvent {
-                handleTouchEvent(event.x, event.y)
+        if (event.action == MotionEvent.ACTION_DOWN && isSessionActive && !missionCompleted) {
+            // Geospatial 앵커가 터치되었는지 확인
+            geospatialAnchor?.let { anchor ->
+                if (anchor.trackingState == TrackingState.TRACKING) {
+                    missionCompleted = true
+                    onMissionComplete(true)
+                    return true
+                }
             }
-            return true
         }
         return super.onTouchEvent(event)
     }
     
-    /**
-     * 터치 지점에 AR 객체 배치
-     */
-    private fun handleTouchEvent(x: Float, y: Float) {
-        try {
-            val frame = session.update()
-            val camera = frame.camera
-            
-            if (camera.trackingState != TrackingState.TRACKING) return
-            
-            // 히트 테스트로 평면과의 교차점 찾기
-            val hits = frame.hitTest(x, y)
-            for (hit in hits) {
-                val trackable = hit.trackable
-                if (trackable is Plane && trackable.isPoseInPolygon(hit.hitPose)) {
-                    val anchor = hit.createAnchor()
-                    anchors.add(anchor)
-                    
-                    if (!missionCompleted) {
-                        missionCompleted = true
-                        onMissionComplete(true)
-                        Log.d(TAG, "Mission completed!")
-                    }
-                    break
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error handling touch event", e)
-        }
-    }
     
     /**
      * AR 세션 시작
@@ -108,9 +90,18 @@ class ARCameraView(
         try {
             session.resume()
             isSessionActive = true
-            Log.d(TAG, "AR session resumed")
+            
+            // Geospatial 지원 여부 체크
+            try {
+                val isGeospatialSupported = session.isGeospatialModeSupported(Config.GeospatialMode.ENABLED)
+                if (!isGeospatialSupported) {
+                    onGeospatialError?.invoke("이 기기는 Geospatial API를 지원하지 않습니다")
+                }
+            } catch (e: Exception) {
+                // Error checking geospatial support
+            }
+            
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to resume AR session", e)
             isSessionActive = false
         }
     }
@@ -123,9 +114,8 @@ class ARCameraView(
         try {
             session.pause()
             isSessionActive = false
-            Log.d(TAG, "AR session paused")
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to pause AR session", e)
+            // Failed to pause AR session
         }
     }
     
@@ -139,9 +129,9 @@ class ARCameraView(
             
             try {
                 backgroundRenderer.initialize(context)
-                Log.d(TAG, "AR renderer initialized")
+                objectRenderer.createOnGlThread(context)
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to initialize renderer", e)
+                // Failed to initialize renderer
             }
         }
         
@@ -169,15 +159,51 @@ class ARCameraView(
                 // 카메라 추적 상태 확인
                 if (camera.trackingState == TrackingState.PAUSED) return
                 
-                // 평면 감지 상태 업데이트
-                val planes = session.getAllTrackables(Plane::class.java)
-                hasFoundPlane = planes.any { it.trackingState == TrackingState.TRACKING }
+                // Earth 객체 및 Geospatial 추적 상태 확인
+                earth = session.earth
+                checkGeospatialStatus()
                 
-                // 3D 객체 렌더링 (실제 구현에서는 ObjectRenderer 사용)
+                if (earth?.trackingState == TrackingState.TRACKING) {
+                    isEarthTracking = true
+                    
+                    // 현재 Geospatial Pose 가져오기
+                    currentGeospatialPose = earth?.cameraGeospatialPose
+                    currentGeospatialPose?.let { pose ->
+                        onEarthStateChanged?.invoke(true, pose)
+                    }
+                    
+                    // 미션 위치에 앵커 생성 (한 번만)
+                    if (geospatialAnchor == null && !missionCompleted) {
+                        createGeospatialAnchor()
+                    }
+                } else {
+                    isEarthTracking = false
+                    val trackingState = earth?.trackingState
+                    
+                    when (trackingState) {
+                        TrackingState.PAUSED -> {
+                            lastTrackingFailureReason = "GPS 신호를 찾고 있습니다..."
+                        }
+                        TrackingState.STOPPED -> {
+                            lastTrackingFailureReason = "위치 서비스를 사용할 수 없습니다"
+                        }
+                        else -> {
+                            lastTrackingFailureReason = "Geospatial API 상태 불명"
+                        }
+                    }
+                    
+                    lastTrackingFailureReason?.let { reason ->
+                        onGeospatialError?.invoke(reason)
+                    }
+                    
+                    onEarthStateChanged?.invoke(false, null)
+                }
+                
+                // 3D 객체 렌더링
                 renderAnchors(camera)
                 
             } catch (e: Exception) {
-                Log.e(TAG, "Rendering error", e)
+                // Rendering error
             }
         }
         
@@ -185,13 +211,120 @@ class ARCameraView(
          * 배치된 앵커들 렌더링
          */
         private fun renderAnchors(camera: Camera) {
-            for (anchor in anchors) {
+            // 프로젝션 매트릭스 가져오기
+            val projectionMatrix = FloatArray(16)
+            camera.getProjectionMatrix(projectionMatrix, 0, 0.1f, 100.0f)
+            
+            // 뷰 매트릭스 가져오기
+            val viewMatrix = FloatArray(16)
+            camera.getViewMatrix(viewMatrix, 0)
+            
+            // Depth 테스트 활성화
+            GLES20.glEnable(GLES20.GL_DEPTH_TEST)
+            GLES20.glDepthFunc(GLES20.GL_LEQUAL)
+            
+            // Geospatial 앵커 렌더링
+            geospatialAnchor?.let { anchor ->
                 if (anchor.trackingState == TrackingState.TRACKING) {
-                    // 여기서 실제 3D 모델을 렌더링
-                    // 현재는 로그만 출력
-                    Log.v(TAG, "Rendering anchor at ${anchor.pose}")
+                    objectRenderer.draw(viewMatrix, projectionMatrix, anchor, 0.5f)
                 }
             }
+            
+            // Depth 테스트 비활성화
+            GLES20.glDisable(GLES20.GL_DEPTH_TEST)
         }
     }
+    
+    /**
+     * Geospatial API 상태 체크 및 로깅
+     */
+    private fun checkGeospatialStatus() {
+        earth?.let { earth ->
+            // Earth State 체크
+            earthState = earth.earthState
+            
+            when (earthState) {
+                Earth.EarthState.ENABLED -> {
+                    // Geospatial API is enabled
+                }
+                Earth.EarthState.ERROR_GEOSPATIAL_MODE_DISABLED -> {
+                    onGeospatialError?.invoke("Geospatial 모드가 비활성화되어 있습니다")
+                }
+                else -> {
+                    // 다른 가능한 오류 상태들을 문자열로 체크
+                    when (earthState.toString()) {
+                        "ERROR_NOT_AUTHORIZED" -> {
+                            onGeospatialError?.invoke("⚠️ Google Cloud API 설정 필요\n• ARCore API 활성화\n• 결제 계정 연결\n• API 키 권한 확인")
+                        }
+                        "ERROR_LOCATION_NOT_AUTHORIZED" -> {
+                            onGeospatialError?.invoke("위치 권한이 필요합니다")
+                        }
+                        "ERROR_INTERNET_PERMISSION_NOT_GRANTED" -> {
+                            onGeospatialError?.invoke("인터넷 권한이 필요합니다")
+                        }
+                        "ERROR_VPS_AVAILABILITY_REQUEST_FAILED" -> {
+                            onGeospatialError?.invoke("VPS 서비스에 연결할 수 없습니다")
+                        }
+                        "ERROR_RESOURCE_EXHAUSTED" -> {
+                            onGeospatialError?.invoke("서비스 할당량을 초과했습니다")
+                        }
+                        else -> {
+                            if (earthState != Earth.EarthState.ENABLED) {
+                                onGeospatialError?.invoke("Geospatial API 오류: $earthState")
+                            }
+                        }
+                    }
+                }
+            }
+        } ?: run {
+            onGeospatialError?.invoke("Geospatial API를 사용할 수 없습니다")
+        }
+    }
+    
+    /**
+     * 미션 위치에 Geospatial 앵커 생성
+     */
+    private fun createGeospatialAnchor() {
+        earth?.let { earth ->
+            try {
+                // 지형 기반 앵커 생성 (altitude는 지형 높이로 자동 결정)
+                val altitudeAboveTerrain = 0.5 // 지면에서 1미터 위
+                val qx = 0f
+                val qy = 0f
+                val qz = 0f
+                val qw = 1f // 회전 없음
+                
+                earth.resolveAnchorOnTerrainAsync(
+                    targetLatitude,
+                    targetLongitude,
+                    altitudeAboveTerrain,
+                    qx, qy, qz, qw,
+                    { anchor, state ->
+                        when (state) {
+                            Anchor.TerrainAnchorState.SUCCESS -> {
+                                geospatialAnchor = anchor
+                            }
+                            Anchor.TerrainAnchorState.ERROR_NOT_AUTHORIZED -> {
+                                onGeospatialError?.invoke("API 인증 오류 - API 키를 확인해주세요")
+                            }
+                            Anchor.TerrainAnchorState.ERROR_UNSUPPORTED_LOCATION -> {
+                                onGeospatialError?.invoke("이 지역에서는 정밀 위치 서비스를 사용할 수 없습니다")
+                            }
+                            Anchor.TerrainAnchorState.ERROR_INTERNAL -> {
+                                onGeospatialError?.invoke("내부 오류가 발생했습니다")
+                            }
+                            else -> {
+                                onGeospatialError?.invoke("앵커 생성 실패: $state")
+                            }
+                        }
+                    }
+                )
+            } catch (e: Exception) {
+                onGeospatialError?.invoke("앵커 생성 오류: ${e.message}")
+            }
+        } ?: run {
+            onGeospatialError?.invoke("Earth 객체를 사용할 수 없습니다")
+        }
+    }
+    
 }

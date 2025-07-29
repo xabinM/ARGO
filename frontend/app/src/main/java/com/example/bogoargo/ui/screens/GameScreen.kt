@@ -247,8 +247,8 @@ fun GameScreen(
                         uiState.nearbyMissionSpots.forEach { spot ->
                             Button(
                                 onClick = { 
-                                    // AR 화면으로 이동
-                                    navController.navigate("ar/${spot.spotId}")
+                                    // AR 화면으로 이동 (위치 정보 포함)
+                                    navController.navigate("ar/${spot.spotId}/${spot.latitude}/${spot.longitude}")
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()

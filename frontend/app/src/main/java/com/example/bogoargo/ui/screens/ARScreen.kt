@@ -33,6 +33,8 @@ import com.google.ar.core.exceptions.*
 @Composable
 fun ARScreen(
     spotId: Long,
+    latitude: Double,
+    longitude: Double,
     onNavigateBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -44,32 +46,69 @@ fun ARScreen(
             ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
         )
     }
+    var hasCoarseLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    var hasFineLocationPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    var hasLocationPermission by remember { mutableStateOf(false) }
+    var needsPreciseLocation by remember { mutableStateOf(false) }
     var arSession by remember { mutableStateOf<Session?>(null) }        // ARCore 세션 객체
     var isArSessionReady by remember { mutableStateOf(false) }          // AR 세션 준비 완료 여부
     var missionCompleted by remember { mutableStateOf(false) }          // 미션 완료 상태
     var errorMessage by remember { mutableStateOf<String?>(null) }      // 에러 메시지
     
-    // 카메라 권한 요청을 위한 런처
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        hasCameraPermission = isGranted
+    // Geospatial 상태
+    var isEarthTracking by remember { mutableStateOf(false) }
+    var currentLatitude by remember { mutableStateOf(0.0) }
+    var currentLongitude by remember { mutableStateOf(0.0) }
+    var currentAltitude by remember { mutableStateOf(0.0) }
+    var currentAccuracy by remember { mutableStateOf(0.0) }
+    var geospatialError by remember { mutableStateOf<String?>(null) }
+    
+    // 권한 요청을 위한 런처
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        hasCameraPermission = permissions[Manifest.permission.CAMERA] ?: false
+        hasCoarseLocationPermission = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        hasFineLocationPermission = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        
+        // 위치 권한 상태 업데이트
+        hasLocationPermission = hasCoarseLocationPermission || hasFineLocationPermission
+        
+        // 정확한 위치가 필요한지 확인
+        if (hasCoarseLocationPermission && !hasFineLocationPermission) {
+            needsPreciseLocation = true
+        }
     }
     
-    // 카메라 권한이 허용되면 ARCore 세션 초기화
-    LaunchedEffect(hasCameraPermission) {
-        if (hasCameraPermission) {
+    // 위치 권한 상태 업데이트
+    LaunchedEffect(hasCoarseLocationPermission, hasFineLocationPermission) {
+        hasLocationPermission = hasCoarseLocationPermission || hasFineLocationPermission
+        if (hasCoarseLocationPermission && !hasFineLocationPermission) {
+            needsPreciseLocation = true
+        }
+    }
+    
+    // 카메라와 위치 권한이 허용되면 ARCore 세션 초기화
+    LaunchedEffect(hasCameraPermission, hasLocationPermission) {
+        if (hasCameraPermission && hasLocationPermission) {
             try {
                 // ARCore 설치 상태 확인 (더 안전한 방식)
                 val installStatus = ArCoreApk.getInstance().requestInstall(context as Activity, false)
                 when (installStatus) {
                     ArCoreApk.InstallStatus.INSTALL_REQUESTED -> {
-                        Log.d("ARScreen", "ARCore installation requested")
-                        errorMessage = "ARCore 설치가 필요합니다. 설치 후 다시 시도해주세요."
+                                errorMessage = "ARCore 설치가 필요합니다. 설치 후 다시 시도해주세요."
                         return@LaunchedEffect
                     }
                     ArCoreApk.InstallStatus.INSTALLED -> {
-                        Log.d("ARScreen", "ARCore is installed, creating session...")
+                        // ARCore is installed
                     }
                 }
                 
@@ -82,6 +121,15 @@ fun ARScreen(
                 
                 // ARCore 세션 생성 및 설정
                 val session = Session(context)
+                
+                // Geospatial 지원 여부 체크
+                val isGeospatialSupported = session.isGeospatialModeSupported(Config.GeospatialMode.ENABLED)
+                
+                if (!isGeospatialSupported) {
+                    errorMessage = "이 기기는 Geospatial API를 지원하지 않습니다."
+                    return@LaunchedEffect
+                }
+                
                 val config = Config(session).apply {
                     // 평면 감지 활성화
                     planeFindingMode = Config.PlaneFindingMode.HORIZONTAL_AND_VERTICAL
@@ -89,16 +137,29 @@ fun ARScreen(
                     updateMode = Config.UpdateMode.LATEST_CAMERA_IMAGE
                     // 광원 추정 활성화
                     lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
+                    // Geospatial API 활성화
+                    geospatialMode = Config.GeospatialMode.ENABLED
                 }
                 session.configure(config)
                 
-                Log.d("ARScreen", "AR Session configured successfully")
+                // VPS 가용성 체크
+                try {
+                    session.checkVpsAvailabilityAsync(latitude, longitude) { availability ->
+                        when (availability.toString()) {
+                            "UNAVAILABLE" -> {
+                                errorMessage = "이 지역에서는 정밀 위치 서비스를 사용할 수 없습니다."
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    // VPS availability check failed
+                }
+                
                 arSession = session
                 isArSessionReady = true
-                errorMessage = null // 성공 시 에러 메시지 클리어
+                errorMessage = null
                 
             } catch (e: Exception) {
-                Log.e("ARScreen", "Failed to create AR session", e)
                 when (e) {
                     is UnavailableArcoreNotInstalledException -> {
                         errorMessage = "ARCore가 설치되지 않았습니다."
@@ -147,8 +208,8 @@ fun ARScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
-            if (!hasCameraPermission) {
-                // 카메라 권한이 없는 경우 - 권한 요청 UI 표시
+            if (!hasCameraPermission || !hasLocationPermission) {
+                // 권한이 없는 경우 - 권한 요청 UI 표시
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -157,27 +218,59 @@ fun ARScreen(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "카메라 권한이 필요합니다",
+                        text = if (!hasCameraPermission && !hasLocationPermission) "권한이 필요합니다" 
+                               else if (!hasCameraPermission) "카메라 권한이 필요합니다"
+                               else "위치 권한이 필요합니다",
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    Text(
-                        text = "AR 미션을 시작하려면 카메라 권한을 허용해주세요.",
-                        fontSize = 16.sp
-                    )
+                    if (!hasCameraPermission) {
+                        Text(
+                            text = "• 카메라: AR 환경을 보기 위해 필요합니다.",
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    
+                    if (!hasLocationPermission) {
+                        Text(
+                            text = "• 위치: 미션 지점에 AR 객체를 배치하기 위해 필요합니다.",
+                            fontSize = 14.sp,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        Text(
+                            text = "• 정확한 위치 사용 시 더 정확한 AR 경험을 제공합니다.",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
                     
                     Spacer(modifier = Modifier.height(24.dp))
                     
                     Button(
                         onClick = {
-                            // 카메라 권한 요청 실행
-                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            // 권한 요청 실행 - Android 가이드라인에 따라 둘 다 요청
+                            val permissionsToRequest = mutableListOf<String>()
+                            
+                            if (!hasCameraPermission) {
+                                permissionsToRequest.add(Manifest.permission.CAMERA)
+                            }
+                            
+                            if (!hasLocationPermission) {
+                                permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+                                permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
+                            }
+                            
+                            if (permissionsToRequest.isNotEmpty()) {
+                                permissionLauncher.launch(permissionsToRequest.toTypedArray())
+                            }
                         }
                     ) {
-                        Text("카메라 권한 허용")
+                        Text("권한 허용")
                     }
                 }
             } else if (!isArSessionReady || errorMessage != null) {
@@ -234,8 +327,30 @@ fun ARScreen(
                 AndroidView(
                     factory = { context ->
                         // 커스텀 ARCameraView 생성
-                        val arCameraView = ARCameraView(context, arSession!!) { completed ->
-                            missionCompleted = completed  // 미션 완료 상태 업데이트
+                        val arCameraView = ARCameraView(
+                            context = context,
+                            session = arSession!!,
+                            targetLatitude = latitude,
+                            targetLongitude = longitude,
+                            onMissionComplete = { completed ->
+                                missionCompleted = completed  // 미션 완료 상태 업데이트
+                            }
+                        ).apply {
+                            // Earth 상태 변경 콜백 설정
+                            onEarthStateChanged = { tracking, pose ->
+                                isEarthTracking = tracking
+                                pose?.let {
+                                    currentLatitude = it.latitude
+                                    currentLongitude = it.longitude
+                                    currentAltitude = it.altitude
+                                    currentAccuracy = it.horizontalAccuracy
+                                }
+                            }
+                            
+                            // Geospatial 에러 콜백 설정
+                            onGeospatialError = { error ->
+                                geospatialError = error
+                            }
                         }
                         // ARCameraView를 즉시 시작
                         arCameraView.onResume()
@@ -267,6 +382,20 @@ fun ARScreen(
                                 fontWeight = FontWeight.Medium
                             )
                             
+                            Text(
+                                text = "목표 위치: ${String.format("%.6f, %.6f", latitude, longitude)}",
+                                fontSize = 12.sp
+                            )
+                            
+                            if (geospatialError != null) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "⚠️ $geospatialError",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                            
                             Spacer(modifier = Modifier.height(8.dp))
                             
                             // 미션 상태에 따른 메시지 표시
@@ -291,7 +420,57 @@ fun ARScreen(
                     }
                 }
                 
-                // 화면 상단 AR 사용법 안내 텍스트
+                // 정확한 위치 업그레이드 안내 (대략적 위치만 있을 때)
+                if (needsPreciseLocation && hasCoarseLocationPermission && !hasFineLocationPermission) {
+                    Card(
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(16.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.9f)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "🎯 더 정확한 AR 경험",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Bold
+                            )
+                            
+                            Spacer(modifier = Modifier.height(8.dp))
+                            
+                            Text(
+                                text = "정확한 위치 권한을 허용하면 더 정밀한 AR 객체 배치가 가능합니다.",
+                                fontSize = 14.sp,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                            
+                            Spacer(modifier = Modifier.height(12.dp))
+                            
+                            Button(
+                                onClick = {
+                                    // 정확한 위치 권한만 요청
+                                    permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION))
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("정확한 위치 사용")
+                            }
+                            
+                            TextButton(
+                                onClick = {
+                                    needsPreciseLocation = false
+                                }
+                            ) {
+                                Text("나중에 하기", fontSize = 12.sp)
+                            }
+                        }
+                    }
+                } else {
+                    // 기존 AR 사용법 안내 텍스트
                 Card(
                     modifier = Modifier
                         .align(Alignment.TopCenter)
@@ -318,16 +497,54 @@ fun ARScreen(
                         )
                         
                         Text(
-                            text = "AR 세션: ${if (isArSessionReady) "✅ 준비됨" else "⏳ 로딩중"}",
+                            text = "위치 권한: ${when {
+                                hasFineLocationPermission -> "✅ 정확한 위치"
+                                hasCoarseLocationPermission -> "🟡 대략적 위치"
+                                else -> "❌ 권한 없음"
+                            }}",
                             fontSize = 12.sp
                         )
                         
                         Text(
-                            text = if (missionCompleted) "🎉 미션 완료!" else "🎯 평면을 터치하세요",
+                            text = "AR 세션: ${if (isArSessionReady) "✅ 준비됨" else "⏳ 로딩중"}",
+                            fontSize = 12.sp
+                        )
+                        
+                        Spacer(modifier = Modifier.height(4.dp))
+                        
+                        Text(
+                            text = "Geospatial API: ${if (isEarthTracking) "✅ 활성" else "❌ 비활성"}",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isEarthTracking) androidx.compose.ui.graphics.Color.Green else androidx.compose.ui.graphics.Color.Red
+                        )
+                        
+                        if (isEarthTracking) {
+                            Text(
+                                text = "현재 GPS: ${String.format("%.6f, %.6f", currentLatitude, currentLongitude)}",
+                                fontSize = 11.sp
+                            )
+                            Text(
+                                text = "고도: ${String.format("%.1fm", currentAltitude)}, 정확도: ${String.format("%.1fm", currentAccuracy)}",
+                                fontSize = 11.sp
+                            )
+                        } else if (geospatialError != null) {
+                            Text(
+                                text = "⚠️ $geospatialError",
+                                fontSize = 11.sp,
+                                color = androidx.compose.ui.graphics.Color.Red
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(4.dp))
+                        
+                        Text(
+                            text = if (missionCompleted) "🎉 미션 완료!" else "🎯 객체를 터치하세요",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Medium
                         )
                     }
+                }
                 }
             }
         }
