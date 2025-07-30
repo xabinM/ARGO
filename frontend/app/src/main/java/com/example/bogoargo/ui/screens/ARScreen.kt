@@ -1,7 +1,6 @@
 package com.example.bogoargo.ui.screens
 
 import android.Manifest
-import android.app.Activity
 import android.content.pm.PackageManager
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -22,13 +21,19 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.google.ar.core.*
-import com.google.ar.core.exceptions.*
+import io.github.sceneview.ar.ArSceneView
+import io.github.sceneview.ar.node.ArModelNode
+import io.github.sceneview.math.Position
+import io.github.sceneview.math.Rotation
 import com.example.bogoargo.ui.components.DebugInfoCard
 
 /**
  * AR 미션을 수행하는 메인 화면
- * ARCore를 사용하여 실시간 AR 환경을 제공하고, 사용자가 3D 객체를 배치할 수 있는 기능 제공
+ * SceneView를 사용하여 실시간 AR 환경을 제공하고, 사용자가 3D 객체를 배치할 수 있는 기능 제공
  *
  * @param spotId 미션 스팟의 고유 ID
  * @param onNavigateBack 뒤로 가기 버튼 클릭 시 호출되는 콜백 함수
@@ -42,11 +47,11 @@ fun ARScreen(
     onNavigateBack: () -> Unit = {}
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
 
     // AR 관련 상태 변수들
     var hasCameraPermission by remember {
         mutableStateOf(
-            // 앱 시작 시 카메라 권한 상태 확인
             ContextCompat.checkSelfPermission(
                 context,
                 Manifest.permission.CAMERA
@@ -71,22 +76,20 @@ fun ARScreen(
     }
     var hasLocationPermission by remember { mutableStateOf(false) }
     var needsPreciseLocation by remember { mutableStateOf(false) }
-    var arSession by remember { mutableStateOf<Session?>(null) }        // ARCore 세션 객체
-    var isArSessionReady by remember { mutableStateOf(false) }          // AR 세션 준비 완료 여부
-    var missionCompleted by remember { mutableStateOf(false) }          // 미션 완료 상태
-    var errorMessage by remember { mutableStateOf<String?>(null) }      // 에러 메시지
+    var missionCompleted by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Geospatial 상태
+    // SceneView 상태
+    var arSceneView by remember { mutableStateOf<ArSceneView?>(null) }
+    var modelNode by remember { mutableStateOf<ArModelNode?>(null) }
     var isEarthTracking by remember { mutableStateOf(false) }
     var currentLatitude by remember { mutableStateOf(0.0) }
     var currentLongitude by remember { mutableStateOf(0.0) }
     var currentAltitude by remember { mutableStateOf(0.0) }
     var currentAccuracy by remember { mutableStateOf(0.0) }
     var geospatialError by remember { mutableStateOf<String?>(null) }
-    var isFallbackMode by remember { mutableStateOf(false) }
     var distanceToObject by remember { mutableStateOf<Float?>(null) }
     var lastVibrationDistance by remember { mutableStateOf<Float?>(null) }
-    var terrainAnchorError by remember { mutableStateOf(false) }
     var showDebugInfo by remember { mutableStateOf(false) }
 
     // 진동 서비스
@@ -101,10 +104,8 @@ fun ARScreen(
             permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
         hasFineLocationPermission = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
 
-        // 위치 권한 상태 업데이트
         hasLocationPermission = hasCoarseLocationPermission || hasFineLocationPermission
 
-        // 정확한 위치가 필요한지 확인
         if (hasCoarseLocationPermission && !hasFineLocationPermission) {
             needsPreciseLocation = true
         }
@@ -118,163 +119,16 @@ fun ARScreen(
         }
     }
 
-    // 세션 상태 추적
-    var sessionInitialized by remember { mutableStateOf(false) }
-    var lastPermissionState by remember { mutableStateOf(Pair(false, false)) }
-
-    // 카메라와 위치 권한이 허용되면 ARCore 세션 초기화 (불필요한 재생성 방지)
-    LaunchedEffect(hasCameraPermission, hasLocationPermission) {
-        val currentPermissionState = Pair(hasCameraPermission, hasLocationPermission)
-
-        // 권한 상태가 변경되지 않았거나 이미 세션이 초기화된 경우 건너뛰기
-        if (currentPermissionState == lastPermissionState && sessionInitialized) {
-            Log.d(
-                "ARScreen",
-                "Permission state unchanged and session already initialized, skipping"
-            )
-            return@LaunchedEffect
-        }
-
-        lastPermissionState = currentPermissionState
-
-        if (hasCameraPermission && hasLocationPermission) {
-            try {
-                // ARCore 설치 상태 확인 (더 안전한 방식)
-                val installStatus =
-                    ArCoreApk.getInstance().requestInstall(context as Activity, false)
-                when (installStatus) {
-                    ArCoreApk.InstallStatus.INSTALL_REQUESTED -> {
-                        errorMessage = "ARCore 설치가 필요합니다. 설치 후 다시 시도해주세요."
-                        return@LaunchedEffect
-                    }
-
-                    ArCoreApk.InstallStatus.INSTALLED -> {
-                        // ARCore is installed
-                    }
-                }
-
-                // ARCore 지원 확인
-                val availability = ArCoreApk.getInstance().checkAvailability(context)
-                if (!availability.isSupported) {
-                    errorMessage = "이 기기는 ARCore를 지원하지 않습니다."
-                    return@LaunchedEffect
-                }
-
-                // ARCore 세션 생성 및 설정
-                val session = Session(context)
-
-                // Geospatial 지원 여부 체크
-                val isGeospatialSupported =
-                    session.isGeospatialModeSupported(Config.GeospatialMode.ENABLED)
-
-                if (!isGeospatialSupported) {
-                    errorMessage = "이 기기는 Geospatial API를 지원하지 않습니다."
-                    return@LaunchedEffect
-                }
-
-                val config = Config(session).apply {
-                    // 평면 감지 활성화 (성능 최적화를 위해 수평만 활성화)
-                    planeFindingMode = Config.PlaneFindingMode.HORIZONTAL
-                    // 업데이트 모드 최적화 - IMU 버퍼 오버플로우 방지
-                    updateMode = Config.UpdateMode.BLOCKING
-                    // 광원 추정 최적화 - 성능 향상을 위해 낮은 단계로 설정
-                    lightEstimationMode = Config.LightEstimationMode.AMBIENT_INTENSITY
-                    // Geospatial API 활성화
-                    geospatialMode = Config.GeospatialMode.ENABLED
-                    // 심도 모드 설정 (성능 최적화)
-                    depthMode = Config.DepthMode.DISABLED
-                    // 인스턴트 배치 모드 비활성화 (메모리 절약)
-                    instantPlacementMode = Config.InstantPlacementMode.DISABLED
-                }
-                session.configure(config)
-
-                // VPS 가용성 체크
-                try {
-                    session.checkVpsAvailabilityAsync(latitude, longitude) { availability ->
-                        when (availability.toString()) {
-                            "UNAVAILABLE" -> {
-                                Log.w(
-                                    "ARScreen",
-                                    "VPS unavailable in this area, will use fallback mode"
-                                )
-                                // VPS 불가능한 지역에서는 직접 fallback 모드 안내
-                                // (실제 fallback은 ARCameraView에서 처리)
-                            }
-
-                            "INSUFFICIENT_GPS_SIGNAL" -> {
-                                Log.w("ARScreen", "GPS signal insufficient for VPS")
-                            }
-
-                            "AVAILABLE" -> {
-                                Log.d("ARScreen", "VPS available in this area")
-                            }
-                        }
-                    }
-                } catch (e: Exception) {
-                    Log.w("ARScreen", "VPS availability check failed", e)
-                }
-
-                arSession = session
-                isArSessionReady = true
-                sessionInitialized = true
-                errorMessage = null
-                Log.d("ARScreen", "AR session initialized successfully")
-
-            } catch (e: Exception) {
-                Log.e("ARScreen", "Failed to initialize AR session", e)
-                when (e) {
-                    is UnavailableArcoreNotInstalledException -> {
-                        errorMessage = "ARCore가 설치되지 않았습니다."
-                    }
-
-                    is UnavailableUserDeclinedInstallationException -> {
-                        errorMessage = "ARCore 설치가 거부되었습니다."
-                    }
-
-                    is UnavailableApkTooOldException -> {
-                        errorMessage = "ARCore 버전이 너무 오래되었습니다."
-                    }
-
-                    is UnavailableDeviceNotCompatibleException -> {
-                        errorMessage = "이 기기는 ARCore와 호환되지 않습니다."
-                    }
-
-                    else -> {
-                        errorMessage = "AR 초기화 실패: ${e.message}"
-                    }
-                }
-                isArSessionReady = false
-                sessionInitialized = false
-            }
-        } else {
-            // 권한이 없으면 세션 정리
-            if (sessionInitialized || arSession != null) {
-                Log.d("ARScreen", "Permissions revoked, cleaning up session")
-                arSession?.close()
-                arSession = null
-                isArSessionReady = false
-                sessionInitialized = false
-            }
-        }
-    }
-
-    // ARCameraView 참조 저장
-    var currentArCameraView: ARCameraView? by remember { mutableStateOf(null) }
-
-    // 컴포넌트가 해제될 때 ARCore 세션 정리
-    DisposableEffect(Unit) {
-        onDispose {
-            Log.d("ARScreen", "Disposing AR session and cleaning up resources")
-
-            // ARCameraView 리소스 정리
-            currentArCameraView?.cleanup()
-            currentArCameraView = null
-
-            // AR 세션 정리
-            arSession?.close()  // 메모리 누수 방지를 위해 세션 종료
-            arSession = null
-            sessionInitialized = false
-        }
+    // 거리 계산 함수
+    fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Float {
+        val earthRadius = 6371000f // 지구 반지름 (미터)
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = kotlin.math.sin(dLat / 2) * kotlin.math.sin(dLat / 2) +
+                kotlin.math.cos(Math.toRadians(lat1)) * kotlin.math.cos(Math.toRadians(lat2)) *
+                kotlin.math.sin(dLon / 2) * kotlin.math.sin(dLon / 2)
+        val c = 2 * kotlin.math.atan2(kotlin.math.sqrt(a), kotlin.math.sqrt(1 - a))
+        return (earthRadius * c).toFloat()
     }
 
     // Material 3 기반 UI 구성
@@ -344,7 +198,7 @@ fun ARScreen(
 
                     Button(
                         onClick = {
-                            // 권한 요청 실행 - Android 가이드라인에 따라 둘 다 요청
+                            // 권한 요청 실행
                             val permissionsToRequest = mutableListOf<String>()
 
                             if (!hasCameraPermission) {
@@ -364,8 +218,8 @@ fun ARScreen(
                         Text("권한 허용")
                     }
                 }
-            } else if (!isArSessionReady || errorMessage != null) {
-                // AR 세션이 준비되지 않은 경우 또는 에러 발생 시
+            } else if (errorMessage != null) {
+                // 에러 발생 시
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -373,142 +227,185 @@ fun ARScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    if (errorMessage != null) {
-                        // 에러 발생 시 에러 메시지 표시
-                        Text(
-                            text = "⚠️ AR 오류",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.error
-                        )
+                    Text(
+                        text = "⚠️ AR 오류",
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.error
+                    )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
-                        Text(
-                            text = errorMessage!!,
-                            fontSize = 16.sp,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                    Text(
+                        text = errorMessage!!,
+                        fontSize = 16.sp,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
 
-                        Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                        Button(
-                            onClick = {
-                                // 재시도 버튼 - 세션 상태 완전 리셋
-                                Log.d("ARScreen", "Retry button clicked, resetting session state")
-                                errorMessage = null
-                                isArSessionReady = false
-                                sessionInitialized = false
-                                arSession?.close()
-                                arSession = null
-                            }
-                        ) {
-                            Text("다시 시도")
+                    Button(
+                        onClick = {
+                            errorMessage = null
                         }
-                    } else {
-                        // 로딩 상태
-                        CircularProgressIndicator()
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        Text(
-                            text = "AR 세션을 준비중입니다...",
-                            fontSize = 16.sp
-                        )
+                    ) {
+                        Text("다시 시도")
                     }
                 }
             } else {
-                // AR 준비 완료 - 실제 AR 화면 표시
+                // SceneView AR 화면
                 AndroidView(
                     factory = { context ->
-                        // 커스텀 ARCameraView 생성 (안전성 강화)
-                        val arCameraView = ARCameraView(
-                            context = context,
-                            session = arSession!!,
-                            targetLatitude = latitude,
-                            targetLongitude = longitude,
-                            onMissionComplete = { completed ->
-                                Log.d("ARScreen", "Mission completed: $completed")
-                                missionCompleted = completed  // 미션 완료 상태 업데이트
-                            }
-                        ).apply {
-                            // Earth 상태 변경 콜백 설정
-                            onEarthStateChanged = { tracking, pose ->
-                                isEarthTracking = tracking
-                                pose?.let {
-                                    currentLatitude = it.latitude
-                                    currentLongitude = it.longitude
-                                    currentAltitude = it.altitude
-                                    currentAccuracy = it.horizontalAccuracy
+                        ArSceneView(context).apply {
+                            arSceneView = this
+                            
+                            // Geospatial API 활성화
+                            geospatialEnabled = true
+                            
+                            // 라이프사이클 수동 관리
+                            val lifecycleObserver = LifecycleEventObserver { owner, event ->
+                                when (event) {
+                                    Lifecycle.Event.ON_RESUME -> onResume(owner)
+                                    Lifecycle.Event.ON_PAUSE -> onPause(owner)
+                                    Lifecycle.Event.ON_DESTROY -> onDestroy(owner)
+                                    else -> {}
                                 }
                             }
-
-                            // Geospatial 에러 콜백 설정
-                            onGeospatialError = { error ->
-                                geospatialError = error
-                                // 폴백 모드 감지 (다양한 폴백 상황 대응)
-                                isFallbackMode = error.contains("폴백 모드") ||
-                                        error.contains("카메라 전방 모드") ||
-                                        error.contains("GPS 고도 기반")
-                            }
-
-                            // 거리 업데이트 콜백 설정
-                            onDistanceUpdate = { distance ->
-                                distanceToObject = distance
-
-                                // 거리 기반 진동 피드백
-                                val shouldVibrate = when {
-                                    distance <= 1.0f -> {
-                                        // 매우 가까우면 강한 진동
-                                        lastVibrationDistance?.let { it > 1.0f } ?: true
-                                    }
-
-                                    distance <= 2.0f -> {
-                                        // 가까우면 약한 진동
-                                        lastVibrationDistance?.let { it > 2.0f || it <= 1.0f }
-                                            ?: true
-                                    }
-
-                                    else -> false
-                                }
-
-                                if (shouldVibrate && vibrator?.hasVibrator() == true) {
-                                    val vibrationEffect = when {
-                                        distance <= 1.0f -> VibrationEffect.createOneShot(
-                                            200,
-                                            VibrationEffect.DEFAULT_AMPLITUDE
+                            lifecycleOwner.lifecycle.addObserver(lifecycleObserver)
+                            
+                            // AR 프레임 업데이트 콜백
+                            onArFrame = { arFrame ->
+                                try {
+                                    val session = arFrame.session
+                                    val earth = session.earth
+                                    
+                                    if (earth?.trackingState == TrackingState.TRACKING) {
+                                        isEarthTracking = true
+                                        val pose = earth.cameraGeospatialPose
+                                        currentLatitude = pose.latitude
+                                        currentLongitude = pose.longitude
+                                        currentAltitude = pose.altitude
+                                        currentAccuracy = pose.horizontalAccuracy
+                                        
+                                        // 미션 위치까지의 거리 계산
+                                        val distance = calculateDistance(
+                                            currentLatitude, currentLongitude,
+                                            latitude, longitude
                                         )
-
-                                        distance > 1.0f && distance <= 2.0f -> VibrationEffect.createOneShot(
-                                            100,
-                                            VibrationEffect.DEFAULT_AMPLITUDE
-                                        )
-
-                                        else -> null
+                                        distanceToObject = distance
+                                        
+                                        // 진동 피드백
+                                        val shouldVibrate = when {
+                                            distance <= 1.0f -> {
+                                                lastVibrationDistance?.let { it > 1.0f } ?: true
+                                            }
+                                            distance <= 2.0f -> {
+                                                lastVibrationDistance?.let { it > 2.0f || it <= 1.0f } ?: true
+                                            }
+                                            else -> false
+                                        }
+                                        
+                                        if (shouldVibrate && vibrator?.hasVibrator() == true) {
+                                            val vibrationEffect = when {
+                                                distance <= 1.0f -> VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE)
+                                                distance <= 2.0f -> VibrationEffect.createOneShot(100, VibrationEffect.DEFAULT_AMPLITUDE)
+                                                else -> null
+                                            }
+                                            vibrationEffect?.let { vibrator.vibrate(it) }
+                                            lastVibrationDistance = distance
+                                        }
+                                        
+                                        // 가까우면 3D 객체 생성 (지형 앵커 사용)
+                                        if (distance <= 10.0f && modelNode == null) {
+                                            try {
+                                                // Terrain 앵커 생성
+                                                val anchor = earth.resolveAnchorOnTerrainAsync(
+                                                    latitude, longitude, 0.5,
+                                                    0f, 0f, 0f, 1f
+                                                ) { anchor, state ->
+                                                    when (state) {
+                                                        Anchor.TerrainAnchorState.SUCCESS -> {
+                                                            Log.d("ARScreen", "Terrain anchor created successfully")
+                                                            
+                                                            // 앵커 성공 시 3D 객체 생성
+                                                            val node = ArModelNode().apply {
+                                                                this.anchor = anchor
+                                                                position = Position(0f, 0f, 0f)
+                                                                scale = Position(0.5f, 0.5f, 0.5f)
+                                                                
+                                                                // 터치 이벤트 설정
+                                                                isSelectable = true
+                                                                onTap = { _, _ ->
+                                                                    if (!missionCompleted) {
+                                                                        missionCompleted = true
+                                                                        Log.d("ARScreen", "Mission completed!")
+                                                                    }
+                                                                }
+                                                            }
+                                                            
+                                                            addChild(node)
+                                                            modelNode = node
+                                                            Log.d("ARScreen", "Model node created with terrain anchor")
+                                                        }
+                                                        Anchor.TerrainAnchorState.ERROR_UNSUPPORTED_LOCATION -> {
+                                                            Log.w("ARScreen", "Terrain anchor not supported, creating fallback")
+                                                            // 폴백 노드 즉시 생성
+                                                            val fallbackNode = ArModelNode().apply {
+                                                                position = Position(0f, 0f, -3f)
+                                                                scale = Position(0.4f, 0.4f, 0.4f)
+                                                                isSelectable = true
+                                                                onTap = { _, _ ->
+                                                                    if (!missionCompleted) {
+                                                                        missionCompleted = true
+                                                                        Log.d("ARScreen", "Mission completed (fallback)!")
+                                                                    }
+                                                                }
+                                                            }
+                                                            addChild(fallbackNode)
+                                                            modelNode = fallbackNode
+                                                            geospatialError = "폴백 모드: 카메라 앞에 객체 배치"
+                                                        }
+                                                        else -> {
+                                                            Log.w("ARScreen", "Terrain anchor failed: $state")
+                                                            geospatialError = "지형 앵커 생성 실패: $state"
+                                                        }
+                                                    }
+                                                }
+                                                
+                                            } catch (e: Exception) {
+                                                Log.e("ARScreen", "Failed to create terrain anchor", e)
+                                                // 폴백 노드 즉시 생성
+                                                val fallbackNode = ArModelNode().apply {
+                                                    position = Position(0f, 0f, -3f)
+                                                    scale = Position(0.4f, 0.4f, 0.4f)
+                                                    isSelectable = true
+                                                    onTap = { _, _ ->
+                                                        if (!missionCompleted) {
+                                                            missionCompleted = true
+                                                            Log.d("ARScreen", "Mission completed (fallback)!")
+                                                        }
+                                                    }
+                                                }
+                                                addChild(fallbackNode)
+                                                modelNode = fallbackNode
+                                                geospatialError = "폴백 모드: 카메라 앞에 객체 배치"
+                                            }
+                                        }
+                                        
+                                    } else {
+                                        isEarthTracking = false
+                                        geospatialError = when (earth?.trackingState) {
+                                            TrackingState.PAUSED -> "GPS 신호를 찾고 있습니다..."
+                                            TrackingState.STOPPED -> "위치 서비스를 사용할 수 없습니다"
+                                            else -> "Geospatial API 초기화 중..."
+                                        }
                                     }
-                                    vibrationEffect?.let { vibrator.vibrate(it) }
-                                    lastVibrationDistance = distance
+                                } catch (e: Exception) {
+                                    Log.e("ARScreen", "Error in AR frame update", e)
+                                    geospatialError = "AR 업데이트 오류: ${e.message}"
                                 }
-                            }
-
-                            // 지형 앵커 오류 콜백 설정
-                            onTerrainAnchorError = { hasError ->
-                                terrainAnchorError = hasError
                             }
                         }
-
-                        // ARCameraView 참조 저장 (리소스 관리를 위해)
-                        currentArCameraView = arCameraView
-
-                        // ARCameraView를 안전하게 시작
-                        try {
-                            Log.d("ARScreen", "Starting ARCameraView")
-                            arCameraView.onResume()
-                        } catch (e: Exception) {
-                            Log.e("ARScreen", "Failed to start ARCameraView", e)
-                        }
-
-                        arCameraView
                     },
                     modifier = Modifier.fillMaxSize()
                 )
@@ -536,17 +433,11 @@ fun ARScreen(
                     Card(
                         modifier = Modifier
                             .align(Alignment.TopCenter)
-                            .padding(top = 80.dp), // TopAppBar 아래쪽에 위치
+                            .padding(top = 80.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = when {
-                                distance <= 2.0f -> androidx.compose.ui.graphics.Color.Green.copy(
-                                    alpha = 0.9f
-                                )
-
-                                distance <= 5.0f -> androidx.compose.ui.graphics.Color.Blue.copy(
-                                    alpha = 0.9f
-                                )
-
+                                distance <= 2.0f -> androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.9f)
+                                distance <= 5.0f -> androidx.compose.ui.graphics.Color.Blue.copy(alpha = 0.9f)
                                 else -> androidx.compose.ui.graphics.Color.Red.copy(alpha = 0.9f)
                             }
                         )
@@ -556,7 +447,7 @@ fun ARScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "📏 객체까지 거리",
+                                text = "📏 목표까지 거리",
                                 fontSize = 12.sp,
                                 color = androidx.compose.ui.graphics.Color.White,
                                 fontWeight = FontWeight.Medium
@@ -593,12 +484,12 @@ fun ARScreen(
                         longitude = longitude,
                         distanceToObject = distanceToObject,
                         geospatialError = geospatialError,
-                        terrainAnchorError = terrainAnchorError,
-                        isFallbackMode = isFallbackMode,
+                        terrainAnchorError = false,
+                        isFallbackMode = false,
                         hasCameraPermission = hasCameraPermission,
                         hasFineLocationPermission = hasFineLocationPermission,
                         hasCoarseLocationPermission = hasCoarseLocationPermission,
-                        isArSessionReady = isArSessionReady,
+                        isArSessionReady = true,
                         isEarthTracking = isEarthTracking,
                         currentLatitude = currentLatitude,
                         currentLongitude = currentLongitude,
@@ -638,7 +529,6 @@ fun ARScreen(
                                             else -> "🔍 객체를 찾아 이동하세요"
                                         }
                                     }
-
                                     else -> "🎯 AR 객체를 찾아보세요"
                                 },
                                 fontSize = 16.sp,
@@ -654,20 +544,20 @@ fun ARScreen(
                     }
                 }
 
-                // 미션 완료 버튼 (별도로 표시)
+                // 미션 완료 버튼
                 if (missionCompleted) {
                     Button(
                         onClick = onNavigateBack,
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
                             .padding(16.dp)
-                            .offset(y = (-80).dp) // 카드 위쪽에 표시
+                            .offset(y = (-80).dp)
                     ) {
                         Text("미션 완료")
                     }
                 }
 
-                // 정확한 위치 업그레이드 안내 (대략적 위치만 있을 때)
+                // 정확한 위치 업그레이드 안내
                 if (needsPreciseLocation && hasCoarseLocationPermission && !hasFineLocationPermission) {
                     Card(
                         modifier = Modifier
@@ -699,7 +589,6 @@ fun ARScreen(
 
                             Button(
                                 onClick = {
-                                    // 정확한 위치 권한만 요청
                                     permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION))
                                 },
                                 modifier = Modifier.fillMaxWidth()
