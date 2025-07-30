@@ -78,7 +78,7 @@ fun DebugInfoCard(
                 ) {
                     Text("객체 거리:", fontWeight = FontWeight.Medium)
                     Text(
-                        "${String.format(Locale.US, "%.1f", distance)}m"
+                        "${String.format(Locale.US, "%.1f", distance)}m",
                         fontSize = 12.sp,
                         color = when {
                             distance <= 2.0f -> androidx.compose.ui.graphics.Color.Green
@@ -146,7 +146,7 @@ fun DebugInfoCard(
                 ) {
                     Text("현재 GPS:", fontWeight = FontWeight.Medium)
                     Text(
-                        "${String.format(Locale.US, "%.6f", currentLatitude)}, ${String.format(Locale.US, "%.6f", currentLongitude)}"
+                        "${String.format(Locale.US, "%.6f", currentLatitude)}, ${String.format(Locale.US, "%.6f", currentLongitude)}",
                         fontSize = 10.sp
                     )
                 }
@@ -157,7 +157,7 @@ fun DebugInfoCard(
                 ) {
                     Text("고도/정확도:", fontWeight = FontWeight.Medium)
                     Text(
-                        "${String.format(Locale.US, "%.1fm", currentAltitude)} / ${String.format(Locale.US, "%.1fm", currentAccuracy)}"
+                        "${String.format(Locale.US, "%.1fm", currentAltitude)} / ${String.format(Locale.US, "%.1fm", currentAccuracy)}",
                         fontSize = 10.sp
                     )
                 }
