@@ -12,3 +12,4 @@ data class Class(
     val currentStudents: Int = 0,
     val schoolName: String
 )
+
