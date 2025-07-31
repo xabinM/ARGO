@@ -1,10 +1,14 @@
 package com.argo.backend.domain.user;
 
 import com.argo.backend.domain.BaseTimeEntity;
+import com.argo.backend.domain.classroom.ClassApplication;
 import com.argo.backend.domain.team.Team;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.crypto.password.PasswordEncoder;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -38,6 +42,8 @@ public class User extends BaseTimeEntity {
     @JoinColumn(name = "team_id")
     private Team team;
 
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<ClassApplication> applications = new ArrayList<>();
 
     public static User from(String username, String encodedPassword, String name, Role role) {
         return new User(

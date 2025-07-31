@@ -5,7 +5,6 @@ package com.argo.backend.organization.repository.classroomcreate;
  * 반과 학습 장소 간의 연결 정보를 관리하는 데이터베이스 작업을 처리
  */
 
-import com.argo.backend.domain.location.ClassLocation;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ClassLocationRepository extends JpaRepository<ClassLocation, ClassLocation.ClassLocationId> {

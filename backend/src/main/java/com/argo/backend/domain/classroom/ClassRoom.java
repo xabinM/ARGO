@@ -1,12 +1,11 @@
 package com.argo.backend.domain.classroom;
+
 import com.argo.backend.domain.CreatedAtEntity;
-import com.argo.backend.domain.location.ClassLocation;
 import com.argo.backend.domain.location.Location;
 import com.argo.backend.domain.team.Team;
-import com.argo.backend.domain.user.User;
+import com.argo.backend.domain.user.Teacher;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -20,44 +19,36 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 public class ClassRoom extends CreatedAtEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long classId;
 
+    @Column(nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "teacher_id")
-    private User teacher;
+    private Teacher teacher;
 
     @Column(nullable = false)
     private String className;
 
+    @Column(nullable = false)
     private String description;
 
     @Column(nullable = false)
     private LocalDate activityDate;
 
-    private Integer maxStudents = 30;
-
-    @Column(nullable = false, unique = true, length = 20)
-    private String inviteCode;
+    @Column(nullable = false)
+    private Integer maxStudents;
 
     @Enumerated(EnumType.STRING)
     private ClassStatus status = ClassStatus.ACTIVE;
 
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "location_id")
+    @OneToOne(fetch = FetchType.LAZY)
     private Location location;
 
     @OneToMany(mappedBy = "classRoom", fetch = FetchType.LAZY)
-    @BatchSize(size = 100)
     private List<ClassApplication> applications = new ArrayList<>();
 
     @OneToMany(mappedBy = "classRoom", fetch = FetchType.LAZY)
-    @BatchSize(size = 50)
     private List<Team> teams = new ArrayList<>();
-
-    @OneToMany(mappedBy = "classRoom", fetch = FetchType.LAZY)
-    @BatchSize(size = 20)
-    private List<ClassLocation> classLocations = new ArrayList<>();
-
 }

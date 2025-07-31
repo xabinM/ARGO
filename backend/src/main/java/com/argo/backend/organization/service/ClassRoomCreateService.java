@@ -7,7 +7,6 @@ package com.argo.backend.organization.service;
 
 import com.argo.backend.domain.classroom.ClassRoom;
 import com.argo.backend.domain.classroom.ClassStatus;
-import com.argo.backend.domain.location.ClassLocation;
 import com.argo.backend.domain.location.Location;
 import com.argo.backend.domain.user.Role;
 import com.argo.backend.domain.user.User;
