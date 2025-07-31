@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.location.LocationManager
 import android.provider.Settings
 import android.util.Log
+import android.view.MotionEvent
+import android.view.HapticFeedbackConstants
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -34,10 +36,14 @@ import com.google.ar.core.Config
 import com.google.ar.core.Session
 import com.google.ar.core.TrackingState
 import com.google.ar.core.Anchor
+import com.google.ar.core.Plane
+import com.google.ar.core.Pose
 import io.github.sceneview.ar.ARSceneView
 import io.github.sceneview.ar.node.AnchorNode
 import io.github.sceneview.math.Position
+import io.github.sceneview.math.Rotation
 import io.github.sceneview.node.ModelNode
+import kotlin.random.Random
 
 // 디버그 정보를 담는 데이터 클래스
 data class ARDebugInfo(
@@ -48,6 +54,7 @@ data class ARDebugInfo(
     val gpsAccuracy: Double = 0.0,
     val earthTrackingState: String = "UNKNOWN",
     val anchorMethod: String = "NONE",
+    val actualAnchorType: String = "NONE", // 실제 사용 중인 앵커 타입
     val isSessionInitialized: Boolean = false,
     val geospatialApiStatus: String = "DISABLED",
     val modelLoadingStatus: String = "NOT_STARTED",
@@ -57,8 +64,28 @@ data class ARDebugInfo(
     val gpsEnabled: Boolean = false,
     val locationServicesEnabled: Boolean = false,
     val networkConnected: Boolean = false,
-    val googlePlayServicesAvailable: Boolean = false
+    val googlePlayServicesAvailable: Boolean = false,
+    val planesDetected: Int = 0,
+    val planeAnchorUsed: Boolean = false,
+    val animationStatus: String = "NONE" // NONE, READY, PLAYED
 )
+
+// 애니메이션 실행 함수 (한번만 실행)
+private fun playAnimationOnce(
+    modelNode: ModelNode, 
+    onAnimationPlayed: () -> Unit,
+    onGlobalAnimationPlayed: () -> Unit = {}
+) {
+    try {
+        // 애니메이션 한번만 재생 (loop = false)
+        modelNode.playAnimation(animationIndex = 0, loop = false)
+        onAnimationPlayed() // 로컬 애니메이션 재생 상태 업데이트
+        onGlobalAnimationPlayed() // 글로벌 애니메이션 재생 상태 업데이트
+        Log.d("ARScreen", "Animation started - will play once")
+    } catch (e: Exception) {
+        Log.w("ARScreen", "No animations available for this model: ${e.message}")
+    }
+}
 
 // GPS 및 위치 서비스 상태 확인 함수
 private fun checkLocationServicesStatus(context: Context): Triple<Boolean, Boolean, Boolean> {
@@ -96,6 +123,10 @@ fun ARScreen(
     var missionCompleted by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     
+    // 3D 객체 상태 관리 (컴포넌트 레벨)
+    var currentModelNode by remember { mutableStateOf<ModelNode?>(null) }
+    var isAnimationPlayed by remember { mutableStateOf(false) }
+    
     // 디버그 관련 상태
     var showDebugInfo by remember { mutableStateOf(false) }
     var debugInfo by remember { 
@@ -103,6 +134,15 @@ fun ARScreen(
             targetLatitude = latitude,
             targetLongitude = longitude
         )) 
+    }
+    
+    // 애니메이션 상태 확인 함수 (컴포넌트 레벨)
+    fun getAnimationStatus(): String {
+        return when {
+            currentModelNode == null -> "NONE"
+            isAnimationPlayed -> "PLAYED"
+            else -> "READY"
+        }
     }
 
     // AR 관련 권한 확인
@@ -222,13 +262,58 @@ fun ARScreen(
                                                 missionCompleted = true
                                             },
                                             onDebugInfoUpdate = { newDebugInfo ->
-                                                debugInfo = newDebugInfo
+                                                debugInfo = newDebugInfo.copy(
+                                                    animationStatus = getAnimationStatus()
+                                                )
+                                            },
+                                            onModelNodeUpdate = { modelNode ->
+                                                currentModelNode = modelNode
+                                                isAnimationPlayed = false // 새 모델이므로 초기화
                                             }
                                         )
                                     } catch (e: Exception) {
                                         Log.e("ARScreen", "Error setting up AR scene", e)
                                         errorMessage = "AR 장면 설정 중 오류가 발생했습니다."
                                     }
+                                }
+                                
+                                // 터치 이벤트 리스너 설정
+                                setOnTouchListener { view, motionEvent ->
+                                    when (motionEvent.action) {
+                                        MotionEvent.ACTION_UP -> {
+                                            try {
+                                                // 현재 3D 객체가 있는지 확인
+                                                if (currentModelNode != null) {
+                                                    Log.d("ARScreen", "Touch detected on AR scene")
+                                                    
+                                                    // 이미 애니메이션이 재생된 경우 무시
+                                                    if (isAnimationPlayed) {
+                                                        Log.d("ARScreen", "Animation already played - ignoring touch")
+                                                        view.performClick() // Accessibility를 위한 performClick 호출
+                                                        return@setOnTouchListener true
+                                                    }
+                                                    
+                                                    // 햅틱 피드백 제공
+                                                    performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                                                    
+                                                    // 애니메이션 한번 실행
+                                                    playAnimationOnce(
+                                                        currentModelNode!!,
+                                                        onAnimationPlayed = { /* 로컬 상태는 setupARScene에서 관리 */ },
+                                                        onGlobalAnimationPlayed = { isAnimationPlayed = true }
+                                                    )
+                                                    Log.d("ARScreen", "3D object touched - animation played once")
+                                                    view.performClick() // Accessibility를 위한 performClick 호출
+                                                    return@setOnTouchListener true
+                                                } else {
+                                                    Log.d("ARScreen", "Touch detected but no 3D object available")
+                                                }
+                                            } catch (e: Exception) {
+                                                Log.e("ARScreen", "Error handling touch event", e)
+                                            }
+                                        }
+                                    }
+                                    false
                                 }
                             }
                         },
@@ -331,6 +416,7 @@ fun DebugInfoPanel(
             // AR 상태 정보
             DebugInfoItem("🌍 Earth Tracking", debugInfo.earthTrackingState)
             DebugInfoItem("⚓ Anchor Method", debugInfo.anchorMethod)
+            DebugInfoItem("✅ Active Anchor", debugInfo.actualAnchorType)
             DebugInfoItem("🔗 Geospatial API", debugInfo.geospatialApiStatus)
             DebugInfoItem("📦 Model Loading", debugInfo.modelLoadingStatus)
             DebugInfoItem("🏔️ Terrain Anchor", debugInfo.terrainAnchorState)
@@ -348,6 +434,22 @@ fun DebugInfoPanel(
             DebugInfoItem("📍 Location Service", if (debugInfo.locationServicesEnabled) "✅ Enabled" else "❌ Disabled")
             DebugInfoItem("🌐 Network Location", if (debugInfo.networkConnected) "✅ Available" else "❌ Unavailable")
             DebugInfoItem("🛡️ Play Services", if (debugInfo.googlePlayServicesAvailable) "✅ Available" else "❌ Unavailable")
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            // 평면 감지 정보
+            DebugInfoItem("🔍 Planes Detected", debugInfo.planesDetected.toString())
+            DebugInfoItem("📐 Plane Anchor Used", if (debugInfo.planeAnchorUsed) "✅ Yes" else "❌ No")
+            
+            Spacer(modifier = Modifier.height(4.dp))
+            
+            // 애니메이션 정보
+            DebugInfoItem("🎬 Animation Status", debugInfo.animationStatus)
+            when (debugInfo.animationStatus) {
+                "READY" -> DebugInfoItem("💡 Touch Tip", "Tap 3D object to open")
+                "PLAYED" -> DebugInfoItem("📦 Box Status", "Opened ✅")
+                else -> {}
+            }
             
             if (debugInfo.availableModels.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
@@ -624,7 +726,8 @@ private fun setupARScene(
     latitude: Double,
     longitude: Double,
     onMissionComplete: () -> Unit,
-    onDebugInfoUpdate: (ARDebugInfo) -> Unit
+    onDebugInfoUpdate: (ARDebugInfo) -> Unit,
+    onModelNodeUpdate: (ModelNode?) -> Unit
 ) {
     Log.d("ARScreen", "Setting up AR scene for mission spot $spotId at GPS($latitude, $longitude)")
     
@@ -769,7 +872,9 @@ private fun setupARScene(
             availableModels = availableModels
         ))
         
-        createFallbackNode(arSceneView, modelPath, "Model file not found")
+        createFallbackNode(arSceneView, modelPath, "Model file not found") { _, _ ->
+            // 모델 파일이 없는 경우이므로 상태 업데이트는 생략
+        }
         return
     }
     
@@ -782,9 +887,31 @@ private fun setupARScene(
         availableModels = availableModels
     ))
     
-    // Earth tracking이 안정화되기까지 대기 (60프레임 = 약 2초)
+    // Earth tracking이 안정화되기까지 대기 (90프레임 = 약 3초)
     var waitFrameCount = 0
     var hasTriedTerrainAnchor = false
+    
+    // 현재 앵커 상태 추적 (mutable state로 관리)
+    var currentAnchorType = "NONE" // 실제 사용 중인 앵커 타입
+    var currentModelNode: ModelNode? = null // 현재 활성화된 ModelNode 참조
+    var isAnimationPlayed = false // 애니메이션이 한번 재생되었는지 추적
+    
+    // 상태 업데이트 함수
+    fun updateAnchorState(anchorType: String, modelNode: ModelNode?) {
+        currentAnchorType = anchorType
+        currentModelNode = modelNode
+        isAnimationPlayed = false // 새 객체이므로 애니메이션 상태 초기화
+        onModelNodeUpdate(modelNode) // 컴포넌트 레벨로 상태 전달
+    }
+    
+    // 현재 애니메이션 상태 확인 함수
+    fun getAnimationStatus(): String {
+        return when {
+            currentModelNode == null -> "NONE"
+            isAnimationPlayed -> "PLAYED" // 애니메이션 완료됨
+            else -> "READY" // 터치 대기 중
+        }
+    }
     
     arSceneView.onFrame = { frame ->
         frameCount++
@@ -797,6 +924,12 @@ private fun setupARScene(
             
             val debugInfo = if (earth != null) {
                 val cameraGeospatialPose = earth.cameraGeospatialPose
+                val planes = session.getAllTrackables(Plane::class.java)
+                val horizontalPlanes = planes.filter { 
+                    it.type == Plane.Type.HORIZONTAL_UPWARD_FACING && 
+                    it.trackingState == TrackingState.TRACKING 
+                }
+                
                 ARDebugInfo(
                     currentLatitude = cameraGeospatialPose.latitude,
                     currentLongitude = cameraGeospatialPose.longitude,
@@ -805,10 +938,13 @@ private fun setupARScene(
                     gpsAccuracy = cameraGeospatialPose.horizontalAccuracy,
                     earthTrackingState = earth.trackingState.name,
                     anchorMethod = when {
-                        !hasTriedTerrainAnchor && waitFrameCount < 60 -> "WAITING_FOR_GPS (${60 - waitFrameCount})"
-                        earth.trackingState == TrackingState.TRACKING && cameraGeospatialPose.horizontalAccuracy <= 10.0f -> "TERRAIN_ANCHOR"
-                        else -> "FALLBACK_FIXED"
+                        !hasTriedTerrainAnchor && waitFrameCount < 90 -> "WAITING_FOR_GPS (${90 - waitFrameCount})"
+                        currentAnchorType == "NONE" -> "CREATING_FALLBACK"
+                        currentAnchorType == "FALLBACK_FIXED" && horizontalPlanes.isNotEmpty() -> "UPGRADING_TO_PLANE"
+                        earth.trackingState == TrackingState.TRACKING && cameraGeospatialPose.horizontalAccuracy <= 10.0f -> "TERRAIN_ANCHOR_READY"
+                        else -> "STABLE"
                     },
+                    actualAnchorType = currentAnchorType, // 실제 사용 중인 앵커 타입
                     isSessionInitialized = true,
                     geospatialApiStatus = if (earth.trackingState == TrackingState.TRACKING) "ENABLED_TRACKING" else "ENABLED_${earth.trackingState.name}",
                     modelLoadingStatus = "LOADED",
@@ -818,14 +954,22 @@ private fun setupARScene(
                     gpsEnabled = gpsEnabled,
                     locationServicesEnabled = locationServicesEnabled,
                     networkConnected = networkEnabled,
-                    googlePlayServicesAvailable = true
+                    googlePlayServicesAvailable = true,
+                    planesDetected = horizontalPlanes.size,
+                    planeAnchorUsed = currentAnchorType.contains("PLANE"),
+                    animationStatus = getAnimationStatus()
                 )
             } else {
                 ARDebugInfo(
                     targetLatitude = latitude,
                     targetLongitude = longitude,
                     earthTrackingState = "EARTH_NULL",
-                    anchorMethod = if (!hasTriedTerrainAnchor && waitFrameCount < 60) "WAITING_FOR_GPS (${60 - waitFrameCount})" else "FALLBACK_FIXED",
+                    anchorMethod = when {
+                        !hasTriedTerrainAnchor && waitFrameCount < 90 -> "WAITING_FOR_GPS (${90 - waitFrameCount})"
+                        currentAnchorType == "NONE" -> "CREATING_FALLBACK"
+                        else -> "STABLE"
+                    },
+                    actualAnchorType = currentAnchorType, // 실제 사용 중인 앵커 타입
                     isSessionInitialized = true,
                     geospatialApiStatus = "DISABLED",
                     modelLoadingStatus = "LOADED",
@@ -834,7 +978,10 @@ private fun setupARScene(
                     gpsEnabled = gpsEnabled,
                     locationServicesEnabled = locationServicesEnabled,
                     networkConnected = networkEnabled,
-                    googlePlayServicesAvailable = true
+                    googlePlayServicesAvailable = true,
+                    planesDetected = 0,
+                    planeAnchorUsed = currentAnchorType.contains("PLANE"),
+                    animationStatus = getAnimationStatus()
                 )
             }
             
@@ -843,26 +990,55 @@ private fun setupARScene(
                 onDebugInfoUpdate(debugInfo)
             }
             
-            // 60프레임 후에 Terrain Anchor 시도 또는 fallback
-            if (waitFrameCount >= 60 && !hasTriedTerrainAnchor) {
+            // 90프레임 후에 Terrain Anchor 시도
+            if (waitFrameCount >= 90 && !hasTriedTerrainAnchor) {
                 hasTriedTerrainAnchor = true
                 
                 // 1단계: Terrain Anchor 시도 (Geospatial API 사용)
-                val terrainAnchorSuccess = tryCreateTerrainAnchor(arSceneView, session, latitude, longitude, modelPath, onDebugInfoUpdate)
+                val terrainAnchorSuccess = tryCreateTerrainAnchor(
+                    arSceneView, session, latitude, longitude, modelPath, onDebugInfoUpdate
+                ) { anchorType, modelNode ->
+                    if (anchorType == "TERRAIN_ANCHOR" && modelNode != null) {
+                        updateAnchorState(anchorType, modelNode)
+                    }
+                }
                 if (terrainAnchorSuccess) {
                     Log.i("ARScreen", "Successfully created Terrain Anchor at GPS($latitude, $longitude)")
-                } else {
-                    // 2단계: Fallback - 고정 위치에 객체 배치
-                    Log.i("ARScreen", "Falling back to fixed position anchor after waiting period")
-                    onDebugInfoUpdate(ARDebugInfo(
-                        targetLatitude = latitude,
-                        targetLongitude = longitude,
-                        anchorMethod = "FALLBACK_FIXED",
-                        modelLoadingStatus = "USING_FALLBACK",
-                        geospatialApiStatus = "FALLBACK_MODE",
-                        availableModels = availableModels
-                    ))
-                    createFallbackNode(arSceneView, modelPath, "Geospatial API not available after waiting")
+                }
+            }
+            
+            // Terrain Anchor 시도 후 즉시 Fallback (평면 감지 시 자동 업그레이드)
+            if (waitFrameCount >= 90 && hasTriedTerrainAnchor && currentAnchorType == "NONE") {
+                // Terrain Anchor가 실패했으므로 즉시 Fallback 생성
+                Log.i("ARScreen", "Creating fallback anchor - Terrain Anchor not available")
+                onDebugInfoUpdate(ARDebugInfo(
+                    targetLatitude = latitude,
+                    targetLongitude = longitude,
+                    anchorMethod = "FALLBACK_FIXED",
+                    actualAnchorType = "FALLBACK_FIXED",
+                    modelLoadingStatus = "USING_FALLBACK",
+                    geospatialApiStatus = "FALLBACK_MODE",
+                    availableModels = availableModels
+                ))
+                createFallbackNode(arSceneView, modelPath, "Terrain Anchor unavailable") { anchorType, modelNode ->
+                    if (anchorType == "FALLBACK_FIXED" && modelNode != null) {
+                        updateAnchorState(anchorType, modelNode)
+                    }
+                }
+            }
+            
+            // Fallback에서 Plane Anchor로 업그레이드 시도 (평면이 감지된 경우)
+            if (currentAnchorType == "FALLBACK_FIXED" && currentModelNode != null && waitFrameCount > 120) {
+                val upgraded = tryUpgradeToPlaneAnchor(
+                    arSceneView, session, currentModelNode!!, onDebugInfoUpdate
+                ) { anchorType, modelNode ->
+                    if (anchorType == "PLANE_ADJUSTED" && modelNode != null) {
+                        updateAnchorState(anchorType, modelNode)
+                    }
+                }
+                
+                if (upgraded) {
+                    Log.i("ARScreen", "Successfully upgraded Fallback to Plane Anchor")
                 }
             }
             
@@ -916,7 +1092,8 @@ private fun setupARScene(
                     targetLatitude = latitude,
                     targetLongitude = longitude,
                     earthTrackingState = "ERROR: ${e.message}",
-                    anchorMethod = if (!hasTriedTerrainAnchor && waitFrameCount < 60) "WAITING_FOR_GPS (${60 - waitFrameCount})" else "FALLBACK_FIXED",
+                    anchorMethod = if (!hasTriedTerrainAnchor && waitFrameCount < 90) "WAITING_FOR_GPS (${90 - waitFrameCount})" else "ERROR_FALLBACK",
+                    actualAnchorType = currentAnchorType,
                     isSessionInitialized = true,
                     geospatialApiStatus = "ERROR",
                     modelLoadingStatus = "ERROR",
@@ -935,7 +1112,8 @@ private fun tryCreateTerrainAnchor(
     latitude: Double,
     longitude: Double,
     modelPath: String,
-    onDebugInfoUpdate: (ARDebugInfo) -> Unit
+    onDebugInfoUpdate: (ARDebugInfo) -> Unit,
+    onAnchorTypeChange: (String, ModelNode?) -> Unit
 ): Boolean {
     try {
         val earth = session.earth
@@ -988,21 +1166,22 @@ private fun tryCreateTerrainAnchor(
                         // ModelNode 생성 및 AnchorNode에 추가
                         val modelNode = ModelNode(
                             modelInstance = modelInstance,
-                            scaleToUnits = 1.0f
+                            scaleToUnits = 0.5f
                         ).apply {
-                            // Terrain Anchor는 지면에 배치되므로 Y축으로 약간 올림
-                            position = Position(0.0f, 1.0f, 0.0f)
+                            // Terrain Anchor는 바닥에 붙게 배치 (모델 중심점이 중앙이므로 아래로 이동)
+                            position = Position(0.0f, 0.0f, 0.0f)
+                            // Y축(수직축) 랜덤 회전 (0-360도)
+                            rotation = Rotation(0f, Random.nextFloat() * 360f, 0f)
                         }
                         
                         anchorNode.addChildNode(modelNode)
                         arSceneView.addChildNode(anchorNode)
                         
-                        // 애니메이션 재생 시도
-                        try {
-                            modelNode.playAnimation(animationIndex = 0, loop = true)
-                        } catch (e: Exception) {
-                            Log.d("ARScreen", "No animations available for terrain anchor model")
-                        }
+                        // 앵커 타입 변경 알림
+                        onAnchorTypeChange("TERRAIN_ANCHOR", modelNode)
+                        
+                        // 애니메이션은 터치 시에만 재생되도록 변경
+                        Log.d("ARScreen", "Terrain Anchor model loaded - animation ready for touch interaction")
                         
                         Log.i("ARScreen", "Terrain Anchor created successfully at GPS($latitude, $longitude)")
                         
@@ -1011,6 +1190,7 @@ private fun tryCreateTerrainAnchor(
                             targetLatitude = latitude,
                             targetLongitude = longitude,
                             anchorMethod = "TERRAIN_ANCHOR_SUCCESS",
+                            actualAnchorType = "TERRAIN_ANCHOR",
                             modelLoadingStatus = "LOADED_WITH_TERRAIN_ANCHOR",
                             terrainAnchorState = "SUCCESS",
                             geospatialApiStatus = "TERRAIN_ANCHOR_CREATED"
@@ -1061,8 +1241,194 @@ private fun tryCreateTerrainAnchor(
     }
 }
 
-// Fallback: 고정 위치에 객체 배치 (Geospatial API 실패 시)
-private fun createFallbackNode(arSceneView: ARSceneView, modelPath: String, reason: String) {
+// 평면 기반 Anchor 생성 시도
+private fun tryCreatePlaneAnchor(
+    arSceneView: ARSceneView,
+    session: Session,
+    modelPath: String,
+    onDebugInfoUpdate: (ARDebugInfo) -> Unit,
+    onAnchorTypeChange: (String, ModelNode?) -> Unit
+): Boolean {
+    try {
+        // 모든 감지된 평면 가져오기
+        val planes = session.getAllTrackables(Plane::class.java)
+        val horizontalPlanes = planes.filter { 
+            it.type == Plane.Type.HORIZONTAL_UPWARD_FACING && 
+            it.trackingState == TrackingState.TRACKING 
+        }
+        
+        Log.d("ARScreen", "Detected ${planes.size} total planes, ${horizontalPlanes.size} horizontal planes")
+        
+        if (horizontalPlanes.isEmpty()) {
+            Log.w("ARScreen", "No horizontal planes detected for anchor placement")
+            onDebugInfoUpdate(ARDebugInfo(
+                anchorMethod = "NO_PLANES_DETECTED",
+                modelLoadingStatus = "WAITING_FOR_PLANES",
+                planesDetected = planes.size
+            ))
+            return false
+        }
+        
+        // 카메라에서 가장 가까운 평면 찾기 (첫 번째 평면 선택으로 단순화)
+        val nearestPlane = horizontalPlanes.firstOrNull()
+        
+        if (nearestPlane == null) {
+            Log.w("ARScreen", "Failed to find nearest plane")
+            return false
+        }
+        
+        // 평면 중심에 Anchor 생성
+        val planePose = nearestPlane.centerPose
+        val planeAnchor = nearestPlane.createAnchor(planePose)
+        
+        // 모델 인스턴스 생성
+        val modelInstance = arSceneView.modelLoader.createModelInstance(modelPath)
+        if (modelInstance == null) {
+            Log.w("ARScreen", "Failed to create model instance for plane anchor")
+            planeAnchor.detach()
+            return false
+        }
+        
+        // AnchorNode 생성
+        val anchorNode = AnchorNode(
+            engine = arSceneView.engine,
+            anchor = planeAnchor
+        )
+        
+        // ModelNode 생성 및 배치
+        val modelNode = ModelNode(
+            modelInstance = modelInstance,
+            scaleToUnits = 0.5f
+        ).apply {
+            // 평면 위에 바닥에 붙게 배치 (모델 중심점이 중앙이므로 아래로 이동)
+            position = Position(0.0f, 0.0f, 0.0f)
+            // Y축(수직축) 랜덤 회전
+            rotation = Rotation(0f, Random.nextFloat() * 360f, 0f)
+        }
+        
+        anchorNode.addChildNode(modelNode)
+        arSceneView.addChildNode(anchorNode)
+        
+        // 앵커 타입 변경 알림
+        onAnchorTypeChange("PLANE_ANCHOR", modelNode)
+        
+        // 애니메이션은 터치 시에만 재생되도록 변경
+        Log.d("ARScreen", "Plane Anchor model loaded - animation ready for touch interaction")
+        
+        Log.i("ARScreen", "Plane-based anchor created successfully on detected ground plane")
+        
+        // 성공 상태 디버그 정보 업데이트
+        onDebugInfoUpdate(ARDebugInfo(
+            anchorMethod = "PLANE_ANCHOR_SUCCESS",
+            actualAnchorType = "PLANE_ANCHOR",
+            modelLoadingStatus = "LOADED_WITH_PLANE_ANCHOR",
+            planesDetected = planes.size,
+            planeAnchorUsed = true
+        ))
+        
+        return true
+        
+    } catch (e: Exception) {
+        Log.e("ARScreen", "Error creating plane-based anchor", e)
+        onDebugInfoUpdate(ARDebugInfo(
+            anchorMethod = "PLANE_ANCHOR_ERROR",
+            modelLoadingStatus = "PLANE_ANCHOR_FAILED"
+        ))
+        return false
+    }
+}
+
+// Fallback에서 Plane Anchor로 부드러운 전환 (XZ 좌표 유지, Y만 조정)
+private fun tryUpgradeToPlaneAnchor(
+    arSceneView: ARSceneView,
+    session: Session,
+    currentModelNode: ModelNode,
+    onDebugInfoUpdate: (ARDebugInfo) -> Unit,
+    onAnchorTypeChange: (String, ModelNode?) -> Unit
+): Boolean {
+    try {
+        // 모든 감지된 평면 가져오기
+        val planes = session.getAllTrackables(Plane::class.java)
+        val horizontalPlanes = planes.filter { 
+            it.type == Plane.Type.HORIZONTAL_UPWARD_FACING && 
+            it.trackingState == TrackingState.TRACKING 
+        }
+        
+        if (horizontalPlanes.isEmpty()) {
+            return false
+        }
+        
+        // 현재 객체 위치 가져오기
+        val currentPosition = currentModelNode.position
+        
+        // 현재 객체와 가장 가까운 평면 찾기
+        var nearestPlane: Plane? = null
+        var minDistance = Float.MAX_VALUE
+        
+        for (plane in horizontalPlanes) {
+            val planePose = plane.centerPose
+            val planeX = planePose.translation[0]
+            val planeZ = planePose.translation[2]
+            
+            // XZ 평면에서의 거리 계산 (Y는 제외)
+            val distance = kotlin.math.sqrt(
+                ((currentPosition.x - planeX) * (currentPosition.x - planeX) + 
+                 (currentPosition.z - planeZ) * (currentPosition.z - planeZ)).toDouble()
+            ).toFloat()
+            
+            if (distance < minDistance) {
+                minDistance = distance
+                nearestPlane = plane
+            }
+        }
+        
+        if (nearestPlane == null) {
+            return false
+        }
+        
+        // 가장 가까운 평면의 높이 계산
+        val planePose = nearestPlane.centerPose
+        val planeY = planePose.translation[1]
+        
+        // 기존 XZ 좌표 유지, Y만 평면 높이로 조정 (모델 중심점 고려해서 아래로)
+        val newPosition = Position(
+            currentPosition.x, 
+            planeY,
+            currentPosition.z
+        )
+        
+        // 부드럽게 위치 업데이트
+        currentModelNode.position = newPosition
+        
+        Log.i("ARScreen", "Successfully upgraded Fallback to Plane Anchor - Y adjusted from ${currentPosition.y} to ${newPosition.y}")
+        
+        // 앵커 타입 변경 알림
+        onAnchorTypeChange("PLANE_ADJUSTED", currentModelNode)
+        
+        // 성공 상태 디버그 정보 업데이트
+        onDebugInfoUpdate(ARDebugInfo(
+            anchorMethod = "PLANE_ADJUSTED",
+            actualAnchorType = "PLANE_ADJUSTED",
+            modelLoadingStatus = "UPGRADED_TO_PLANE",
+            planesDetected = planes.size,
+            planeAnchorUsed = true
+        ))
+        
+        return true
+        
+    } catch (e: Exception) {
+        Log.e("ARScreen", "Error upgrading to plane anchor", e)
+        return false
+    }
+}
+
+// Fallback: 고정 위치에 객체 배치 (평면 감지 실패 시)
+private fun createFallbackNode(
+    arSceneView: ARSceneView, 
+    modelPath: String, 
+    reason: String,
+    onAnchorTypeChange: (String, ModelNode?) -> Unit
+) {
     try {
         Log.i("ARScreen", "Creating fallback node - reason: $reason")
         
@@ -1070,21 +1436,22 @@ private fun createFallbackNode(arSceneView: ARSceneView, modelPath: String, reas
         if (modelInstance != null) {
             val modelNode = ModelNode(
                 modelInstance = modelInstance,
-                scaleToUnits = 1.0f
+                scaleToUnits = 0.5f
             ).apply {
-                // 사용자 앞 2미터 고정 위치
-                position = Position(0.0f, 0.0f, -2.0f)
+                // 사용자 앞 2미터, 바닥에 붙게 배치 (모델 중심점이 중앙이므로 아래로 이동)
+                position = Position(0.0f, -1.5f, -2.0f)
+                // Y축(수직축) 랜덤 회전 (0-360도)
+                rotation = Rotation(0f, Random.nextFloat() * 360f, 0f)
             }
             
             arSceneView.addChildNode(modelNode)
             Log.i("ARScreen", "Fallback model loaded at fixed position")
             
-            // 애니메이션 재생 시도
-            try {
-                modelNode.playAnimation(animationIndex = 0, loop = true)
-            } catch (e: Exception) {
-                Log.d("ARScreen", "No animations available for fallback model")
-            }
+            // 앵커 타입 변경 알림
+            onAnchorTypeChange("FALLBACK_FIXED", modelNode)
+            
+            // 애니메이션은 터치 시에만 재생되도록 변경
+            Log.d("ARScreen", "Fallback model loaded - animation ready for touch interaction")
         } else {
             Log.w("ARScreen", "Failed to create fallback model instance")
             createPrimitiveNode(arSceneView)
