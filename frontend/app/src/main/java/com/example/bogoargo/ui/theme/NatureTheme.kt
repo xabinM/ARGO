@@ -16,8 +16,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.bogoargo.data.model.User
+import com.example.bogoargo.data.model.UserRole
 
 /**
  * 초등학생 친화적인 자연 테마 색상 팔레트
@@ -44,48 +47,48 @@ object NatureTypography {
         fontWeight = FontWeight.Bold,
         color = NatureColors.forestGreen
     )
-    
+
     val titleMedium = androidx.compose.ui.text.TextStyle(
         fontSize = 18.sp,
         fontWeight = FontWeight.Bold,
         color = NatureColors.earthBrown
     )
-    
+
     val headlineSmall = androidx.compose.ui.text.TextStyle(
         fontSize = 16.sp,
         fontWeight = FontWeight.Bold,
         color = NatureColors.forestGreen
     )
-    
+
     val bodyLarge = androidx.compose.ui.text.TextStyle(
         fontSize = 20.sp,
         fontWeight = FontWeight.Bold,
         color = NatureColors.earthBrown
     )
-    
+
     val bodyMedium = androidx.compose.ui.text.TextStyle(
         fontSize = 16.sp,
         fontWeight = FontWeight.Medium,
         color = NatureColors.earthBrown
     )
-    
+
     val bodySmall = androidx.compose.ui.text.TextStyle(
         fontSize = 14.sp,
         fontWeight = FontWeight.Medium,
         color = NatureColors.forestGreen
     )
-    
+
     val labelLarge = androidx.compose.ui.text.TextStyle(
         fontSize = 16.sp,
         fontWeight = FontWeight.Bold,
         color = Color.White
     )
-    
+
     val labelMedium = androidx.compose.ui.text.TextStyle(
         fontSize = 13.sp,
         fontWeight = FontWeight.Bold
     )
-    
+
     val labelSmall = androidx.compose.ui.text.TextStyle(
         fontSize = 12.sp,
         fontWeight = FontWeight.Medium
@@ -120,7 +123,7 @@ object NatureElevation {
  * 자연 테마 공통 컴포넌트들
  */
 object NatureComponents {
-    
+
     /**
      * 자연 테마의 TopAppBar
      */
@@ -132,11 +135,11 @@ object NatureComponents {
         onNavigationClick: () -> Unit
     ) {
         TopAppBar(
-            title = { 
+            title = {
                 Text(
-                    "$emoji $title", 
+                    "$emoji $title",
                     style = NatureTypography.titleLarge
-                ) 
+                )
             },
             navigationIcon = {
                 IconButton(onClick = onNavigationClick) {
@@ -152,7 +155,7 @@ object NatureComponents {
             )
         )
     }
-    
+
     /**
      * 자연 테마의 배경 그라데이션
      */
@@ -174,7 +177,7 @@ object NatureComponents {
             content = content
         )
     }
-    
+
     /**
      * 자연 테마의 기본 카드
      */
@@ -194,7 +197,7 @@ object NatureComponents {
             content = { Column(content = content) }
         )
     }
-    
+
     /**
      * 통계 표시용 카드
      */
@@ -222,14 +225,14 @@ object NatureComponents {
             }
         }
     }
-    
+
     /**
      * 개별 통계 아이템
      */
     @Composable
     fun StatItem(
-        label: String, 
-        value: String, 
+        label: String,
+        value: String,
         emoji: String,
         color: Color
     ) {
@@ -248,10 +251,10 @@ object NatureComponents {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = emoji,
-                    fontSize = 20.sp
-                )
+//                Text(
+//                    text = emoji,
+//                    fontSize = 20.sp
+//                )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = value,
@@ -268,7 +271,7 @@ object NatureComponents {
             }
         }
     }
-    
+
     /**
      * 로딩 인디케이터
      */
@@ -287,7 +290,7 @@ object NatureComponents {
             )
         }
     }
-    
+
     /**
      * 빈 상태 표시 카드
      */
@@ -337,7 +340,7 @@ object NatureComponents {
             }
         }
     }
-    
+
     /**
      * 자연 테마 버튼
      */
@@ -366,7 +369,7 @@ object NatureComponents {
             )
         }
     }
-    
+
     /**
      * 자연 테마 아웃라인 버튼
      */
@@ -390,7 +393,7 @@ object NatureComponents {
             Text(text, style = NatureTypography.bodyMedium.copy(color = contentColor))
         }
     }
-    
+
     /**
      * 프로필 아바타 (다양한 색상)
      */
@@ -418,7 +421,7 @@ object NatureComponents {
             }
         }
     }
-    
+
     /**
      * 상태 배지 (팀 소속, 역할 등)
      */
@@ -441,7 +444,7 @@ object NatureComponents {
             )
         }
     }
-    
+
     /**
      * 섹션 헤더
      */
@@ -457,6 +460,190 @@ object NatureComponents {
             modifier = modifier.padding(bottom = 12.dp)
         )
     }
+
+    /**
+     * 회원 정보 카드
+     */
+    @Composable
+    fun MemberCard(
+        member: User,
+        forestGreen: Color,
+        sunnyYellow: Color,
+        leafGreen: Color,
+        earthBrown: Color,
+        softOrange: Color
+    ) {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            elevation = CardDefaults.cardElevation(8.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = Color.White.copy(alpha = 0.95f)
+            )
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // 프로필 아이콘
+                Box(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .clip(CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Card(
+                        modifier = Modifier.size(60.dp),
+                        shape = CircleShape,
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (member.role == UserRole.TEACHER)
+                                earthBrown
+                            else
+                                when ((member.userName.length + member.studentId.length) % 4) {
+                                    0 -> forestGreen
+                                    1 -> sunnyYellow
+                                    2 -> leafGreen
+                                    else -> softOrange
+                                }
+                        ),
+                        elevation = CardDefaults.cardElevation(6.dp)
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = if (member.role == UserRole.TEACHER) "👩‍🏫" else "👦",
+                                fontSize = 24.sp
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(20.dp))
+
+                // 사용자 정보
+                Column(
+                    modifier = Modifier.weight(1f)
+                ) {
+                    // 이름 (강조)
+                    Text(
+                        text = member.userName,
+                        fontSize = 20.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = earthBrown,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // 학번/교번
+                    if (member.studentId.isNotEmpty()) {
+                        Card(
+                            shape = RoundedCornerShape(8.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = forestGreen.copy(alpha = 0.1f)
+                            )
+                        ) {
+                            Text(
+                                text = "🎓 ${member.studentId}",
+                                fontSize = 14.sp,
+                                color = forestGreen,
+                                fontWeight = FontWeight.Medium,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    // 역할
+                    Card(
+                        shape = RoundedCornerShape(6.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = when (member.role) {
+                                UserRole.TEACHER -> earthBrown.copy(alpha = 0.15f)
+                                UserRole.STUDENT -> sunnyYellow.copy(alpha = 0.2f)
+                            }
+                        )
+                    ) {
+                        Text(
+                            text = when (member.role) {
+                                UserRole.TEACHER -> "📚 선생님"
+                                UserRole.STUDENT -> "✏️ 학생"
+                            },
+                            fontSize = 12.sp,
+                            color = when (member.role) {
+                                UserRole.TEACHER -> earthBrown
+                                UserRole.STUDENT -> sunnyYellow.copy(alpha = 0.8f)
+                            },
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                // 소속 팀 (강조)
+                Column(
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Card(
+                        shape = RoundedCornerShape(12.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (member.teamId != null)
+                                leafGreen.copy(alpha = 0.2f)
+                            else
+                                Color.Gray.copy(alpha = 0.15f)
+                        ),
+                        elevation = CardDefaults.cardElevation(4.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(12.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = if (member.teamId != null) "🏆" else "⏳",
+                                fontSize = 18.sp
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = if (member.teamId != null) "팀 소속" else "대기중",
+                                fontSize = 13.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = if (member.teamId != null)
+                                    leafGreen
+                                else
+                                    Color.Gray,
+                                textAlign = TextAlign.Center
+                            )
+
+                            if (member.teamId != null) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Card(
+                                    shape = RoundedCornerShape(6.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = leafGreen.copy(alpha = 0.3f)
+                                    )
+                                ) {
+                                    Text(
+                                        text = "ID: ${member.teamId}",
+                                        fontSize = 10.sp,
+                                        color = leafGreen,
+                                        fontWeight = FontWeight.Medium,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
 }
 
 /**
@@ -475,14 +662,14 @@ object NatureColorUtils {
         )
         return colors[(userName.length + studentId.length) % colors.size]
     }
-    
+
     /**
      * 역할별 색상 반환
      */
     fun getRoleColor(isTeacher: Boolean): Color {
         return if (isTeacher) NatureColors.earthBrown else getUserColor("student", "default")
     }
-    
+
     /**
      * 상태별 색상 반환
      */
