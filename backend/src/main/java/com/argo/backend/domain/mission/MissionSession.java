@@ -1,11 +1,10 @@
 package com.argo.backend.domain.mission;
 
 import com.argo.backend.domain.CreatedAtEntity;
+import com.argo.backend.domain.ploblem.ProblemType;
 import com.argo.backend.domain.team.Team;
 import jakarta.persistence.*;
 import lombok.*;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "mission_sessions")
@@ -33,7 +32,7 @@ public class MissionSession extends CreatedAtEntity {
     private MissionSessionStatus status = MissionSessionStatus.STARTED;
 
     @Enumerated(EnumType.STRING)
-    private ResultType resultType;
+    private ProblemType resultType;
 
     @Lob
     private String resultData;
