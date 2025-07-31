@@ -1,17 +1,14 @@
 package com.example.bogoargo.data.model
 
+import java.time.LocalDate
+
 data class Team(
-    val id: String = "",
-    val classId: String = "",
-    val name: String = "",
-    val description: String = "",
-    val leaderId: String = "",
-    val memberIds: List<String> = emptyList(),
-    val maxMembers: Int = 4,
-    val currentMembers: Int = 0,
-    val color: String = "#6200EE", // 팀 컬러
-    val createdAt: String = "",
-    val updatedAt: String = ""
+    val id: Long,
+    val classId: Long,
+    val name: String,
+    val maxMembers: Int,
+    val currentMembers: Int,
+    val createdAt: LocalDate,
 )
 
 data class TeamMember(

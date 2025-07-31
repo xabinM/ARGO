@@ -2,9 +2,9 @@ package com.example.bogoargo.data.dto.response
 
 // 팀 정보 응답 DTO
 data class TeamDataDto (
-    val teamId: Int,
+    val teamId: Long,
     val teamName: String,
-    val maxMembers: Int? = 99,
+    val maxMembers: Int,
     val currentMembers: Int,
     val createdAt: String,
     val classId: Long,

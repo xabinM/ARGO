@@ -1,9 +1,75 @@
 package com.example.bogoargo.data.repository
 
+import androidx.lifecycle.viewModelScope
 import com.example.bogoargo.data.model.*
+import com.example.bogoargo.ui.screens.ClassDetail
+import com.example.bogoargo.ui.screens.Location
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class ClassRepository {
+
+
+
+    /**
+     * 반 상세 정보를 서버에서 로드
+     */
+    fun loadClassDetail(classId: String) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _error.value = null
+
+                val response = apiService.getClassDetail(classId)
+
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    if (responseBody?.success == true && responseBody.data != null) {
+                        // 서버 데이터를 UI 모델로 변환
+                        _classDetail.value = mapToClassDetail(responseBody.data)
+                    } else {
+                        _error.value = responseBody?.message ?: "데이터를 불러올 수 없습니다."
+                    }
+                } else {
+                    _error.value = "서버 오류: ${response.code()}"
+                }
+            } catch (e: Exception) {
+                _error.value = "네트워크 오류: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    /**
+     * 서버 데이터를 UI 모델로 변환
+     */
+    private fun mapToClassDetail(data: ClassDetailData): ClassDetail {
+        return ClassDetail(
+            id = data.id,
+            schoolName = data.schoolName,
+            className = data.className,
+            description = data.description,
+            location = Location(
+                id = data.location.id,
+                name = data.location.name,
+                latitude = data.location.latitude,
+                longitude = data.location.longitude,
+                address = data.location.address
+            ),
+            invitationCode = data.invitationCode,
+            maxStudents = data.maxStudents,
+            currentStudents = data.currentStudents
+        )
+    }
+
+
+
+
+
+
+
+
     
     // 임시 데이터 - 실제 구현에서는 API 호출로 대체
     private val mockClasses = mutableListOf<Class>(

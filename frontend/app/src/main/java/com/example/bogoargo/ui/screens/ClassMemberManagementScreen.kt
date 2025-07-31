@@ -29,6 +29,7 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.data.model.User
 import com.example.bogoargo.data.model.UserRole
+import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.viewmodels.ClassViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -191,7 +192,7 @@ fun ClassMemberManagementScreen(
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
                         items(members) { member ->
-                            MemberCard(
+                            NatureComponents.MemberCard(
                                 member = member,
                                 forestGreen = forestGreen,
                                 sunnyYellow = sunnyYellow,
@@ -241,19 +242,19 @@ fun MemberStatsCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                StatItem(
+                NatureComponents.StatItem(
                     "전체", 
                     totalMembers.toString(), 
                     "👥",
                     forestGreen
                 )
-                StatItem(
+                NatureComponents.StatItem(
                     "학생", 
                     studentsCount.toString(), 
                     "🎒",
                     sunnyYellow
                 )
-                StatItem(
+                NatureComponents.StatItem(
                     "팀", 
                     teamsCount.toString(), 
                     "🏆",
@@ -264,228 +265,6 @@ fun MemberStatsCard(
     }
 }
 
-@Composable
-fun StatItem(
-    label: String, 
-    value: String, 
-    emoji: String,
-    color: Color
-) {
-    Card(
-        modifier = Modifier.size(90.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.15f)
-        ),
-        elevation = CardDefaults.cardElevation(4.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = emoji,
-                fontSize = 20.sp
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = value,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = color
-            )
-            Text(
-                text = label,
-                fontSize = 12.sp,
-                color = color.copy(alpha = 0.8f),
-                fontWeight = FontWeight.Medium
-            )
-        }
-    }
-}
-
-@Composable
-fun MemberCard(
-    member: User,
-    forestGreen: Color,
-    sunnyYellow: Color,
-    leafGreen: Color,
-    earthBrown: Color,
-    softOrange: Color
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(18.dp),
-        elevation = CardDefaults.cardElevation(8.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color.White.copy(alpha = 0.95f)
-        )
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            // 프로필 아이콘
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Card(
-                    modifier = Modifier.size(60.dp),
-                    shape = CircleShape,
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (member.role == UserRole.TEACHER) 
-                            earthBrown 
-                        else 
-                            when ((member.userName.length + member.studentId.length) % 4) {
-                                0 -> forestGreen
-                                1 -> sunnyYellow
-                                2 -> leafGreen
-                                else -> softOrange
-                            }
-                    ),
-                    elevation = CardDefaults.cardElevation(6.dp)
-                ) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = if (member.role == UserRole.TEACHER) "👩‍🏫" else "👦",
-                            fontSize = 24.sp
-                        )
-                    }
-                }
-            }
-            
-            Spacer(modifier = Modifier.width(20.dp))
-            
-            // 사용자 정보
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                // 이름 (강조)
-                Text(
-                    text = member.userName,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = earthBrown,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                
-                Spacer(modifier = Modifier.height(6.dp))
-                
-                // 학번/교번
-                if (member.studentId.isNotEmpty()) {
-                    Card(
-                        shape = RoundedCornerShape(8.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = forestGreen.copy(alpha = 0.1f)
-                        )
-                    ) {
-                        Text(
-                            text = "🎓 ${member.studentId}",
-                            fontSize = 14.sp,
-                            color = forestGreen,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(6.dp))
-                
-                // 역할
-                Card(
-                    shape = RoundedCornerShape(6.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = when (member.role) {
-                            UserRole.TEACHER -> earthBrown.copy(alpha = 0.15f)
-                            UserRole.STUDENT -> sunnyYellow.copy(alpha = 0.2f)
-                        }
-                    )
-                ) {
-                    Text(
-                        text = when (member.role) {
-                            UserRole.TEACHER -> "📚 선생님"
-                            UserRole.STUDENT -> "✏️ 학생"
-                        },
-                        fontSize = 12.sp,
-                        color = when (member.role) {
-                            UserRole.TEACHER -> earthBrown
-                            UserRole.STUDENT -> sunnyYellow.copy(alpha = 0.8f)
-                        },
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
-                }
-            }
-            
-            // 소속 팀 (강조)
-            Column(
-                horizontalAlignment = Alignment.End
-            ) {
-                Card(
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (member.teamId != null) 
-                            leafGreen.copy(alpha = 0.2f)
-                        else 
-                            Color.Gray.copy(alpha = 0.15f)
-                    ),
-                    elevation = CardDefaults.cardElevation(4.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = if (member.teamId != null) "🏆" else "⏳",
-                            fontSize = 18.sp
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = if (member.teamId != null) "팀 소속" else "대기중",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = if (member.teamId != null) 
-                                leafGreen
-                            else 
-                                Color.Gray,
-                            textAlign = TextAlign.Center
-                        )
-                        
-                        if (member.teamId != null) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Card(
-                                shape = RoundedCornerShape(6.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = leafGreen.copy(alpha = 0.3f)
-                                )
-                            ) {
-                                Text(
-                                    text = "ID: ${member.teamId}",
-                                    fontSize = 10.sp,
-                                    color = leafGreen,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Preview(showBackground = true)
 @Composable

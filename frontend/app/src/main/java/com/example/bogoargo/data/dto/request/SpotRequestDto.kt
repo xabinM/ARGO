@@ -1,6 +1,6 @@
-package com.example.bogoargo.data.dto
+package com.example.bogoargo.data.dto.request
 
-data class PlaceDto(
+data class SpotDtoRequest(
     val id: String,
     val name: String,
     val latitude: Double,

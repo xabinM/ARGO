@@ -1,15 +1,23 @@
 package com.example.bogoargo.data.model
 
-data class Class(
-    val id: String = "",
-    val year: Int,
-    val school: String = "",
-    val className: String = "",
-    val description: String = "",
-    val region: String = "",
-    val invitationCode: String = "",
-    val maxStudents: Int = 0,
-    val currentStudents: Int = 0,
-    val schoolName: String
-)
+import java.time.LocalDate
 
+data class Class(
+    val id: Long,
+    val name: String,
+    val description: String,
+    val location: String,
+    val activityDate: LocalDate,
+    val currentStudents: Int,
+    val maxStudents: Int,
+    val teamCount: Int,
+    val status: ClassStatus,
+    val inviteCode: String,
+    val createdAt: LocalDate,
+    val isFull: Boolean = currentStudents >= maxStudents
+) {
+    enum class ClassStatus {
+        ACTIVE,
+        ENDED,
+    }
+}

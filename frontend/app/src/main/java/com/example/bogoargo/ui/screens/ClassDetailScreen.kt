@@ -3,11 +3,6 @@ package com.example.bogoargo.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.People
-import androidx.compose.material.icons.filled.Groups
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,8 +15,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.bogoargo.data.model.Program
-import com.example.bogoargo.data.model.ProgramStatus
 import com.example.bogoargo.ui.viewmodels.ClassViewModel
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
@@ -29,26 +22,25 @@ import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
 import com.example.bogoargo.ui.theme.NatureElevation
 
+// 장소 데이터 클래스
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClassDetailScreen(
     navController: NavController,
-    classId: String = "class_1",
-    schoolName: String = "싸피 초등학교",
-    className: String = "1학년 1반",
-    description: String = "우리 반은 체험 학습을 통해 다양한 경험을 쌓고 있습니다. 과학, 역사, 문화 등 다양한 분야의 프로그램에 참여하며 즐겁게 학습하고 있어요!",
-    region: String = "서울",
-    invitationCode: String = "ABC12DEF",
+    classId: String,
     viewModel: ClassViewModel = viewModel()
 ) {
-    // ViewModel에서 프로그램 데이터를 가져옴
-    val programs by viewModel.programs.collectAsState()
+    // ViewModel에서 반 상세 정보와 팀 진행도 데이터를 가져옴
+    val classDetail by viewModel.classDetail.collectAsState()
+    val teamProgressList by viewModel.teamProgressList.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     
-    // 페이지 진입 시 프로그램 목록 로드
+    // 페이지 진입 시 데이터 로드
     LaunchedEffect(classId) {
-        viewModel.loadProgramsByClassId(classId)
+        viewModel.loadClassDetail(classId)
+        viewModel.loadTeamProgress(classId)
     }
     
     // 에러 처리
@@ -66,18 +58,6 @@ fun ClassDetailScreen(
                 emoji = "🏫"
             ) { 
                 navController.popBackStack() 
-            }
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = { 
-                    navController.navigate("programCreate/$classId")
-                },
-                containerColor = NatureColors.leafGreen,
-                contentColor = androidx.compose.ui.graphics.Color.White,
-                shape = NatureShapes.medium
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "프로그램 추가")
             }
         }
     ) { paddingValues ->
@@ -98,64 +78,81 @@ fun ClassDetailScreen(
                         Column(
                             modifier = Modifier.padding(24.dp)
                         ) {
-                            // 학교 + 반 제목
-                            Text(
-                                text = "$schoolName $className",
-                                style = NatureTypography.titleLarge.copy(fontSize = 24.sp),
-                                modifier = Modifier.padding(bottom = 8.dp)
-                            )
-                            
-                            // 지역 정보
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(bottom = 16.dp)
-                            ) {
+                            if (classDetail != null) {
+                                // 학교 + 반 제목
                                 Text(
-                                    text = "📍",
-                                    fontSize = 16.sp
+                                    text = "${classDetail!!.schoolName} ${classDetail!!.className}",
+                                    style = NatureTypography.titleLarge.copy(fontSize = 24.sp),
+                                    modifier = Modifier.padding(bottom = 8.dp)
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = region,
-                                    style = NatureTypography.bodyMedium
-                                )
-                            }
-                            
-                            // 설명
-                            Text(
-                                text = description,
-                                style = NatureTypography.bodyMedium.copy(
-                                    color = NatureColors.earthBrown.copy(alpha = 0.8f),
-                                    lineHeight = 22.sp
-                                ),
-                                modifier = Modifier.padding(bottom = 20.dp)
-                            )
-                            
-                            // 초대 코드
-                            NatureComponents.NatureCard(
-                                shape = NatureShapes.medium,
-                                containerColor = NatureColors.forestGreen.copy(alpha = 0.1f)
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(16.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
+                                
+                                // 장소 정보
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.padding(bottom = 16.dp)
                                 ) {
                                     Text(
-                                        text = "🎫 초대 코드",
-                                        style = NatureTypography.labelMedium.copy(
-                                            color = NatureColors.forestGreen
-                                        )
+                                        text = "📍",
+                                        fontSize = 16.sp
                                     )
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(
-                                        text = invitationCode,
-                                        style = NatureTypography.titleMedium.copy(
-                                            fontSize = 20.sp,
-                                            letterSpacing = 2.sp,
-                                            color = NatureColors.forestGreen
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Column {
+                                        Text(
+                                            text = classDetail!!.location.name,
+                                            style = NatureTypography.bodyMedium
                                         )
-                                    )
+                                        if (classDetail!!.location.address.isNotEmpty()) {
+                                            Text(
+                                                text = classDetail!!.location.address,
+                                                style = NatureTypography.bodySmall.copy(
+                                                    color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                                                )
+                                            )
+                                        }
+                                    }
                                 }
+                                
+                                // 설명
+                                Text(
+                                    text = classDetail!!.description,
+                                    style = NatureTypography.bodyMedium.copy(
+                                        color = NatureColors.earthBrown.copy(alpha = 0.8f),
+                                        lineHeight = 22.sp
+                                    ),
+                                    modifier = Modifier.padding(bottom = 20.dp)
+                                )
+                                
+                                // 초대 코드
+                                NatureComponents.NatureCard(
+                                    shape = NatureShapes.medium,
+                                    containerColor = NatureColors.forestGreen.copy(alpha = 0.1f)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(16.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(
+                                            text = "🎫 초대 코드",
+                                            style = NatureTypography.labelMedium.copy(
+                                                color = NatureColors.forestGreen
+                                            )
+                                        )
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(
+                                            text = classDetail!!.invitationCode,
+                                            style = NatureTypography.titleMedium.copy(
+                                                fontSize = 20.sp,
+                                                letterSpacing = 2.sp,
+                                                color = NatureColors.forestGreen
+                                            )
+                                        )
+                                    }
+                                }
+                            } else if (isLoading) {
+                                // 로딩 중
+                                NatureComponents.NatureLoadingIndicator(
+                                    modifier = Modifier.height(200.dp)
+                                )
                             }
                         }
                     }
@@ -243,55 +240,33 @@ fun ClassDetailScreen(
                     }
                 }
 
-                // 프로그램 목록 섹션 헤더
+                // 팀별 진행도 섹션
                 item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        NatureComponents.SectionHeader(
-                            text = "체험 프로그램",
-                            emoji = "🎒"
-                        )
-                        NatureComponents.StatusBadge(
-                            text = "${programs.size}개",
-                            backgroundColor = NatureColors.forestGreen.copy(alpha = 0.15f),
-                            textColor = NatureColors.forestGreen
-                        )
-                    }
+                    NatureComponents.SectionHeader(
+                        text = "팀별 진행도",
+                        emoji = "📊"
+                    )
                 }
                 
-                // 로딩 또는 프로그램 목록 표시
+                // 팀별 진행도 데이터 표시
                 if (isLoading) {
                     item {
                         NatureComponents.NatureLoadingIndicator(
                             modifier = Modifier.height(200.dp)
                         )
                     }
-                } else if (programs.isEmpty()) {
+                } else if (teamProgressList.isEmpty()) {
                     item {
                         NatureComponents.EmptyStateCard(
                             emoji = "🌱",
-                            title = "아직 프로그램이 없어요",
-                            description = "새로운 체험 프로그램을\n추가해서 시작해보세요!"
+                            title = "아직 팀이 없어요",
+                            description = "팀을 만들고 활동을\n시작해보세요!"
                         )
                     }
                 } else {
-                    // 프로그램 목록
-                    items(programs) { program ->
-                        ProgramCard(
-                            program = program,
-                            onClick = {
-                                navController.navigate("programDetail/${program.id}")
-                            }
-                        )
+                    item {
+                        TeamProgressSection(teamProgressList = teamProgressList)
                     }
-                }
-                
-                // 빈 공간 추가 (FAB와의 겹침 방지)
-                item {
-                    Spacer(modifier = Modifier.height(80.dp))
                 }
             }
         }
@@ -299,131 +274,85 @@ fun ClassDetailScreen(
 }
 
 @Composable
-fun ProgramCard(
-    program: Program,
-    onClick: () -> Unit
-) {
+fun TeamProgressSection(teamProgressList: List<TeamProgress>) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        teamProgressList.forEach { teamProgress ->
+            TeamProgressCard(teamProgress = teamProgress)
+        }
+    }
+}
+
+@Composable
+fun TeamProgressCard(teamProgress: TeamProgress) {
     NatureComponents.NatureCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = NatureShapes.card
+        containerColor = teamProgress.color.copy(alpha = 0.1f)
     ) {
-        Button(
-            onClick = onClick,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                contentColor = NatureColors.earthBrown
-            ),
-            shape = NatureShapes.card
+        Column(
+            modifier = Modifier.padding(16.dp)
         ) {
-            Column(
-                modifier = Modifier.padding(20.dp)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = program.title,
-                            style = NatureTypography.bodyLarge.copy(fontSize = 18.sp),
-                            textAlign = TextAlign.Start
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = program.description,
-                            style = NatureTypography.bodyMedium.copy(
-                                color = NatureColors.earthBrown.copy(alpha = 0.7f)
-                            ),
-                            textAlign = TextAlign.Start
-                        )
-                    }
-                    
-                    // 상태 배지
-                    StatusBadge(status = program.status)
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // 위치 정보
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
+                Column {
                     Text(
-                        text = "📍",
-                        fontSize = 16.sp
+                        text = "🏆 ${teamProgress.teamName}",
+                        style = NatureTypography.titleMedium.copy(color = teamProgress.color)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = program.location,
+                        text = teamProgress.stage,
                         style = NatureTypography.bodySmall.copy(
-                            color = NatureColors.forestGreen
+                            color = NatureColors.earthBrown.copy(alpha = 0.7f)
                         )
                     )
                 }
                 
-                Spacer(modifier = Modifier.height(12.dp))
-                
-                // 날짜 및 참가자 정보
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                // 진행률 표시
+                NatureComponents.StatusBadge(
+                    text = "${teamProgress.progress}%",
+                    backgroundColor = teamProgress.color.copy(alpha = 0.2f),
+                    textColor = teamProgress.color
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            // 진행 바
+            NatureComponents.NatureCard(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp),
+                containerColor = NatureColors.earthBrown.copy(alpha = 0.1f),
+                shape = NatureShapes.small
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(teamProgress.progress / 100f)
+                        .height(8.dp)
+                        .padding(0.dp)
                 ) {
-                    NatureComponents.StatusBadge(
-                        text = "📅 ${program.date}",
-                        backgroundColor = NatureColors.sunnyYellow.copy(alpha = 0.2f),
-                        textColor = NatureColors.earthBrown
-                    )
-                    NatureComponents.StatusBadge(
-                        text = "👥 ${program.participants}/${program.maxParticipants}명",
-                        backgroundColor = NatureColors.leafGreen.copy(alpha = 0.2f),
-                        textColor = NatureColors.leafGreen
-                    )
+                    NatureComponents.NatureCard(
+                        modifier = Modifier.fillMaxSize(),
+                        containerColor = teamProgress.color,
+                        shape = NatureShapes.small
+                    ) {}
                 }
             }
         }
     }
 }
-
-@Composable
-fun StatusBadge(status: ProgramStatus) {
-    val (text, emoji, backgroundColor, textColor) = when (status) {
-        ProgramStatus.UPCOMING -> Tuple4(
-            "예정",
-            "⏰",
-            NatureColors.sunnyYellow.copy(alpha = 0.2f),
-            NatureColors.earthBrown
-        )
-        ProgramStatus.ONGOING -> Tuple4(
-            "진행중",
-            "🚀",
-            NatureColors.leafGreen.copy(alpha = 0.2f),
-            NatureColors.leafGreen
-        )
-        ProgramStatus.COMPLETED -> Tuple4(
-            "완료",
-            "✅",
-            NatureColors.forestGreen.copy(alpha = 0.2f),
-            NatureColors.forestGreen
-        )
-    }
-    
-    NatureComponents.StatusBadge(
-        text = "$emoji $text",
-        backgroundColor = backgroundColor,
-        textColor = textColor
-    )
-}
-
-// Helper data class for multiple return values
-data class Tuple4<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
 @Preview(showBackground = true)
 @Composable
 fun ClassDetailScreenPreview() {
     MaterialTheme {
-        ClassDetailScreen(navController = rememberNavController())
+        ClassDetailScreen(
+            navController = rememberNavController(),
+            classId = "preview_class"
+        )
     }
 }
