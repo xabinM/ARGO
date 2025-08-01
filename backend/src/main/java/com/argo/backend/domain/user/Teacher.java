@@ -42,6 +42,5 @@ public class Teacher extends User {
     // 편의 메서드 (양방향 연관관계 동기화)
     public void addClassRoom(ClassRoom c) {
         this.classes.add(c);
-        c.setTeacher(this);
     }
 }
