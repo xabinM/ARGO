@@ -1,0 +1,285 @@
+package com.example.bogoargo.ui.screens.ar.utils
+
+import android.util.Log
+import com.google.ar.core.Anchor
+import com.google.ar.core.Plane
+import com.google.ar.core.Session
+import com.google.ar.core.TrackingState
+import io.github.sceneview.ar.ARSceneView
+import io.github.sceneview.ar.node.AnchorNode
+import io.github.sceneview.math.Position
+import io.github.sceneview.node.ModelNode
+import com.example.bogoargo.ui.screens.ar.model.ARDebugInfo
+import kotlin.random.Random
+
+fun setupARScene(
+    arSceneView: ARSceneView,
+    session: Session,
+    spotId: Long,
+    latitude: Double,
+    longitude: Double,
+    onMissionComplete: () -> Unit,
+    onDebugInfoUpdate: (ARDebugInfo) -> Unit,
+    onModelNodeUpdate: (ModelNode?) -> Unit
+) {
+    Log.d("ARScreen", "Setting up AR scene for mission spot $spotId at GPS($latitude, $longitude)")
+    
+    // 모델 파일 목록 수집
+    val availableModels = try {
+        arSceneView.context.assets.list("models")?.toList() ?: emptyList()
+    } catch (e: Exception) {
+        emptyList()
+    }
+    
+    var frameCount = 0L
+    
+    // 모델 파일 존재 확인
+    val modelPath = "models/cube.glb"
+    val assetList = arSceneView.context.assets.list("models")
+    
+    if (assetList?.contains("cube.glb") != true) {
+        Log.e("ARScreen", "Model file not found: $modelPath")
+        Log.d("ARScreen", "Available models: ${assetList?.joinToString()}")
+        
+        // 디버그 정보 업데이트 - 모델 파일 없음
+        onDebugInfoUpdate(ARDebugInfo(
+            targetLatitude = latitude,
+            targetLongitude = longitude,
+            anchorMethod = "MODEL_NOT_FOUND",
+            modelLoadingStatus = "FILE_NOT_FOUND",
+            availableModels = availableModels
+        ))
+        
+        createFallbackNode(arSceneView, modelPath, "Model file not found") { _, _ ->
+            // 모델 파일이 없는 경우이므로 상태 업데이트는 생략
+        }
+        return
+    }
+    
+    // 초기 디버그 정보 업데이트
+    onDebugInfoUpdate(ARDebugInfo(
+        targetLatitude = latitude,
+        targetLongitude = longitude,
+        anchorMethod = "INITIALIZING",
+        modelLoadingStatus = "MODEL_FOUND",
+        availableModels = availableModels
+    ))
+    
+    // Earth tracking이 안정화되기까지 대기 (90프레임 = 약 3초)
+    var waitFrameCount = 0
+    var hasTriedTerrainAnchor = false
+    
+    // 현재 앵커 상태 추적 (mutable state로 관리)
+    var currentAnchorType = "NONE" // 실제 사용 중인 앵커 타입
+    var localModelNode: ModelNode? = null // 로컬 ModelNode 참조
+    var localAnimationPlayed = false // 로컬 애니메이션 상태
+    
+    // 상태 업데이트 함수 (중앙화된 상태 관리)
+    fun updateAnchorState(anchorType: String, modelNode: ModelNode?) {
+        currentAnchorType = anchorType
+        localModelNode = modelNode
+        localAnimationPlayed = false // 새 객체이므로 애니메이션 상태 초기화
+        onModelNodeUpdate(modelNode) // 컴포넌트 레벨로 상태 전달
+        Log.d("ARScreen", "Anchor state updated: $anchorType, Model: ${modelNode != null}, Animation: $localAnimationPlayed")
+    }
+    
+    // 현재 애니메이션 상태 확인 함수 (중앙화된 상태 관리)
+    fun getAnimationStatus(): String {
+        return when {
+            localModelNode == null -> "NONE"
+            localAnimationPlayed -> "PLAYED"
+            else -> "READY"
+        }
+    }
+    
+    arSceneView.onFrame = { frame ->
+        frameCount++
+        waitFrameCount++
+        
+        // 매 프레임마다 Geospatial API 상태 확인 및 디버그 정보 업데이트
+        try {
+            val earth = session.earth
+            val (gpsEnabled, networkEnabled, locationServicesEnabled) = checkLocationServicesStatus(arSceneView.context)
+            
+            val debugInfo = if (earth != null) {
+                val cameraGeospatialPose = earth.cameraGeospatialPose
+                val planes = session.getAllTrackables(Plane::class.java)
+                val horizontalPlanes = planes.filter { 
+                    it.type == Plane.Type.HORIZONTAL_UPWARD_FACING && 
+                    it.trackingState == TrackingState.TRACKING 
+                }
+                
+                ARDebugInfo(
+                    currentLatitude = cameraGeospatialPose.latitude,
+                    currentLongitude = cameraGeospatialPose.longitude,
+                    targetLatitude = latitude,
+                    targetLongitude = longitude,
+                    gpsAccuracy = cameraGeospatialPose.horizontalAccuracy,
+                    earthTrackingState = earth.trackingState.name,
+                    anchorMethod = when {
+                        !hasTriedTerrainAnchor && waitFrameCount < 90 -> "WAITING_FOR_GPS (${90 - waitFrameCount})"
+                        currentAnchorType == "NONE" -> "CREATING_FALLBACK"
+                        currentAnchorType == "FALLBACK_FIXED" && horizontalPlanes.isNotEmpty() -> "UPGRADING_TO_PLANE"
+                        earth.trackingState == TrackingState.TRACKING && cameraGeospatialPose.horizontalAccuracy <= 10.0f -> "TERRAIN_ANCHOR_READY"
+                        else -> "STABLE"
+                    },
+                    actualAnchorType = currentAnchorType, // 실제 사용 중인 앵커 타입
+                    isSessionInitialized = true,
+                    geospatialApiStatus = if (earth.trackingState == TrackingState.TRACKING) "ENABLED_TRACKING" else "ENABLED_${earth.trackingState.name}",
+                    modelLoadingStatus = "LOADED",
+                    terrainAnchorState = "READY",
+                    availableModels = availableModels,
+                    frameCount = frameCount,
+                    gpsEnabled = gpsEnabled,
+                    locationServicesEnabled = locationServicesEnabled,
+                    networkConnected = networkEnabled,
+                    googlePlayServicesAvailable = true,
+                    planesDetected = horizontalPlanes.size,
+                    planeAnchorUsed = currentAnchorType.contains("PLANE"),
+                    animationStatus = getAnimationStatus()
+                )
+            } else {
+                ARDebugInfo(
+                    targetLatitude = latitude,
+                    targetLongitude = longitude,
+                    earthTrackingState = "EARTH_NULL",
+                    anchorMethod = when {
+                        !hasTriedTerrainAnchor && waitFrameCount < 90 -> "WAITING_FOR_GPS (${90 - waitFrameCount})"
+                        currentAnchorType == "NONE" -> "CREATING_FALLBACK"
+                        else -> "STABLE"
+                    },
+                    actualAnchorType = currentAnchorType, // 실제 사용 중인 앵커 타입
+                    isSessionInitialized = true,
+                    geospatialApiStatus = "DISABLED",
+                    modelLoadingStatus = "LOADED",
+                    availableModels = availableModels,
+                    frameCount = frameCount,
+                    gpsEnabled = gpsEnabled,
+                    locationServicesEnabled = locationServicesEnabled,
+                    networkConnected = networkEnabled,
+                    googlePlayServicesAvailable = true,
+                    planesDetected = 0,
+                    planeAnchorUsed = currentAnchorType.contains("PLANE"),
+                    animationStatus = getAnimationStatus()
+                )
+            }
+            
+            // 30프레임마다 디버그 정보 업데이트 (성능 고려)
+            if (frameCount % 30 == 0L) {
+                onDebugInfoUpdate(debugInfo)
+            }
+            
+            // 90프레임 후에 Terrain Anchor 시도
+            if (waitFrameCount >= 90 && !hasTriedTerrainAnchor) {
+                hasTriedTerrainAnchor = true
+                
+                // 1단계: Terrain Anchor 시도 (Geospatial API 사용)
+                val terrainAnchorSuccess = tryCreateTerrainAnchor(
+                    arSceneView, session, latitude, longitude, modelPath, onDebugInfoUpdate
+                ) { anchorType, modelNode ->
+                    if (anchorType == "TERRAIN_ANCHOR" && modelNode != null) {
+                        updateAnchorState(anchorType, modelNode)
+                    }
+                }
+                if (terrainAnchorSuccess) {
+                    Log.i("ARScreen", "Successfully created Terrain Anchor at GPS($latitude, $longitude)")
+                }
+            }
+            
+            // Terrain Anchor 시도 후 즉시 Fallback (평면 감지 시 자동 업그레이드)
+            if (waitFrameCount >= 90 && hasTriedTerrainAnchor && currentAnchorType == "NONE") {
+                // Terrain Anchor가 실패했으므로 즉시 Fallback 생성
+                Log.i("ARScreen", "Creating fallback anchor - Terrain Anchor not available")
+                onDebugInfoUpdate(ARDebugInfo(
+                    targetLatitude = latitude,
+                    targetLongitude = longitude,
+                    anchorMethod = "FALLBACK_FIXED",
+                    actualAnchorType = "FALLBACK_FIXED",
+                    modelLoadingStatus = "USING_FALLBACK",
+                    geospatialApiStatus = "FALLBACK_MODE",
+                    availableModels = availableModels
+                ))
+                createFallbackNode(arSceneView, modelPath, "Terrain Anchor unavailable") { anchorType, modelNode ->
+                    if (anchorType == "FALLBACK_FIXED" && modelNode != null) {
+                        updateAnchorState(anchorType, modelNode)
+                    }
+                }
+            }
+            
+            // Fallback에서 Plane Anchor로 업그레이드 시도 (평면이 감지된 경우)
+            if (currentAnchorType == "FALLBACK_FIXED" && localModelNode != null && waitFrameCount > 120) {
+                val upgraded = tryUpgradeToPlaneAnchor(
+                    arSceneView, session, localModelNode!!, onDebugInfoUpdate
+                ) { anchorType, modelNode ->
+                    if (anchorType == "PLANE_ADJUSTED" && modelNode != null) {
+                        updateAnchorState(anchorType, modelNode)
+                    }
+                }
+                
+                if (upgraded) {
+                    Log.i("ARScreen", "Successfully upgraded Fallback to Plane Anchor")
+                }
+            }
+            
+            if (earth != null) {
+                val cameraGeospatialPose = earth.cameraGeospatialPose
+                
+                // 상세한 진단 로깅 (Earth tracking 상태가 변경될 때만)
+                if (frameCount % 60 == 0L) { // 2초마다 상세 로그
+                    Log.d("ARScreen", "=== Earth Tracking Diagnosis ===")
+                    Log.d("ARScreen", "Earth tracking state: ${earth.trackingState}")
+                    Log.d("ARScreen", "GPS accuracy: ${cameraGeospatialPose.horizontalAccuracy}m")
+                    Log.d("ARScreen", "Current position: ${cameraGeospatialPose.latitude}, ${cameraGeospatialPose.longitude}")
+                    Log.d("ARScreen", "Altitude: ${cameraGeospatialPose.altitude}m")
+                    Log.d("ARScreen", "GPS enabled: $gpsEnabled, Location services: $locationServicesEnabled, Network: $networkEnabled")
+                    Log.d("ARScreen", "Wait frames: $waitFrameCount/60, Has tried terrain anchor: $hasTriedTerrainAnchor")
+                    
+                    when (earth.trackingState) {
+                        TrackingState.STOPPED -> {
+                            Log.w("ARScreen", "Earth tracking STOPPED - possible causes:")
+                            Log.w("ARScreen", "  - Location services disabled: ${!locationServicesEnabled}")
+                            Log.w("ARScreen", "  - GPS disabled: ${!gpsEnabled}")
+                            Log.w("ARScreen", "  - Network location disabled: ${!networkEnabled}")
+                            Log.w("ARScreen", "  - Insufficient permissions or Google Play Services issue")
+                        }
+                        TrackingState.PAUSED -> {
+                            Log.i("ARScreen", "Earth tracking PAUSED - initializing or temporary loss")
+                        }
+                        TrackingState.TRACKING -> {
+                            Log.i("ARScreen", "Earth tracking ACTIVE - GPS accuracy: ${cameraGeospatialPose.horizontalAccuracy}m")
+                        }
+                    }
+                    Log.d("ARScreen", "=== End Diagnosis ===")
+                }
+                
+                Log.v("ARScreen", "GPS accuracy: ${cameraGeospatialPose.horizontalAccuracy}m, " +
+                        "Earth tracking: ${earth.trackingState}")
+            } else {
+                if (frameCount % 60 == 0L) {
+                    Log.e("ARScreen", "Earth object is NULL - Geospatial API not properly initialized")
+                    Log.e("ARScreen", "  - Check ARCore installation and Google Play Services")
+                    Log.e("ARScreen", "  - GPS enabled: $gpsEnabled, Location services: $locationServicesEnabled")
+                    Log.e("ARScreen", "  - Wait frames: $waitFrameCount/60, Has tried terrain anchor: $hasTriedTerrainAnchor")
+                }
+            }
+        } catch (e: Exception) {
+            Log.v("ARScreen", "Earth tracking check failed: ${e.message}")
+            
+            // 오류 상태도 디버그 정보로 업데이트
+            if (frameCount % 30 == 0L) {
+                onDebugInfoUpdate(ARDebugInfo(
+                    targetLatitude = latitude,
+                    targetLongitude = longitude,
+                    earthTrackingState = "ERROR: ${e.message}",
+                    anchorMethod = if (!hasTriedTerrainAnchor && waitFrameCount < 90) "WAITING_FOR_GPS (${90 - waitFrameCount})" else "ERROR_FALLBACK",
+                    actualAnchorType = currentAnchorType,
+                    isSessionInitialized = true,
+                    geospatialApiStatus = "ERROR",
+                    modelLoadingStatus = "ERROR",
+                    availableModels = availableModels,
+                    frameCount = frameCount
+                ))
+            }
+        }
+    }
+}
