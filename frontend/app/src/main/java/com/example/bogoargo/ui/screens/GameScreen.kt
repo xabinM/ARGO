@@ -222,6 +222,37 @@ fun GameScreen(
                     completedCount = 0
                 )
                 
+                // 디버그 AR 버튼 (우측 상단)
+                Card(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 80.dp, end = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.9f)
+                    )
+                ) {
+                    TextButton(
+                        onClick = {
+                            // 현재 위치 기준으로 가상의 미션 위치 생성 (±5m)
+                            val currentLat = uiState.userLocation?.latitude ?: 37.5665
+                            val currentLon = uiState.userLocation?.longitude ?: 126.9780
+                            val debugLat = currentLat + 0.00005 // 약 5m 북쪽
+                            val debugLon = currentLon + 0.00005 // 약 5m 동쪽
+                            
+                            // 디버그용 하드코딩된 미션 ID와 위치로 AR 화면 이동
+                            navController.navigate("ar/999/$debugLat/$debugLon")
+                        },
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "🔧 Debug AR",
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                
                 // 근처 미션 AR 버튼들 (포켓몬GO 스타일)
                 if (uiState.nearbyMissionSpots.isNotEmpty()) {
                     Column(
