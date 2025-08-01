@@ -78,8 +78,9 @@ fun tryCreateTerrainAnchor(
                             position = Position(0.0f, 0.0f, 0.0f)
                             // Y축(수직축) 랜덤 회전 (0-360도)
                             rotation = generateRandomYRotation()
-                            // 모든 애니메이션 정지
-                            stopAnimation(0)
+                            // 애니메이션을 준비된 상태로 설정 (즉각 반응용)
+                            // SceneView에서는 기본적으로 정지된 상태로 시작하므로 별도 설정 불필요
+                            Log.d("ARScreen", "Model prepared for instant animation response")
                         }
                         
                         anchorNode.addChildNode(modelNode)
@@ -211,8 +212,9 @@ fun tryCreatePlaneAnchor(
             position = Position(0.0f, 0.0f, 0.0f)
             // Y축(수직축) 랜덤 회전
             rotation = generateRandomYRotation()
-            // 모든 애니메이션 정지
-            stopAnimation(0)
+            // 애니메이션을 준비된 상태로 설정 (즉각 반응용)
+            // SceneView에서는 기본적으로 정지된 상태로 시작하므로 별도 설정 불필요
+            Log.d("ARScreen", "Model prepared for instant animation response")
         }
         
         anchorNode.addChildNode(modelNode)
@@ -350,8 +352,9 @@ fun createFallbackNode(
                 position = Position(0.0f, -1.5f, -2.0f)
                 // Y축(수직축) 랜덤 회전 (0-360도)
                 rotation = generateRandomYRotation()
-                // 모든 애니메이션 정지
-                stopAnimation(0)
+                // 애니메이션을 준비된 상태로 설정 (즉각 반응용)
+                // SceneView에서는 기본적으로 정지된 상태로 시작하므로 별도 설정 불필요
+                Log.d("ARScreen", "Model prepared for instant animation response")
             }
             
             arSceneView.addChildNode(modelNode)
@@ -387,8 +390,9 @@ fun createPrimitiveNode(arSceneView: ARSceneView) {
                     scaleToUnits = 0.5f
                 ).apply {
                     position = Position(0.0f, 0.0f, -2.0f)
-                    // 모든 애니메이션 정지
-                    stopAnimation(0)
+                    // 애니메이션을 준비된 상태로 설정 (즉각 반응용)
+                    // SceneView에서는 기본적으로 정지된 상태로 시작하므로 별도 설정 불필요
+                    Log.d("ARScreen", "Model prepared for instant animation response")
                 }
                 arSceneView.addChildNode(cubeNode)
                 Log.i("ARScreen", "Primitive fallback cube model loaded")

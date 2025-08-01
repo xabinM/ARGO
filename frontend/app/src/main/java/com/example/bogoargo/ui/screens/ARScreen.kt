@@ -33,7 +33,6 @@ import com.example.bogoargo.ui.screens.ar.components.ErrorScreen
 import com.example.bogoargo.ui.screens.ar.components.LoadingScreen
 import com.example.bogoargo.ui.screens.ar.model.ARDebugInfo
 import com.example.bogoargo.ui.screens.ar.utils.checkLocationServicesStatus
-import com.example.bogoargo.ui.screens.ar.utils.playAnimationOnce
 import com.example.bogoargo.ui.screens.ar.utils.setupARScene
 
 
@@ -55,9 +54,7 @@ fun ARScreen(
     var missionCompleted by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     
-    // 3D 객체 상태 관리 (컴포넌트 레벨)
-    var currentModelNode by remember { mutableStateOf<ModelNode?>(null) }
-    var isAnimationPlayed by remember { mutableStateOf(false) }
+    // 터치 이벤트 처리
     var touchDownPosition by remember { mutableStateOf<Pair<Float, Float>?>(null) }
     
     // 디버그 관련 상태
@@ -69,14 +66,6 @@ fun ARScreen(
         )) 
     }
     
-    // 애니메이션 상태 확인 함수 (컴포넌트 레벨)
-    fun getAnimationStatus(): String {
-        return when {
-            currentModelNode == null -> "NONE"
-            isAnimationPlayed -> "PLAYED"
-            else -> "READY"
-        }
-    }
 
     // AR 관련 권한 확인
     val arPermissions = arrayOf(
@@ -195,13 +184,10 @@ fun ARScreen(
                                                 missionCompleted = true
                                             },
                                             onDebugInfoUpdate = { newDebugInfo ->
-                                                debugInfo = newDebugInfo.copy(
-                                                    animationStatus = getAnimationStatus()
-                                                )
+                                                debugInfo = newDebugInfo
                                             },
                                             onModelNodeUpdate = { modelNode ->
-                                                currentModelNode = modelNode
-                                                isAnimationPlayed = false // 새 모델이므로 초기화
+                                                // 모델 노드 업데이트 로직 (필요시 추가)
                                             }
                                         )
                                     } catch (e: Exception) {
@@ -228,35 +214,18 @@ fun ARScreen(
                                                     val deltaY = kotlin.math.abs(motionEvent.y - downPos.second)
                                                     val isClick = deltaX < 50 && deltaY < 50 // 50픽셀 이내면 클릭으로 간주
                                                     
-                                                    if (isClick && currentModelNode != null) {
-                                                        // 간단한 거리 기반 터치 감지 (레이캐스팅 대안)
-                                                        // 실제 앱에서는 더 정교한 충돌 감지를 구현할 수 있습니다
-                                                        Log.d("ARScreen", "Processing click on 3D object")
+                                                    if (isClick) {
+                                                        // 클릭 감지 로그
+                                                        Log.d("ARScreen", "Click detected on AR view")
                                                         
-                                                        // 이미 애니메이션이 재생된 경우 무시
-                                                        if (isAnimationPlayed) {
-                                                            Log.d("ARScreen", "Animation already played - ignoring click")
-                                                            view.performClick()
-                                                            touchDownPosition = null
-                                                            return@setOnTouchListener true
-                                                        }
-                                                        
-                                                        // 햅틱 피드백과 애니메이션 동시 실행
+                                                        // 햅틱 피드백
                                                         view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                                                         
-                                                        // 애니메이션 실행
-                                                        playAnimationOnce(
-                                                            currentModelNode!!,
-                                                            onAnimationPlayed = { /* 로컬 상태는 setupARScene에서 관리 */ },
-                                                            onGlobalAnimationPlayed = { isAnimationPlayed = true }
-                                                        )
+                                                        // 필요시 다른 클릭 처리 로직 추가 가능
                                                         
-                                                        Log.d("ARScreen", "3D object clicked - animation and haptic triggered")
                                                         view.performClick()
                                                         touchDownPosition = null
                                                         return@setOnTouchListener true
-                                                    } else if (currentModelNode == null) {
-                                                        Log.d("ARScreen", "Click detected but no 3D object available")
                                                     }
                                                 }
                                                 touchDownPosition = null

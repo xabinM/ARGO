@@ -8,22 +8,6 @@ import io.github.sceneview.math.Rotation
 import io.github.sceneview.node.ModelNode
 import kotlin.random.Random
 
-// 애니메이션 실행 함수 (한번만 실행)
-fun playAnimationOnce(
-    modelNode: ModelNode, 
-    onAnimationPlayed: () -> Unit,
-    onGlobalAnimationPlayed: () -> Unit = {}
-) {
-    try {
-        // 애니메이션 한번만 재생 (loop = false)
-        modelNode.playAnimation(animationIndex = 0, loop = false)
-        onAnimationPlayed() // 로컬 애니메이션 재생 상태 업데이트
-        onGlobalAnimationPlayed() // 글로벌 애니메이션 재생 상태 업데이트
-        Log.d("ARScreen", "Animation started - will play once")
-    } catch (e: Exception) {
-        Log.w("ARScreen", "No animations available for this model: ${e.message}")
-    }
-}
 
 // GPS 및 위치 서비스 상태 확인 함수
 fun checkLocationServicesStatus(context: Context): Triple<Boolean, Boolean, Boolean> {
