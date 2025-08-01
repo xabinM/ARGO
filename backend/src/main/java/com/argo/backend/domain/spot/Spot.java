@@ -30,12 +30,10 @@ public class Spot {
     private String description;
 
     @Embedded
-    @Column(nullable = false)
     private Coordinates coordinates;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "location_id")
-    @Column(nullable = false)
+    @JoinColumn(name = "location_id", nullable = false)
     private Location location;
 
     @OneToMany(mappedBy = "spot", fetch = FetchType.LAZY)

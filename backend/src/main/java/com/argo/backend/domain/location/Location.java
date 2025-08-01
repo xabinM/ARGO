@@ -22,7 +22,6 @@ public class Location {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false)
     @Embedded
     private Coordinates coordinates;
 

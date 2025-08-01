@@ -18,16 +18,14 @@ public class MissionSession extends CreatedAtEntity {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private String sessionId;
+    private Long sessionId;
 
-    @Column(nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "spot_id")
+    @JoinColumn(name = "spot_id", nullable = false)
     private Spot spot;
 
-    @Column(nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id")
+    @JoinColumn(name = "team_id", nullable = false)
     private Team team;
 
     @Column(nullable = false)
