@@ -23,9 +23,8 @@ public class ClassRoom extends CreatedAtEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long classId;
 
-    @Column(nullable = false)
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "teacher_id")
+    @JoinColumn(name = "teacher_id", nullable = false)
     private Teacher teacher;
 
     @Column(nullable = false)
@@ -44,6 +43,7 @@ public class ClassRoom extends CreatedAtEntity {
     private ClassStatus status = ClassStatus.ACTIVE;
 
     @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "location_id")
     private Location location;
 
     @OneToMany(mappedBy = "classRoom", fetch = FetchType.LAZY)
