@@ -8,6 +8,8 @@ import io.github.sceneview.math.Position
 import io.github.sceneview.math.Rotation
 import io.github.sceneview.node.ModelNode
 import kotlin.math.sqrt
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlin.random.Random
 
 
@@ -34,6 +36,22 @@ fun checkLocationServicesStatus(context: Context): Triple<Boolean, Boolean, Bool
 // 랜덤 Y축 회전 생성
 fun generateRandomYRotation(): Rotation {
     return Rotation(0f, Random.nextFloat() * 360f, 0f)
+}
+
+// 사용자 주변 랜덤 위치 생성 (1.5m~5m 범위, 360도)
+fun generateRandomPositionAroundUser(): Position {
+    // 최소 1.5m, 최대 5m 범위에서 랜덤 거리
+    val minDistance = 1.5f
+    val maxDistance = 5.0f
+    val distance = Random.nextFloat() * (maxDistance - minDistance) + minDistance
+    
+    // 360도 랜덤 각도
+    val angle = Random.nextFloat() * 2 * kotlin.math.PI
+    
+    val x = distance * cos(angle).toFloat()
+    val z = distance * sin(angle).toFloat()
+    
+    return Position(x, -1.5f, z)
 }
 
 // 카메라와 AR 객체 간의 거리 계산 (ARSceneView를 통해)

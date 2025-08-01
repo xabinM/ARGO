@@ -348,8 +348,8 @@ fun createFallbackNode(
                 modelInstance = modelInstance,
                 scaleToUnits = 0.5f
             ).apply {
-                // 사용자 앞 2미터, 바닥에 붙게 배치 (모델 중심점이 중앙이므로 아래로 이동)
-                position = Position(0.0f, -1.5f, -2.0f)
+                // 사용자 주변 랜덤 위치에 바닥에 붙게 배치 (1.5m~5m 범위, 360도)
+                position = generateRandomPositionAroundUser()
                 // Y축(수직축) 랜덤 회전 (0-360도)
                 rotation = generateRandomYRotation()
                 // 애니메이션을 준비된 상태로 설정 (즉각 반응용)
@@ -358,7 +358,7 @@ fun createFallbackNode(
             }
             
             arSceneView.addChildNode(modelNode)
-            Log.i("ARScreen", "Fallback model loaded at fixed position")
+            Log.i("ARScreen", "Fallback model loaded at random position around user")
             
             // 앵커 타입 변경 알림
             onAnchorTypeChange("FALLBACK_FIXED", modelNode)
