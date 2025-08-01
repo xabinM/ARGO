@@ -126,6 +126,7 @@ fun ARScreen(
     // 3D 객체 상태 관리 (컴포넌트 레벨)
     var currentModelNode by remember { mutableStateOf<ModelNode?>(null) }
     var isAnimationPlayed by remember { mutableStateOf(false) }
+    var touchDownPosition by remember { mutableStateOf<Pair<Float, Float>?>(null) }
     
     // 디버그 관련 상태
     var showDebugInfo by remember { mutableStateOf(false) }
@@ -277,40 +278,65 @@ fun ARScreen(
                                     }
                                 }
                                 
-                                // 터치 이벤트 리스너 설정
+                                // 터치 이벤트 리스너 설정 (개선된 클릭 감지)
                                 setOnTouchListener { view, motionEvent ->
                                     when (motionEvent.action) {
+                                        MotionEvent.ACTION_DOWN -> {
+                                            // 터치 시작 위치 저장
+                                            touchDownPosition = Pair(motionEvent.x, motionEvent.y)
+                                            true
+                                        }
+                                        
                                         MotionEvent.ACTION_UP -> {
                                             try {
-                                                // 현재 3D 객체가 있는지 확인
-                                                if (currentModelNode != null) {
-                                                    Log.d("ARScreen", "Touch detected on AR scene")
+                                                val downPos = touchDownPosition
+                                                if (downPos != null) {
+                                                    // 터치 이동 거리 계산 (클릭 vs 드래그 구분)
+                                                    val deltaX = kotlin.math.abs(motionEvent.x - downPos.first)
+                                                    val deltaY = kotlin.math.abs(motionEvent.y - downPos.second)
+                                                    val isClick = deltaX < 50 && deltaY < 50 // 50픽셀 이내면 클릭으로 간주
                                                     
-                                                    // 이미 애니메이션이 재생된 경우 무시
-                                                    if (isAnimationPlayed) {
-                                                        Log.d("ARScreen", "Animation already played - ignoring touch")
-                                                        view.performClick() // Accessibility를 위한 performClick 호출
+                                                    if (isClick && currentModelNode != null) {
+                                                        // 간단한 거리 기반 터치 감지 (레이캐스팅 대안)
+                                                        // 실제 앱에서는 더 정교한 충돌 감지를 구현할 수 있습니다
+                                                        Log.d("ARScreen", "Processing click on 3D object")
+                                                        
+                                                        // 이미 애니메이션이 재생된 경우 무시
+                                                        if (isAnimationPlayed) {
+                                                            Log.d("ARScreen", "Animation already played - ignoring click")
+                                                            view.performClick()
+                                                            touchDownPosition = null
+                                                            return@setOnTouchListener true
+                                                        }
+                                                        
+                                                        // 햅틱 피드백과 애니메이션 동시 실행
+                                                        view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+                                                        
+                                                        // 애니메이션 실행
+                                                        playAnimationOnce(
+                                                            currentModelNode!!,
+                                                            onAnimationPlayed = { /* 로컬 상태는 setupARScene에서 관리 */ },
+                                                            onGlobalAnimationPlayed = { isAnimationPlayed = true }
+                                                        )
+                                                        
+                                                        Log.d("ARScreen", "3D object clicked - animation and haptic triggered")
+                                                        view.performClick()
+                                                        touchDownPosition = null
                                                         return@setOnTouchListener true
+                                                    } else if (currentModelNode == null) {
+                                                        Log.d("ARScreen", "Click detected but no 3D object available")
                                                     }
-                                                    
-                                                    // 햅틱 피드백 제공
-                                                    performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-                                                    
-                                                    // 애니메이션 한번 실행
-                                                    playAnimationOnce(
-                                                        currentModelNode!!,
-                                                        onAnimationPlayed = { /* 로컬 상태는 setupARScene에서 관리 */ },
-                                                        onGlobalAnimationPlayed = { isAnimationPlayed = true }
-                                                    )
-                                                    Log.d("ARScreen", "3D object touched - animation played once")
-                                                    view.performClick() // Accessibility를 위한 performClick 호출
-                                                    return@setOnTouchListener true
-                                                } else {
-                                                    Log.d("ARScreen", "Touch detected but no 3D object available")
                                                 }
+                                                touchDownPosition = null
                                             } catch (e: Exception) {
-                                                Log.e("ARScreen", "Error handling touch event", e)
+                                                Log.e("ARScreen", "Error handling click event", e)
+                                                touchDownPosition = null
                                             }
+                                        }
+                                        
+                                        MotionEvent.ACTION_CANCEL -> {
+                                            // 터치 취소 시 상태 초기화
+                                            touchDownPosition = null
                                         }
                                     }
                                     false
@@ -893,25 +919,27 @@ private fun setupARScene(
     
     // 현재 앵커 상태 추적 (mutable state로 관리)
     var currentAnchorType = "NONE" // 실제 사용 중인 앵커 타입
-    var currentModelNode: ModelNode? = null // 현재 활성화된 ModelNode 참조
-    var isAnimationPlayed = false // 애니메이션이 한번 재생되었는지 추적
+    var localModelNode: ModelNode? = null // 로컬 ModelNode 참조
+    var localAnimationPlayed = false // 로컬 애니메이션 상태
     
-    // 상태 업데이트 함수
+    // 상태 업데이트 함수 (중앙화된 상태 관리)
     fun updateAnchorState(anchorType: String, modelNode: ModelNode?) {
         currentAnchorType = anchorType
-        currentModelNode = modelNode
-        isAnimationPlayed = false // 새 객체이므로 애니메이션 상태 초기화
+        localModelNode = modelNode
+        localAnimationPlayed = false // 새 객체이므로 애니메이션 상태 초기화
         onModelNodeUpdate(modelNode) // 컴포넌트 레벨로 상태 전달
+        Log.d("ARScreen", "Anchor state updated: $anchorType, Model: ${modelNode != null}, Animation: $localAnimationPlayed")
     }
     
-    // 현재 애니메이션 상태 확인 함수
+    // 현재 애니메이션 상태 확인 함수 (중앙화된 상태 관리)
     fun getAnimationStatus(): String {
         return when {
-            currentModelNode == null -> "NONE"
-            isAnimationPlayed -> "PLAYED" // 애니메이션 완료됨
-            else -> "READY" // 터치 대기 중
+            localModelNode == null -> "NONE"
+            localAnimationPlayed -> "PLAYED"
+            else -> "READY"
         }
     }
+    
     
     arSceneView.onFrame = { frame ->
         frameCount++
@@ -1028,9 +1056,9 @@ private fun setupARScene(
             }
             
             // Fallback에서 Plane Anchor로 업그레이드 시도 (평면이 감지된 경우)
-            if (currentAnchorType == "FALLBACK_FIXED" && currentModelNode != null && waitFrameCount > 120) {
+            if (currentAnchorType == "FALLBACK_FIXED" && localModelNode != null && waitFrameCount > 120) {
                 val upgraded = tryUpgradeToPlaneAnchor(
-                    arSceneView, session, currentModelNode!!, onDebugInfoUpdate
+                    arSceneView, session, localModelNode!!, onDebugInfoUpdate
                 ) { anchorType, modelNode ->
                     if (anchorType == "PLANE_ADJUSTED" && modelNode != null) {
                         updateAnchorState(anchorType, modelNode)
@@ -1172,6 +1200,8 @@ private fun tryCreateTerrainAnchor(
                             position = Position(0.0f, 0.0f, 0.0f)
                             // Y축(수직축) 랜덤 회전 (0-360도)
                             rotation = Rotation(0f, Random.nextFloat() * 360f, 0f)
+                            // 모든 애니메이션 정지
+                            stopAnimation(0)
                         }
                         
                         anchorNode.addChildNode(modelNode)
@@ -1180,8 +1210,7 @@ private fun tryCreateTerrainAnchor(
                         // 앵커 타입 변경 알림
                         onAnchorTypeChange("TERRAIN_ANCHOR", modelNode)
                         
-                        // 애니메이션은 터치 시에만 재생되도록 변경
-                        Log.d("ARScreen", "Terrain Anchor model loaded - animation ready for touch interaction")
+                        Log.d("ARScreen", "Terrain Anchor model loaded - ready for interaction")
                         
                         Log.i("ARScreen", "Terrain Anchor created successfully at GPS($latitude, $longitude)")
                         
@@ -1304,6 +1333,8 @@ private fun tryCreatePlaneAnchor(
             position = Position(0.0f, 0.0f, 0.0f)
             // Y축(수직축) 랜덤 회전
             rotation = Rotation(0f, Random.nextFloat() * 360f, 0f)
+            // 모든 애니메이션 정지
+            stopAnimation(0)
         }
         
         anchorNode.addChildNode(modelNode)
@@ -1312,8 +1343,7 @@ private fun tryCreatePlaneAnchor(
         // 앵커 타입 변경 알림
         onAnchorTypeChange("PLANE_ANCHOR", modelNode)
         
-        // 애니메이션은 터치 시에만 재생되도록 변경
-        Log.d("ARScreen", "Plane Anchor model loaded - animation ready for touch interaction")
+        Log.d("ARScreen", "Plane Anchor model loaded - ready for interaction")
         
         Log.i("ARScreen", "Plane-based anchor created successfully on detected ground plane")
         
@@ -1442,6 +1472,8 @@ private fun createFallbackNode(
                 position = Position(0.0f, -1.5f, -2.0f)
                 // Y축(수직축) 랜덤 회전 (0-360도)
                 rotation = Rotation(0f, Random.nextFloat() * 360f, 0f)
+                // 모든 애니메이션 정지
+                stopAnimation(0)
             }
             
             arSceneView.addChildNode(modelNode)
@@ -1450,8 +1482,7 @@ private fun createFallbackNode(
             // 앵커 타입 변경 알림
             onAnchorTypeChange("FALLBACK_FIXED", modelNode)
             
-            // 애니메이션은 터치 시에만 재생되도록 변경
-            Log.d("ARScreen", "Fallback model loaded - animation ready for touch interaction")
+            Log.d("ARScreen", "Fallback model loaded - ready for interaction")
         } else {
             Log.w("ARScreen", "Failed to create fallback model instance")
             createPrimitiveNode(arSceneView)
@@ -1478,6 +1509,8 @@ private fun createPrimitiveNode(arSceneView: ARSceneView) {
                     scaleToUnits = 0.5f
                 ).apply {
                     position = Position(0.0f, 0.0f, -2.0f)
+                    // 모든 애니메이션 정지
+                    stopAnimation(0)
                 }
                 arSceneView.addChildNode(cubeNode)
                 Log.i("ARScreen", "Primitive fallback cube model loaded")
