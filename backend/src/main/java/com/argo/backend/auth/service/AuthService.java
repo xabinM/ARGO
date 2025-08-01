@@ -8,6 +8,8 @@ import com.argo.backend.auth.exception.*;
 import com.argo.backend.auth.repository.UserRepository;
 import com.argo.backend.auth.repository.UserWithdrawalRepository;
 import com.argo.backend.auth.security.jwt.JwtTokenProvider;
+import com.argo.backend.domain.user.Role;
+import com.argo.backend.domain.user.Teacher;
 import com.argo.backend.domain.user.User;
 import com.argo.backend.domain.user.UserWithdrawal;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,17 +42,29 @@ public class AuthService {
     private final RedisService redisService;
 
     public void signup(SignupRequest request) {
-        if (userRepository.existsByUsername(request.getUsername())) {
-            throw new DuplicateUsernameException();
-        }
-        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        validateDuplicateUsername(request.getUsername());
 
-        User user = User.from(request.getUsername(),
-                encodedPassword,
-                request.getName(),
-                request.getRole());
+        String encodedPassword = passwordEncoder.encode(request.getPassword());
+        Role role = request.getRole();
+
+        User user = createsUserByRole(request, role, encodedPassword);
+
         userRepository.save(user);
     }
+
+    private void validateDuplicateUsername(String username) {
+        if (userRepository.existsByUsername(username)) {
+            throw new DuplicateUsernameException();
+        }
+    }
+
+    private User createsUserByRole(SignupRequest request, Role role, String encodedPassword) {
+        return switch (role) {
+            case ROLE_STUDENT -> User.from(request.getUsername(), encodedPassword, request.getName(), role);
+            case ROLE_TEACHER -> Teacher.from(request.getUsername(), encodedPassword, request.getName());
+        };
+    }
+
 
     public TokenDto login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername());
