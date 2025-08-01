@@ -22,8 +22,8 @@ sealed class Screen(val route: String) {
     data object Game : Screen("game")
     data object Profile : Screen("profile")
     data object Settings : Screen("settings")
-    data object AR : Screen("ar/{spotId}") {
-        fun createRoute(spotId: Long) = "ar/$spotId"
+    data object AR : Screen("ar/{spotId}/{latitude}/{longitude}") {
+        fun createRoute(spotId: Long, latitude: Double, longitude: Double) = "ar/$spotId/$latitude/$longitude"
     }
 }
 
@@ -55,11 +55,19 @@ fun AppNavigation(
         }
         composable(
             route = Screen.AR.route,
-            arguments = listOf(navArgument("spotId") { type = NavType.LongType })
+            arguments = listOf(
+                navArgument("spotId") { type = NavType.LongType },
+                navArgument("latitude") { type = NavType.FloatType },
+                navArgument("longitude") { type = NavType.FloatType }
+            )
         ) { backStackEntry ->
             val spotId = backStackEntry.arguments?.getLong("spotId") ?: 0L
+            val latitude = backStackEntry.arguments?.getFloat("latitude")?.toDouble() ?: 0.0
+            val longitude = backStackEntry.arguments?.getFloat("longitude")?.toDouble() ?: 0.0
             ARScreen(
                 spotId = spotId,
+                latitude = latitude,
+                longitude = longitude,
                 onNavigateBack = {
                     navController.popBackStack()
                 }

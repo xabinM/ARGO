@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.core.content.PermissionChecker
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -153,15 +154,16 @@ fun GameScreen(
                         zoomControlsEnabled = false
                     )
                 ) {
-                    // 미션 스팟 마커들
+                    // 미션 스팟 마커들 (포켓몬GO 스타일)
                     if (isGameStarted) {
                         uiState.missionSpots.forEach { spot ->
+                            val isNearby = uiState.nearbyMissionSpots.contains(spot)
                             Marker(
                                 state = MarkerState(
                                     position = LatLng(spot.latitude, spot.longitude)
                                 ),
-                                title = spot.spotName,
-                                snippet = "미션 스팟 ID: ${spot.spotId}"
+                                title = if (isNearby) "🎯 ${spot.spotName} (활성화됨)" else "📍 ${spot.spotName}",
+                                snippet = if (isNearby) "미션을 시작할 수 있습니다!" else "가까이 이동하세요 (${spot.spotId})"
                             )
                         }
                         
@@ -171,7 +173,18 @@ fun GameScreen(
                                 state = MarkerState(
                                     position = LatLng(location.latitude, location.longitude)
                                 ),
-                                title = "내 위치"
+                                title = "🚶‍♂️ 내 위치"
+                            )
+                        }
+                        
+                        // 근처 미션 범위 표시 (Circle)
+                        uiState.nearbyMissionSpots.forEach { spot ->
+                            Circle(
+                                center = LatLng(spot.latitude, spot.longitude),
+                                radius = 50.0, // 50미터 범위
+                                strokeColor = androidx.compose.ui.graphics.Color.Green,
+                                strokeWidth = 3f,
+                                fillColor = androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.2f)
                             )
                         }
                     }
@@ -209,18 +222,64 @@ fun GameScreen(
                     completedCount = 0
                 )
                 
-                // 근처 미션 AR 버튼들
+                // 디버그 AR 버튼 (우측 상단)
+                Card(
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 80.dp, end = 16.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.9f)
+                    )
+                ) {
+                    TextButton(
+                        onClick = {
+                            // 현재 위치 기준으로 가상의 미션 위치 생성 (±5m)
+                            val currentLat = uiState.userLocation?.latitude ?: 37.5665
+                            val currentLon = uiState.userLocation?.longitude ?: 126.9780
+                            val debugLat = currentLat + 0.00005 // 약 5m 북쪽
+                            val debugLon = currentLon + 0.00005 // 약 5m 동쪽
+                            
+                            // 디버그용 하드코딩된 미션 ID와 위치로 AR 화면 이동
+                            navController.navigate("ar/999/$debugLat/$debugLon")
+                        },
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "🔧 Debug AR",
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                
+                // 근처 미션 AR 버튼들 (포켓몬GO 스타일)
                 if (uiState.nearbyMissionSpots.isNotEmpty()) {
                     Column(
                         modifier = Modifier
-                            .align(Alignment.BottomStart)
+                            .align(Alignment.BottomCenter)
                             .padding(16.dp)
                     ) {
+                        // 진동 효과 및 알림 텍스트
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.9f)
+                            ),
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        ) {
+                            Text(
+                                text = "🎯 미션 지점에 도착했습니다!",
+                                modifier = Modifier.padding(12.dp),
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onTertiary
+                            )
+                        }
+                        
                         uiState.nearbyMissionSpots.forEach { spot ->
                             Button(
                                 onClick = { 
-                                    // AR 화면으로 이동
-                                    navController.navigate("ar/${spot.spotId}")
+                                    // AR 화면으로 이동 (위치 정보 포함)
+                                    navController.navigate("ar/${spot.spotId}/${spot.latitude}/${spot.longitude}")
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -228,15 +287,34 @@ fun GameScreen(
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary
                                 ),
-                                shape = RoundedCornerShape(12.dp)
+                                shape = RoundedCornerShape(16.dp)
                             ) {
-                                Text(
-                                    text = "🎯 ${spot.spotName} AR 체험",
-                                    fontWeight = FontWeight.Bold
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        text = "📱",
+                                        fontSize = 20.sp,
+                                        modifier = Modifier.padding(end = 8.dp)
+                                    )
+                                    Text(
+                                        text = "${spot.spotName} AR 시작",
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 16.sp
+                                    )
+                                }
                             }
                         }
                     }
+                }
+                
+                // 개발용 현재 좌표 표시 창
+                if (isGameStarted) {
+                    CurrentLocationOverlay(
+                        modifier = Modifier.align(Alignment.BottomStart),
+                        userLocation = uiState.userLocation
+                    )
                 }
             } else {
                 GameStartOverlay(
@@ -375,6 +453,51 @@ fun GameInstructionItem(
             text = text,
             style = MaterialTheme.typography.bodyMedium
         )
+    }
+}
+
+@Composable
+fun CurrentLocationOverlay(
+    modifier: Modifier = Modifier,
+    userLocation: android.location.Location?
+) {
+    Card(
+        modifier = modifier.padding(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Text(
+                text = "📍 현재 위치",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            if (userLocation != null) {
+                Text(
+                    text = "위도: ${String.format("%.6f", userLocation.latitude)}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = "경도: ${String.format("%.6f", userLocation.longitude)}",
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    text = "정확도: ${userLocation.accuracy.toInt()}m",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            } else {
+                Text(
+                    text = "위치 정보 없음",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
     }
 }
 

@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!--
-    TODO: 실제 Google Maps API 키로 교체하세요
-    Google Cloud Console에서 발급받은 API 키를 입력하세요.
-    -->
-    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyBpinXiRNt2WeCDId48IveMxvDsG9GdntI</string>
-</resources>
