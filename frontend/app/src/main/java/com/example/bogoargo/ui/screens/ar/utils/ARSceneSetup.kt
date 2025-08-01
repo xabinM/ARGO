@@ -10,6 +10,8 @@ import io.github.sceneview.ar.node.AnchorNode
 import io.github.sceneview.math.Position
 import io.github.sceneview.node.ModelNode
 import com.example.bogoargo.ui.screens.ar.model.ARDebugInfo
+import com.example.bogoargo.data.model.AR3DObject
+import com.example.bogoargo.data.model.ModelFormat
 import kotlin.random.Random
 
 fun setupARScene(
@@ -21,7 +23,8 @@ fun setupARScene(
     onMissionComplete: () -> Unit,
     onDebugInfoUpdate: (ARDebugInfo) -> Unit,
     onModelNodeUpdate: (ModelNode?) -> Unit,
-    onObjectClick: ((ModelNode, Float) -> Boolean)? = null // 객체 클릭 핸들러 (거리 포함)
+    onObjectClick: ((ModelNode, Float) -> Boolean)? = null, // 객체 클릭 핸들러 (거리 포함)
+    onObjectInfoUpdate: ((AR3DObject) -> Unit)? = null // 객체 정보 업데이트 콜백 추가
 ) {
     Log.d("ARScreen", "Setting up AR scene for mission spot $spotId at GPS($latitude, $longitude)")
     
@@ -34,35 +37,12 @@ fun setupARScene(
     
     var frameCount = 0L
     
-    // 모델 파일 존재 확인
-    val modelPath = "models/cube.glb"
-    val assetList = arSceneView.context.assets.list("models")
-    
-    if (assetList?.contains("cube.glb") != true) {
-        Log.e("ARScreen", "Model file not found: $modelPath")
-        Log.d("ARScreen", "Available models: ${assetList?.joinToString()}")
-        
-        // 디버그 정보 업데이트 - 모델 파일 없음
-        onDebugInfoUpdate(ARDebugInfo(
-            targetLatitude = latitude,
-            targetLongitude = longitude,
-            anchorMethod = "MODEL_NOT_FOUND",
-            modelLoadingStatus = "FILE_NOT_FOUND",
-            availableModels = availableModels
-        ))
-        
-        createFallbackNode(arSceneView, modelPath, "Model file not found") { _, _ ->
-            // 모델 파일이 없는 경우이므로 상태 업데이트는 생략
-        }
-        return
-    }
-    
     // 초기 디버그 정보 업데이트
     onDebugInfoUpdate(ARDebugInfo(
         targetLatitude = latitude,
         targetLongitude = longitude,
         anchorMethod = "INITIALIZING",
-        modelLoadingStatus = "MODEL_FOUND",
+        modelLoadingStatus = "SCENE_SETUP_STARTED",
         availableModels = availableModels
     ))
     
@@ -72,7 +52,8 @@ fun setupARScene(
     
     // 현재 앵커 상태 추적 (mutable state로 관리)
     var currentAnchorType = "NONE" // 실제 사용 중인 앵커 타입
-    var localModelNode: ModelNode? = null // 로컬 ModelNode 참조
+    var localModelNode: ModelNode? = null
+    var currentARObject: AR3DObject? = null // 현재 사용 중인 AR 객체 정보 추적
     var localAnimationPlayed = false // 로컬 애니메이션 상태
     var objectWorldPosition: Position? = null // 객체의 월드 좌표
     
@@ -197,21 +178,44 @@ fun setupARScene(
                 
                 // 1단계: Terrain Anchor 시도 (Geospatial API 사용)
                 val terrainAnchorSuccess = tryCreateTerrainAnchor(
-                    arSceneView, session, latitude, longitude, modelPath, onDebugInfoUpdate
-                ) { anchorType, modelNode ->
-                    if (anchorType == "TERRAIN_ANCHOR" && modelNode != null) {
-                        updateAnchorState(anchorType, modelNode)
+                    arSceneView, session, latitude, longitude, onDebugInfoUpdate,
+                    onAnchorTypeChange = { anchorType, modelNode ->
+                        if (anchorType == "TERRAIN_ANCHOR" && modelNode != null) {
+                            updateAnchorState(anchorType, modelNode)
+                        }
+                    },
+                    onObjectInfoUpdate = { arObject ->
+                        currentARObject = arObject
+                        onObjectInfoUpdate?.invoke(arObject)
                     }
-                }
+                )
                 if (terrainAnchorSuccess) {
                     Log.i("ARScreen", "Successfully created Terrain Anchor at GPS($latitude, $longitude)")
+                } else {
+                    // 2단계: Plane Anchor 시도 (Terrain Anchor 실패 시)
+                    Log.i("ARScreen", "Terrain Anchor failed, trying Plane Anchor")
+                    val planeAnchorSuccess = tryCreatePlaneAnchor(
+                        arSceneView, session, onDebugInfoUpdate,
+                        onAnchorTypeChange = { anchorType, modelNode ->
+                            if (anchorType == "PLANE_ANCHOR" && modelNode != null) {
+                                updateAnchorState(anchorType, modelNode)
+                            }
+                        },
+                        onObjectInfoUpdate = { arObject ->
+                        currentARObject = arObject
+                        onObjectInfoUpdate?.invoke(arObject)
+                    }
+                    )
+                    if (planeAnchorSuccess) {
+                        Log.i("ARScreen", "Successfully created Plane Anchor")
+                    }
                 }
             }
             
-            // Terrain Anchor 시도 후 즉시 Fallback (평면 감지 시 자동 업그레이드)
-            if (waitFrameCount >= 90 && hasTriedTerrainAnchor && currentAnchorType == "NONE") {
-                // Terrain Anchor가 실패했으므로 즉시 Fallback 생성
-                Log.i("ARScreen", "Creating fallback anchor - Terrain Anchor not available")
+            // Fallback Anchor 시도 (모든 앵커 방식 실패 시)
+            if (waitFrameCount >= 120 && hasTriedTerrainAnchor && currentAnchorType == "NONE") {
+                // 모든 앵커 방식이 실패했으므로 Fallback 생성
+                Log.i("ARScreen", "Creating fallback anchor - All anchor methods failed")
                 onDebugInfoUpdate(ARDebugInfo(
                     targetLatitude = latitude,
                     targetLongitude = longitude,
@@ -221,25 +225,56 @@ fun setupARScene(
                     geospatialApiStatus = "FALLBACK_MODE",
                     availableModels = availableModels
                 ))
-                createFallbackNode(arSceneView, modelPath, "Terrain Anchor unavailable") { anchorType, modelNode ->
-                    if (anchorType == "FALLBACK_FIXED" && modelNode != null) {
-                        updateAnchorState(anchorType, modelNode)
+                createFallbackNode(arSceneView, "All anchor methods failed",
+                    onAnchorTypeChange = { anchorType, modelNode ->
+                        if (anchorType == "FALLBACK_FIXED" && modelNode != null) {
+                            updateAnchorState(anchorType, modelNode)
+                        }
+                    },
+                    onObjectInfoUpdate = { arObject ->
+                        currentARObject = arObject
+                        onObjectInfoUpdate?.invoke(arObject)
                     }
-                }
+                )
             }
             
-            // Fallback에서 Plane Anchor로 업그레이드 시도 (평면이 감지된 경우)
-            if (currentAnchorType == "FALLBACK_FIXED" && localModelNode != null && waitFrameCount > 120) {
-                val upgraded = tryUpgradeToPlaneAnchor(
-                    arSceneView, session, localModelNode!!, onDebugInfoUpdate
-                ) { anchorType, modelNode ->
-                    if (anchorType == "PLANE_ADJUSTED" && modelNode != null) {
-                        updateAnchorState(anchorType, modelNode)
+            // 지속적인 평면 모니터링 및 동적 위치 조정
+            if (localModelNode != null) {
+                when (currentAnchorType) {
+                    // Fallback에서 Plane Anchor로 업그레이드 시도
+                    "FALLBACK_FIXED" -> {
+                        if (waitFrameCount > 120 && currentARObject != null) {
+                            val upgraded = tryUpgradeToPlaneAnchor(
+                                arSceneView, session, localModelNode!!, currentARObject!!, onDebugInfoUpdate
+                            ) { anchorType, modelNode ->
+                                if (anchorType == "PLANE_ADJUSTED" && modelNode != null) {
+                                    updateAnchorState(anchorType, modelNode)
+                                }
+                            }
+                            
+                            if (upgraded) {
+                                Log.i("ARScreen", "Successfully upgraded Fallback to Plane Anchor")
+                            }
+                        }
                     }
-                }
-                
-                if (upgraded) {
-                    Log.i("ARScreen", "Successfully upgraded Fallback to Plane Anchor")
+                    
+                    // 평면 기반 앵커의 지속적인 품질 모니터링
+                    "PLANE_ANCHOR", "PLANE_ADJUSTED" -> {
+                        // 30프레임(약 1초)마다 평면 품질 확인
+                        if (frameCount % 30 == 0L && currentARObject != null) {
+                            val dynamicallyAdjusted = tryDynamicPlaneAdjustment(
+                                arSceneView, session, localModelNode!!, currentARObject!!, onDebugInfoUpdate
+                            ) { anchorType, modelNode ->
+                                if (anchorType == "PLANE_DYNAMICALLY_ADJUSTED" && modelNode != null) {
+                                    updateAnchorState("PLANE_ADJUSTED", modelNode)
+                                }
+                            }
+                            
+                            if (dynamicallyAdjusted) {
+                                Log.d("ARScreen", "Dynamically adjusted object position to better plane")
+                            }
+                        }
+                    }
                 }
             }
             

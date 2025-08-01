@@ -34,6 +34,9 @@ import com.example.bogoargo.ui.screens.ar.components.LoadingScreen
 import com.example.bogoargo.ui.screens.ar.model.ARDebugInfo
 import com.example.bogoargo.ui.screens.ar.utils.checkLocationServicesStatus
 import com.example.bogoargo.ui.screens.ar.utils.setupARScene
+import com.example.bogoargo.data.model.AR3DObject
+import com.example.bogoargo.data.repository.AR3DObjectRepository
+import androidx.compose.runtime.LaunchedEffect
 
 
 
@@ -66,7 +69,9 @@ fun ARScreen(
         )) 
     }
     
-
+    // AR 객체 관련 상태 (앵커 생성 시점에서 선택됨)
+    var selectedARObject by remember { mutableStateOf<AR3DObject?>(null) }
+    
     // AR 관련 권한 확인
     val arPermissions = arrayOf(
         Manifest.permission.CAMERA,
@@ -179,7 +184,7 @@ fun ARScreen(
                                 // AR 세션 콜백 설정
                                 onSessionCreated = { session ->
                                     try {
-                                        setupARScene(this, session, spotId, latitude, longitude, 
+                                        setupARScene(this, session, spotId, latitude, longitude,
                                             onMissionComplete = {
                                                 missionCompleted = true
                                             },
@@ -193,6 +198,10 @@ fun ARScreen(
                                                 // 객체 클릭 시 처리 로직
                                                 Log.i("ARScreen", "Object clicked at distance: ${distance}m")
                                                 true // 클릭 처리 성공
+                                            },
+                                            onObjectInfoUpdate = { updatedObject ->
+                                                // 객체 정보 업데이트 시
+                                                selectedARObject = updatedObject
                                             }
                                         )
                                     } catch (e: Exception) {
@@ -269,6 +278,7 @@ fun ARScreen(
                             missionCompleted = true
                         },
                         debugInfo = debugInfo,
+                        arObject = selectedARObject,
                         modifier = Modifier.fillMaxSize()
                     )
                     

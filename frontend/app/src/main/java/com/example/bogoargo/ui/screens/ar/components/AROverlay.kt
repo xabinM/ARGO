@@ -14,6 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.bogoargo.ui.screens.ar.model.ARDebugInfo
 import com.example.bogoargo.ui.screens.ar.utils.formatDistance
+import com.example.bogoargo.data.model.AR3DObject
 
 @Composable
 fun AROverlay(
@@ -22,7 +23,8 @@ fun AROverlay(
     spotId: Long,
     onMissionComplete: () -> Unit,
     modifier: Modifier = Modifier,
-    debugInfo: ARDebugInfo = ARDebugInfo()
+    debugInfo: ARDebugInfo = ARDebugInfo(),
+    arObject: AR3DObject? = null
 ) {
     Box(modifier = modifier) {
         // 상단 정보 카드
@@ -185,6 +187,18 @@ fun AROverlay(
             }
         }
 
+        // AR 객체 정보 표시 (하단 위쪽)
+        if (isSessionInitialized && !missionCompleted && arObject != null && debugInfo.distanceToObject != Float.MAX_VALUE) {
+            ARObjectInfo(
+                arObject = arObject,
+                distance = debugInfo.distanceToObject,
+                isInteractable = debugInfo.isObjectInteractable,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 100.dp)
+            )
+        }
+        
         // 거리 정보 표시 (하단 중앙)
         if (isSessionInitialized && !missionCompleted && debugInfo.distanceToObject != Float.MAX_VALUE) {
             Card(
