@@ -4,8 +4,10 @@ import android.content.Context
 import android.location.LocationManager
 import android.provider.Settings
 import android.util.Log
+import io.github.sceneview.math.Position
 import io.github.sceneview.math.Rotation
 import io.github.sceneview.node.ModelNode
+import kotlin.math.sqrt
 import kotlin.random.Random
 
 
@@ -32,4 +34,42 @@ fun checkLocationServicesStatus(context: Context): Triple<Boolean, Boolean, Bool
 // 랜덤 Y축 회전 생성
 fun generateRandomYRotation(): Rotation {
     return Rotation(0f, Random.nextFloat() * 360f, 0f)
+}
+
+// 카메라와 AR 객체 간의 거리 계산 (ARSceneView를 통해)
+fun calculateDistanceToObject(arSceneView: io.github.sceneview.ar.ARSceneView, objectPosition: Position): Float {
+    return try {
+        val session = arSceneView.session ?: return Float.MAX_VALUE
+        val frame = session.update()
+        val cameraPose = frame.camera.pose
+        
+        // 카메라 위치 가져오기
+        val cameraX = cameraPose.translation[0]
+        val cameraY = cameraPose.translation[1] 
+        val cameraZ = cameraPose.translation[2]
+        
+        // 3D 유클리드 거리 계산
+        val deltaX = objectPosition.x - cameraX
+        val deltaY = objectPosition.y - cameraY
+        val deltaZ = objectPosition.z - cameraZ
+        
+        sqrt((deltaX * deltaX + deltaY * deltaY + deltaZ * deltaZ).toDouble()).toFloat()
+    } catch (e: Exception) {
+        Log.w("ARUtilities", "Failed to calculate distance to object: ${e.message}")
+        Float.MAX_VALUE
+    }
+}
+
+// 객체가 상호작용 가능한 거리 내에 있는지 확인 (2m 이내)
+fun isObjectInteractable(distance: Float, maxDistance: Float = 2.0f): Boolean {
+    return distance <= maxDistance
+}
+
+// 거리를 사용자 친화적 문자열로 변환
+fun formatDistance(distance: Float): String {
+    return when {
+        distance == Float.MAX_VALUE -> "알 수 없음"
+        distance < 1.0f -> "${(distance * 100).toInt()}cm"
+        else -> String.format("%.1fm", distance)
+    }
 }

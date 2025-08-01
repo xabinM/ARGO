@@ -3,6 +3,7 @@ package com.example.bogoargo.ui.screens.ar.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -12,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.bogoargo.ui.screens.ar.model.ARDebugInfo
+import com.example.bogoargo.ui.screens.ar.utils.formatDistance
 
 @Composable
 fun AROverlay(
@@ -121,6 +123,50 @@ fun AROverlay(
                                 )
                             }
                         }
+                        debugInfo.distanceToObject != Float.MAX_VALUE -> {
+                            // 객체가 감지된 경우 거리 정보 표시
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                if (debugInfo.isObjectInteractable) {
+                                    // 상호작용 가능한 거리 (2m 이내)
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            Icons.Default.TouchApp,
+                                            contentDescription = "터치",
+                                            tint = Color.Green,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = "터치하여 미션 완료!",
+                                            color = Color.Green,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    Text(
+                                        text = "거리: ${formatDistance(debugInfo.distanceToObject)}",
+                                        color = Color.White.copy(alpha = 0.8f),
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                } else {
+                                    // 객체가 너무 멀어서 상호작용 불가능
+                                    Text(
+                                        text = "🎯 객체를 발견했습니다!",
+                                        color = Color(0xFFFFA500),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = "거리: ${formatDistance(debugInfo.distanceToObject)} (2m 이내로 접근하세요)",
+                                        color = Color.White.copy(alpha = 0.8f),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
                         else -> {
                             Text(
                                 text = "🎯 미션 지점을 찾아보세요",
@@ -139,22 +185,29 @@ fun AROverlay(
             }
         }
 
-        // 하단 미션 완료 버튼 (테스트용)
-        if (isSessionInitialized && !missionCompleted) {
-            Button(
-                onClick = onMissionComplete,
+        // 거리 정보 표시 (하단 중앙)
+        if (isSessionInitialized && !missionCompleted && debugInfo.distanceToObject != Float.MAX_VALUE) {
+            Card(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(32.dp)
-                    .fillMaxWidth(0.8f),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.9f)
+                    .padding(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (debugInfo.isObjectInteractable) 
+                        Color.Green.copy(alpha = 0.8f) 
+                    else 
+                        Color(0xFFFFA500).copy(alpha = 0.8f)
                 )
             ) {
                 Text(
-                    text = "미션 완료 (테스트)",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = if (debugInfo.isObjectInteractable) 
+                        "🎯 터치하여 상호작용!" 
+                    else 
+                        "📍 ${formatDistance(debugInfo.distanceToObject)} - 더 가까이 접근하세요",
+                    modifier = Modifier.padding(12.dp),
+                    color = Color.White,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
                 )
             }
         }

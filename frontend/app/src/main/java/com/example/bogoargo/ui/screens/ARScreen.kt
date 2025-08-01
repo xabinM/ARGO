@@ -188,6 +188,11 @@ fun ARScreen(
                                             },
                                             onModelNodeUpdate = { modelNode ->
                                                 // 모델 노드 업데이트 로직 (필요시 추가)
+                                            },
+                                            onObjectClick = { modelNode, distance ->
+                                                // 객체 클릭 시 처리 로직
+                                                Log.i("ARScreen", "Object clicked at distance: ${distance}m")
+                                                true // 클릭 처리 성공
                                             }
                                         )
                                     } catch (e: Exception) {
@@ -216,12 +221,20 @@ fun ARScreen(
                                                     
                                                     if (isClick) {
                                                         // 클릭 감지 로그
-                                                        Log.d("ARScreen", "Click detected on AR view")
+                                                        Log.d("ARScreen", "Click detected on AR view at (${motionEvent.x}, ${motionEvent.y})")
                                                         
                                                         // 햅틱 피드백
                                                         view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                                                         
-                                                        // 필요시 다른 클릭 처리 로직 추가 가능
+                                                        // 객체 클릭 핸들러 호출
+                                                        val clickHandler = view.getTag("ar_object_click_handler".hashCode()) as? ((Float, Float) -> Boolean)
+                                                        val handled = clickHandler?.invoke(motionEvent.x, motionEvent.y) ?: false
+                                                        
+                                                        if (handled) {
+                                                            Log.i("ARScreen", "Object interaction successful")
+                                                        } else {
+                                                            Log.d("ARScreen", "No object interaction - object may be too far or not found")
+                                                        }
                                                         
                                                         view.performClick()
                                                         touchDownPosition = null

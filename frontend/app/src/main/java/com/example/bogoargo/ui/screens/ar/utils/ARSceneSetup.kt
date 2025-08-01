@@ -20,7 +20,8 @@ fun setupARScene(
     longitude: Double,
     onMissionComplete: () -> Unit,
     onDebugInfoUpdate: (ARDebugInfo) -> Unit,
-    onModelNodeUpdate: (ModelNode?) -> Unit
+    onModelNodeUpdate: (ModelNode?) -> Unit,
+    onObjectClick: ((ModelNode, Float) -> Boolean)? = null // 객체 클릭 핸들러 (거리 포함)
 ) {
     Log.d("ARScreen", "Setting up AR scene for mission spot $spotId at GPS($latitude, $longitude)")
     
@@ -73,14 +74,19 @@ fun setupARScene(
     var currentAnchorType = "NONE" // 실제 사용 중인 앵커 타입
     var localModelNode: ModelNode? = null // 로컬 ModelNode 참조
     var localAnimationPlayed = false // 로컬 애니메이션 상태
+    var objectWorldPosition: Position? = null // 객체의 월드 좌표
     
     // 상태 업데이트 함수 (중앙화된 상태 관리)
     fun updateAnchorState(anchorType: String, modelNode: ModelNode?) {
         currentAnchorType = anchorType
         localModelNode = modelNode
         localAnimationPlayed = false // 새 객체이므로 애니메이션 상태 초기화
+        
+        // 객체의 월드 좌표 업데이트
+        objectWorldPosition = modelNode?.worldPosition
+        
         onModelNodeUpdate(modelNode) // 컴포넌트 레벨로 상태 전달
-        Log.d("ARScreen", "Anchor state updated: $anchorType, Model: ${modelNode != null}, Animation: $localAnimationPlayed")
+        Log.d("ARScreen", "Anchor state updated: $anchorType, Model: ${modelNode != null}, Animation: $localAnimationPlayed, Position: $objectWorldPosition")
     }
     
     // 현재 애니메이션 상태 확인 함수 (중앙화된 상태 관리)
@@ -100,6 +106,16 @@ fun setupARScene(
         try {
             val earth = session.earth
             val (gpsEnabled, networkEnabled, locationServicesEnabled) = checkLocationServicesStatus(arSceneView.context)
+            
+            // 거리 계산
+            val currentPosition = objectWorldPosition ?: localModelNode?.worldPosition
+            val distance = if (currentPosition != null) {
+                calculateDistanceToObject(arSceneView, currentPosition)
+            } else {
+                Float.MAX_VALUE
+            }
+            
+            val isInteractable = isObjectInteractable(distance)
             
             val debugInfo = if (earth != null) {
                 val cameraGeospatialPose = earth.cameraGeospatialPose
@@ -136,7 +152,10 @@ fun setupARScene(
                     googlePlayServicesAvailable = true,
                     planesDetected = horizontalPlanes.size,
                     planeAnchorUsed = currentAnchorType.contains("PLANE"),
-                    animationStatus = getAnimationStatus()
+                    animationStatus = getAnimationStatus(),
+                    distanceToObject = distance,
+                    isObjectInteractable = isInteractable,
+                    objectPosition = currentPosition?.let { "X:${String.format("%.2f", it.x)}, Y:${String.format("%.2f", it.y)}, Z:${String.format("%.2f", it.z)}" } ?: "UNKNOWN"
                 )
             } else {
                 ARDebugInfo(
@@ -160,7 +179,10 @@ fun setupARScene(
                     googlePlayServicesAvailable = true,
                     planesDetected = 0,
                     planeAnchorUsed = currentAnchorType.contains("PLANE"),
-                    animationStatus = getAnimationStatus()
+                    animationStatus = getAnimationStatus(),
+                    distanceToObject = distance,
+                    isObjectInteractable = isInteractable,
+                    objectPosition = currentPosition?.let { "X:${String.format("%.2f", it.x)}, Y:${String.format("%.2f", it.y)}, Z:${String.format("%.2f", it.z)}" } ?: "UNKNOWN"
                 )
             }
             
@@ -282,4 +304,43 @@ fun setupARScene(
             }
         }
     }
+    
+    // 객체 클릭 처리 함수
+    fun handleObjectClick(x: Float, y: Float): Boolean {
+        val modelNode = localModelNode
+        if (modelNode == null) {
+            Log.d("ARScreen", "No model node available for interaction")
+            return false
+        }
+        
+        // 현재 객체까지의 거리 계산
+        val currentPosition = objectWorldPosition ?: modelNode.worldPosition
+        val distance = if (currentPosition != null) {
+            calculateDistanceToObject(arSceneView, currentPosition)
+        } else {
+            Float.MAX_VALUE
+        }
+        
+        Log.d("ARScreen", "Object interaction attempt - Distance: ${formatDistance(distance)}")
+        
+        // 거리 확인 (2m 이내)
+        if (!isObjectInteractable(distance)) {
+            Log.d("ARScreen", "Object too far for interaction: ${formatDistance(distance)}")
+            return false
+        }
+        
+        // 객체 클릭 핸들러 호출
+        val handled = onObjectClick?.invoke(modelNode, distance) ?: false
+        
+        if (handled) {
+            Log.i("ARScreen", "Object interaction successful at distance: ${formatDistance(distance)}")
+            // 미션 완료 처리
+            onMissionComplete()
+        }
+        
+        return handled
+    }
+    
+    // 외부에서 접근 가능하도록 태그로 저장
+    arSceneView.setTag("ar_object_click_handler".hashCode(), ::handleObjectClick)
 }

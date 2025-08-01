@@ -22,5 +22,8 @@ data class ARDebugInfo(
     val googlePlayServicesAvailable: Boolean = false,
     val planesDetected: Int = 0,
     val planeAnchorUsed: Boolean = false,
-    val animationStatus: String = "NONE" // NONE, READY, PLAYED
+    val animationStatus: String = "NONE", // NONE, READY, PLAYED
+    val distanceToObject: Float = Float.MAX_VALUE, // 객체까지의 거리 (미터)
+    val isObjectInteractable: Boolean = false, // 객체가 상호작용 가능한 거리에 있는지
+    val objectPosition: String = "UNKNOWN" // 객체의 현재 위치 (디버그용)
 )
