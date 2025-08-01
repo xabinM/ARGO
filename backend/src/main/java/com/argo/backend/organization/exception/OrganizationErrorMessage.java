@@ -15,6 +15,10 @@ public enum OrganizationErrorMessage {
     // ClassRoom 관련
     INVITE_CODE_GENERATION_FAILED("초대 코드 생성에 실패했습니다."),
     CLASS_CREATION_FAILED("반 생성에 실패했습니다."),
+    INVALID_INVITE_CODE("유효하지 않은 초대 코드입니다."),
+    STUDENT_ONLY_ALLOWED("학생만 반에 신청할 수 있습니다."),
+    CLASS_NOT_AVAILABLE("현재 신청할 수 없는 반입니다."),
+    DUPLICATE_APPLICATION("이미 신청했거나 참여 중인 반입니다."),
     
     // System
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다.");
