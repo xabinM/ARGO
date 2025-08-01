@@ -1,6 +1,7 @@
 package com.argo.backend.auth.controller;
 
-import com.argo.backend.auth.dto.common.TokenDto;
+import com.argo.backend.auth.dto.common.Tokens;
+import com.argo.backend.auth.dto.login.LoginDto;
 import com.argo.backend.auth.dto.login.LoginRequest;
 import com.argo.backend.auth.dto.login.LoginResponse;
 import com.argo.backend.auth.dto.reissue.ReissueResponse;
@@ -32,13 +33,13 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
 
-        TokenDto tokens = authService.login(request);
-        return ResponseEntity.ok(new LoginResponse(tokens, ResponseMessage.LOGIN_SUCCESS.getMessage()));
+        LoginDto dto = authService.login(request);
+        return ResponseEntity.ok(new LoginResponse(dto, ResponseMessage.LOGIN_SUCCESS.getMessage()));
     }
 
     @PostMapping("/reissue")
     public ResponseEntity<?> refreshToken(HttpServletRequest request) {
-        TokenDto tokens = authService.refresh(request);
+        Tokens tokens = authService.refresh(request);
 
         return ResponseEntity.ok(new ReissueResponse(tokens));
     }
