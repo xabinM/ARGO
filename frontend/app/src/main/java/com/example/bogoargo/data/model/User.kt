@@ -7,10 +7,10 @@ data class User(
     val id: Long,
     val nickname: String,
     val role: UserRole,
-    val team: Team?
-) {
-    enum class UserRole {
-        STUDENT,
-        TEACHER
-    }
+    val team: Team?,
+    val userRole: UserRole
+)
+enum class UserRole {
+    STUDENT,
+    TEACHER
 }

@@ -1,248 +1,227 @@
 package com.example.bogoargo.data.repository
 
-import androidx.lifecycle.viewModelScope
-import com.example.bogoargo.data.model.*
-import com.example.bogoargo.ui.screens.ClassDetail
-import com.example.bogoargo.ui.screens.Location
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import com.example.bogoargo.data.api.ClassApiService
+import com.example.bogoargo.data.dto.ClassCreateRequest
+import com.example.bogoargo.data.dto.ApproveStudentRequest
+import com.example.bogoargo.data.dto.ApplyClassRequest
+import com.example.bogoargo.data.response.ClassDataDto
+import com.example.bogoargo.data.response.ClassListResponse
+import com.example.bogoargo.data.response.ClassDetailResponse
+import com.example.bogoargo.data.response.ClassMemberResponse
+import com.example.bogoargo.data.response.ClassLeaveResponse
+import com.example.bogoargo.data.response.applyClassResponse
 
-class ClassRepository {
+import com.example.bogoargo.data.mapper.toDomainModel
+import com.example.bogoargo.data.model.Class
+import com.example.bogoargo.data.dto.response.ApplicationResponseDto
+import com.example.bogoargo.data.dto.response.MessageResponseDto
+import com.example.bogoargo.data.dto.response.UserDataDto
+import javax.inject.Inject
+import javax.inject.Singleton
 
-
-
-    /**
-     * 반 상세 정보를 서버에서 로드
-     */
-    fun loadClassDetail(classId: String) {
-        viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                _error.value = null
-
-                val response = apiService.getClassDetail(classId)
-
-                if (response.isSuccessful) {
-                    val responseBody = response.body()
-                    if (responseBody?.success == true && responseBody.data != null) {
-                        // 서버 데이터를 UI 모델로 변환
-                        _classDetail.value = mapToClassDetail(responseBody.data)
-                    } else {
-                        _error.value = responseBody?.message ?: "데이터를 불러올 수 없습니다."
-                    }
+@Singleton
+class ClassRepository @Inject constructor(
+    private val classApiService: ClassApiService
+) {
+    
+    // 교사용 반 목록 조회
+    suspend fun getTeacherClassList(
+        page: Int = 1,
+        size: Int = 10,
+        status: String? = "active"
+    ): Result<List<Class>> {
+        return try {
+            val response = classApiService.getTeacherClassList(page, size, status)
+            if (response.isSuccessful) {
+                val classListResponse = response.body()
+                if (classListResponse?.success == true && classListResponse.data != null) {
+                    val classes = classListResponse.data.map { it.toDomainModel() }
+                    Result.success(classes)
                 } else {
-                    _error.value = "서버 오류: ${response.code()}"
+                    Result.failure(Exception(classListResponse?.message ?: "반 목록을 불러올 수 없습니다."))
                 }
-            } catch (e: Exception) {
-                _error.value = "네트워크 오류: ${e.message}"
-            } finally {
-                _isLoading.value = false
+            } else {
+                Result.failure(Exception("서버 오류: ${response.code()}"))
             }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
-
-    /**
-     * 서버 데이터를 UI 모델로 변환
-     */
-    private fun mapToClassDetail(data: ClassDetailData): ClassDetail {
-        return ClassDetail(
-            id = data.id,
-            schoolName = data.schoolName,
-            className = data.className,
-            description = data.description,
-            location = Location(
-                id = data.location.id,
-                name = data.location.name,
-                latitude = data.location.latitude,
-                longitude = data.location.longitude,
-                address = data.location.address
-            ),
-            invitationCode = data.invitationCode,
-            maxStudents = data.maxStudents,
-            currentStudents = data.currentStudents
-        )
-    }
-
-
-
-
-
-
-
-
     
-    // 임시 데이터 - 실제 구현에서는 API 호출로 대체
-    private val mockClasses = mutableListOf<Class>(
-        Class(
-            id = "class_1",
-            year = 2025,
-            school = "싸피 초등학교",
-            className = "1학년 1반",
-            description = "우리 반은 체험 학습을 통해 다양한 경험을 쌓고 있습니다.",
-            region = "서울",
-            invitationCode = "ABC12DEF",
-            maxStudents = 30,
-            currentStudents = 25,
-            schoolName = "싸피 초등학교",
-        ),
-        Class(
-            id = "class_2",
-            year = 2025,
-            school = "싸피 초등학교",
-            className = "2학년 1반",
-            description = "즐겁게 배우는 우리 반입니다.",
-            region = "서울",
-            invitationCode = "XYZ98GHI",
-            maxStudents = 28,
-            currentStudents = 28,
-            schoolName = "싸피 초등학교",
-        )
-    )
-    
-    private val mockPrograms = mutableListOf<Program>(
-        Program(
-            id = "program_1",
-            classId = "class_1",
-            title = "과학 실험실 견학",
-            description = "과학관에서 진행하는 실험 체험 프로그램",
-            location = "국립과천과학관",
-            date = "2025-08-15",
-            startTime = "09:00",
-            endTime = "15:00",
-            maxParticipants = 30,
-            participants = 25,
-            status = ProgramStatus.UPCOMING
-        ),
-        Program(
-            id = "program_2",
-            classId = "class_1",
-            title = "역사 박물관 탐방",
-            description = "한국사 학습을 위한 박물관 견학",
-            location = "국립중앙박물관",
-            date = "2025-07-20",
-            startTime = "10:00",
-            endTime = "16:00",
-            maxParticipants = 30,
-            participants = 25,
-            status = ProgramStatus.COMPLETED
-        )
-    )
-    
-    private val mockUsers = mutableListOf<User>(
-        User(
-            id = "user_1",
-            userName = "student1",
-            email = "student1@example.com",
-            role = UserRole.STUDENT,
-            studentId = "2025001",
-            phoneNumber = "010-1234-5678"
-        ),
-        User(
-            id = "user_2",
-            userName = "student2", 
-            email = "student2@example.com",
-            role = UserRole.STUDENT,
-            studentId = "2025002",
-            phoneNumber = "010-2345-6789"
-        )
-    )
-    
-    private val mockTeams = mutableListOf<Team>(
-        Team(
-            id = "team_1",
-            classId = "class_1",
-            name = "탐험대",
-            description = "호기심 가득한 탐험대입니다",
-            leaderId = "user_1",
-            memberIds = listOf("user_1", "user_2"),
-            maxMembers = 4,
-            currentMembers = 2,
-            color = "#6200EE"
-        )
-    )
-    
-    private val mockMissions = mutableListOf<Mission>(
-        Mission(
-            id = "mission_1",
-            programId = "program_1",
-            title = "실험실 찾기",
-            description = "물리 실험실을 찾아보세요",
-            location = "물리 실험실",
-            latitude = 37.4265,
-            longitude = 126.9516,
-            order = 1,
-            type = MissionType.LOCATION,
-            isRequired = true,
-            points = 100
-        )
-    )
-    
-    private val mockTeamProgress = mutableListOf<TeamMissionProgress>()
-    
-    suspend fun getAllClasses(): List<Class> {
-        delay(500) // 네트워크 지연 시뮬레이션
-        return mockClasses.toList()
-    }
-    
-    suspend fun getClassById(classId: String): Class? {
-        delay(300)
-        return mockClasses.find { it.id == classId }
-    }
-    
-    suspend fun createClass(classData: Class): Class {
-        delay(800)
-        val newClass = classData.copy(
-            id = "class_${System.currentTimeMillis()}",
-        )
-        mockClasses.add(newClass)
-        return newClass
-    }
-    
-    suspend fun getProgramsByClassId(classId: String): List<Program> {
-        delay(400)
-        return mockPrograms.filter { it.classId == classId }
-    }
-    
-    suspend fun getMembersByClassId(classId: String): List<User> {
-        delay(300)
-        return mockUsers.toList()
-    }
-    
-    suspend fun getTeamsByClassId(classId: String): List<Team> {
-        delay(300)
-        return mockTeams.filter { it.classId == classId }
-    }
-    
-    suspend fun createTeam(team: Team): Team {
-        delay(500)
-        val newTeam = team.copy(
-            id = "team_${System.currentTimeMillis()}"
-        )
-        mockTeams.add(newTeam)
-        return newTeam
-    }
-    
-    suspend fun updateTeam(team: Team): Team {
-        delay(400)
-        val index = mockTeams.indexOfFirst { it.id == team.id }
-        if (index != -1) {
-            mockTeams[index] = team
+    // 학생용 반 목록 조회
+    suspend fun getStudentClassList(
+        page: Int = 1,
+        size: Int = 10,
+        status: String? = "active"
+    ): Result<List<Class>> {
+        return try {
+            val response = classApiService.getStudentClassList(page, size, status)
+            if (response.isSuccessful) {
+                val classListResponse = response.body()
+                if (classListResponse?.success == true && classListResponse.data != null) {
+                    val classes = classListResponse.data.map { it.toDomainModel() }
+                    Result.success(classes)
+                } else {
+                    Result.failure(Exception(classListResponse?.message ?: "반 목록을 불러올 수 없습니다."))
+                }
+            } else {
+                Result.failure(Exception("서버 오류: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-        return team
     }
     
-    suspend fun deleteTeam(teamId: String): Boolean {
-        delay(300)
-        return mockTeams.removeIf { it.id == teamId }
+    // 반 상세 정보 조회
+    suspend fun getClassDetail(classId: Long): Result<Class> {
+        return try {
+            val response = classApiService.getClassDetail(classId)
+            if (response.isSuccessful) {
+                val classData = response.body()
+                if (classData != null) {
+                    Result.success(classData.toDomainModel())
+                } else {
+                    Result.failure(Exception("반 정보를 불러올 수 없습니다."))
+                }
+            } else {
+                Result.failure(Exception("서버 오류: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
     
-    suspend fun getMissionsByProgramId(programId: String): List<Mission> {
-        delay(300)
-        return mockMissions.filter { it.programId == programId }
+    // 반 생성 (교사 기능)
+    suspend fun createClass(classCreateRequest: ClassCreateRequest): Result<Class?> {
+        return try {
+            val response = classApiService.createClass(classCreateRequest)
+            if (response.isSuccessful) {
+                val classDetailResponse = response.body()
+                if (classDetailResponse?.success == true && classDetailResponse.data != null) {
+                    Result.success(classDetailResponse.data.toDomainModel())
+                } else {
+                    Result.failure(Exception(classDetailResponse?.message ?: "반 생성에 실패했습니다."))
+                }
+            } else {
+                Result.failure(Exception("서버 오류: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
     
-    suspend fun getTeamProgressByProgramId(programId: String): List<TeamMissionProgress> {
-        delay(300)
-        return mockTeamProgress.filter { it.programId == programId }
+    // 참여 신청한 학생 목록 조회 (교사 기능)
+    suspend fun getApplicationList(classId: Long): Result<ApplicationResponseDto?> {
+        return try {
+            val response = classApiService.getApplicationList(classId)
+            if (response.isSuccessful) {
+                val applicationResponse = response.body()
+                Result.success(applicationResponse)
+            } else {
+                Result.failure(Exception("서버 오류: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    // 참여 신청 승인/거절 (교사 기능)
+    suspend fun approveApplication(classId: Long, applicationId: Long): Result<MessageResponseDto?> {
+        return try {
+            val response = classApiService.approveApplication(classId, applicationId)
+            if (response.isSuccessful) {
+                val successResponse = response.body()
+                if (successResponse?.success == true) {
+                    Result.success(successResponse)
+                } else {
+                    Result.failure(Exception(successResponse?.message ?: "신청 처리에 실패했습니다."))
+                }
+            } else {
+                Result.failure(Exception("서버 오류: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    // 반 소속 학생 목록 조회 (교사 기능)
+    suspend fun getClassMemberList(
+        classId: Long,
+        status: String,
+        page: Int = 10,
+        size: Int = 10
+    ): Result<List<UserDataDto>?> {
+        return try {
+            val response = classApiService.getClassMemberList(classId, status, page, size)
+            if (response.isSuccessful) {
+                val memberResponse = response.body()
+                if (memberResponse?.success == true) {
+                    Result.success(memberResponse.data)
+                } else {
+                    Result.failure(Exception(memberResponse?.message ?: "학생 목록을 불러올 수 없습니다."))
+                }
+            } else {
+                Result.failure(Exception("서버 오류: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    // 반 삭제 (교사 기능)
+    suspend fun deleteClass(classId: Long): Result<MessageResponseDto?> {
+        return try {
+            val response = classApiService.deleteClass(classId)
+            if (response.isSuccessful) {
+                val messageResponse = response.body()
+                if (messageResponse?.success == true) {
+                    Result.success(messageResponse)
+                } else {
+                    Result.failure(Exception(messageResponse?.message ?: "반 삭제에 실패했습니다."))
+                }
+            } else {
+                Result.failure(Exception("서버 오류: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    // 반 참여 신청 (학생 기능)
+    suspend fun applyClass(inviteCode: String): Result<applyClassResponse?> {
+        return try {
+            val response = classApiService.applyClass(inviteCode)
+            if (response.isSuccessful) {
+                val applyResponse = response.body()
+                if (applyResponse?.success == true) {
+                    Result.success(applyResponse)
+                } else {
+                    Result.failure(Exception(applyResponse?.message ?: "반 참여 신청에 실패했습니다."))
+                }
+            } else {
+                Result.failure(Exception("서버 오류: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+    
+    // 반 탈퇴 (학생 기능)
+    suspend fun leaveClass(classId: Long): Result<ClassLeaveResponse?> {
+        return try {
+            val response = classApiService.leaveClass(classId)
+            if (response.isSuccessful) {
+                val leaveResponse = response.body()
+                if (leaveResponse?.success == true) {
+                    Result.success(leaveResponse)
+                } else {
+                    Result.failure(Exception(leaveResponse?.message ?: "반 탈퇴에 실패했습니다."))
+                }
+            } else {
+                Result.failure(Exception("서버 오류: ${response.code()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

@@ -37,7 +37,7 @@ data class ClassDetailResponse(
 data class InviteStudentListResponse(
     val success: Boolean,
     val message: String,
-    val data: List<UserDataDto>?
+    val data: List<UserDataDto>? //TODO: 어플리케이션 목록으로 변경 필요
 )
 
 // 신청 상태 응답 DTO
