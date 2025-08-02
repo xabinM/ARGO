@@ -19,6 +19,8 @@ public enum OrganizationErrorMessage {
     STUDENT_ONLY_ALLOWED("학생만 반에 신청할 수 있습니다."),
     CLASS_NOT_AVAILABLE("현재 신청할 수 없는 반입니다."),
     DUPLICATE_APPLICATION("이미 신청했거나 참여 중인 반입니다."),
+    CLASS_NOT_FOUND("존재하지 않는 반입니다."),
+    UNAUTHORIZED_CLASS_ACCESS("해당 반에 접근할 권한이 없습니다."),
     
     // System
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다.");
