@@ -1,62 +1,87 @@
 package com.example.bogoargo.data.repository
 
 import android.content.Context
+import android.util.Base64
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.bogoargo.data.api.ApiClient
+import com.example.bogoargo.data.model.RefreshTokenRequest
 import com.example.bogoargo.data.model.TokenInfo
+import com.example.bogoargo.data.storage.TokenStorage
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import org.json.JSONObject
 
 private val Context.authDataStore: DataStore<Preferences> by preferencesDataStore(name = "auth_preferences")
 
 class AuthRepository(private val context: Context) {
     
-    private companion object {
-        val ACCESS_TOKEN = stringPreferencesKey("access_token")
-        val REFRESH_TOKEN = stringPreferencesKey("refresh_token")
-    }
+    private val tokenStorage = TokenStorage(context)
+    private val refreshMutex = Mutex()
     
-    val tokenFlow: Flow<TokenInfo?> = context.authDataStore.data.map { preferences ->
-        val accessToken = preferences[ACCESS_TOKEN]
-        val refreshToken = preferences[REFRESH_TOKEN]
+    fun getTokenInfo(): TokenInfo? {
+        val accessToken = tokenStorage.getAccessToken()
+        val refreshToken = tokenStorage.getRefreshToken()
         
-        if (accessToken != null && refreshToken != null) {
+        return if (accessToken != null && refreshToken != null) {
             TokenInfo(accessToken, refreshToken)
         } else {
             null
         }
     }
     
-    suspend fun saveTokens(accessToken: String, refreshToken: String) {
-        context.authDataStore.edit { preferences ->
-            preferences[ACCESS_TOKEN] = accessToken
-            preferences[REFRESH_TOKEN] = refreshToken
-        }
+    fun saveTokens(accessToken: String, refreshToken: String) {
+        tokenStorage.saveTokens(accessToken, refreshToken)
     }
     
-    suspend fun clearTokens() {
-        context.authDataStore.edit { preferences ->
-            preferences.remove(ACCESS_TOKEN)
-            preferences.remove(REFRESH_TOKEN)
-        }
+    fun clearTokens() {
+        tokenStorage.clearTokens()
     }
     
-    suspend fun getAccessToken(): String? {
-        var token: String? = null
-        context.authDataStore.data.collect { preferences ->
-            token = preferences[ACCESS_TOKEN]
-        }
-        return token
+    fun getAccessToken(): String? {
+        return tokenStorage.getAccessToken()
     }
     
-    suspend fun getRefreshToken(): String? {
-        var token: String? = null
-        context.authDataStore.data.collect { preferences ->
-            token = preferences[REFRESH_TOKEN]
+    fun getRefreshToken(): String? {
+        return tokenStorage.getRefreshToken()
+    }
+    
+    fun hasTokens(): Boolean {
+        return tokenStorage.hasTokens()
+    }
+    
+    suspend fun refreshToken(): Boolean {
+        return refreshMutex.withLock {
+            val refreshToken = getRefreshToken() ?: return@withLock false
+            
+            try {
+                val response = ApiClient.authApiService.refreshToken(
+                    RefreshTokenRequest(refreshToken)
+                )
+                
+                if (response.isSuccessful) {
+                    val refreshResponse = response.body()
+                    if (refreshResponse != null) {
+                        saveTokens(refreshResponse.accessToken, refreshResponse.refreshToken)
+                        return@withLock true
+                    }
+                }
+                
+                // 갱신 실패 시 토큰 클리어
+                clearTokens()
+                return@withLock false
+            } catch (e: Exception) {
+                clearTokens()
+                return@withLock false
+            }
         }
-        return token
     }
 }

@@ -1,20 +1,20 @@
 package com.argo.backend.domain.location;
 
-import com.argo.backend.domain.CreatedAtEntity;
+import com.argo.backend.domain.spot.Spot;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
-import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "locations")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Location extends CreatedAtEntity {
+@AllArgsConstructor
+@Builder
+public class Location {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long locationId;
@@ -22,11 +22,10 @@ public class Location extends CreatedAtEntity {
     @Column(nullable = false)
     private String name;
 
-    private String address;
+    @Embedded
+    private Coordinates coordinates;
 
-    @Column(nullable = false, precision = 10, scale = 7)
-    private BigDecimal latitude;
+    @OneToMany(mappedBy = "location", fetch = FetchType.LAZY)
+    private List<Spot> spots = new ArrayList<>();
 
-    @Column(nullable = false, precision = 10, scale = 7)
-    private BigDecimal longitude;
 }

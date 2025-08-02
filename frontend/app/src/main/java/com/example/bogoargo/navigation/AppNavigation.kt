@@ -151,11 +151,19 @@ fun AppNavigation(
         }
         composable(
             route = Screen.AR.route,
-            arguments = listOf(navArgument("spotId") { type = NavType.LongType })
+            arguments = listOf(
+                navArgument("spotId") { type = NavType.LongType },
+                navArgument("latitude") { type = NavType.FloatType },
+                navArgument("longitude") { type = NavType.FloatType }
+            )
         ) { backStackEntry ->
             val spotId = backStackEntry.arguments?.getLong("spotId") ?: 0L
+            val latitude = backStackEntry.arguments?.getFloat("latitude")?.toDouble() ?: 0.0
+            val longitude = backStackEntry.arguments?.getFloat("longitude")?.toDouble() ?: 0.0
             ARScreen(
                 spotId = spotId,
+                latitude = latitude,
+                longitude = longitude,
                 onNavigateBack = {
                     navController.popBackStack()
                 }

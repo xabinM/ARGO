@@ -13,7 +13,6 @@ import com.example.bogoargo.data.mapper.toDomainModel
 import com.example.bogoargo.domain.model.User
 import javax.inject.Inject
 import javax.inject.Singleton
-
 @Singleton
 class UserRepository @Inject constructor(
     private val userApiService: UserApiService
@@ -54,6 +53,7 @@ class UserRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Result.failure(e)
+
         }
     }
     
