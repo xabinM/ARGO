@@ -43,18 +43,20 @@ sealed class Screen(val route: String) {
     data object Game : Screen("game")
     data object Profile : Screen("profile")
     data object Settings : Screen("settings")
+    data object AR : Screen("ar/{spotId}/{latitude}/{longitude}") {
+        fun createRoute(spotId: Long, latitude: Double, longitude: Double) = "ar/$spotId/$latitude/$longitude"
     data object TeacherMain : Screen("teacherMain")
     data object ClassCreate : Screen("classCreate")
     data object ClassManagement : Screen("classManagement")
     data object ClassDetail : Screen("classDetail/{classId}/{schoolName}/{className}/{description}/{region}/{invitationCode}") {
-        fun createRoute(classId: String, schoolName: String, className: String, description: String, region: String, invitationCode: String) = 
+        fun createRoute(classId: String, schoolName: String, className: String, description: String, region: String, invitationCode: String) =
             "classDetail/$classId/$schoolName/$className/$description/$region/$invitationCode"
     }
     data object TeamCreate : Screen("teamCreate/{classId}") {
         fun createRoute(classId: String) = "teamCreate/$classId"
     }
     data object AR : Screen("ar/{spotId}") {
-        fun createRoute(spotId: Long) = "ar/$spotId"  
+        fun createRoute(spotId: Long) = "ar/$spotId"
     }
     data object ProgramManagement : Screen("programManagement")
     data object ProgramCreate : Screen("programCreate/{classId}") {
@@ -80,7 +82,7 @@ fun AppNavigation(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.TeacherMain.route
+        startDestination = Screen.Splash.route
     ) {
         composable(Screen.Splash.route) {
             SplashScreen(navController = navController)
@@ -126,7 +128,7 @@ fun AppNavigation(
             val description = backStackEntry.arguments?.getString("description") ?: ""
             val region = backStackEntry.arguments?.getString("region") ?: ""
             val invitationCode = backStackEntry.arguments?.getString("invitationCode") ?: ""
-            
+
             ClassDetailScreen(
                 navController = navController,
                 classId = classId,
@@ -184,11 +186,19 @@ fun AppNavigation(
         }
         composable(
             route = Screen.AR.route,
-            arguments = listOf(navArgument("spotId") { type = NavType.LongType })
+            arguments = listOf(
+                navArgument("spotId") { type = NavType.LongType },
+                navArgument("latitude") { type = NavType.FloatType },
+                navArgument("longitude") { type = NavType.FloatType }
+            )
         ) { backStackEntry ->
             val spotId = backStackEntry.arguments?.getLong("spotId") ?: 0L
+            val latitude = backStackEntry.arguments?.getFloat("latitude")?.toDouble() ?: 0.0
+            val longitude = backStackEntry.arguments?.getFloat("longitude")?.toDouble() ?: 0.0
             ARScreen(
                 spotId = spotId,
+                latitude = latitude,
+                longitude = longitude,
                 onNavigateBack = {
                     navController.popBackStack()
                 }
@@ -226,5 +236,3 @@ fun AppNavigation(
         }
     }
 }
-
-

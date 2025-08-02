@@ -1,4 +1,4 @@
-package com.example.bogoargo.domain.model
+package com.example.bogoargo.data.model
 
 import com.example.bogoargo.data.model.Team
 
