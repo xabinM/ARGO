@@ -33,7 +33,8 @@ public class OrganizationExceptionHandler {
     @ExceptionHandler({
         DuplicateApplicationException.class,
         ClassNotAvailableException.class,
-        ApplicationAlreadyProcessedException.class
+        ApplicationAlreadyProcessedException.class,
+        DuplicateTeamNameException.class
     })
     public ResponseEntity<ErrorResponse> handleConflictException(RuntimeException e) {
         ErrorResponse error = new ErrorResponse("CONFLICT", e.getMessage());
@@ -49,7 +50,10 @@ public class OrganizationExceptionHandler {
         return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 
-    @ExceptionHandler(InviteCodeGenerationException.class)
+    @ExceptionHandler({
+        InviteCodeGenerationException.class,
+        TeamCreationFailedException.class
+    })
     public ResponseEntity<ErrorResponse> handleInternalServerError(RuntimeException e) {
         ErrorResponse error = new ErrorResponse("INTERNAL_SERVER_ERROR", e.getMessage());
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);

@@ -27,6 +27,10 @@ public enum OrganizationErrorMessage {
     APPLICATION_NOT_FOUND("존재하지 않는 신청입니다."),
     APPLICATION_ALREADY_PROCESSED("이미 처리된 신청입니다."),
     
+    // Team 관련
+    DUPLICATE_TEAM_NAME("이미 동일한 이름의 팀이 존재합니다."),
+    TEAM_CREATION_FAILED("팀 생성에 실패했습니다."),
+    
     // System
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다.");
 
