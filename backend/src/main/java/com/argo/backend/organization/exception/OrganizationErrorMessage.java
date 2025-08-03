@@ -46,6 +46,9 @@ public enum OrganizationErrorMessage {
     // Class Detail 관련
     INVALID_CLASS_ID("올바르지 않은 반 ID입니다."),
     
+    // Student List 관련
+    INVALID_STATUS_PARAMETER("올바르지 않은 상태값입니다. (all, assigned, unassigned 중 선택)"),
+    
     // System
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다.");
 
@@ -53,5 +56,9 @@ public enum OrganizationErrorMessage {
 
     OrganizationErrorMessage(String message) {
         this.message = message;
+    }
+    
+    public String getMessage() {
+        return message;
     }
 }

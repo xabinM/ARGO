@@ -7,6 +7,7 @@ import com.argo.backend.organization.dto.applicationprocess.ApplicationProcessRe
 import com.argo.backend.organization.dto.applicationprocess.ApplicationProcessResponse;
 import com.argo.backend.organization.dto.classlist.ClassListResponse;
 import com.argo.backend.organization.dto.classdetail.ClassDetailResponse;
+import com.argo.backend.organization.dto.studentlist.StudentListResponse;
 import com.argo.backend.organization.service.ClassService;
 import com.argo.backend.organization.service.ClassApplicationService;
 import org.springframework.data.domain.PageRequest;
@@ -83,6 +84,19 @@ public class TeacherClassController {
             @AuthenticationPrincipal Long teacherId
     ) {
         ApplicationProcessResponse response = classApplicationService.processApplications(classId, request, teacherId);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{classId}/students")
+    public ResponseEntity<StudentListResponse> getClassStudents(
+            @PathVariable Long classId,
+            @RequestParam(value = "status", defaultValue = "all") String status,
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "20") int size,
+            @AuthenticationPrincipal Long teacherId
+    ) {
+        Pageable pageable = PageRequest.of(page - 1, size);
+        StudentListResponse response = classService.getClassStudents(teacherId, classId, status, pageable);
         return ResponseEntity.ok(response);
     }
 }

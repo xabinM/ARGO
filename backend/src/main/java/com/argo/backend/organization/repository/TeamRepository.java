@@ -32,4 +32,12 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
            "WHERE t.classRoom.classId = :classId " +
            "ORDER BY t.createdAt ASC")
     List<Team> findTeamsByClassId(@Param("classId") Long classId);
+    
+    // 팀 정보와 멤버 수를 한 번에 조회 (N+1 쿼리 방지)
+    @Query("SELECT t.teamId, t.teamName, t.maxMembers, COUNT(u) " +
+           "FROM Team t LEFT JOIN User u ON u.team.teamId = t.teamId " +
+           "WHERE t.classRoom.classId = :classId " +
+           "GROUP BY t.teamId, t.teamName, t.maxMembers " +
+           "ORDER BY t.createdAt ASC")
+    List<Object[]> findTeamStatusByClassId(@Param("classId") Long classId);
 }

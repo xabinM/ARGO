@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface ClassStudentRepository extends JpaRepository<User, Long> {
     
@@ -52,4 +54,37 @@ public interface ClassStudentRepository extends JpaRepository<User, Long> {
            "AND ca.classRoom.classId = :classId " +
            "AND ca.status = 'APPROVED'")
     boolean isStudentInClass(@Param("studentId") Long studentId, @Param("classId") Long classId);
+    
+    // 반의 모든 승인된 학생들 조회 (페이징)
+    @Query("SELECT u, ca.updatedAt FROM User u " +
+           "LEFT JOIN FETCH u.team " +
+           "JOIN u.applications ca " +
+           "WHERE ca.classRoom.classId = :classId " +
+           "AND ca.status = 'APPROVED' " +
+           "AND u.role = 'ROLE_STUDENT' " +
+           "ORDER BY ca.updatedAt ASC")
+    Page<Object[]> findApprovedStudentsWithTeamAndJoinDateByClassIdPaged(@Param("classId") Long classId, Pageable pageable);
+    
+    // 반의 팀 배정된 학생들 조회 (페이징)
+    @Query("SELECT u, ca.updatedAt FROM User u " +
+           "LEFT JOIN FETCH u.team " +
+           "JOIN u.applications ca " +
+           "WHERE ca.classRoom.classId = :classId " +
+           "AND ca.status = 'APPROVED' " +
+           "AND u.role = 'ROLE_STUDENT' " +
+           "AND u.team IS NOT NULL " +
+           "ORDER BY ca.updatedAt ASC")
+    Page<Object[]> findAssignedStudentsWithTeamAndJoinDateByClassIdPaged(@Param("classId") Long classId, Pageable pageable);
+    
+    // 반의 팀 미배정 학생들 조회 (페이징)
+    @Query("SELECT u, ca.updatedAt FROM User u " +
+           "LEFT JOIN FETCH u.team " +
+           "JOIN u.applications ca " +
+           "WHERE ca.classRoom.classId = :classId " +
+           "AND ca.status = 'APPROVED' " +
+           "AND u.role = 'ROLE_STUDENT' " +
+           "AND u.team IS NULL " +
+           "ORDER BY ca.updatedAt ASC")
+    Page<Object[]> findUnassignedStudentsWithTeamAndJoinDateByClassIdPaged(@Param("classId") Long classId, Pageable pageable);
+    
 }

@@ -48,7 +48,10 @@ public class OrganizationExceptionHandler {
         InvalidInviteCodeException.class,
         ClassCapacityExceededException.class,
         TeamCapacityExceededException.class,
-        TeamFullException.class
+        TeamFullException.class,
+        InvalidPageParameterException.class,
+        InvalidClassIdException.class,
+        InvalidStatusParameterException.class
     })
     public ResponseEntity<ErrorResponse> handleBadRequestException(RuntimeException e) {
         ErrorResponse error = new ErrorResponse("BAD_REQUEST", e.getMessage());

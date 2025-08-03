@@ -16,6 +16,7 @@ import com.argo.backend.organization.dto.classlist.ClassListResponse;
 import com.argo.backend.organization.dto.classlist.ClassInfoDto;
 import com.argo.backend.organization.dto.classlist.PaginationDto;
 import com.argo.backend.organization.dto.classdetail.*;
+import com.argo.backend.organization.dto.studentlist.*;
 import com.argo.backend.domain.team.Team;
 import com.argo.backend.organization.exception.LocationNotFoundException;
 import com.argo.backend.organization.exception.InsufficientPermissionException;
@@ -27,6 +28,7 @@ import com.argo.backend.organization.exception.DuplicateApplicationException;
 import com.argo.backend.organization.exception.ClassNotFoundException;
 import com.argo.backend.organization.exception.UnauthorizedClassAccessException;
 import com.argo.backend.organization.exception.InvalidClassIdException;
+import com.argo.backend.organization.exception.InvalidStatusParameterException;
 import com.argo.backend.organization.dto.applicationlist.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -177,6 +179,7 @@ public class ClassService {
     }
     
     // 선생님의 반 목록 조회
+    @Transactional
     public ClassListResponse getTeacherClassList(Long teacherId, String status, Pageable pageable) {
         Teacher teacher = teacherRepository.findById(teacherId)
                 .orElseThrow(InsufficientPermissionException::new);
@@ -204,6 +207,7 @@ public class ClassService {
     }
     
     // 학생의 반 목록 조회
+    @Transactional
     public ClassListResponse getStudentClassList(Long studentId, String status, Pageable pageable) {
         User student = userRepository.findById(studentId)
                 .orElseThrow(UserNotFoundException::new);
@@ -254,6 +258,7 @@ public class ClassService {
     }
     
     // 선생님의 반 상세정보 조회
+    @Transactional
     public ClassDetailResponse getTeacherClassDetail(Long teacherId, Long classId, String include) {
         validateClassId(classId);
         
@@ -288,6 +293,7 @@ public class ClassService {
     }
     
     // 학생의 반 상세정보 조회
+    @Transactional
     public ClassDetailResponse getStudentClassDetail(Long studentId, Long classId) {
         validateClassId(classId);
         
@@ -355,5 +361,82 @@ public class ClassService {
                 .toList();
         
         return TeamDetailDto.from(team, memberDtos);
+    }
+    
+    // 반 참여 학생 목록 조회
+    @Transactional
+    public StudentListResponse getClassStudents(Long teacherId, Long classId, String status, Pageable pageable) {
+        ClassRoom classRoom = validateClassAccess(teacherId, classId);
+        StatusType statusType = parseStatusFilter(status);
+        
+        Page<Object[]> studentPage = getStudentsByStatus(classId, statusType, pageable);
+        
+        List<StudentDetailDto> students = studentPage.getContent().stream()
+                .map(this::mapToStudentDetailDto)
+                .toList();
+        
+        int totalStudents = getApprovedStudentCount(classId);
+        StudentClassInfoDto classInfo = StudentClassInfoDto.from(classRoom, totalStudents);
+        TeamSummaryDto teamSummary = buildTeamSummary(classId, totalStudents);
+        StudentListPaginationDto pagination = StudentListPaginationDto.from(studentPage);
+        
+        return StudentListResponse.of(classInfo, students, teamSummary, pagination);
+    }
+    
+    private ClassRoom validateClassAccess(Long teacherId, Long classId) {
+        validateClassId(classId);
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(ClassNotFoundException::new);
+        if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
+            throw new UnauthorizedClassAccessException();
+        }
+        return classRoom;
+    }
+    
+    private StudentDetailDto mapToStudentDetailDto(Object[] result) {
+        User student = (User) result[0];
+        java.time.LocalDateTime joinedAt = (java.time.LocalDateTime) result[1];
+        TeamInfoDto teamInfo = student.getTeam() != null ? 
+            TeamInfoDto.from(student.getTeam(), null) : null;
+        return StudentDetailDto.from(student, joinedAt, teamInfo);
+    }
+
+    // string -> statusType
+    private StatusType parseStatusFilter(String status) {
+        if (status == null || "all".equals(status)) {
+            return StatusType.ALL;
+        } else if ("assigned".equals(status)) {
+            return StatusType.ASSIGNED;
+        } else if ("unassigned".equals(status)) {
+            return StatusType.UNASSIGNED;
+        } else {
+            throw new InvalidStatusParameterException();
+        }
+    }
+    
+    private Page<Object[]> getStudentsByStatus(Long classId, StatusType statusType, Pageable pageable) {
+        return switch (statusType) {
+            case ALL -> classStudentRepository.findApprovedStudentsWithTeamAndJoinDateByClassIdPaged(classId, pageable);
+            case ASSIGNED -> classStudentRepository.findAssignedStudentsWithTeamAndJoinDateByClassIdPaged(classId, pageable);
+            case UNASSIGNED -> classStudentRepository.findUnassignedStudentsWithTeamAndJoinDateByClassIdPaged(classId, pageable);
+        };
+    }
+    
+    private TeamSummaryDto buildTeamSummary(Long classId, int totalStudents) {
+        List<Team> teams = teamRepository.findTeamsByClassId(classId);
+        
+        List<TeamStatusDto> teamStatuses = teams.stream()
+                .map(team -> TeamStatusDto.from(team, (int) classStudentRepository.countByTeamId(team.getTeamId())))
+                .toList();
+        
+        int totalAssigned = teamStatuses.stream()
+                .mapToInt(TeamStatusDto::getCurrentMembers)
+                .sum();
+        
+        return TeamSummaryDto.of(teams.size(), totalAssigned, totalStudents - totalAssigned, teamStatuses);
+    }
+    
+    private enum StatusType {
+        ALL, ASSIGNED, UNASSIGNED
     }
 }
