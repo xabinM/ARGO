@@ -40,4 +40,7 @@ public interface ClassApplicationRepository extends JpaRepository<ClassApplicati
         @Param("applicationIds") List<Long> applicationIds, 
         @Param("classId") Long classId
     );
+    
+    // 승인된 학생 수 조회 (반 목록 조회용)
+    long countByClassRoomClassIdAndStatus(@Param("classId") Long classId, @Param("status") ApplicationStatus status);
 }

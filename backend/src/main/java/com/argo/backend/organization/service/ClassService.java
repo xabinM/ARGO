@@ -11,6 +11,9 @@ import com.argo.backend.domain.user.User;
 import com.argo.backend.organization.dto.classapply.ClassApplyResponse;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateRequest;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateResponse;
+import com.argo.backend.organization.dto.classlist.ClassListResponse;
+import com.argo.backend.organization.dto.classlist.ClassInfoDto;
+import com.argo.backend.organization.dto.classlist.PaginationDto;
 import com.argo.backend.organization.exception.LocationNotFoundException;
 import com.argo.backend.organization.exception.InsufficientPermissionException;
 import com.argo.backend.organization.exception.InvalidInviteCodeException;
@@ -29,12 +32,14 @@ import com.argo.backend.organization.repository.ClassApplicationRepository;
 import com.argo.backend.organization.repository.ClassRoomRepository;
 import com.argo.backend.organization.repository.LocationRepository;
 import com.argo.backend.organization.repository.TeacherRepository;
+import com.argo.backend.organization.repository.TeamRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.security.SecureRandom;
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -45,6 +50,7 @@ public class ClassService {
     private final TeacherRepository teacherRepository;
     private final UserRepository userRepository;
     private final ClassApplicationRepository classApplicationRepository;
+    private final TeamRepository teamRepository;
 
 
     private static final String INVITE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -166,5 +172,82 @@ public class ClassService {
         return classRoom.getStatus() == ClassStatus.ACTIVE
                 && classRoom.getActivityDate() != null
                 && !classRoom.getActivityDate().isBefore(LocalDate.now());
+    }
+    
+    // 선생님의 반 목록 조회
+    public ClassListResponse getTeacherClassList(Long teacherId, String status, Pageable pageable) {
+        Teacher teacher = teacherRepository.findById(teacherId)
+                .orElseThrow(InsufficientPermissionException::new);
+        
+        Page<ClassRoom> classPage;
+        
+        if ("all".equals(status)) {
+            classPage = classRoomRepository.findByTeacher(teacher, pageable);
+        } else {
+            ClassStatus classStatus = parseClassStatus(status);
+            classPage = classRoomRepository.findByTeacherAndStatus(teacher, classStatus, pageable);
+        }
+        
+        List<ClassInfoDto> classInfoList = classPage.getContent().stream()
+                .map(classRoom -> {
+                    int studentCount = getApprovedStudentCount(classRoom.getClassId());
+                    int teamCount = getTeamCount(classRoom.getClassId());
+                    return ClassInfoDto.from(classRoom, studentCount, teamCount);
+                })
+                .toList();
+        
+        PaginationDto pagination = PaginationDto.from(classPage);
+        
+        return ClassListResponse.success(classInfoList, pagination);
+    }
+    
+    // 학생의 반 목록 조회
+    public ClassListResponse getStudentClassList(Long studentId, String status, Pageable pageable) {
+        User student = userRepository.findById(studentId)
+                .orElseThrow(UserNotFoundException::new);
+        
+        if (student.getRole() != Role.ROLE_STUDENT) {
+            throw new StudentOnlyException();
+        }
+        
+        Page<ClassRoom> classPage;
+        
+        if ("all".equals(status)) {
+            classPage = classRoomRepository.findStudentClasses(studentId, pageable);
+        } else {
+            ClassStatus classStatus = parseClassStatus(status);
+            classPage = classRoomRepository.findStudentClassesByStatus(studentId, classStatus, pageable);
+        }
+        
+        List<ClassInfoDto> classInfoList = classPage.getContent().stream()
+                .map(classRoom -> {
+                    int studentCount = getApprovedStudentCount(classRoom.getClassId());
+                    int teamCount = getTeamCount(classRoom.getClassId());
+                    return ClassInfoDto.fromStudent(classRoom, studentCount, teamCount);
+                })
+                .toList();
+        
+        PaginationDto pagination = PaginationDto.from(classPage);
+        
+        return ClassListResponse.success(classInfoList, pagination);
+    }
+    
+    private ClassStatus parseClassStatus(String status) {
+        return switch (status.toLowerCase()) {
+            case "active" -> ClassStatus.ACTIVE;
+            case "inactive" -> ClassStatus.INACTIVE;
+            default -> ClassStatus.ACTIVE;
+        };
+    }
+    
+    private int getApprovedStudentCount(Long classId) {
+        return (int) classApplicationRepository.countByClassRoomClassIdAndStatus(
+                classId, ApplicationStatus.APPROVED);
+    }
+    
+    private int getTeamCount(Long classId) {
+        ClassRoom classRoom = classRoomRepository.findById(classId).orElse(null);
+        if (classRoom == null) return 0;
+        return teamRepository.findByClassRoomOrderByCreatedAtAsc(classRoom).size();
     }
 }

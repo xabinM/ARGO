@@ -40,6 +40,9 @@ public enum OrganizationErrorMessage {
     // Team Auto Assignment 관련
     TEAM_FULL("모든 팀이 가득 차서 배정할 수 없습니다."),
     
+    // Page 관련
+    INVALID_PAGE_PARAMETER("페이지 번호는 1 이상이어야 합니다."),
+    
     // System
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다.");
 

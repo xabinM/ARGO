@@ -5,8 +5,10 @@ import com.argo.backend.organization.dto.classroomcreate.ClassCreateResponse;
 import com.argo.backend.organization.dto.applicationlist.ApplicationListResponse;
 import com.argo.backend.organization.dto.applicationprocess.ApplicationProcessRequest;
 import com.argo.backend.organization.dto.applicationprocess.ApplicationProcessResponse;
+import com.argo.backend.organization.dto.classlist.ClassListResponse;
 import com.argo.backend.organization.service.ClassService;
 import com.argo.backend.organization.service.ClassApplicationService;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -26,6 +28,20 @@ public class TeacherClassController {
 
     private final ClassService classService;
     private final ClassApplicationService classApplicationService;
+
+    @GetMapping
+    public ResponseEntity<ClassListResponse> getClassList(
+            @RequestParam(value = "page", defaultValue = "1") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @RequestParam(value = "status", defaultValue = "active")
+            @Pattern(regexp = "^(active|inactive|all)$", message = "상태는 active, inactive, all 중 하나여야 합니다")
+            String status,
+            @AuthenticationPrincipal Long teacherId
+    ) {
+        Pageable pageable = PageRequest.of(page - 1, size, Sort.unsorted());
+        ClassListResponse response = classService.getTeacherClassList(teacherId, status, pageable);
+        return ResponseEntity.ok(response);
+    }
 
     @PostMapping
     public ResponseEntity<ClassCreateResponse> createClass(
