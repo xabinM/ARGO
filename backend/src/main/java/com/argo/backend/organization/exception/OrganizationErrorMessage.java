@@ -37,6 +37,9 @@ public enum OrganizationErrorMessage {
     STUDENT_NOT_FOUND("해당 반에 참여하지 않은 학생입니다."),
     STUDENT_ALREADY_ASSIGNED("이미 다른 팀에 속한 학생이 포함되어 있습니다."),
     
+    // Team Auto Assignment 관련
+    TEAM_FULL("모든 팀이 가득 차서 배정할 수 없습니다."),
+    
     // System
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다.");
 

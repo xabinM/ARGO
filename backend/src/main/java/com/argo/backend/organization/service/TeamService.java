@@ -10,6 +10,11 @@ import com.argo.backend.organization.dto.teamassign.TeamAssignRequest;
 import com.argo.backend.organization.dto.teamassign.TeamAssignResponse;
 import com.argo.backend.organization.dto.teamassign.AssignedStudentDto;
 import com.argo.backend.organization.dto.teamassign.TeamInfoDto;
+import com.argo.backend.organization.dto.teamautoassign.TeamAutoAssignResponse;
+import com.argo.backend.organization.dto.teamautoassign.TeamAssignmentDto;
+import com.argo.backend.organization.dto.teamautoassign.AssignedStudentInfoDto;
+import com.argo.backend.organization.dto.teamautoassign.TeamStatusDto;
+import com.argo.backend.organization.dto.teamautoassign.UnassignedStudentDto;
 import com.argo.backend.organization.exception.*;
 import com.argo.backend.organization.repository.ClassRoomRepository;
 import com.argo.backend.organization.repository.ClassStudentRepository;
@@ -21,7 +26,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -146,6 +154,65 @@ public class TeamService {
                     userRepository.save(student);
                     return AssignedStudentDto.from(student, assignedAt);
                 })
+                .toList();
+    }
+    
+    @Transactional
+    public TeamAutoAssignResponse autoAssignStudentsToTeams(Long classId, Long teacherId) {
+        ClassRoom classRoom = validateClassAccess(classId, teacherId);
+        
+        List<Team> teams = teamRepository.findAllTeamsWithDetailsByClassRoom(classRoom);
+        if (teams.isEmpty()) throw new TeamNotFoundException();
+        
+        List<User> unassignedStudents = classStudentRepository.findUnassignedStudentsByClassId(classId);
+        if (unassignedStudents.isEmpty()) {
+            return TeamAutoAssignResponse.ofNoAssignment(classRoom.getClassId(), classRoom.getClassName(), LocalDateTime.now());
+        }
+        
+        Collections.shuffle(unassignedStudents);
+        
+        // 직접 배정 로직
+        int[] teamCounts = new int[teams.size()];
+        for (int i = 0; i < teams.size(); i++) {
+            teamCounts[i] = (int) classStudentRepository.countByTeamId(teams.get(i).getTeamId());
+        }
+        
+        int totalAssigned = 0;
+        while (!unassignedStudents.isEmpty()) {
+            boolean anyAssignment = false;
+            for (int i = 0; i < teams.size() && !unassignedStudents.isEmpty(); i++) {
+                if (teams.get(i).getMaxMembers() == null || teamCounts[i] < teams.get(i).getMaxMembers()) {
+                    User student = unassignedStudents.remove(0);
+                    student.setTeam(teams.get(i));
+                    userRepository.save(student);
+                    teamCounts[i]++;
+                    totalAssigned++;
+                    anyAssignment = true;
+                }
+            }
+            if (!anyAssignment) break;
+        }
+        
+        LocalDateTime assignedAt = LocalDateTime.now();
+        return TeamAutoAssignResponse.of(
+                classRoom.getClassId(),
+                classRoom.getClassName(),
+                totalAssigned,
+                assignedAt,
+                createTeamAssignments(teams),
+                unassignedStudents.stream().map(u -> UnassignedStudentDto.of(u, "모든 팀이 가득 참")).toList()
+        );
+    }
+    
+    private List<TeamAssignmentDto> createTeamAssignments(List<Team> teams) {
+        return teams.stream()
+                .map(team -> {
+                    List<User> members = userRepository.findByTeamId(team.getTeamId());
+                    return members.isEmpty() ? null : TeamAssignmentDto.of(team,
+                            members.stream().map(AssignedStudentInfoDto::from).toList(),
+                            TeamStatusDto.of(team, members.size()));
+                })
+                .filter(dto -> dto != null)
                 .toList();
     }
 }
