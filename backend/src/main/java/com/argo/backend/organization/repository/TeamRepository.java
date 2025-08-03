@@ -25,4 +25,11 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
            "WHERE t.classRoom = :classRoom " +
            "ORDER BY t.createdAt ASC")
     List<Team> findAllTeamsWithDetailsByClassRoom(@Param("classRoom") ClassRoom classRoom);
+    
+    // 반의 모든 팀과 멤버들 조회 (반 상세정보용)
+    @Query("SELECT t FROM Team t " +
+           "LEFT JOIN FETCH t.classRoom " +
+           "WHERE t.classRoom.classId = :classId " +
+           "ORDER BY t.createdAt ASC")
+    List<Team> findTeamsByClassId(@Param("classId") Long classId);
 }

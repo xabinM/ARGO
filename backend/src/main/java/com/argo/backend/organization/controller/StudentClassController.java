@@ -2,6 +2,7 @@ package com.argo.backend.organization.controller;
 
 import com.argo.backend.organization.dto.classapply.ClassApplyResponse;
 import com.argo.backend.organization.dto.classlist.ClassListResponse;
+import com.argo.backend.organization.dto.classdetail.ClassDetailResponse;
 import com.argo.backend.organization.service.ClassService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +34,15 @@ public class StudentClassController {
     ) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.unsorted());
         ClassListResponse response = classService.getStudentClassList(studentId, status, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{classId}")
+    public ResponseEntity<ClassDetailResponse> getClassDetail(
+            @PathVariable Long classId,
+            @AuthenticationPrincipal Long studentId
+    ) {
+        ClassDetailResponse response = classService.getStudentClassDetail(studentId, classId);
         return ResponseEntity.ok(response);
     }
 

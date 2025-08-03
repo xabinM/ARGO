@@ -6,6 +6,7 @@ import com.argo.backend.organization.dto.applicationlist.ApplicationListResponse
 import com.argo.backend.organization.dto.applicationprocess.ApplicationProcessRequest;
 import com.argo.backend.organization.dto.applicationprocess.ApplicationProcessResponse;
 import com.argo.backend.organization.dto.classlist.ClassListResponse;
+import com.argo.backend.organization.dto.classdetail.ClassDetailResponse;
 import com.argo.backend.organization.service.ClassService;
 import com.argo.backend.organization.service.ClassApplicationService;
 import org.springframework.data.domain.PageRequest;
@@ -40,6 +41,16 @@ public class TeacherClassController {
     ) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.unsorted());
         ClassListResponse response = classService.getTeacherClassList(teacherId, status, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/{classId}")
+    public ResponseEntity<ClassDetailResponse> getClassDetail(
+            @PathVariable Long classId,
+            @RequestParam(value = "include", required = false) String include,
+            @AuthenticationPrincipal Long teacherId
+    ) {
+        ClassDetailResponse response = classService.getTeacherClassDetail(teacherId, classId, include);
         return ResponseEntity.ok(response);
     }
 

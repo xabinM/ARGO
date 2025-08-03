@@ -43,6 +43,9 @@ public enum OrganizationErrorMessage {
     // Page 관련
     INVALID_PAGE_PARAMETER("페이지 번호는 1 이상이어야 합니다."),
     
+    // Class Detail 관련
+    INVALID_CLASS_ID("올바르지 않은 반 ID입니다."),
+    
     // System
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다.");
 

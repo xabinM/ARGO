@@ -9,11 +9,14 @@ import com.argo.backend.domain.user.Role;
 import com.argo.backend.domain.user.Teacher;
 import com.argo.backend.domain.user.User;
 import com.argo.backend.organization.dto.classapply.ClassApplyResponse;
+import com.argo.backend.organization.dto.classdetail.StatisticsDto;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateRequest;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateResponse;
 import com.argo.backend.organization.dto.classlist.ClassListResponse;
 import com.argo.backend.organization.dto.classlist.ClassInfoDto;
 import com.argo.backend.organization.dto.classlist.PaginationDto;
+import com.argo.backend.organization.dto.classdetail.*;
+import com.argo.backend.domain.team.Team;
 import com.argo.backend.organization.exception.LocationNotFoundException;
 import com.argo.backend.organization.exception.InsufficientPermissionException;
 import com.argo.backend.organization.exception.InvalidInviteCodeException;
@@ -23,6 +26,7 @@ import com.argo.backend.organization.exception.ClassNotAvailableException;
 import com.argo.backend.organization.exception.DuplicateApplicationException;
 import com.argo.backend.organization.exception.ClassNotFoundException;
 import com.argo.backend.organization.exception.UnauthorizedClassAccessException;
+import com.argo.backend.organization.exception.InvalidClassIdException;
 import com.argo.backend.organization.dto.applicationlist.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -33,6 +37,7 @@ import com.argo.backend.organization.repository.ClassRoomRepository;
 import com.argo.backend.organization.repository.LocationRepository;
 import com.argo.backend.organization.repository.TeacherRepository;
 import com.argo.backend.organization.repository.TeamRepository;
+import com.argo.backend.organization.repository.ClassStudentRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -51,6 +56,7 @@ public class ClassService {
     private final UserRepository userRepository;
     private final ClassApplicationRepository classApplicationRepository;
     private final TeamRepository teamRepository;
+    private final ClassStudentRepository classStudentRepository;
 
 
     private static final String INVITE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -133,10 +139,6 @@ public class ClassService {
                 savedApplication.getCreatedAt()
         );
     }
-
-
-
-
 
 
     private boolean isValidInviteCode(String inviteCode) {
@@ -249,5 +251,109 @@ public class ClassService {
         ClassRoom classRoom = classRoomRepository.findById(classId).orElse(null);
         if (classRoom == null) return 0;
         return teamRepository.findByClassRoomOrderByCreatedAtAsc(classRoom).size();
+    }
+    
+    // 선생님의 반 상세정보 조회
+    public ClassDetailResponse getTeacherClassDetail(Long teacherId, Long classId, String include) {
+        validateClassId(classId);
+        
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(ClassNotFoundException::new);
+        
+        // 선생님 권한 검증
+        if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
+            throw new UnauthorizedClassAccessException();
+        }
+        
+        ClassInfoDetailDto classInfo = ClassInfoDetailDto.fromTeacher(classRoom);
+        
+        // include 파라미터에 따라 선택적으로 정보 포함
+        List<StudentDto> students = null;
+        List<TeamDetailDto> teams = null;
+        
+        if (include == null || include.contains("students")) {
+            students = getStudentsForClass(classId);
+        }
+        
+        if (include == null || include.contains("teams")) {
+            teams = getTeamsForClass(classId);
+        }
+        
+        StatisticsDto statistics = new StatisticsDto(
+                students != null ? students.size() : getApprovedStudentCount(classId),
+                teams != null ? teams.size() : getTeamCount(classId)
+        );
+        
+        return ClassDetailResponse.forTeacher(classInfo, students, teams, statistics);
+    }
+    
+    // 학생의 반 상세정보 조회
+    public ClassDetailResponse getStudentClassDetail(Long studentId, Long classId) {
+        validateClassId(classId);
+        
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(ClassNotFoundException::new);
+        
+        // 학생 권한 검증 (해당 반에 참여하고 있는지)
+        if (!classStudentRepository.isStudentInClass(studentId, classId)) {
+            throw new UnauthorizedClassAccessException();
+        }
+        
+        ClassInfoDetailDto classInfo = ClassInfoDetailDto.fromStudent(classRoom);
+        TeamDetailDto myTeam = getStudentTeam(studentId, classId);
+        
+        return ClassDetailResponse.forStudent(classInfo, myTeam);
+    }
+
+
+    private void validateClassId(Long classId) {
+        if (classId == null || classId <= 0) {
+            throw new InvalidClassIdException();
+        }
+    }
+
+    // 선생 전용
+    private List<StudentDto> getStudentsForClass(Long classId) {
+        List<Object[]> results = classStudentRepository.findApprovedStudentsWithTeamAndJoinDateByClassId(classId);
+        return results.stream()
+                .map(result -> {
+                    User student = (User) result[0];
+                    java.time.LocalDateTime joinedAt = (java.time.LocalDateTime) result[1];
+                    String teamName = student.getTeam() != null ? student.getTeam().getTeamName() : null;
+                    return StudentDto.from(student, teamName, joinedAt);
+                })
+                .toList();
+    }
+
+    // 선생 전용
+    private List<TeamDetailDto> getTeamsForClass(Long classId) {
+        List<Team> teams = teamRepository.findTeamsByClassId(classId);
+        return teams.stream()
+                .map(team -> {
+                    List<User> members = userRepository.findByTeamId(team.getTeamId());
+                    List<TeamMemberDto> memberDtos = members.stream()
+                            .map(TeamMemberDto::from)
+                            .toList();
+                    return TeamDetailDto.from(team, memberDtos);
+                })
+                .toList();
+    }
+    
+    // 학생(자기자신) 팀 조회
+    private TeamDetailDto getStudentTeam(Long studentId, Long classId) {
+        User student = userRepository.findById(studentId)
+                .orElseThrow(UserNotFoundException::new);
+        
+        if (student.getTeam() == null) {
+            return null; // 팀에 배정되지 않은 경우
+        }
+        
+        Team team = student.getTeam();
+        List<User> members = userRepository.findByTeamId(team.getTeamId());
+        List<TeamMemberDto> memberDtos = members.stream()
+                .map(TeamMemberDto::from)
+                .toList();
+        
+        return TeamDetailDto.from(team, memberDtos);
     }
 }
