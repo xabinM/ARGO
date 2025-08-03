@@ -3,6 +3,7 @@ package com.argo.backend.organization.controller;
 import com.argo.backend.organization.dto.classapply.ClassApplyResponse;
 import com.argo.backend.organization.dto.classlist.ClassListResponse;
 import com.argo.backend.organization.dto.classdetail.ClassDetailResponse;
+import com.argo.backend.organization.dto.classleave.ClassLeaveResponse;
 import com.argo.backend.organization.service.ClassService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -52,6 +53,15 @@ public class StudentClassController {
             @AuthenticationPrincipal Long studentId
     ) {
         ClassApplyResponse response = classService.applyToClass(studentId, inviteCode);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{classId}/leave")
+    public ResponseEntity<ClassLeaveResponse> leaveClass(
+            @PathVariable Long classId,
+            @AuthenticationPrincipal Long studentId
+    ) {
+        ClassLeaveResponse response = classService.leaveClass(studentId, classId);
         return ResponseEntity.ok(response);
     }
 }

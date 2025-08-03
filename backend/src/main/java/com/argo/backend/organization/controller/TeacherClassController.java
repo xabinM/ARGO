@@ -2,6 +2,7 @@ package com.argo.backend.organization.controller;
 
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateRequest;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateResponse;
+import com.argo.backend.organization.dto.classdelete.ClassDeleteResponse;
 import com.argo.backend.organization.dto.applicationlist.ApplicationListResponse;
 import com.argo.backend.organization.dto.applicationprocess.ApplicationProcessRequest;
 import com.argo.backend.organization.dto.applicationprocess.ApplicationProcessResponse;
@@ -97,6 +98,15 @@ public class TeacherClassController {
     ) {
         Pageable pageable = PageRequest.of(page - 1, size);
         StudentListResponse response = classService.getClassStudents(teacherId, classId, status, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{classId}")
+    public ResponseEntity<ClassDeleteResponse> deleteClass(
+            @PathVariable Long classId,
+            @AuthenticationPrincipal Long teacherId
+    ) {
+        ClassDeleteResponse response = classService.deleteClass(teacherId, classId);
         return ResponseEntity.ok(response);
     }
 }

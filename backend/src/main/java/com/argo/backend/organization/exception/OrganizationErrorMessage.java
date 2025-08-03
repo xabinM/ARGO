@@ -49,6 +49,13 @@ public enum OrganizationErrorMessage {
     // Student List 관련
     INVALID_STATUS_PARAMETER("올바르지 않은 상태값입니다. (all, assigned, unassigned 중 선택)"),
     
+    // Class Leave 관련
+    NOT_PARTICIPATING_CLASS("참여하지 않은 반입니다."),
+    ACTIVITY_IN_PROGRESS("활동 진행 중에는 탈퇴할 수 없습니다."),
+    
+    // Class Delete 관련
+    CANNOT_DELETE_ACTIVE_CLASS("활동 진행 중인 반은 삭제할 수 없습니다."),
+    
     // System
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다.");
 

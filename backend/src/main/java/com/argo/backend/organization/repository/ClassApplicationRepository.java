@@ -43,4 +43,8 @@ public interface ClassApplicationRepository extends JpaRepository<ClassApplicati
     
     // 승인된 학생 수 조회 (반 목록 조회용)
     long countByClassRoomClassIdAndStatus(@Param("classId") Long classId, @Param("status") ApplicationStatus status);
+    
+    // 특정 학생의 특정 반 승인된 신청 조회
+    @Query("SELECT ca FROM ClassApplication ca WHERE ca.user.userId = :studentId AND ca.classRoom.classId = :classId AND ca.status = 'APPROVED'")
+    ClassApplication findApprovedApplicationByStudentAndClass(@Param("studentId") Long studentId, @Param("classId") Long classId);
 }

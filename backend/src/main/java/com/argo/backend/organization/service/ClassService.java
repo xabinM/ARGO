@@ -9,6 +9,17 @@ import com.argo.backend.domain.user.Role;
 import com.argo.backend.domain.user.Teacher;
 import com.argo.backend.domain.user.User;
 import com.argo.backend.organization.dto.classapply.ClassApplyResponse;
+import com.argo.backend.organization.dto.classleave.ClassLeaveResponse;
+import com.argo.backend.organization.dto.classleave.LeftClassDto;
+import com.argo.backend.organization.dto.classleave.StudentInfoDto;
+import com.argo.backend.organization.dto.classleave.TeamInfoDto;
+import com.argo.backend.organization.dto.classleave.ClassStatusDto;
+import com.argo.backend.organization.dto.classdelete.ClassDeleteResponse;
+import com.argo.backend.organization.dto.classdelete.DeletedClassDto;
+import com.argo.backend.organization.dto.classdelete.DeletedDataDto;
+import com.argo.backend.organization.dto.classdelete.DeletedStudentsDto;
+import com.argo.backend.organization.dto.classdelete.DeletedTeamsDto;
+import com.argo.backend.organization.dto.classdelete.DeletedApplicationsDto;
 import com.argo.backend.organization.dto.classdetail.StatisticsDto;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateRequest;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateResponse;
@@ -29,6 +40,9 @@ import com.argo.backend.organization.exception.ClassNotFoundException;
 import com.argo.backend.organization.exception.UnauthorizedClassAccessException;
 import com.argo.backend.organization.exception.InvalidClassIdException;
 import com.argo.backend.organization.exception.InvalidStatusParameterException;
+import com.argo.backend.organization.exception.NotParticipatingClassException;
+import com.argo.backend.organization.exception.ActivityInProgressException;
+import com.argo.backend.organization.exception.CannotDeleteActiveClassException;
 import com.argo.backend.organization.dto.applicationlist.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,6 +61,8 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -396,8 +412,8 @@ public class ClassService {
     private StudentDetailDto mapToStudentDetailDto(Object[] result) {
         User student = (User) result[0];
         java.time.LocalDateTime joinedAt = (java.time.LocalDateTime) result[1];
-        TeamInfoDto teamInfo = student.getTeam() != null ? 
-            TeamInfoDto.from(student.getTeam(), null) : null;
+        com.argo.backend.organization.dto.studentlist.TeamInfoDto teamInfo = student.getTeam() != null ? 
+            com.argo.backend.organization.dto.studentlist.TeamInfoDto.from(student.getTeam(), null) : null;
         return StudentDetailDto.from(student, joinedAt, teamInfo);
     }
 
@@ -436,6 +452,122 @@ public class ClassService {
         return TeamSummaryDto.of(teams.size(), totalAssigned, totalStudents - totalAssigned, teamStatuses);
     }
     
+    @Transactional
+    public ClassLeaveResponse leaveClass(Long studentId, Long classId) {
+        User student = userRepository.findById(studentId)
+                .orElseThrow(UserNotFoundException::new);
+        
+        if (student.getRole() != Role.ROLE_STUDENT) {
+            throw new StudentOnlyException();
+        }
+        
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(ClassNotFoundException::new);
+        
+        ClassApplication application = findStudentApplication(studentId, classId);
+        
+        validateActivityStatus(classRoom);
+        
+        java.time.LocalDateTime joinedAt = application.getUpdatedAt();
+        java.time.LocalDateTime leftAt = java.time.LocalDateTime.now();
+        
+        com.argo.backend.domain.team.Team currentTeam = student.getTeam();
+        TeamInfoDto teamInfo = currentTeam != null 
+            ? TeamInfoDto.fromTeam(currentTeam, leftAt)
+            : TeamInfoDto.noTeam();
+        
+        if (currentTeam != null) {
+            student.setTeam(null);
+            userRepository.save(student);
+        }
+        
+        classApplicationRepository.delete(application);
+        
+        ClassStatusDto classStatus = buildClassStatus(classRoom);
+        
+        return ClassLeaveResponse.of(
+            LeftClassDto.from(classRoom),
+            StudentInfoDto.from(student, joinedAt, leftAt),
+            teamInfo,
+            classStatus
+        );
+    }
+    
+    private ClassApplication findStudentApplication(Long studentId, Long classId) {
+        ClassApplication application = classApplicationRepository.findApprovedApplicationByStudentAndClass(studentId, classId);
+        
+        if (application == null) {
+            throw new NotParticipatingClassException();
+        }
+        
+        return application;
+    }
+    
+    private void validateActivityStatus(ClassRoom classRoom) {
+        LocalDate today = LocalDate.now();
+        if (classRoom.getActivityDate().equals(today)) {
+            throw new ActivityInProgressException();
+        }
+    }
+    
+    private ClassStatusDto buildClassStatus(ClassRoom classRoom) {
+        long approvedCount = classApplicationRepository.countByClassRoomClassIdAndStatus(classRoom.getClassId(), ApplicationStatus.APPROVED);
+        
+        return ClassStatusDto.of((int) approvedCount, classRoom.getMaxStudents());
+    }
+
+    @Transactional
+    public ClassDeleteResponse deleteClass(Long teacherId, Long classId) {
+        Teacher teacher = teacherRepository.findById(teacherId)
+                .orElseThrow(InsufficientPermissionException::new);
+                
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(ClassNotFoundException::new);
+                
+        if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
+            throw new UnauthorizedClassAccessException();
+        }
+        
+        validateDeletionRules(classRoom);
+        
+        java.time.LocalDateTime deletedAt = java.time.LocalDateTime.now();
+        
+        Object[] applicationStats = classApplicationRepository.findStatisticsByClassId(classId);
+        List<User> approvedStudents = classStudentRepository.findApprovedStudentsWithTeamAndJoinDateByClassId(classId)
+                .stream()
+                .map(result -> (User) result[0])
+                .toList();
+        List<Team> teams = teamRepository.findTeamsByClassId(classId);
+        Map<Long, Integer> memberCounts = teams.stream()
+                .collect(Collectors.toMap(
+                    Team::getTeamId,
+                    team -> (int) classStudentRepository.countByTeamId(team.getTeamId())
+                ));
+        
+        approvedStudents.forEach(student -> student.setTeam(null));
+        userRepository.saveAll(approvedStudents);
+        
+        teamRepository.deleteAll(teams);
+        classApplicationRepository.deleteAll(classRoom.getApplications());
+        classRoomRepository.delete(classRoom);
+        
+        DeletedClassDto deletedClass = DeletedClassDto.from(classRoom, deletedAt);
+        DeletedDataDto deletedData = DeletedDataDto.of(
+            DeletedStudentsDto.of(approvedStudents),
+            DeletedTeamsDto.of(teams, memberCounts),
+            DeletedApplicationsDto.of(applicationStats)
+        );
+        
+        return ClassDeleteResponse.of(deletedClass, deletedData);
+    }
+    
+    private void validateDeletionRules(ClassRoom classRoom) {
+        LocalDate today = LocalDate.now();
+        if (classRoom.getActivityDate().equals(today)) {
+            throw new CannotDeleteActiveClassException();
+        }
+    }
+
     private enum StatusType {
         ALL, ASSIGNED, UNASSIGNED
     }
