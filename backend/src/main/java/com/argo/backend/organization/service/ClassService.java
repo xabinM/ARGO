@@ -102,7 +102,7 @@ public class ClassService {
         ClassRoom classRoom = classRoomRepository.findByInviteCode(inviteCode)
                 .orElseThrow(InvalidInviteCodeException::new);
 
-        if (!classRoom.isAvailableForApplication()) {
+        if (!isAvailableForApplication(classRoom)) {
             throw new ClassNotAvailableException();
         }
 
@@ -160,4 +160,11 @@ public class ClassService {
         return code;
     }
 
+
+    // 반 신청 가능 여부 검증
+    public boolean isAvailableForApplication(ClassRoom classRoom) {
+        return classRoom.getStatus() == ClassStatus.ACTIVE
+                && classRoom.getActivityDate() != null
+                && !classRoom.getActivityDate().isBefore(LocalDate.now());
+    }
 }

@@ -81,11 +81,5 @@ public class ClassRoom extends CreatedAtEntity {
                 grade
         );
     }
-    
-    // 반 신청 가능 여부 검증
-    public boolean isAvailableForApplication() {
-        return this.status == ClassStatus.ACTIVE 
-            && this.activityDate != null 
-            && !this.activityDate.isBefore(LocalDate.now());
-    }
+
 }

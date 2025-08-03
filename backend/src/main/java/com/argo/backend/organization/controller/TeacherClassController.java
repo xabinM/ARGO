@@ -3,6 +3,8 @@ package com.argo.backend.organization.controller;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateRequest;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateResponse;
 import com.argo.backend.organization.dto.applicationlist.ApplicationListResponse;
+import com.argo.backend.organization.dto.applicationprocess.ApplicationProcessRequest;
+import com.argo.backend.organization.dto.applicationprocess.ApplicationProcessResponse;
 import com.argo.backend.organization.service.ClassService;
 import com.argo.backend.organization.service.ClassApplicationService;
 import org.springframework.data.domain.Pageable;
@@ -47,5 +49,14 @@ public class TeacherClassController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{classId}/applications")
+    public ResponseEntity<ApplicationProcessResponse> processApplications(
+            @PathVariable Long classId,
+            @Valid @RequestBody ApplicationProcessRequest request,
+            @AuthenticationPrincipal Long teacherId
+    ) {
+        ApplicationProcessResponse response = classApplicationService.processApplications(classId, request, teacherId);
+        return ResponseEntity.ok(response);
+    }
 }
 

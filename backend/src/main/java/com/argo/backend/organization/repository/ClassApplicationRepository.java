@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface ClassApplicationRepository extends JpaRepository<ClassApplication, Long> {
     
     boolean existsByUserAndClassRoom(User user, ClassRoom classRoom);
@@ -30,4 +32,12 @@ public interface ClassApplicationRepository extends JpaRepository<ClassApplicati
            "SUM(CASE WHEN ca.status = 'REJECTED' THEN 1 ELSE 0 END) " +
            "FROM ClassApplication ca WHERE ca.classRoom.classId = :classId")
     Object[] findStatisticsByClassId(@Param("classId") Long classId);
+    
+    // 다중 신청 조회 (처리용)
+    @Query("SELECT ca FROM ClassApplication ca JOIN FETCH ca.user JOIN FETCH ca.classRoom " + 
+           "WHERE ca.applicationId IN :applicationIds AND ca.classRoom.classId = :classId")
+    List<ClassApplication> findByApplicationIdsAndClassId(
+        @Param("applicationIds") List<Long> applicationIds, 
+        @Param("classId") Long classId
+    );
 }

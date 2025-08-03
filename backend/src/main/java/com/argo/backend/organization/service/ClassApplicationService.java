@@ -2,10 +2,11 @@ package com.argo.backend.organization.service;
 
 import com.argo.backend.domain.classroom.ClassApplication;
 import com.argo.backend.domain.classroom.ClassRoom;
+import com.argo.backend.domain.classroom.ClassStatus;
 import com.argo.backend.domain.user.ApplicationStatus;
 import com.argo.backend.organization.dto.applicationlist.*;
-import com.argo.backend.organization.exception.ClassNotFoundException;
-import com.argo.backend.organization.exception.UnauthorizedClassAccessException;
+import com.argo.backend.organization.dto.applicationprocess.*;
+import com.argo.backend.organization.exception.*;
 import com.argo.backend.organization.repository.ClassApplicationRepository;
 import com.argo.backend.organization.repository.ClassRoomRepository;
 import jakarta.transaction.Transactional;
@@ -14,6 +15,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -23,6 +26,7 @@ public class ClassApplicationService {
     private final ClassApplicationRepository classApplicationRepository;
     private final ClassRoomRepository classRoomRepository;
 
+    // 신청 리스트 받기
     @Transactional
     public ApplicationListResponse getApplicationList(Long classId, String status, Pageable pageable, Long teacherId) {
 
@@ -43,15 +47,15 @@ public class ClassApplicationService {
     
     private ClassRoom validateClassAccess(Long classId, Long teacherId) {
         ClassRoom classRoom = classRoomRepository.findById(classId)
-                .orElseThrow(ClassNotFoundException::new);
-        
+                .orElseThrow(com.argo.backend.organization.exception.ClassNotFoundException::new);
+
         if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
             throw new UnauthorizedClassAccessException();
         }
-        
+
         return classRoom;
     }
-    
+
     private Page<ClassApplication> getApplicationsByStatus(Long classId, String status, Pageable pageable) {
         if ("ALL".equals(status)) {
             return classApplicationRepository.findByClassRoomClassId(classId, pageable);
@@ -68,7 +72,6 @@ public class ClassApplicationService {
             return StatisticsDto.of(0L, 0L, 0L, 0L);
         }
 
-        // Query 결과가 단일 행이므로 첫 번째 요소가 Object[] 배열
         Object[] statistics = (Object[]) result[0];
         
         Long totalApplications = ((Number) statistics[0]).longValue();
@@ -78,4 +81,76 @@ public class ClassApplicationService {
         
         return StatisticsDto.of(totalApplications, pendingCount, approvedCount, rejectedCount);
     }
+
+    // 신청 처리하기
+    @Transactional
+    public ApplicationProcessResponse processApplications(Long classId, ApplicationProcessRequest request, Long teacherId) {
+        ClassRoom classRoom = validateClassAccess(classId, teacherId);
+        
+        List<ClassApplication> applications = findAndValidateApplications(classId, request.getApplicationIds());
+        
+        if ("approve".equals(request.getAction())) {
+            return processApproval(classRoom, applications);
+        } else {
+            return processRejection(applications);
+        }
+    }
+    
+    private List<ClassApplication> findAndValidateApplications(Long classId, List<Long> applicationIds) {
+        List<ClassApplication> applications = classApplicationRepository.findByApplicationIdsAndClassId(applicationIds, classId);
+        
+        // 존재 검증
+        if (applications.size() != applicationIds.size()) {
+            throw new ApplicationNotFoundException();
+        }
+        
+        // 상태 검증
+        for (ClassApplication application : applications) {
+            if (application.getStatus() != ApplicationStatus.PENDING) {
+                throw new ApplicationAlreadyProcessedException();
+            }
+        }
+        
+        return applications;
+    }
+    
+    private ApplicationProcessResponse processApproval(ClassRoom classRoom, List<ClassApplication> applications) {
+        validateClassCapacityForApproval(classRoom, applications.size());
+        
+        LocalDateTime processedAt = LocalDateTime.now();
+        List<ApplicationProcessResultDto> results = applications.stream()
+                .map(application -> {
+                    application.setStatus(ApplicationStatus.APPROVED);
+                    application.setProcessedAt(processedAt);
+                    return ApplicationProcessResultDto.from(application);
+                })
+                .toList();
+        
+        return ApplicationProcessResponse.from(results);
+    }
+    
+    private ApplicationProcessResponse processRejection(List<ClassApplication> applications) {
+        LocalDateTime processedAt = LocalDateTime.now();
+        List<ApplicationProcessResultDto> results = applications.stream()
+                .map(application -> {
+                    application.setStatus(ApplicationStatus.REJECTED);
+                    application.setProcessedAt(processedAt);
+                    return ApplicationProcessResultDto.from(application);
+                })
+                .toList();
+        
+        return ApplicationProcessResponse.from(results);
+    }
+    
+    private void validateClassCapacityForApproval(ClassRoom classRoom, int approvalCount) {
+        StatisticsDto statistics = createStatistics(classRoom.getClassId());
+        long currentApproved = statistics.approvedCount();
+        long maxStudents = classRoom.getMaxStudents();
+        
+        if (currentApproved + approvalCount > maxStudents) {
+            throw new ClassCapacityExceededException();
+        }
+    }
+
+
 }
