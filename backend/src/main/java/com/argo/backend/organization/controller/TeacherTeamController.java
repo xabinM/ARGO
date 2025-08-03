@@ -5,6 +5,7 @@ import com.argo.backend.organization.dto.teamcreate.TeamCreateResponse;
 import com.argo.backend.organization.dto.teamassign.TeamAssignRequest;
 import com.argo.backend.organization.dto.teamassign.TeamAssignResponse;
 import com.argo.backend.organization.dto.teamautoassign.TeamAutoAssignResponse;
+import com.argo.backend.organization.dto.teamdelete.TeamDeleteResponse;
 import com.argo.backend.organization.service.TeamService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -48,6 +49,16 @@ public class TeacherTeamController {
             @AuthenticationPrincipal Long teacherId
     ) {
         TeamAutoAssignResponse response = teamService.autoAssignStudentsToTeams(classId, teacherId);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/{classId}/teams/{teamId}")
+    public ResponseEntity<TeamDeleteResponse> deleteTeam(
+            @PathVariable Long classId,
+            @PathVariable Long teamId,
+            @AuthenticationPrincipal Long teacherId
+    ) {
+        TeamDeleteResponse response = teamService.deleteTeam(classId, teamId, teacherId);
         return ResponseEntity.ok(response);
     }
 }

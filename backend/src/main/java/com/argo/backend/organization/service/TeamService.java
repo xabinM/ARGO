@@ -14,7 +14,10 @@ import com.argo.backend.organization.dto.teamautoassign.TeamAutoAssignResponse;
 import com.argo.backend.organization.dto.teamautoassign.TeamAssignmentDto;
 import com.argo.backend.organization.dto.teamautoassign.AssignedStudentInfoDto;
 import com.argo.backend.organization.dto.teamautoassign.TeamStatusDto;
-import com.argo.backend.organization.dto.teamautoassign.UnassignedStudentDto;
+import com.argo.backend.organization.dto.teamdelete.TeamDeleteResponse;
+import com.argo.backend.organization.dto.teamdelete.DeletedTeamDto;
+import com.argo.backend.organization.dto.teamdelete.UnassignedStudentDto;
+import com.argo.backend.organization.dto.teamdelete.ClassTeamStatusDto;
 import com.argo.backend.organization.exception.*;
 import com.argo.backend.organization.repository.ClassRoomRepository;
 import com.argo.backend.organization.repository.ClassStudentRepository;
@@ -200,7 +203,7 @@ public class TeamService {
                 totalAssigned,
                 assignedAt,
                 createTeamAssignments(teams),
-                unassignedStudents.stream().map(u -> UnassignedStudentDto.of(u, "모든 팀이 가득 참")).toList()
+                unassignedStudents.stream().map(u -> com.argo.backend.organization.dto.teamautoassign.UnassignedStudentDto.of(u, "모든 팀이 가득 참")).toList()
         );
     }
     
@@ -214,5 +217,52 @@ public class TeamService {
                 })
                 .filter(dto -> dto != null)
                 .toList();
+    }
+    
+    @Transactional
+    public TeamDeleteResponse deleteTeam(Long classId, Long teamId, Long teacherId) {
+        ClassRoom classRoom = validateTeamAccess(classId, teamId, teacherId);
+        Team team = teamRepository.findByTeamIdAndClassRoom(teamId, classRoom);
+        
+        List<User> teamMembers = userRepository.findByTeamId(teamId);
+        teamMembers.forEach(student -> student.setTeam(null));
+        
+        LocalDateTime now = LocalDateTime.now();
+        DeletedTeamDto deletedTeam = DeletedTeamDto.from(team, now);
+        List<UnassignedStudentDto> unassignedStudents = teamMembers.stream()
+                .map(student -> UnassignedStudentDto.from(student, now))
+                .toList();
+        
+        teamRepository.delete(team);
+        ClassTeamStatusDto status = buildClassTeamStatus(classId);
+        
+        return TeamDeleteResponse.of(deletedTeam, unassignedStudents, status);
+    }
+    
+    private ClassRoom validateTeamAccess(Long classId, Long teamId, Long teacherId) {
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(com.argo.backend.organization.exception.ClassNotFoundException::new);
+        
+        if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
+            throw new UnauthorizedClassAccessException();
+        }
+        
+        Team team = teamRepository.findByTeamIdAndClassRoom(teamId, classRoom);
+        if (team == null) {
+            throw new TeamNotFoundException();
+        }
+        
+        return classRoom;
+    }
+    
+    private ClassTeamStatusDto buildClassTeamStatus(Long classId) {
+        List<Object[]> results = classStudentRepository.findApprovedStudentsWithTeamAndJoinDateByClassId(classId);
+        int totalStudents = results.size();
+        int assignedStudents = (int) results.stream()
+                .filter(result -> ((User) result[0]).getTeam() != null)
+                .count();
+        int totalTeams = teamRepository.findTeamsByClassId(classId).size();
+        
+        return ClassTeamStatusDto.of(totalTeams, totalStudents, assignedStudents, totalStudents - assignedStudents);
     }
 }

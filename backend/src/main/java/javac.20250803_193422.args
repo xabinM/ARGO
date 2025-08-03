@@ -1,3 +1,0 @@
--cp
-/usr/lib/jvm/java-17-openjdk-amd64/lib/jrt-fs.jar
-./com/argo/backend/organization/service/ClassService.java
