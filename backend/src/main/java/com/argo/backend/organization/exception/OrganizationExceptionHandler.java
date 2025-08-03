@@ -14,7 +14,9 @@ public class OrganizationExceptionHandler {
         UnauthorizedClassAccessException.class,
         UserNotFoundException.class,
         LocationNotFoundException.class,
-        ApplicationNotFoundException.class
+        ApplicationNotFoundException.class,
+        StudentNotFoundException.class,
+        TeamNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleNotFoundException(RuntimeException e) {
         ErrorResponse error = new ErrorResponse("NOT_FOUND", e.getMessage());
@@ -34,7 +36,8 @@ public class OrganizationExceptionHandler {
         DuplicateApplicationException.class,
         ClassNotAvailableException.class,
         ApplicationAlreadyProcessedException.class,
-        DuplicateTeamNameException.class
+        DuplicateTeamNameException.class,
+        StudentAlreadyAssignedException.class
     })
     public ResponseEntity<ErrorResponse> handleConflictException(RuntimeException e) {
         ErrorResponse error = new ErrorResponse("CONFLICT", e.getMessage());
@@ -43,7 +46,8 @@ public class OrganizationExceptionHandler {
 
     @ExceptionHandler({
         InvalidInviteCodeException.class,
-        ClassCapacityExceededException.class
+        ClassCapacityExceededException.class,
+        TeamCapacityExceededException.class
     })
     public ResponseEntity<ErrorResponse> handleBadRequestException(RuntimeException e) {
         ErrorResponse error = new ErrorResponse("BAD_REQUEST", e.getMessage());

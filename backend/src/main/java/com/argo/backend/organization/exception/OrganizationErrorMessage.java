@@ -30,6 +30,12 @@ public enum OrganizationErrorMessage {
     // Team 관련
     DUPLICATE_TEAM_NAME("이미 동일한 이름의 팀이 존재합니다."),
     TEAM_CREATION_FAILED("팀 생성에 실패했습니다."),
+    TEAM_NOT_FOUND("존재하지 않는 팀입니다."),
+    TEAM_CAPACITY_EXCEEDED("팀의 최대 인원을 초과합니다."),
+    
+    // Student 관련
+    STUDENT_NOT_FOUND("해당 반에 참여하지 않은 학생입니다."),
+    STUDENT_ALREADY_ASSIGNED("이미 다른 팀에 속한 학생이 포함되어 있습니다."),
     
     // System
     INTERNAL_SERVER_ERROR("서버 내부 오류가 발생했습니다.");

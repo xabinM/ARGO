@@ -2,6 +2,8 @@ package com.argo.backend.organization.controller;
 
 import com.argo.backend.organization.dto.teamcreate.TeamCreateRequest;
 import com.argo.backend.organization.dto.teamcreate.TeamCreateResponse;
+import com.argo.backend.organization.dto.teamassign.TeamAssignRequest;
+import com.argo.backend.organization.dto.teamassign.TeamAssignResponse;
 import com.argo.backend.organization.service.TeamService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,17 @@ public class TeacherTeamController {
             @AuthenticationPrincipal Long teacherId
     ) {
         TeamCreateResponse response = teamService.createTeam(classId, request, teacherId);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{classId}/teams/{teamId}/assign")
+    public ResponseEntity<TeamAssignResponse> assignStudentsToTeam(
+            @PathVariable Long classId,
+            @PathVariable Long teamId,
+            @Valid @RequestBody TeamAssignRequest request,
+            @AuthenticationPrincipal Long teacherId
+    ) {
+        TeamAssignResponse response = teamService.assignStudentsToTeam(classId, teamId, request, teacherId);
         return ResponseEntity.ok(response);
     }
 }

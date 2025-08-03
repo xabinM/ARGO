@@ -13,4 +13,7 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     
     // 반의 모든 팀 조회
     List<Team> findByClassRoomOrderByCreatedAtAsc(ClassRoom classRoom);
+    
+    // 팀 ID와 반 ID로 팀 조회 (권한 검증용)
+    Team findByTeamIdAndClassRoom(Long teamId, ClassRoom classRoom);
 }
