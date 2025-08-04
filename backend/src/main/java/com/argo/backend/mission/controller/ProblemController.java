@@ -10,10 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 
 @RestController
@@ -24,10 +21,10 @@ public class ProblemController {
 
     private final ProblemService problemService;
 
-    @PostMapping("/register")
-    public ResponseEntity<?> registerProblem(@RequestBody @Valid ProblemRegisterRequest request) {
+    @PostMapping("/register/spot/{spotId}")
+    public ResponseEntity<?> registerProblem(@PathVariable Long spotId, @RequestBody @Valid ProblemRegisterRequest request) {
 
-        problemService.createQuizProblem(request);
+        problemService.registerQuizProblem(spotId, request);
         return ResponseEntity.ok(new ProblemRegisterResponse(ResponseMessage.SUCCESS_REGISTER_PROBLEM.getMessage()));
     }
 

@@ -24,8 +24,12 @@ public class ProblemService {
     private final SpotRepository spotRepository;
 
     @Transactional
-    public void createQuizProblem(ProblemRegisterRequest request) {
+    public void registerQuizProblem(Long spotId, ProblemRegisterRequest request) {
+        Spot spot = spotRepository.findById(spotId)
+                .orElseThrow(SpotNotFoundException::new);
+
         QuizProblem quiz = QuizProblem.from(
+                spot,
                 request.getQuestion(),
                 request.getChoices(),
                 request.getCorrectIndex(),

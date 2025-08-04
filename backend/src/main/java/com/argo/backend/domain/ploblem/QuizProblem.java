@@ -1,5 +1,6 @@
 package com.argo.backend.domain.ploblem;
 
+import com.argo.backend.domain.spot.Spot;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -30,11 +31,18 @@ public class QuizProblem extends Problem {
     @Lob
     private String explanation;
 
-    public static QuizProblem from(String question, List<String> choices, Integer correctIndex, String explanation) {
-        return new QuizProblem(question, choices, correctIndex, explanation);
+    public static QuizProblem from(Spot spot, String question,
+                                   List<String> choices,
+                                   Integer correctIndex,
+                                   String explanation) {
+        return new QuizProblem(spot, question, choices, correctIndex, explanation);
     }
 
-    private QuizProblem(String question, List<String> choices, Integer correctIndex, String explanation) {
+    private QuizProblem(Spot spot, String question,
+                        List<String> choices,
+                        Integer correctIndex,
+                        String explanation) {
+        super(spot);
         this.question = question;
         this.choices = choices;
         this.correctIndex = correctIndex;

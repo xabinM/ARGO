@@ -18,4 +18,8 @@ public abstract class Problem {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "spot_id")
     private Spot spot;
+
+    protected Problem(Spot spot) {
+        this.spot = spot;
+    }
 }
