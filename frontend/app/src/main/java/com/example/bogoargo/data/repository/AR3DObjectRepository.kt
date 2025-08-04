@@ -37,6 +37,23 @@ object AR3DObjectRepository {
             category = "문화재",
             description = "한국의 대표적인 불교 조각상인 금동 반가사유상입니다. 국보급 문화재를 AR로 체험해보세요.",
             placementType = PlacementType.MISSION_ONLY
+        ),
+        
+        // 나전경함 (고려시대 보물)
+        AR3DObject(
+            id = "mother_of_pearl_sutra_case",
+            displayName = "나전경함",
+            modelPath = "models/mother_of_pearl_sutra_case_goryeo.obj",
+            materialPath = "models/mother_of_pearl_sutra_case_goryeo.mtl",
+            texturePaths = listOf(
+                "models/textures/mother_of_pearl_sutra_case_goryeo_diffuse.jpg",
+                "models/textures/mother_of_pearl_sutra_case_goryeo_normal.jpg"
+            ),
+            thumbnailPath = "images/objects/mother_of_pearl_sutra_case_thumb.png",
+            scale = 0.7f,
+            category = "문화재",
+            description = "고려 후기 나전으로 장식된 불교 경전함입니다. 모란당초문이 새겨진 보물급 문화재입니다.",
+            placementType = PlacementType.FALLBACK_ONLY
         )
         // 새로운 3D 모델 추가 가이드:
         // 1. GLB/GLTF/OBJ 파일을 assets/models/ 폴더에 추가
