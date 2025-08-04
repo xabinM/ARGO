@@ -17,6 +17,8 @@ data class ClassDataDto(
     val status: String,
     val inviteCode: String,
     val createdAt: String,
+    val students: List<UserDataDto>,
+    val teams: List<TeamDataDto>
 )
 
 // 반 리스트 조회 응답 DTO

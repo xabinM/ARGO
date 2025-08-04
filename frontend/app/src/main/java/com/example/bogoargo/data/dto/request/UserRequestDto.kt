@@ -2,7 +2,7 @@ package com.example.bogoargo.data.dto
 
 // 회원가입 요청 DTO
 data class UserSignUpRequest(
-    val id: String,
+    val username: String,
     val password: String,
     val name: String,
     val role: String,
@@ -11,13 +11,13 @@ data class UserSignUpRequest(
 
 // 로그인 요청 DTO
 data class UserLoginRequest(
-    val id: String,
+    val username: String,
     val password: String
 )
 
 // 회원정보 변경 요청 DTO
 data class UserUpdateRequest(
-    val nickname: String,
+    val name: String,
     val password: String,
 )
 

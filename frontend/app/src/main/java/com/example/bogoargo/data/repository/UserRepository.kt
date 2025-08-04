@@ -10,18 +10,19 @@ import com.example.bogoargo.data.dto.response.UserUpdateResponse
 import com.example.bogoargo.data.dto.response.UserWithdrawResponse
 import com.example.bogoargo.data.dto.response.MessageResponseDto
 import com.example.bogoargo.data.mapper.toDomainModel
-import com.example.bogoargo.domain.model.User
+import com.example.bogoargo.data.model.User
 import javax.inject.Inject
 import javax.inject.Singleton
 @Singleton
 class UserRepository @Inject constructor(
-    private val userApiService: UserApiService
+    private val userApiService: UserApiService,
+    private val authRepository: AuthRepository
 ) {
     
     // 회원가입
     suspend fun signUp(userSignUpRequest: UserSignUpRequest): Result<MessageResponseDto?> {
         return try {
-            val response = userApiService.sighup(userSignUpRequest)
+            val response = userApiService.signup(userSignUpRequest)
             if (response.isSuccessful) {
                 val messageResponse = response.body()
                 if (messageResponse?.success == true) {
@@ -36,14 +37,17 @@ class UserRepository @Inject constructor(
             Result.failure(e)
         }
     }
-    
+
     // 로그인
     suspend fun login(userLoginRequest: UserLoginRequest): Result<User?> {
         return try {
             val response = userApiService.login(userLoginRequest)
             if (response.isSuccessful) {
                 val loginResponse = response.body()
+                val jwtToken = response.headers()["Authorization"]?.replace("Bearer ", "")
+
                 if (loginResponse?.success == true && loginResponse.data != null) {
+                    //authRepository.saveAuthInfo(jwtToken, loginResponse) TODO: auth repo save기능
                     Result.success(loginResponse.data.toDomainModel())
                 } else {
                     Result.failure(Exception(loginResponse?.message ?: "로그인에 실패했습니다."))
@@ -56,7 +60,7 @@ class UserRepository @Inject constructor(
 
         }
     }
-    
+
     // 회원 정보 수정
     suspend fun updateUserInfo(userUpdateRequest: UserUpdateRequest): Result<UserUpdateResponse?> {
         return try {

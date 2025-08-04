@@ -9,7 +9,7 @@ import com.example.bogoargo.data.dto.response.TeamAssignResponse
 import com.example.bogoargo.data.dto.response.TeamDeleteResponse
 import com.example.bogoargo.data.mapper.toDomainModel
 import com.example.bogoargo.data.model.Team
-import com.example.bogoargo.domain.model.User
+import com.example.bogoargo.data.model.User
 
 import javax.inject.Inject
 import javax.inject.Singleton

@@ -54,6 +54,12 @@ object NatureTypography {
         color = NatureColors.earthBrown
     )
 
+    val titleSmall = androidx.compose.ui.text.TextStyle(
+        fontSize = 16.sp,
+        fontWeight = FontWeight.Bold,
+        color = NatureColors.earthBrown
+    )
+
     val headlineSmall = androidx.compose.ui.text.TextStyle(
         fontSize = 16.sp,
         fontWeight = FontWeight.Bold,
@@ -467,11 +473,11 @@ object NatureComponents {
     @Composable
     fun MemberCard(
         member: User,
-        forestGreen: Color,
-        sunnyYellow: Color,
-        leafGreen: Color,
-        earthBrown: Color,
-        softOrange: Color
+        forestGreen: Color = NatureColors.forestGreen,
+        sunnyYellow: Color = NatureColors.sunnyYellow,
+        leafGreen: Color = NatureColors.leafGreen,
+        earthBrown: Color = NatureColors.earthBrown,
+        softOrange: Color = NatureColors.softOrange
     ) {
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -501,7 +507,7 @@ object NatureComponents {
                             containerColor = if (member.role == UserRole.TEACHER)
                                 earthBrown
                             else
-                                when ((member.userName.length + member.studentId.length) % 4) {
+                                when ((member.name.length) % 4) {
                                     0 -> forestGreen
                                     1 -> sunnyYellow
                                     2 -> leafGreen
@@ -530,7 +536,7 @@ object NatureComponents {
                 ) {
                     // 이름 (강조)
                     Text(
-                        text = member.userName,
+                        text = member.name,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,
                         color = earthBrown,
@@ -540,24 +546,22 @@ object NatureComponents {
 
                     Spacer(modifier = Modifier.height(6.dp))
 
-                    // 학번/교번
-                    if (member.studentId.isNotEmpty()) {
-                        Card(
-                            shape = RoundedCornerShape(8.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = forestGreen.copy(alpha = 0.1f)
-                            )
-                        ) {
-                            Text(
-                                text = "🎓 ${member.studentId}",
-                                fontSize = 14.sp,
-                                color = forestGreen,
-                                fontWeight = FontWeight.Medium,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                            )
-                        }
+                    /* 사용자 ID
+                    Card(
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = forestGreen.copy(alpha = 0.1f)
+                        )
+                    ) {
+                        Text(
+                            text = "🆔 ${member.username}",
+                            fontSize = 14.sp,
+                            color = forestGreen,
+                            fontWeight = FontWeight.Medium,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
                     }
-
+*/
                     Spacer(modifier = Modifier.height(6.dp))
 
                     // 역할
@@ -593,7 +597,7 @@ object NatureComponents {
                     Card(
                         shape = RoundedCornerShape(12.dp),
                         colors = CardDefaults.cardColors(
-                            containerColor = if (member.teamId != null)
+                            containerColor = if (member.team != null)
                                 leafGreen.copy(alpha = 0.2f)
                             else
                                 Color.Gray.copy(alpha = 0.15f)
@@ -605,22 +609,22 @@ object NatureComponents {
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = if (member.teamId != null) "🏆" else "⏳",
+                                text = if (member.team != null) "🏆" else "⏳",
                                 fontSize = 18.sp
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = if (member.teamId != null) "팀 소속" else "대기중",
+                                text = if (member.team != null) "팀 소속" else "대기중",
                                 fontSize = 13.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = if (member.teamId != null)
+                                color = if (member.team != null)
                                     leafGreen
                                 else
                                     Color.Gray,
                                 textAlign = TextAlign.Center
                             )
 
-                            if (member.teamId != null) {
+                            if (member.team != null) {
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Card(
                                     shape = RoundedCornerShape(6.dp),
@@ -629,7 +633,7 @@ object NatureComponents {
                                     )
                                 ) {
                                     Text(
-                                        text = "ID: ${member.teamId}",
+                                        text = member.team!!.name,
                                         fontSize = 10.sp,
                                         color = leafGreen,
                                         fontWeight = FontWeight.Medium,
@@ -653,21 +657,21 @@ object NatureColorUtils {
     /**
      * 사용자별로 다른 색상 반환 (해시 기반)
      */
-    fun getUserColor(userName: String, studentId: String): Color {
+    fun getUserColor(nickname: String, userId: Long): Color {
         val colors = listOf(
             NatureColors.forestGreen,
             NatureColors.sunnyYellow,
             NatureColors.leafGreen,
             NatureColors.softOrange
         )
-        return colors[(userName.length + studentId.length) % colors.size]
+        return colors[(nickname.length + userId.toString().length) % colors.size]
     }
 
     /**
      * 역할별 색상 반환
      */
     fun getRoleColor(isTeacher: Boolean): Color {
-        return if (isTeacher) NatureColors.earthBrown else getUserColor("student", "default")
+        return if (isTeacher) NatureColors.earthBrown else NatureColors.leafGreen
     }
 
     /**

@@ -1,12 +1,13 @@
 package com.example.bogoargo.data.dto.response
 
+import com.example.bogoargo.data.model.UserRole
 import com.example.bogoargo.data.response.ClassDataDto
 
 // 유저 정보 응답 DTO
 data class UserDataDto(
     val userId: Long,
-    val nickname: String,
-    val role: String,
+    val name: String,
+    val role: UserRole,
     val team: TeamDataDto?
 )
 

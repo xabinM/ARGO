@@ -1,19 +1,13 @@
-package com.example.bogoargo.ui.screens
+package com.example.bogoargo.ui.screens.user
 
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -21,7 +15,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.bogoargo.ui.viewmodels.TeacherMainViewModel
+import com.example.bogoargo.data.model.UserRole
+import com.example.bogoargo.ui.viewmodels.user.TeacherMainViewModel
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
@@ -38,6 +33,7 @@ fun TeacherMainScreen(
     navController: NavController,
     viewModel: TeacherMainViewModel = viewModel()
 ) {
+    /* // TODO: 교사 메인 페이지
     val user by viewModel.user.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val uiState by viewModel.uiState.collectAsState()
@@ -48,7 +44,7 @@ fun TeacherMainScreen(
                 title = "선생님 홈",
                 emoji = "🌳"
             ) { 
-                // 메인 화면이므로 뒤로가기 없음
+                // 메인 화면이므로 뒤로가기 없음 //TODO: 로그아웃 추가
             }
         }
     ) { paddingValues ->
@@ -92,7 +88,7 @@ fun TeacherMainScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = user?.userName?.let { "$it 님" } ?: "로딩중...",
+                                text = user?.nickname?.let { "$it 님" } ?: "로딩중...",
                                 style = NatureTypography.titleLarge.copy(fontSize = 24.sp)
                             )
                         }
@@ -208,19 +204,23 @@ fun TeacherMainScreen(
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     InfoItem(
-                                        emoji = "📧",
-                                        label = "이메일",
-                                        value = user?.email ?: "정보 없음"
+                                        emoji = "👤",
+                                        label = "이름",
+                                        value = user?.name ?: "정보 없음"
+                                    )
+                                    InfoItem(
+                                        emoji = "🏷️",
+                                        label = "역할",
+                                        value = when(user?.role) {
+                                            UserRole.TEACHER -> "선생님"
+                                            UserRole.STUDENT -> "학생"
+                                            else -> "정보 없음"
+                                        }
                                     )
                                     InfoItem(
                                         emoji = "🆔",
-                                        label = "교직원번호",
-                                        value = user?.studentId?.takeIf { it.isNotEmpty() } ?: "정보 없음"
-                                    )
-                                    InfoItem(
-                                        emoji = "📞",
-                                        label = "연락처",
-                                        value = user?.phoneNumber?.takeIf { it.isNotEmpty() } ?: "정보 없음"
+                                        label = "사용자 ID",
+                                        value = user?.id?.toString() ?: "정보 없음"
                                     )
                                 }
                             }
@@ -244,6 +244,8 @@ fun TeacherMainScreen(
             }
         }
     }
+    */
+
 }
 
 @Composable

@@ -8,8 +8,8 @@ import java.time.format.DateTimeParseException
 
 fun ClassDataDto.toDomainModel(): Class {
     return Class(
-        id = this.classId,
-        name = this.className,
+        classId = this.classId,
+        className = this.className,
         description = this.description,
         location = this.location,
         activityDate = try {
@@ -19,6 +19,7 @@ fun ClassDataDto.toDomainModel(): Class {
         },
         currentStudents = this.studentCount,
         maxStudents = this.maxStudents,
+        studentCount = this.students.size,
         teamCount = this.teamCount,
         status = when (this.status) {
             "ACTIVE" -> Class.ClassStatus.ACTIVE

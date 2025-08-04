@@ -19,7 +19,7 @@ interface UserApiService {
 
     // 회원 가입
     @POST("api/users/signup")
-    suspend fun sighup(
+    suspend fun signup(
         @Body userSignUpRequest: UserSignUpRequest
     ): Response<MessageResponseDto>
 

@@ -7,21 +7,19 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import androidx.compose.material3.*
-import com.example.bogoargo.ui.screens.ARScreen
-import com.example.bogoargo.ui.screens.ClassDetailScreen
-import com.example.bogoargo.ui.screens.ClassManagementScreen
-import com.example.bogoargo.ui.screens.ClassCreateScreen
+import com.example.bogoargo.ui.screens.classRoom.ClassDetailScreen
+import com.example.bogoargo.ui.screens.classRoom.ClassManagementScreen
+import com.example.bogoargo.ui.screens.classRoom.ClassCreateScreen
 import com.example.bogoargo.ui.screens.GameScreen
 import com.example.bogoargo.ui.screens.HomeScreen
-import com.example.bogoargo.ui.screens.LoginScreen
-import com.example.bogoargo.ui.screens.ProfileScreen
+import com.example.bogoargo.ui.screens.user.LoginScreen
+import com.example.bogoargo.ui.screens.user.ProfileScreen
 import com.example.bogoargo.ui.screens.SettingsScreen
 import com.example.bogoargo.ui.screens.SplashScreen
-import com.example.bogoargo.ui.screens.TeacherMainScreen
-import com.example.bogoargo.ui.screens.TeamCreateScreen
-import com.example.bogoargo.ui.screens.TeamManagementScreen
-import com.example.bogoargo.ui.screens.ClassMemberManagementScreen
+import com.example.bogoargo.ui.screens.user.TeacherMainScreen
+import com.example.bogoargo.ui.screens.team.TeamCreateScreen
+import com.example.bogoargo.ui.screens.team.TeamManagementScreen
+import com.example.bogoargo.ui.screens.classRoom.ClassMemberManagementScreen
 
 sealed class Screen(val route: String) {
     data object Splash : Screen("splash")

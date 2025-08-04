@@ -9,8 +9,14 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.bogoargo.data.api.ApiClient
+import com.example.bogoargo.data.dto.UserLoginRequest
+import com.example.bogoargo.data.dto.response.UserDataDto
+import com.example.bogoargo.data.dto.response.UserLoginResponse
+import com.example.bogoargo.data.mapper.toDomainModel
 import com.example.bogoargo.data.model.RefreshTokenRequest
 import com.example.bogoargo.data.model.TokenInfo
+import com.example.bogoargo.data.model.User
+import com.example.bogoargo.data.preferences.PreferencesManager
 import com.example.bogoargo.data.storage.TokenStorage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
@@ -22,10 +28,22 @@ import org.json.JSONObject
 
 private val Context.authDataStore: DataStore<Preferences> by preferencesDataStore(name = "auth_preferences")
 
-class AuthRepository(private val context: Context) {
+class AuthRepository(private val context: Context,
+                     //private val preferencesManager: PreferencesManager
+) {
     
     private val tokenStorage = TokenStorage(context)
     private val refreshMutex = Mutex()
+
+
+//TODO: 유저 저장 기능
+//    suspend fun saveAuthInfo(jwtToken: String, user: UserLoginResponse) {
+//        preferencesManager.saveJwtToken(jwtToken)
+//        preferencesManager.saveUserId(user.data?.userId ?: -1L)
+//        preferencesManager.saveUserName(user.data?.name ?: "")
+//        preferencesManager.saveUserRole(user.data?.role.toString())
+//    }
+
     
     fun getTokenInfo(): TokenInfo? {
         val accessToken = tokenStorage.getAccessToken()

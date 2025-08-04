@@ -1,14 +1,14 @@
 package com.example.bogoargo.data.dto.response
 
 import com.example.bogoargo.data.response.ClassDataDto
+import java.time.LocalDateTime
 
 data class ApplicationDataDto(
     val applicationId: Long,
-    val studentId: Long,
-    val studentName: String,
+    val user: UserDataDto,
+    val classRoom: ClassDataDto,
     val status: String,
-    val appliedAt: String,
-    val processedAt: String
+    val processedAt: LocalDateTime
 )
 
 data class ApplicationResponseDto (
