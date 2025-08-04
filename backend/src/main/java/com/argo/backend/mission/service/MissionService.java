@@ -5,6 +5,9 @@ import com.argo.backend.domain.ploblem.Problem;
 import com.argo.backend.domain.spot.Spot;
 import com.argo.backend.domain.team.Team;
 import com.argo.backend.mission.dto.MissionCreate.MissionCreateDto;
+import com.argo.backend.mission.exception.ProblemNotFoundException;
+import com.argo.backend.mission.exception.SpotNotFoundException;
+import com.argo.backend.mission.exception.TeamNotFoundException;
 import com.argo.backend.mission.repository.MissionSessionRepository;
 import com.argo.backend.mission.repository.ProblemRepository;
 import com.argo.backend.mission.repository.SpotRepository;
@@ -27,17 +30,16 @@ public class MissionService {
     @Transactional
     public MissionCreateDto createMission(Long teamId, Long spotId) {
         Spot spot = spotRepository.findById(spotId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid spotId: " + spotId));
+                .orElseThrow(SpotNotFoundException::new);
 
         Team team = teamRepository.findById(teamId)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid teamId: " + teamId));
+                .orElseThrow(TeamNotFoundException::new);
 
         List<Problem> problems = problemRepository.findRandomProblems();
 
         Problem problem = findRandomProblem(problems);
-
         if (problem == null) {
-            throw new IllegalArgumentException("temp");
+            throw new ProblemNotFoundException();
         }
 
         MissionSession missionSession = MissionSession.from(spot, team, problem);

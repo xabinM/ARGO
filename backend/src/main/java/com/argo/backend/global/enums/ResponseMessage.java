@@ -21,6 +21,12 @@ public enum ResponseMessage {
 
     // Parameter
     WRONG_REQUEST_PARAMETER("요청 파라미터가 잘못되었습니다."),
+
+    // mission
+    TEAM_NOT_FOUND("해당 팀이 존재하지 않습니다."),
+    SPOT_NOT_FOUND("해당 스팟이 존재하지 않습니다."),
+    PROBLEM_NOT_FOUND("문제가 존재하지 않습니다."),
+
     ;
 
     private final String message;
