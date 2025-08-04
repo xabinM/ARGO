@@ -7,6 +7,7 @@ import com.argo.backend.domain.user.ApplicationStatus;
 import com.argo.backend.organization.dto.applicationlist.*;
 import com.argo.backend.organization.dto.applicationprocess.*;
 import com.argo.backend.organization.exception.*;
+import com.argo.backend.organization.exception.ClassNotFoundException;
 import com.argo.backend.organization.repository.ClassApplicationRepository;
 import com.argo.backend.organization.repository.ClassRoomRepository;
 import jakarta.transaction.Transactional;
@@ -47,7 +48,7 @@ public class ClassApplicationService {
     
     private ClassRoom validateClassAccess(Long classId, Long teacherId) {
         ClassRoom classRoom = classRoomRepository.findById(classId)
-                .orElseThrow(com.argo.backend.organization.exception.ClassNotFoundException::new);
+                .orElseThrow(ClassNotFoundException::new);
 
         if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
             throw new UnauthorizedClassAccessException();

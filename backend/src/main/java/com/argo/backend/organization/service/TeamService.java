@@ -19,6 +19,7 @@ import com.argo.backend.organization.dto.teamdelete.DeletedTeamDto;
 import com.argo.backend.organization.dto.teamdelete.UnassignedStudentDto;
 import com.argo.backend.organization.dto.teamdelete.ClassTeamStatusDto;
 import com.argo.backend.organization.exception.*;
+import com.argo.backend.organization.exception.ClassNotFoundException;
 import com.argo.backend.organization.repository.ClassRoomRepository;
 import com.argo.backend.organization.repository.ClassStudentRepository;
 import com.argo.backend.auth.repository.UserRepository;
@@ -74,7 +75,7 @@ public class TeamService {
 
     private ClassRoom validateClassAccess(Long classId, Long teacherId) {
         ClassRoom classRoom = classRoomRepository.findById(classId)
-                .orElseThrow(com.argo.backend.organization.exception.ClassNotFoundException::new);
+                .orElseThrow(ClassNotFoundException::new);
 
         if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
             throw new UnauthorizedClassAccessException();
@@ -241,7 +242,7 @@ public class TeamService {
     
     private ClassRoom validateTeamAccess(Long classId, Long teamId, Long teacherId) {
         ClassRoom classRoom = classRoomRepository.findById(classId)
-                .orElseThrow(com.argo.backend.organization.exception.ClassNotFoundException::new);
+                .orElseThrow(ClassNotFoundException::new);
         
         if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
             throw new UnauthorizedClassAccessException();

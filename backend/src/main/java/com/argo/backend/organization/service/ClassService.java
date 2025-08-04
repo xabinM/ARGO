@@ -29,20 +29,8 @@ import com.argo.backend.organization.dto.classlist.PaginationDto;
 import com.argo.backend.organization.dto.classdetail.*;
 import com.argo.backend.organization.dto.studentlist.*;
 import com.argo.backend.domain.team.Team;
-import com.argo.backend.organization.exception.LocationNotFoundException;
-import com.argo.backend.organization.exception.InsufficientPermissionException;
-import com.argo.backend.organization.exception.InvalidInviteCodeException;
-import com.argo.backend.organization.exception.StudentOnlyException;
-import com.argo.backend.organization.exception.UserNotFoundException;
-import com.argo.backend.organization.exception.ClassNotAvailableException;
-import com.argo.backend.organization.exception.DuplicateApplicationException;
+import com.argo.backend.organization.exception.*;
 import com.argo.backend.organization.exception.ClassNotFoundException;
-import com.argo.backend.organization.exception.UnauthorizedClassAccessException;
-import com.argo.backend.organization.exception.InvalidClassIdException;
-import com.argo.backend.organization.exception.InvalidStatusParameterException;
-import com.argo.backend.organization.exception.NotParticipatingClassException;
-import com.argo.backend.organization.exception.ActivityInProgressException;
-import com.argo.backend.organization.exception.CannotDeleteActiveClassException;
 import com.argo.backend.organization.dto.applicationlist.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -117,6 +105,7 @@ public class ClassService {
         );
     }
 
+
     @Transactional
     public ClassApplyResponse applyToClass(Long studentId, String inviteCode) {
 
@@ -158,7 +147,6 @@ public class ClassService {
         );
     }
 
-
     private boolean isValidInviteCode(String inviteCode) {
         return inviteCode != null && !inviteCode.trim().isEmpty();
     }
@@ -168,7 +156,6 @@ public class ClassService {
             throw new StudentOnlyException();
         }
     }
-
 
     private String generateUniqueInviteCode() {
         SecureRandom random = new SecureRandom();
@@ -186,38 +173,37 @@ public class ClassService {
         return code;
     }
 
-
-    // 반 신청 가능 여부 검증
     public boolean isAvailableForApplication(ClassRoom classRoom) {
         return classRoom.getStatus() == ClassStatus.ACTIVE
                 && classRoom.getActivityDate() != null
                 && !classRoom.getActivityDate().isBefore(LocalDate.now());
     }
     
-    // 선생님의 반 목록 조회
+
     @Transactional
     public ClassListResponse getTeacherClassList(Long teacherId, String status, Pageable pageable) {
         Teacher teacher = teacherRepository.findById(teacherId)
                 .orElseThrow(InsufficientPermissionException::new);
         
-        Page<ClassRoom> classPage;
+        Page<Object[]> classRoomsWithCounts;
         
         if ("all".equals(status)) {
-            classPage = classRoomRepository.findByTeacher(teacher, pageable);
+            classRoomsWithCounts = classRoomRepository.findClassRoomsWithCounts(teacher, pageable);
         } else {
             ClassStatus classStatus = parseClassStatus(status);
-            classPage = classRoomRepository.findByTeacherAndStatus(teacher, classStatus, pageable);
+            classRoomsWithCounts = classRoomRepository.findClassRoomsWithCountsByStatus(teacher, classStatus, pageable);
         }
         
-        List<ClassInfoDto> classInfoList = classPage.getContent().stream()
-                .map(classRoom -> {
-                    int studentCount = getApprovedStudentCount(classRoom.getClassId());
-                    int teamCount = getTeamCount(classRoom.getClassId());
+        List<ClassInfoDto> classInfoList = classRoomsWithCounts.getContent().stream()
+                .map(result -> {
+                    ClassRoom classRoom = (ClassRoom) result[0];
+                    int studentCount = ((Number) result[1]).intValue();
+                    int teamCount = ((Number) result[2]).intValue();
                     return ClassInfoDto.from(classRoom, studentCount, teamCount);
                 })
                 .toList();
         
-        PaginationDto pagination = PaginationDto.from(classPage);
+        PaginationDto pagination = PaginationDto.from(classRoomsWithCounts);
         
         return ClassListResponse.success(classInfoList, pagination);
     }
@@ -232,24 +218,25 @@ public class ClassService {
             throw new StudentOnlyException();
         }
         
-        Page<ClassRoom> classPage;
+        Page<Object[]> classRoomsWithCounts;
         
         if ("all".equals(status)) {
-            classPage = classRoomRepository.findStudentClasses(studentId, pageable);
+            classRoomsWithCounts = classRoomRepository.findStudentClassesWithCounts(studentId, pageable);
         } else {
             ClassStatus classStatus = parseClassStatus(status);
-            classPage = classRoomRepository.findStudentClassesByStatus(studentId, classStatus, pageable);
+            classRoomsWithCounts = classRoomRepository.findStudentClassesWithCountsByStatus(studentId, classStatus, pageable);
         }
         
-        List<ClassInfoDto> classInfoList = classPage.getContent().stream()
-                .map(classRoom -> {
-                    int studentCount = getApprovedStudentCount(classRoom.getClassId());
-                    int teamCount = getTeamCount(classRoom.getClassId());
+        List<ClassInfoDto> classInfoList = classRoomsWithCounts.getContent().stream()
+                .map(result -> {
+                    ClassRoom classRoom = (ClassRoom) result[0];
+                    int studentCount = ((Number) result[1]).intValue();
+                    int teamCount = ((Number) result[2]).intValue();
                     return ClassInfoDto.fromStudent(classRoom, studentCount, teamCount);
                 })
                 .toList();
         
-        PaginationDto pagination = PaginationDto.from(classPage);
+        PaginationDto pagination = PaginationDto.from(classRoomsWithCounts);
         
         return ClassListResponse.success(classInfoList, pagination);
     }
