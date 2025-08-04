@@ -42,7 +42,7 @@ public class ClassRoom extends CreatedAtEntity {
     @Enumerated(EnumType.STRING)
     private ClassStatus status = ClassStatus.ACTIVE;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id")
     private Location location;
 

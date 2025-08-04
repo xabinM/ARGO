@@ -7,10 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@DiscriminatorValue("QUIZ")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
+@PrimaryKeyJoinColumn(name = "id")
 public class QuizProblem extends Problem {
 
     @Lob
@@ -28,9 +30,4 @@ public class QuizProblem extends Problem {
 
     @Lob
     private String explanation;              // 해설(옵션)
-
-    @Override
-    protected ProblemType declaredType() {
-        return ProblemType.QUIZ;
-    }
 }

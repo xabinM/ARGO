@@ -7,10 +7,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
+@DiscriminatorValue("SELFIE")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@PrimaryKeyJoinColumn(name = "id")
 public class SelfieProblem extends Problem{
 
     @Lob
@@ -24,8 +26,4 @@ public class SelfieProblem extends Problem{
     @Column(nullable = false)
     private String poseHint;                 // 포즈 힌트(옵션)
 
-    @Override
-    protected ProblemType declaredType() {
-        return ProblemType.SELFIE;
-    }
 }
