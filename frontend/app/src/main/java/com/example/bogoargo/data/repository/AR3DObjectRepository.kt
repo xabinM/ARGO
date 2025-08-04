@@ -22,16 +22,11 @@ object AR3DObjectRepository {
             placementType = PlacementType.FALLBACK_ONLY
         ),
         
-        // OBJ 형식 객체들 (실제 파일 존재)
+        // GLB 형식 객체들
         AR3DObject(
             id = "bodhisattva_statue",
             displayName = "금동 반가사유상",
-            modelPath = "models/gilt_bronze_pensive_bodhisattva_statue.obj",
-            materialPath = "models/gilt_bronze_pensive_bodhisattva_statue.mtl",
-            texturePaths = listOf(
-                "models/textures/gilt_bronze_pensive_bodhisattva_diffuse.jpg",
-                "models/textures/gilt_bronze_pensive_bodhisattva_normal.jpg"
-            ),
+            modelPath = "models/bodhisattva_statue.glb",
             thumbnailPath = "images/objects/bodhisattva_statue_thumb.png",
             scale = 0.6f,
             category = "문화재",
@@ -43,22 +38,17 @@ object AR3DObjectRepository {
         AR3DObject(
             id = "mother_of_pearl_sutra_case",
             displayName = "나전경함",
-            modelPath = "models/mother_of_pearl_sutra_case_goryeo.obj",
-            materialPath = "models/mother_of_pearl_sutra_case_goryeo.mtl",
-            texturePaths = listOf(
-                "models/textures/mother_of_pearl_sutra_case_goryeo_diffuse.jpg",
-                "models/textures/mother_of_pearl_sutra_case_goryeo_normal.jpg"
-            ),
-            thumbnailPath = "images/objects/mother_of_pearl_sutra_case_thumb.png",
+            modelPath = "models/mother_of_pearl_sutra_case_goryeo.glb",
+            thumbnailPath = "images/objects/mother_of_pearl_sutra_case_thumb.JPG",
             scale = 0.7f,
             category = "문화재",
             description = "고려 후기 나전으로 장식된 불교 경전함입니다. 모란당초문이 새겨진 보물급 문화재입니다.",
             placementType = PlacementType.FALLBACK_ONLY
         )
         // 새로운 3D 모델 추가 가이드:
-        // 1. GLB/GLTF/OBJ 파일을 assets/models/ 폴더에 추가
+        // 1. GLB/GLTF 파일을 assets/models/ 폴더에 추가
         // 2. 위의 리스트에 AR3DObject 추가
-        // 3. modelPath에 올바른 확장자 사용 (.glb, .gltf, .obj)
+        // 3. modelPath에 올바른 확장자 사용 (.glb, .gltf)
     )
     
     /**

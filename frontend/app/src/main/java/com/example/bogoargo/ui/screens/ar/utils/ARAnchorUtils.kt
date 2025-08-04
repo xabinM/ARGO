@@ -370,19 +370,6 @@ fun createFallbackNode(
         Log.i("ARScreen", "Scale: ${fallbackObject.scale}")
         Log.i("ARScreen", "Placement Type: ${fallbackObject.placementType}")
         
-        // OBJ 형식인 경우 추가 파일들 로깅
-        if (fallbackObject.getModelFormat()?.name == "OBJ") {
-            Log.i("ARScreen", "=== OBJ FORMAT ADDITIONAL FILES ===")
-            fallbackObject.materialPath?.let { mtlPath ->
-                Log.i("ARScreen", "MTL Path: $mtlPath")
-            }
-            if (fallbackObject.texturePaths.isNotEmpty()) {
-                Log.i("ARScreen", "Texture Paths:")
-                fallbackObject.texturePaths.forEachIndexed { index, texturePath ->
-                    Log.i("ARScreen", "  [$index]: $texturePath")
-                }
-            }
-        }
         
         // 객체 정보 업데이트 콜백 호출
         onObjectInfoUpdate?.invoke(fallbackObject)
@@ -400,26 +387,6 @@ fun createFallbackNode(
             }
             Log.i("ARScreen", "Main model file exists: $modelExists ($fallbackModelPath)")
             
-            // OBJ 형식인 경우 추가 파일들 확인
-            if (fallbackObject.getModelFormat()?.name == "OBJ") {
-                fallbackObject.materialPath?.let { mtlPath ->
-                    val mtlExists = try {
-                        assetManager.open(mtlPath).use { true }
-                    } catch (e: Exception) {
-                        false
-                    }
-                    Log.i("ARScreen", "MTL file exists: $mtlExists ($mtlPath)")
-                }
-                
-                fallbackObject.texturePaths.forEachIndexed { index, texturePath ->
-                    val textureExists = try {
-                        assetManager.open(texturePath).use { true }
-                    } catch (e: Exception) {
-                        false
-                    }
-                    Log.i("ARScreen", "Texture[$index] exists: $textureExists ($texturePath)")
-                }
-            }
         } catch (e: Exception) {
             Log.w("ARScreen", "Error checking file existence", e)
         }
