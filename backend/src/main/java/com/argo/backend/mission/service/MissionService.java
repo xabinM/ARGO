@@ -4,7 +4,7 @@ import com.argo.backend.domain.mission.MissionSession;
 import com.argo.backend.domain.ploblem.Problem;
 import com.argo.backend.domain.spot.Spot;
 import com.argo.backend.domain.team.Team;
-import com.argo.backend.mission.dto.MissionCreate.MissionCreateDto;
+import com.argo.backend.mission.dto.missionCreate.MissionCreateDto;
 import com.argo.backend.mission.exception.ProblemNotFoundException;
 import com.argo.backend.mission.exception.SpotNotFoundException;
 import com.argo.backend.mission.exception.TeamNotFoundException;

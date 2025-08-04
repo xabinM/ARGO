@@ -1,4 +1,4 @@
-package com.argo.backend.mission.dto.MissionCreate;
+package com.argo.backend.mission.dto.missionCreate;
 
 import lombok.Getter;
 

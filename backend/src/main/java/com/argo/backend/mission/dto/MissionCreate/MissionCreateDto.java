@@ -1,4 +1,4 @@
-package com.argo.backend.mission.dto.MissionCreate;
+package com.argo.backend.mission.dto.missionCreate;
 
 import com.argo.backend.domain.ploblem.Problem;
 import lombok.AllArgsConstructor;
