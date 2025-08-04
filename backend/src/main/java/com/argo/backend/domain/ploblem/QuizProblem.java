@@ -11,23 +11,33 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 @PrimaryKeyJoinColumn(name = "id")
 public class QuizProblem extends Problem {
 
     @Lob
     @Column(nullable = false)
-    private String question;                 // 지문
+    private String question;
 
     @ElementCollection
     @CollectionTable(name = "quiz_problem_choices",
             joinColumns = @JoinColumn(name = "quiz_problem_id"))
     @Column(name = "choice", nullable = false)
-    private List<String> choices = new ArrayList<>(); // 보기(순서)
+    private List<String> choices = new ArrayList<>();
 
     @Column(nullable = false)
-    private Integer correctIndex;            // 정답 인덱스(0-based)
+    private Integer correctIndex;
 
     @Lob
-    private String explanation;              // 해설(옵션)
+    private String explanation;
+
+    public static QuizProblem from(String question, List<String> choices, Integer correctIndex, String explanation) {
+        return new QuizProblem(question, choices, correctIndex, explanation);
+    }
+
+    private QuizProblem(String question, List<String> choices, Integer correctIndex, String explanation) {
+        this.question = question;
+        this.choices = choices;
+        this.correctIndex = correctIndex;
+        this.explanation = explanation;
+    }
 }

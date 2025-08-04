@@ -1,5 +1,6 @@
 package com.argo.backend.domain.ploblem;
 
+import com.argo.backend.domain.spot.Spot;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -13,4 +14,8 @@ public abstract class Problem {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "spot_id")
+    private Spot spot;
 }
