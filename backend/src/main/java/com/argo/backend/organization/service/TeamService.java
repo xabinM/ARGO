@@ -18,8 +18,8 @@ import com.argo.backend.organization.dto.teamdelete.TeamDeleteResponse;
 import com.argo.backend.organization.dto.teamdelete.DeletedTeamDto;
 import com.argo.backend.organization.dto.teamdelete.UnassignedStudentDto;
 import com.argo.backend.organization.dto.teamdelete.ClassTeamStatusDto;
-import com.argo.backend.organization.exception.*;
-import com.argo.backend.organization.exception.ClassNotFoundException;
+import com.argo.backend.organization.exception.types.*;
+import com.argo.backend.organization.exception.types.ClassNotFoundException;
 import com.argo.backend.organization.repository.ClassRoomRepository;
 import com.argo.backend.organization.repository.ClassStudentRepository;
 import com.argo.backend.auth.repository.UserRepository;
@@ -30,10 +30,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Random;
 
 @Service
 @RequiredArgsConstructor

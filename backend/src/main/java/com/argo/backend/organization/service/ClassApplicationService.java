@@ -2,12 +2,11 @@ package com.argo.backend.organization.service;
 
 import com.argo.backend.domain.classroom.ClassApplication;
 import com.argo.backend.domain.classroom.ClassRoom;
-import com.argo.backend.domain.classroom.ClassStatus;
 import com.argo.backend.domain.user.ApplicationStatus;
 import com.argo.backend.organization.dto.applicationlist.*;
 import com.argo.backend.organization.dto.applicationprocess.*;
-import com.argo.backend.organization.exception.*;
-import com.argo.backend.organization.exception.ClassNotFoundException;
+import com.argo.backend.organization.exception.types.*;
+import com.argo.backend.organization.exception.types.ClassNotFoundException;
 import com.argo.backend.organization.repository.ClassApplicationRepository;
 import com.argo.backend.organization.repository.ClassRoomRepository;
 import jakarta.transaction.Transactional;
@@ -16,7 +15,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -45,7 +43,24 @@ public class ClassApplicationService {
         
         return new ApplicationListResponse(classInfo, applications, statistics, pagination);
     }
-    
+
+
+    // 신청 처리하기
+    @Transactional
+    public ApplicationProcessResponse processApplications(Long classId, ApplicationProcessRequest request, Long teacherId) {
+        ClassRoom classRoom = validateClassAccess(classId, teacherId);
+        
+        List<ClassApplication> applications = findAndValidateApplications(classId, request.getApplicationIds());
+        
+        if ("approve".equals(request.getAction())) {
+            return processApproval(classRoom, applications);
+        } else {
+            return processRejection(applications);
+        }
+    }
+
+
+
     private ClassRoom validateClassAccess(Long classId, Long teacherId) {
         ClassRoom classRoom = classRoomRepository.findById(classId)
                 .orElseThrow(ClassNotFoundException::new);
@@ -61,11 +76,11 @@ public class ClassApplicationService {
         if ("ALL".equals(status)) {
             return classApplicationRepository.findByClassRoomClassId(classId, pageable);
         }
-        
+
         ApplicationStatus applicationStatus = ApplicationStatus.valueOf(status.toUpperCase());
         return classApplicationRepository.findByClassRoomClassIdAndStatus(classId, applicationStatus, pageable);
     }
-    
+
     private StatisticsDto createStatistics(Long classId) {
         Object[] result = classApplicationRepository.findStatisticsByClassId(classId);
 
@@ -74,29 +89,16 @@ public class ClassApplicationService {
         }
 
         Object[] statistics = (Object[]) result[0];
-        
+
         Long totalApplications = ((Number) statistics[0]).longValue();
         Long pendingCount = ((Number) statistics[1]).longValue();
         Long approvedCount = ((Number) statistics[2]).longValue();
         Long rejectedCount = ((Number) statistics[3]).longValue();
-        
+
         return StatisticsDto.of(totalApplications, pendingCount, approvedCount, rejectedCount);
     }
 
-    // 신청 처리하기
-    @Transactional
-    public ApplicationProcessResponse processApplications(Long classId, ApplicationProcessRequest request, Long teacherId) {
-        ClassRoom classRoom = validateClassAccess(classId, teacherId);
-        
-        List<ClassApplication> applications = findAndValidateApplications(classId, request.getApplicationIds());
-        
-        if ("approve".equals(request.getAction())) {
-            return processApproval(classRoom, applications);
-        } else {
-            return processRejection(applications);
-        }
-    }
-    
+
     private List<ClassApplication> findAndValidateApplications(Long classId, List<Long> applicationIds) {
         List<ClassApplication> applications = classApplicationRepository.findByApplicationIdsAndClassId(applicationIds, classId);
         

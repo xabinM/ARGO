@@ -1,4 +1,4 @@
-package com.argo.backend.organization.exception;
+package com.argo.backend.organization.exception.types;
 
 import static com.argo.backend.organization.exception.OrganizationErrorMessage.TEAM_CREATION_FAILED;
 

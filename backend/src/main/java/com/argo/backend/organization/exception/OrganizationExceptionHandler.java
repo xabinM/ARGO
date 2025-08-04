@@ -1,7 +1,8 @@
 package com.argo.backend.organization.exception;
 
-import com.argo.backend.global.exception.ErrorResponse;
 import com.argo.backend.organization.dto.CommonApiResponse;
+import com.argo.backend.organization.exception.types.*;
+import com.argo.backend.organization.exception.types.ClassNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -38,7 +39,10 @@ public class OrganizationExceptionHandler {
         ClassNotAvailableException.class,
         ApplicationAlreadyProcessedException.class,
         DuplicateTeamNameException.class,
-        StudentAlreadyAssignedException.class
+        StudentAlreadyAssignedException.class,
+        ActivityInProgressException.class,
+        CannotDeleteActiveClassException.class,
+        NotParticipatingClassException.class
     })
     public ResponseEntity<CommonApiResponse<Void>> handleConflictException(RuntimeException e) {
         CommonApiResponse<Void> response = new CommonApiResponse<>(false, e.getMessage());
