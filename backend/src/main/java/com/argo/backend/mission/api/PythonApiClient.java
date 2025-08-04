@@ -2,6 +2,9 @@ package com.argo.backend.mission.api;
 
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateResponse;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestToAI;
+import com.argo.backend.mission.exception.ProblemCountMismatchException;
+import com.argo.backend.mission.exception.ProblemGenerationFailedException;
+import com.argo.backend.mission.exception.PythonServerNoResponseException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -35,13 +38,13 @@ public class PythonApiClient {
 
         ProblemGenerateResponse body = response.getBody();
         if (body == null) {
-            throw new IllegalStateException("Python 서버에서 응답이 없습니다.");
+            throw new PythonServerNoResponseException();
         }
         if (body.getProblems() == null) {
-            throw new IllegalStateException("문제 생성 실패");
+            throw new ProblemGenerationFailedException();
         }
         if (body.getProblems().size() != request.getProblemCnt()) {
-            throw new IllegalStateException("요청한 문제 개수와 맞지 않습니다.");
+            throw new ProblemCountMismatchException();
         }
 
             return body;

@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 
 public class TeamNotFoundException extends BusinessException {
 
-    private static final String FAIL_CODE = "4101";
+    private static final String FAIL_CODE = "5001";
 
     public TeamNotFoundException() {
         super(FAIL_CODE, HttpStatus.NOT_FOUND);

@@ -6,7 +6,7 @@ import org.springframework.http.HttpStatus;
 
 public class SpotNotFoundException extends BusinessException {
 
-    private static final String FAIL_CODE = "4102";
+    private static final String FAIL_CODE = "5002";
 
     public SpotNotFoundException() {
         super(FAIL_CODE, HttpStatus.NOT_FOUND);

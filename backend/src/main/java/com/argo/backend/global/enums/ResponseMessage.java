@@ -29,9 +29,13 @@ public enum ResponseMessage {
     SPOT_NOT_FOUND("해당 스팟이 존재하지 않습니다."),
     PROBLEM_NOT_FOUND("문제가 존재하지 않습니다."),
 
-
     // problem
     SUCCESS_REGISTER_PROBLEM("문제가 성공적으로 등록되었습니다."),
+
+    // api
+    PYTHON_SERVER_NO_RESPONSE("Python 서버에서 응답이 없습니다."),
+    PROBLEM_GENERATION_FAILED("문제가 생성되지 않았습니다."),
+    PROBLEM_COUNT_MISMATCH("요청한 문제 개수와 맞지 않습니다."),
     ;
 
     private final String message;
