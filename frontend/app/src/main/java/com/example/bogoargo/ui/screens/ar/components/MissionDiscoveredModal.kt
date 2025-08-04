@@ -119,4 +119,4 @@ fun MissionDiscoveredModal(
             }
         }
     }
-}ㅋ
+}
