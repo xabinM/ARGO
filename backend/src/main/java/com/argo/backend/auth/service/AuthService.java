@@ -1,8 +1,9 @@
 package com.argo.backend.auth.service;
 
+import com.argo.backend.auth.dto.login.LoginDto;
 import com.argo.backend.auth.dto.login.LoginRequest;
 import com.argo.backend.auth.dto.signup.SignupRequest;
-import com.argo.backend.auth.dto.common.TokenDto;
+import com.argo.backend.auth.dto.common.Tokens;
 import com.argo.backend.auth.dto.withdraw.WithdrawalRequest;
 import com.argo.backend.auth.exception.*;
 import com.argo.backend.auth.repository.UserRepository;
@@ -66,7 +67,7 @@ public class AuthService {
     }
 
 
-    public TokenDto login(LoginRequest request) {
+    public LoginDto login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername());
         if (Objects.equals(user, null)) {
             throw new NotFoundUserException();
@@ -83,7 +84,7 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId(), user.getUsername(), roles);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUserId(), user.getUsername(), roles);
 
-        return new TokenDto(accessToken, refreshToken);
+        return new LoginDto(new Tokens(accessToken, refreshToken), user.getRole());
     }
 
     private List<String> getRole(Authentication authentication) {
@@ -92,7 +93,7 @@ public class AuthService {
                 .collect(Collectors.toList());
     }
 
-    public TokenDto refresh(HttpServletRequest request) {
+    public Tokens refresh(HttpServletRequest request) {
         String refreshToken = jwtTokenProvider.resolveToken(request);
 
         jwtTokenProvider.validateToken(refreshToken);
@@ -109,7 +110,7 @@ public class AuthService {
         String newAccessToken = jwtTokenProvider.generateAccessToken(userId, username, roles);
         String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId, username, roles);
 
-        return new TokenDto(newAccessToken, newRefreshToken);
+        return new Tokens(newAccessToken, newRefreshToken);
     }
 
     @Transactional
