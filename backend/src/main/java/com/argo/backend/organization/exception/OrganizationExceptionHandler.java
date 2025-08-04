@@ -1,6 +1,7 @@
 package com.argo.backend.organization.exception;
 
 import com.argo.backend.global.exception.ErrorResponse;
+import com.argo.backend.organization.dto.CommonApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -18,18 +19,18 @@ public class OrganizationExceptionHandler {
         StudentNotFoundException.class,
         TeamNotFoundException.class
     })
-    public ResponseEntity<ErrorResponse> handleNotFoundException(RuntimeException e) {
-        ErrorResponse error = new ErrorResponse("NOT_FOUND", e.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.NOT_FOUND);
+    public ResponseEntity<CommonApiResponse<Void>> handleNotFoundException(RuntimeException e) {
+        CommonApiResponse<Void> response = new CommonApiResponse<>(false, e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
     }
 
     @ExceptionHandler({
         InsufficientPermissionException.class,
         StudentOnlyException.class
     })
-    public ResponseEntity<ErrorResponse> handleForbiddenException(RuntimeException e) {
-        ErrorResponse error = new ErrorResponse("FORBIDDEN", e.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.FORBIDDEN);
+    public ResponseEntity<CommonApiResponse<Void>> handleForbiddenException(RuntimeException e) {
+        CommonApiResponse<Void> response = new CommonApiResponse<>(false, e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.FORBIDDEN);
     }
 
     @ExceptionHandler({
@@ -39,9 +40,9 @@ public class OrganizationExceptionHandler {
         DuplicateTeamNameException.class,
         StudentAlreadyAssignedException.class
     })
-    public ResponseEntity<ErrorResponse> handleConflictException(RuntimeException e) {
-        ErrorResponse error = new ErrorResponse("CONFLICT", e.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.CONFLICT);
+    public ResponseEntity<CommonApiResponse<Void>> handleConflictException(RuntimeException e) {
+        CommonApiResponse<Void> response = new CommonApiResponse<>(false, e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.CONFLICT);
     }
 
     @ExceptionHandler({
@@ -53,17 +54,17 @@ public class OrganizationExceptionHandler {
         InvalidClassIdException.class,
         InvalidStatusParameterException.class
     })
-    public ResponseEntity<ErrorResponse> handleBadRequestException(RuntimeException e) {
-        ErrorResponse error = new ErrorResponse("BAD_REQUEST", e.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
+    public ResponseEntity<CommonApiResponse<Void>> handleBadRequestException(RuntimeException e) {
+        CommonApiResponse<Void> response = new CommonApiResponse<>(false, e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
     }
 
     @ExceptionHandler({
         InviteCodeGenerationException.class,
         TeamCreationFailedException.class
     })
-    public ResponseEntity<ErrorResponse> handleInternalServerError(RuntimeException e) {
-        ErrorResponse error = new ErrorResponse("INTERNAL_SERVER_ERROR", e.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
+    public ResponseEntity<CommonApiResponse<Void>> handleInternalServerError(RuntimeException e) {
+        CommonApiResponse<Void> response = new CommonApiResponse<>(false, e.getMessage());
+        return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

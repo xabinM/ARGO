@@ -1,5 +1,6 @@
 package com.argo.backend.organization.controller;
 
+import com.argo.backend.organization.dto.CommonApiResponse;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateRequest;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateResponse;
 import com.argo.backend.organization.dto.classdelete.ClassDeleteResponse;
@@ -33,7 +34,7 @@ public class TeacherClassController {
     private final ClassApplicationService classApplicationService;
 
     @GetMapping
-    public ResponseEntity<ClassListResponse> getClassList(
+    public ResponseEntity<CommonApiResponse<ClassListResponse.ClassListData>> getClassList(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
             @RequestParam(value = "status", defaultValue = "active")
@@ -43,30 +44,30 @@ public class TeacherClassController {
     ) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.unsorted());
         ClassListResponse response = classService.getTeacherClassList(teacherId, status, pageable);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 목록 조회 성공", response.getData()));
     }
 
     @GetMapping("/{classId}")
-    public ResponseEntity<ClassDetailResponse> getClassDetail(
+    public ResponseEntity<CommonApiResponse<ClassDetailResponse>> getClassDetail(
             @PathVariable Long classId,
             @RequestParam(value = "include", required = false) String include,
             @AuthenticationPrincipal Long teacherId
     ) {
         ClassDetailResponse response = classService.getTeacherClassDetail(teacherId, classId, include);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 상세정보 조회 성공", response));
     }
 
     @PostMapping
-    public ResponseEntity<ClassCreateResponse> createClass(
+    public ResponseEntity<CommonApiResponse<ClassCreateResponse>> createClass(
             @Valid @RequestBody ClassCreateRequest request,
             @AuthenticationPrincipal Long teacherId
     ) {
         ClassCreateResponse response = classService.createClass(teacherId, request);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 생성 성공", response));
     }
 
     @GetMapping("/{classId}/applications")
-    public ResponseEntity<ApplicationListResponse> getApplicationList(
+    public ResponseEntity<CommonApiResponse<ApplicationListResponse>> getApplicationList(
             @PathVariable Long classId,
             @RequestParam(value = "status", defaultValue = "ALL")
             @Pattern(regexp = "^(PENDING|APPROVED|REJECTED|ALL)$", message = "상태는 PENDING, APPROVED, REJECTED, ALL 중 하나여야 합니다")
@@ -75,21 +76,21 @@ public class TeacherClassController {
             @AuthenticationPrincipal Long teacherId
     ) {
         ApplicationListResponse response = classApplicationService.getApplicationList(classId, status, pageable, teacherId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "신청 목록 조회 성공", response));
     }
 
     @PutMapping("/{classId}/applications")
-    public ResponseEntity<ApplicationProcessResponse> processApplications(
+    public ResponseEntity<CommonApiResponse<ApplicationProcessResponse>> processApplications(
             @PathVariable Long classId,
             @Valid @RequestBody ApplicationProcessRequest request,
             @AuthenticationPrincipal Long teacherId
     ) {
         ApplicationProcessResponse response = classApplicationService.processApplications(classId, request, teacherId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "신청 처리 성공", response));
     }
 
     @GetMapping("/{classId}/students")
-    public ResponseEntity<StudentListResponse> getClassStudents(
+    public ResponseEntity<CommonApiResponse<StudentListResponse>> getClassStudents(
             @PathVariable Long classId,
             @RequestParam(value = "status", defaultValue = "all") String status,
             @RequestParam(value = "page", defaultValue = "1") int page,
@@ -98,16 +99,16 @@ public class TeacherClassController {
     ) {
         Pageable pageable = PageRequest.of(page - 1, size);
         StudentListResponse response = classService.getClassStudents(teacherId, classId, status, pageable);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "학생 목록 조회 성공", response));
     }
 
     @DeleteMapping("/{classId}")
-    public ResponseEntity<ClassDeleteResponse> deleteClass(
+    public ResponseEntity<CommonApiResponse<ClassDeleteResponse>> deleteClass(
             @PathVariable Long classId,
             @AuthenticationPrincipal Long teacherId
     ) {
         ClassDeleteResponse response = classService.deleteClass(teacherId, classId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 삭제 성공", response));
     }
 }
 

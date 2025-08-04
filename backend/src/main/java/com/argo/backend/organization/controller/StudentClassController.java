@@ -1,5 +1,6 @@
 package com.argo.backend.organization.controller;
 
+import com.argo.backend.organization.dto.CommonApiResponse;
 import com.argo.backend.organization.dto.classapply.ClassApplyResponse;
 import com.argo.backend.organization.dto.classlist.ClassListResponse;
 import com.argo.backend.organization.dto.classdetail.ClassDetailResponse;
@@ -25,7 +26,7 @@ public class StudentClassController {
     private final ClassService classService;
 
     @GetMapping
-    public ResponseEntity<ClassListResponse> getClassList(
+    public ResponseEntity<CommonApiResponse<ClassListResponse.ClassListData>> getClassList(
             @RequestParam(value = "page", defaultValue = "1") int page,
             @RequestParam(value = "size", defaultValue = "10") int size,
             @RequestParam(value = "status", defaultValue = "active")
@@ -35,33 +36,33 @@ public class StudentClassController {
     ) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.unsorted());
         ClassListResponse response = classService.getStudentClassList(studentId, status, pageable);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 목록 조회 성공", response.getData()));
     }
 
     @GetMapping("/{classId}")
-    public ResponseEntity<ClassDetailResponse> getClassDetail(
+    public ResponseEntity<CommonApiResponse<ClassDetailResponse>> getClassDetail(
             @PathVariable Long classId,
             @AuthenticationPrincipal Long studentId
     ) {
         ClassDetailResponse response = classService.getStudentClassDetail(studentId, classId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 상세정보 조회 성공", response));
     }
 
     @PostMapping("/apply")
-    public ResponseEntity<ClassApplyResponse> applyClass(
+    public ResponseEntity<CommonApiResponse<ClassApplyResponse>> applyClass(
             @RequestParam String inviteCode,
             @AuthenticationPrincipal Long studentId
     ) {
         ClassApplyResponse response = classService.applyToClass(studentId, inviteCode);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 신청 성공", response));
     }
 
     @DeleteMapping("/{classId}/leave")
-    public ResponseEntity<ClassLeaveResponse> leaveClass(
+    public ResponseEntity<CommonApiResponse<ClassLeaveResponse>> leaveClass(
             @PathVariable Long classId,
             @AuthenticationPrincipal Long studentId
     ) {
         ClassLeaveResponse response = classService.leaveClass(studentId, classId);
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 탈퇴 성공", response));
     }
 }
