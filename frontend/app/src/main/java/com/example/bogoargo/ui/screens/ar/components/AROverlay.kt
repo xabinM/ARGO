@@ -141,7 +141,7 @@ fun AROverlay(
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
-                                            text = "터치하여 미션 완료!",
+                                            text = "터치하여 미션 발견!",
                                             color = Color.Green,
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold
@@ -214,7 +214,7 @@ fun AROverlay(
             ) {
                 Text(
                     text = if (debugInfo.isObjectInteractable) 
-                        "🎯 터치하여 상호작용!" 
+                        "🎯 터치하여 미션 발견!" 
                     else 
                         "📍 ${formatDistance(debugInfo.distanceToObject)} - 더 가까이 접근하세요",
                     modifier = Modifier.padding(12.dp),

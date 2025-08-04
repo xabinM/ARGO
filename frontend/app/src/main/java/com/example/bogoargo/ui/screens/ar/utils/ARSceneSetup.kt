@@ -20,7 +20,7 @@ fun setupARScene(
     spotId: Long,
     latitude: Double,
     longitude: Double,
-    onMissionComplete: () -> Unit,
+    onMissionComplete: () -> Unit, // 미션 발견 시 호출되는 콜백 (실제로는 발견 처리)
     onDebugInfoUpdate: (ARDebugInfo) -> Unit,
     onModelNodeUpdate: (ModelNode?) -> Unit,
     onObjectClick: ((ModelNode, Float) -> Boolean)? = null, // 객체 클릭 핸들러 (거리 포함)
@@ -372,7 +372,7 @@ fun setupARScene(
         
         if (handled) {
             Log.i("ARScreen", "Object interaction successful at distance: ${formatDistance(distance)}")
-            // 미션 완료 처리
+            // 미션 발견 처리 (완료가 아닌 발견으로 변경)
             onMissionComplete()
         }
         

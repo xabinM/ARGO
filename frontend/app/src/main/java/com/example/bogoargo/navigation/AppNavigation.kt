@@ -11,6 +11,7 @@ import com.example.bogoargo.ui.screens.ARScreen
 import com.example.bogoargo.ui.screens.GameScreen
 import com.example.bogoargo.ui.screens.HomeScreen
 import com.example.bogoargo.ui.screens.LoginScreen
+import com.example.bogoargo.ui.screens.MissionDetailScreen
 import com.example.bogoargo.ui.screens.ProfileScreen
 import com.example.bogoargo.ui.screens.SettingsScreen
 import com.example.bogoargo.ui.screens.SplashScreen
@@ -24,6 +25,9 @@ sealed class Screen(val route: String) {
     data object Settings : Screen("settings")
     data object AR : Screen("ar/{spotId}/{latitude}/{longitude}") {
         fun createRoute(spotId: Long, latitude: Double, longitude: Double) = "ar/$spotId/$latitude/$longitude"
+    }
+    data object Mission : Screen("mission/{spotId}") {
+        fun createRoute(spotId: Long) = "mission/$spotId"
     }
 }
 
@@ -68,6 +72,23 @@ fun AppNavigation(
                 spotId = spotId,
                 latitude = latitude,
                 longitude = longitude,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToMission = { missionSpotId ->
+                    navController.navigate(Screen.Mission.createRoute(missionSpotId))
+                }
+            )
+        }
+        composable(
+            route = Screen.Mission.route,
+            arguments = listOf(
+                navArgument("spotId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val spotId = backStackEntry.arguments?.getLong("spotId") ?: 0L
+            MissionDetailScreen(
+                spotId = spotId,
                 onNavigateBack = {
                     navController.popBackStack()
                 }
