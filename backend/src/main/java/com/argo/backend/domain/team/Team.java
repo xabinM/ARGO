@@ -16,7 +16,6 @@ import java.util.List;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
 public class Team extends CreatedAtEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long teamId;
