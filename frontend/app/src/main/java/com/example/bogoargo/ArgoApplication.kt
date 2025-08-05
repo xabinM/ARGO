@@ -1,11 +1,11 @@
 package com.example.bogoargo
 
 import android.app.Application
-import com.example.bogoargo.data.api.ApiClient
+import dagger.hilt.android.HiltAndroidApp
 
+@HiltAndroidApp
 class ArgoApplication : Application() {
     override fun onCreate() {
         super.onCreate()
-        ApiClient.init(this)
     }
 }

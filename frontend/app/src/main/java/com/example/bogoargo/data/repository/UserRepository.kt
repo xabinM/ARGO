@@ -1,61 +1,167 @@
 package com.example.bogoargo.data.repository
 
-import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import com.example.bogoargo.data.model.User
-import com.example.bogoargo.data.model.UserRole
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
+import com.example.bogoargo.data.api.UserApiService
+import com.example.bogoargo.data.dto.UserSignUpRequest
+import com.example.bogoargo.data.dto.UserLoginRequest
+import com.example.bogoargo.data.dto.UserUpdateRequest
+import com.example.bogoargo.data.dto.UserWithdrawRequest
+import com.example.bogoargo.data.dto.response.UserUpdateResponse
+import com.example.bogoargo.data.dto.response.UserWithdrawResponse
+import com.example.bogoargo.data.dto.response.MessageResponseDto
+import com.example.bogoargo.data.mapper.toDomainModel
+import com.example.bogoargo.data.storage.TokenStorage
+import com.example.bogoargo.domain.model.DataException
+import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.domain.model.User
+import com.example.bogoargo.domain.repository.IUserRepository
+import retrofit2.HttpException
+import java.io.IOException
+import javax.inject.Inject
 
-// Extension property to get DataStore instance
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "user_preferences")
+class UserRepositoryImpl @Inject constructor(
+    private val userApiService: UserApiService,
+    private val tokenStorage: TokenStorage
+) : IUserRepository {
+    
+    override suspend fun signUp(userSignUpRequest: UserSignUpRequest): DataResult<MessageResponseDto> {
+        return try {
+            val response = userApiService.signup(userSignUpRequest)
+            if (response.isSuccessful) {
+                val messageResponse = response.body()
+                if (messageResponse?.success == true) {
+                    DataResult.Success(messageResponse)
+                } else {
+                    DataResult.Error(DataException.ServerError)
+                }
+            } else {
+                DataResult.Error(DataException.ServerError)
+            }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
+    }
 
-class UserRepository(private val context: Context) {
-    
-    // Preference keys
-    private companion object {
-        val USER_ID = stringPreferencesKey("user_id")
-        val USER_NAME = stringPreferencesKey("user_name")
-        val USER_FULL_NAME = stringPreferencesKey("user_full_name")
-        val USER_ROLE = stringPreferencesKey("user_role")
+    override suspend fun login(request: UserLoginRequest): DataResult<User> {
+        return try {
+            val response = userApiService.login(request)
+            if (response.isSuccessful) {
+                val loginResponse = response.body()
+                val accessToken = response.headers()["Authorization"]?.replace("Bearer ", "")
+                val refreshToken = response.headers()["Refresh-Token"] // 일반적인 헤더명
+                
+                if (loginResponse?.success == true && loginResponse.data != null && 
+                    accessToken != null && refreshToken != null) {
+                    
+                    // 토큰 저장
+                    tokenStorage.saveTokens(accessToken, refreshToken)
+                    
+                    DataResult.Success(loginResponse.data.toDomainModel())
+                } else {
+                    DataResult.Error(DataException.AuthenticationError)
+                }
+            } else {
+                DataResult.Error(DataException.ServerError)
+            }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
     }
-    
-    // Get user data as Flow
-    val userFlow: Flow<User> = context.dataStore.data.map { preferences ->
-        User(
-            userId = preferences[USER_ID]?.toLongOrNull() ?: 0L,
-            username = preferences[USER_NAME] ?: "user123",
-            name = preferences[USER_FULL_NAME] ?: "John Doe",
-            role = preferences[USER_ROLE]?.let { UserRole.valueOf(it) } ?: UserRole.STUDENT
-        )
+
+    override suspend fun getUserProfile(): DataResult<User> {
+        return try {
+            // TODO: API 호출 구현
+            DataResult.Error(DataException.UnknownError("Not implemented"))
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
     }
-    
-    // Save user data
-    suspend fun saveUser(user: User) {
-        context.dataStore.edit { preferences ->
-            preferences[USER_ID] = user.userId.toString()
-            preferences[USER_NAME] = user.username
-            preferences[USER_FULL_NAME] = user.name
-            preferences[USER_ROLE] = user.role.name
+
+    override suspend fun updateUserProfile(user: User): DataResult<User> {
+        return try {
+            // TODO: API 호출 구현
+            DataResult.Error(DataException.UnknownError("Not implemented"))
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun updateUserInfo(userUpdateRequest: UserUpdateRequest): DataResult<UserUpdateResponse> {
+        return try {
+            val response = userApiService.updateUserInfo(userUpdateRequest)
+            if (response.isSuccessful) {
+                val updateResponse = response.body()
+                if (updateResponse?.success == true) {
+                    DataResult.Success(updateResponse)
+                } else {
+                    DataResult.Error(DataException.ServerError)
+                }
+            } else {
+                DataResult.Error(DataException.ServerError)
+            }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
         }
     }
     
-    // Update specific user fields
-    suspend fun updateUserProfile(username: String, name: String) {
-        context.dataStore.edit { preferences ->
-            preferences[USER_NAME] = username
-            preferences[USER_FULL_NAME] = name
-        }
-    }
-    
-    // Clear all user data
-    suspend fun clearUserData() {
-        context.dataStore.edit { preferences ->
-            preferences.clear()
+    override suspend fun withdrawUser(userWithdrawRequest: UserWithdrawRequest): DataResult<UserWithdrawResponse> {
+        return try {
+            val response = userApiService.withrawUser(userWithdrawRequest)
+            if (response.isSuccessful) {
+                val withdrawResponse = response.body()
+                if (withdrawResponse?.success == true) {
+                    DataResult.Success(withdrawResponse)
+                } else {
+                    DataResult.Error(DataException.ServerError)
+                }
+            } else {
+                DataResult.Error(DataException.ServerError)
+            }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
         }
     }
 }

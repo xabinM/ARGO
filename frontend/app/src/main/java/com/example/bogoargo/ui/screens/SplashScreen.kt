@@ -9,17 +9,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.bogoargo.data.api.ApiClient
-import com.example.bogoargo.data.repository.AuthRepository
+import com.example.bogoargo.domain.repository.IAuthRepository
 import kotlinx.coroutines.delay
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.bogoargo.ui.viewmodels.SplashViewModel
 
 @Composable
 fun SplashScreen(
     navController: NavHostController,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val authRepository = AuthRepository(context)
+    val splashViewModel: SplashViewModel = hiltViewModel()
+    val authRepository = splashViewModel.authRepository
     
     LaunchedEffect(Unit) {
         delay(1000)
@@ -28,7 +29,7 @@ fun SplashScreen(
         if (tokenInfo != null) {
             // 토큰이 있으면 서버에 검증 요청
             try {
-                val response = ApiClient.authApiService.validateToken()
+                val response = splashViewModel.validateToken()
                 if (response.isSuccessful) {
                     // 토큰이 유효하면 홈으로 이동
                     navController.navigate("home") {
