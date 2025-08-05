@@ -34,29 +34,31 @@ abstract class RepositoryModule {
     @Singleton
     abstract fun bindClassRepository(impl: ClassRepositoryImpl): IClassRepository
     
-    companion object {
+    @Binds
+    @Singleton
+    abstract fun bindMissionRepository(impl: MissionRepositoryImpl): IMissionRepository
+    
+    @Binds
+    @Singleton
+    abstract fun bindSettingsRepository(impl: SettingsRepositoryImpl): ISettingsRepository
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+object RepositoryProvidesModule {
         
-        @Provides
-        @Singleton
-        fun provideMissionRepository(
-            @Named("authenticated") authApiService: AuthApiService,
-            @ApplicationContext context: Context
-        ): MissionRepository {
-            return MissionRepository(authApiService, context)
-        }
-        
-        @Provides
-        @Singleton
-        fun provideAR3DObjectRepository(): AR3DObjectRepository {
-            return AR3DObjectRepository
-        }
-        
-        @Provides
-        @Singleton
-        fun provideSettingsRepository(
-            @ApplicationContext context: Context
-        ): SettingsRepository {
-            return SettingsRepository(context)
-        }
+    @Provides
+    @Singleton
+    fun provideMissionRepository(
+        authApiService: AuthApiService,
+        @ApplicationContext context: Context
+    ): MissionRepositoryImpl {
+        return MissionRepositoryImpl(authApiService, context)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideAR3DObjectRepository(): AR3DObjectRepository {
+        return AR3DObjectRepository
     }
 }

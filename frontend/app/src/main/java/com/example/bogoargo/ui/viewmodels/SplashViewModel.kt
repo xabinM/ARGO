@@ -11,7 +11,7 @@ import javax.inject.Named
 @HiltViewModel
 class SplashViewModel @Inject constructor(
     val authRepository: IAuthRepository,
-    @Named("authenticated") private val authApiService: AuthApiService
+    private val authApiService: AuthApiService
 ) : ViewModel() {
     
     suspend fun validateToken(): Response<Unit> {

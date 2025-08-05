@@ -76,9 +76,10 @@ class AuthRepositoryImpl @Inject constructor(
                 ?: return@withLock DataResult.Error(DataException.AuthenticationError)
             
             try {
-                val response = authApiService.refreshToken(
+                val call = authApiService.refreshToken(
                     RefreshTokenRequest(refreshToken)
                 )
+                val response = call.execute()
                 
                 if (response.isSuccessful) {
                     val refreshResponse = response.body()

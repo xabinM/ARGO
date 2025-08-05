@@ -9,6 +9,7 @@ import com.example.bogoargo.data.dto.response.UserUpdateResponse
 import com.example.bogoargo.data.dto.response.UserWithdrawResponse
 import com.example.bogoargo.data.dto.response.MessageResponseDto
 import com.example.bogoargo.data.mapper.toDomainModel
+import com.example.bogoargo.data.storage.TokenStorage
 import com.example.bogoargo.domain.model.DataException
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.User
@@ -18,7 +19,8 @@ import java.io.IOException
 import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
-    private val userApiService: UserApiService
+    private val userApiService: UserApiService,
+    private val tokenStorage: TokenStorage
 ) : IUserRepository {
     
     override suspend fun signUp(userSignUpRequest: UserSignUpRequest): DataResult<MessageResponseDto> {
@@ -55,9 +57,15 @@ class UserRepositoryImpl @Inject constructor(
             val response = userApiService.login(request)
             if (response.isSuccessful) {
                 val loginResponse = response.body()
-                val jwtToken = response.headers()["Authorization"]?.replace("Bearer ", "")
-
-                if (loginResponse?.success == true && loginResponse.data != null) {
+                val accessToken = response.headers()["Authorization"]?.replace("Bearer ", "")
+                val refreshToken = response.headers()["Refresh-Token"] // 일반적인 헤더명
+                
+                if (loginResponse?.success == true && loginResponse.data != null && 
+                    accessToken != null && refreshToken != null) {
+                    
+                    // 토큰 저장
+                    tokenStorage.saveTokens(accessToken, refreshToken)
+                    
                     DataResult.Success(loginResponse.data.toDomainModel())
                 } else {
                     DataResult.Error(DataException.AuthenticationError)

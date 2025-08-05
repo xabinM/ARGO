@@ -1,7 +1,10 @@
 package com.example.bogoargo.di
 
+import com.example.bogoargo.data.repository.AR3DObjectRepository
 import com.example.bogoargo.domain.repository.IAuthRepository
 import com.example.bogoargo.domain.repository.IClassRepository
+import com.example.bogoargo.domain.repository.IMissionRepository
+import com.example.bogoargo.domain.repository.ISettingsRepository
 import com.example.bogoargo.domain.repository.ITeamRepository
 import com.example.bogoargo.domain.repository.IUserRepository
 import com.example.bogoargo.domain.use_case.auth.LoginUseCase
@@ -22,6 +25,13 @@ import com.example.bogoargo.domain.use_case.team.ManageTeamUseCase
 import com.example.bogoargo.domain.use_case.user.SignUpUseCase
 import com.example.bogoargo.domain.use_case.user.UpdateUserProfileUseCase
 import com.example.bogoargo.domain.use_case.user.WithdrawUserUseCase
+import com.example.bogoargo.domain.use_case.mission.GetMissionSpotsUseCase
+import com.example.bogoargo.domain.use_case.mission.GetMissionUseCase
+import com.example.bogoargo.domain.use_case.mission.ManageMissionUseCase
+import com.example.bogoargo.domain.use_case.settings.GetSettingsUseCase
+import com.example.bogoargo.domain.use_case.settings.UpdateSettingsUseCase
+import com.example.bogoargo.domain.use_case.ar.GetAR3DObjectsUseCase
+import com.example.bogoargo.data.repository.MissionRepositoryImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -142,5 +152,44 @@ object UseCaseModule {
     @Singleton
     fun provideGetStudentClassListUseCase(classRepository: IClassRepository): GetStudentClassListUseCase {
         return GetStudentClassListUseCase(classRepository)
+    }
+    
+    // Mission Use Cases
+    @Provides
+    @Singleton
+    fun provideGetMissionSpotsUseCase(missionRepository: MissionRepositoryImpl): GetMissionSpotsUseCase {
+        return GetMissionSpotsUseCase(missionRepository)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideGetMissionUseCase(missionRepository: IMissionRepository): GetMissionUseCase {
+        return GetMissionUseCase(missionRepository)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideManageMissionUseCase(missionRepository: IMissionRepository): ManageMissionUseCase {
+        return ManageMissionUseCase(missionRepository)
+    }
+    
+    // Settings Use Cases
+    @Provides
+    @Singleton
+    fun provideGetSettingsUseCase(settingsRepository: ISettingsRepository): GetSettingsUseCase {
+        return GetSettingsUseCase(settingsRepository)
+    }
+    
+    @Provides
+    @Singleton
+    fun provideUpdateSettingsUseCase(settingsRepository: ISettingsRepository): UpdateSettingsUseCase {
+        return UpdateSettingsUseCase(settingsRepository)
+    }
+    
+    // AR Use Cases
+    @Provides
+    @Singleton
+    fun provideGetAR3DObjectsUseCase(ar3DObjectRepository: AR3DObjectRepository): GetAR3DObjectsUseCase {
+        return GetAR3DObjectsUseCase(ar3DObjectRepository)
     }
 }

@@ -27,19 +27,7 @@ object NetworkModule {
         }
     }
     
-    @Provides
-    @Singleton
-    fun provideAuthHeaderInterceptor(tokenStorage: TokenStorage): AuthHeaderInterceptor {
-        return AuthHeaderInterceptor(tokenStorage)
-    }
-    
-    @Provides
-    @Singleton
-    fun provideTokenAuthenticator(tokenStorage: TokenStorage, @Named("basic") authApiService: AuthApiService): TokenAuthenticator {
-        return TokenAuthenticator(tokenStorage, authApiService)
-    }
-    
-    // 기본 OkHttpClient (인증 없음)
+    // 기본 OkHttpClient (토큰 갱신용 - 인터셉터 없음)
     @Provides
     @Singleton
     @Named("basic")
@@ -47,22 +35,6 @@ object NetworkModule {
         loggingInterceptor: HttpLoggingInterceptor
     ): OkHttpClient {
         return OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
-            .build()
-    }
-    
-    // 인증 OkHttpClient (TokenAuthenticator 포함)
-    @Provides
-    @Singleton
-    @Named("authenticated")
-    fun provideAuthenticatedOkHttpClient(
-        loggingInterceptor: HttpLoggingInterceptor,
-        authHeaderInterceptor: AuthHeaderInterceptor,
-        tokenAuthenticator: TokenAuthenticator
-    ): OkHttpClient {
-        return OkHttpClient.Builder()
-            .addInterceptor(authHeaderInterceptor)
-            .authenticator(tokenAuthenticator)
             .addInterceptor(loggingInterceptor)
             .build()
     }
@@ -79,18 +51,6 @@ object NetworkModule {
             .build()
     }
     
-    // 인증 Retrofit (일반 API용)
-    @Provides
-    @Singleton
-    @Named("authenticated")
-    fun provideAuthenticatedRetrofit(@Named("authenticated") okHttpClient: OkHttpClient): Retrofit {
-        return Retrofit.Builder()
-            .baseUrl(BASE_URL)
-            .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-    }
-    
     // 기본 AuthApiService (토큰 갱신용)
     @Provides
     @Singleton
@@ -99,35 +59,67 @@ object NetworkModule {
         return retrofit.create(AuthApiService::class.java)
     }
     
-    // 인증 AuthApiService (일반 API용)
     @Provides
     @Singleton
-    @Named("authenticated")
-    fun provideAuthenticatedAuthApiService(@Named("authenticated") retrofit: Retrofit): AuthApiService {
+    fun provideTokenManagementInterceptor(
+        tokenStorage: TokenStorage, 
+        @Named("basic") authApiService: AuthApiService
+    ): TokenManagementInterceptor {
+        return TokenManagementInterceptor(tokenStorage, authApiService)
+    }
+    
+    // 통합 OkHttpClient (TokenManagementInterceptor 포함)
+    @Provides
+    @Singleton
+    fun provideOkHttpClient(
+        loggingInterceptor: HttpLoggingInterceptor,
+        tokenManagementInterceptor: TokenManagementInterceptor
+    ): OkHttpClient {
+        return OkHttpClient.Builder()
+            .addInterceptor(tokenManagementInterceptor)
+            .addInterceptor(loggingInterceptor)
+            .build()
+    }
+    
+    // 통합 Retrofit (일반 API용)
+    @Provides
+    @Singleton
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl(BASE_URL)
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+    
+    // 통합 AuthApiService (일반 API용)
+    @Provides
+    @Singleton
+    fun provideAuthApiService(retrofit: Retrofit): AuthApiService {
         return retrofit.create(AuthApiService::class.java)
     }
     
     @Provides
     @Singleton
-    fun provideTeamApiService(@Named("authenticated") retrofit: Retrofit): TeamApiService {
+    fun provideTeamApiService(retrofit: Retrofit): TeamApiService {
         return retrofit.create(TeamApiService::class.java)
     }
     
     @Provides
     @Singleton
-    fun provideClassApiService(@Named("authenticated") retrofit: Retrofit): ClassApiService {
+    fun provideClassApiService(retrofit: Retrofit): ClassApiService {
         return retrofit.create(ClassApiService::class.java)
     }
     
     @Provides
     @Singleton
-    fun provideUserApiService(@Named("authenticated") retrofit: Retrofit): UserApiService {
+    fun provideUserApiService(retrofit: Retrofit): UserApiService {
         return retrofit.create(UserApiService::class.java)
     }
     
     @Provides
     @Singleton
-    fun provideApplicationApiService(@Named("authenticated") retrofit: Retrofit): AppliationApiService {
+    fun provideApplicationApiService(retrofit: Retrofit): AppliationApiService {
         return retrofit.create(AppliationApiService::class.java)
     }
 }
