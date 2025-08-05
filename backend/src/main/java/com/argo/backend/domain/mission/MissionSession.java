@@ -12,7 +12,6 @@ import lombok.*;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 public class MissionSession extends CreatedAtEntity {
     
     @Id

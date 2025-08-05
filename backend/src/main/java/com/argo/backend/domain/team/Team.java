@@ -15,7 +15,6 @@ import java.util.List;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 public class Team extends CreatedAtEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long teamId;
@@ -35,4 +34,14 @@ public class Team extends CreatedAtEntity {
 
     @OneToMany(mappedBy = "team", fetch = FetchType.LAZY)
     private List<MissionSession> missions = new ArrayList<>();
+
+    public static Team from(ClassRoom classRoom, String teamName, Integer maxMembers) {
+        return new Team(classRoom, teamName, maxMembers);
+    }
+
+    protected Team(ClassRoom classRoom, String teamName, Integer maxMembers) {
+        this.classRoom = classRoom;
+        this.teamName = teamName;
+        this.maxMembers = maxMembers;
+    }
 }

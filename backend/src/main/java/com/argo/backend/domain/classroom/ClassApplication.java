@@ -2,6 +2,7 @@ package com.argo.backend.domain.classroom;
 
 import com.argo.backend.domain.BaseTimeEntity;
 import com.argo.backend.domain.user.ApplicationStatus;
+import com.argo.backend.domain.user.Role;
 import com.argo.backend.domain.user.User;
 import jakarta.persistence.*;
 import lombok.*;
@@ -13,7 +14,6 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 public class ClassApplication extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -32,4 +32,16 @@ public class ClassApplication extends BaseTimeEntity {
     private ApplicationStatus status = ApplicationStatus.PENDING;
 
     private LocalDateTime processedAt;
+
+    public static ClassApplication from(User user, ClassRoom classRoom) {
+        return new ClassApplication(
+                user,
+                classRoom
+        );
+    }
+
+    protected ClassApplication(User user, ClassRoom classRoom) {
+        this.user = user;
+        this.classRoom = classRoom;
+    }
 }
