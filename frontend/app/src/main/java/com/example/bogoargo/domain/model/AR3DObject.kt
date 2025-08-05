@@ -1,4 +1,4 @@
-package com.example.bogoargo.data.model
+package com.example.bogoargo.domain.model
 
 /**
  * AR 객체의 배치 타입 (FallBack vs GeoSpatial 미션)

@@ -12,7 +12,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material3.*
@@ -26,7 +26,6 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import com.google.ar.core.Config
 import io.github.sceneview.ar.ARSceneView
-import io.github.sceneview.node.ModelNode
 import com.example.bogoargo.ui.screens.ar.components.AROverlay
 import com.example.bogoargo.ui.screens.ar.components.DebugInfoPanel
 import com.example.bogoargo.ui.screens.ar.components.ErrorScreen
@@ -35,8 +34,7 @@ import com.example.bogoargo.ui.screens.ar.components.MissionDiscoveredModal
 import com.example.bogoargo.ui.screens.ar.model.ARDebugInfo
 import com.example.bogoargo.ui.screens.ar.utils.checkLocationServicesStatus
 import com.example.bogoargo.ui.screens.ar.utils.setupARScene
-import com.example.bogoargo.data.model.AR3DObject
-import com.example.bogoargo.data.repository.AR3DObjectRepository
+import com.example.bogoargo.domain.model.AR3DObject
 import androidx.compose.runtime.LaunchedEffect
 
 
@@ -112,7 +110,7 @@ fun ARScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로가기")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -240,7 +238,8 @@ fun ARScreen(
                                                         view.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
                                                         
                                                         // 객체 클릭 핸들러 호출
-                                                        val clickHandler = view.getTag("ar_object_click_handler".hashCode()) as? ((Float, Float) -> Boolean)
+                                                        val tag = view.getTag("ar_object_click_handler".hashCode())
+                                                        val clickHandler = tag as? ((Float, Float) -> Boolean)
                                                         val handled = clickHandler?.invoke(motionEvent.x, motionEvent.y) ?: false
                                                         
                                                         if (handled) {

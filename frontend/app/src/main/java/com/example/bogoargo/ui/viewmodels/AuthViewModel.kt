@@ -2,16 +2,19 @@ package com.example.bogoargo.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bogoargo.data.model.TokenInfo
-import com.example.bogoargo.data.repository.AuthRepository
+import com.example.bogoargo.domain.model.TokenInfo
+import com.example.bogoargo.domain.repository.IAuthRepository
+import com.example.bogoargo.domain.model.DataResult
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
+@HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: IAuthRepository
 ) : ViewModel() {
 
     sealed class UiState {
@@ -56,14 +59,19 @@ class AuthViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = UiState.Loading
             try {
-                val success = authRepository.refreshToken()
-                if (success) {
+                when (val result = authRepository.refreshToken()) {
+                    is DataResult.Success -> {
                     _tokenInfo.value = authRepository.getTokenInfo()
                     _isAuthenticated.value = true
                     _uiState.value = UiState.Success
-                } else {
-                    logout()
-                    _uiState.value = UiState.Error("토큰 갱신 실패")
+                    }
+                    is DataResult.Error -> {
+                        logout()
+                        _uiState.value = UiState.Error(result.exception.message)
+                    }
+                    is DataResult.Loading -> {
+                        // 이미 로딩 상태 설정됨
+                    }
                 }
             } catch (e: Exception) {
                 logout()

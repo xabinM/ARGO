@@ -2,8 +2,14 @@ package com.example.bogoargo.data.storage
 
 import android.content.Context
 import android.content.SharedPreferences
+import dagger.hilt.android.qualifiers.ApplicationContext
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class TokenStorage(context: Context) {
+@Singleton
+class TokenStorage @Inject constructor(
+    @ApplicationContext context: Context
+) {
     
     private val sharedPreferences: SharedPreferences = context.getSharedPreferences(
         "auth_prefs",

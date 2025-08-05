@@ -1,6 +1,4 @@
-package com.example.bogoargo.data.model
-
-import com.example.bogoargo.data.model.Team
+package com.example.bogoargo.domain.model
 
 // User Model 클래스
 data class User(

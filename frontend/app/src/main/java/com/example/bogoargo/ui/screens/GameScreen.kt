@@ -15,14 +15,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import androidx.core.content.PermissionChecker
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.bogoargo.data.api.ApiClient
-import com.example.bogoargo.data.model.MissionSpot
-import com.example.bogoargo.data.repository.MissionRepository
+import com.example.bogoargo.domain.model.MissionSpot
 import com.example.bogoargo.ui.viewmodels.MapViewModel
-import com.example.bogoargo.util.LocationUtils
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
@@ -39,14 +35,7 @@ fun GameScreen(
     val context = LocalContext.current
     
     // ViewModel 초기화
-    val viewModel: MapViewModel = viewModel {
-        MapViewModel(
-            missionRepository = MissionRepository(
-                ApiClient.authApiService,
-                context
-            )
-        )
-    }
+    val viewModel: MapViewModel = hiltViewModel()
     val uiState by viewModel.uiState.collectAsState()
     
     // 위치 추적을 위한 상태 관리

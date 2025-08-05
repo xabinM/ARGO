@@ -1,94 +1,159 @@
 package com.example.bogoargo.data.repository
 
 import com.example.bogoargo.data.api.TeamApiService
-import com.example.bogoargo.data.dto.TeamCreateRequest
-import com.example.bogoargo.data.dto.TeamAssignStudentRequest
-import com.example.bogoargo.data.dto.TeatAssignRamdomRequest
-import com.example.bogoargo.data.dto.response.TeamCreateResponse
 import com.example.bogoargo.data.dto.response.TeamAssignResponse
-import com.example.bogoargo.data.dto.response.TeamDeleteResponse
 import com.example.bogoargo.data.mapper.toDomainModel
-import com.example.bogoargo.data.model.Team
-import com.example.bogoargo.data.model.User
-
+import com.example.bogoargo.domain.model.DataException
+import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.domain.model.Team
+import com.example.bogoargo.domain.model.User
+import com.example.bogoargo.domain.repository.ITeamRepository
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
-class TeamRepository @Inject constructor(
+class TeamRepositoryImpl @Inject constructor(
     private val teamApiService: TeamApiService
-) {
+) : ITeamRepository {
     
-    suspend fun createTeam(classId: Long): Result<Team?> {
+    override suspend fun createTeam(classId: Long): DataResult<Team> {
         return try {
             val response = teamApiService.createTeam(classId)
             if (response.isSuccessful) {
                 val teamCreateResponse = response.body()
                 if (teamCreateResponse?.success == true && teamCreateResponse.data != null) {
-                    Result.success(teamCreateResponse.data.toDomainModel())
+                    DataResult.Success(teamCreateResponse.data.toDomainModel())
                 } else {
-                    Result.failure(Exception(teamCreateResponse?.message ?: "팀 생성에 실패했습니다."))
+                    DataResult.Error(DataException.ServerError)
                 }
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()}"))
+                DataResult.Error(DataException.ServerError)
             }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-    
-    suspend fun assignTeam(classId: Long, teamId: Long): Result<TeamAssignResponse> {
-        return try {
-            val response = teamApiService.AssignTeam(classId, teamId)
-            if (response.isSuccessful) {
-                val assignResponse = response.body()
-                if (assignResponse?.success == true) {
-                    Result.success(assignResponse)
-                } else {
-                    Result.failure(Exception(assignResponse?.message ?: "팀 배정에 실패했습니다."))
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
                 }
-            } else {
-                Result.failure(Exception("서버 오류: ${response.code()}"))
-            }
+            )
         } catch (e: Exception) {
-            Result.failure(e)
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
         }
     }
-    
-    suspend fun assignTeamRandom(classId: Long): Result<TeamAssignResponse> {
-        return try {
-            val response = teamApiService.AssignTeamRandom(classId)
-            if (response.isSuccessful) {
-                val assignResponse = response.body()
-                if (assignResponse?.success == true) {
-                    Result.success(assignResponse)
-                } else {
-                    Result.failure(Exception(assignResponse?.message ?: "랜덤 팀 배정에 실패했습니다."))
-                }
-            } else {
-                Result.failure(Exception("서버 오류: ${response.code()}"))
-            }
-        } catch (e: Exception) {
-            Result.failure(e)
-        }
+
+    override suspend fun getTeams(): DataResult<List<Team>> {
+        return DataResult.Error(DataException.UnknownError("Not implemented"))
     }
-    
-    suspend fun deleteTeam(classId: Long, teamId: Long): Result<List<User>?> {
+
+    override suspend fun getTeamById(teamId: Long): DataResult<Team> {
+        return DataResult.Error(DataException.UnknownError("Not implemented"))
+    }
+
+    override suspend fun updateTeam(teamId: Long): DataResult<Team> {
+        return DataResult.Error(DataException.UnknownError("Not implemented"))
+    }
+
+    override suspend fun deleteTeam(teamId: Long): DataResult<Unit> {
+        return DataResult.Error(DataException.UnknownError("Not implemented"))
+    }
+
+    override suspend fun joinTeam(teamId: Long): DataResult<Unit> {
+        return DataResult.Error(DataException.UnknownError("Not implemented"))
+    }
+
+    override suspend fun leaveTeam(teamId: Long): DataResult<Unit> {
+        return DataResult.Error(DataException.UnknownError("Not implemented"))
+    }
+
+    override suspend fun deleteTeam(classId: Long, teamId: Long): DataResult<List<User>> {
         return try {
             val response = teamApiService.deleteTeam(classId, teamId)
             if (response.isSuccessful) {
                 val deleteResponse = response.body()
                 if (deleteResponse?.success == true) {
-                    // TeamDeleteResponse의 students를 User 모델로 변환 필요시 추가
-                    Result.success(null) // 현재는 UserDataDto -> User 매퍼가 없어서 null 반환
+                    // TODO: 실제 User 리스트로 변환 구현 필요
+                    DataResult.Success(emptyList())
                 } else {
-                    Result.failure(Exception(deleteResponse?.message ?: "팀 삭제에 실패했습니다."))
+                    DataResult.Error(DataException.ServerError)
                 }
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()}"))
+                DataResult.Error(DataException.ServerError)
             }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
         } catch (e: Exception) {
-            Result.failure(e)
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun assignTeam(classId: Long, teamId: Long): DataResult<TeamAssignResponse> {
+        return try {
+            val response = teamApiService.AssignTeam(classId, teamId)
+            if (response.isSuccessful) {
+                val assignResponse = response.body()
+                if (assignResponse?.success == true) {
+                    DataResult.Success(assignResponse)
+                } else {
+                    DataResult.Error(DataException.ServerError)
+                }
+            } else {
+                DataResult.Error(DataException.ServerError)
+            }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun assignTeamRandom(classId: Long): DataResult<TeamAssignResponse> {
+        return try {
+            val response = teamApiService.AssignTeamRandom(classId)
+            if (response.isSuccessful) {
+                val assignResponse = response.body()
+                if (assignResponse?.success == true) {
+                    DataResult.Success(assignResponse)
+                } else {
+                    DataResult.Error(DataException.ServerError)
+                }
+            } else {
+                DataResult.Error(DataException.ServerError)
+            }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
         }
     }
 }

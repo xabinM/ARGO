@@ -13,10 +13,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.bogoargo.data.model.Class
+import com.example.bogoargo.domain.model.Class
 import com.example.bogoargo.ui.viewmodels.classRoom.ClassManagementViewModel
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
@@ -27,7 +27,7 @@ import com.example.bogoargo.ui.theme.NatureTypography
 @Composable
 fun ClassManagementScreen(
     navController: NavController,
-    viewModel: ClassManagementViewModel = viewModel()
+    viewModel: ClassManagementViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var isTeacher by remember { mutableStateOf(true) }

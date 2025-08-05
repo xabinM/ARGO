@@ -1,6 +1,6 @@
 package com.example.bogoargo.data.dto.response
 
-import com.example.bogoargo.data.model.UserRole
+import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.data.response.ClassDataDto
 
 // 유저 정보 응답 DTO

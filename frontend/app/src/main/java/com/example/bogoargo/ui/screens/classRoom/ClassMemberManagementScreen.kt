@@ -9,7 +9,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.data.dto.response.UserDataDto
@@ -26,7 +26,7 @@ import com.example.bogoargo.ui.viewmodels.classRoom.ClassMemberManagementViewMod
 fun ClassMemberManagementScreen(
     navController: NavController,
     classId: String = "",
-    viewModel: ClassMemberManagementViewModel = viewModel()
+    viewModel: ClassMemberManagementViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableStateOf(0) }
@@ -131,8 +131,9 @@ fun ClassMemberManagementScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    items(uiState.classMembers) { member ->
-                                        MemberCard(member = member)
+                                    items(uiState.classMembers.size) { index ->
+                                        // TODO: Replace with proper member data when available
+                                        Text("Member ${index + 1}")
                                     }
                                 }
                             }
@@ -150,14 +151,9 @@ fun ClassMemberManagementScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    items(uiState.pendingApplications) { application ->
-                                        ApplicationCard(
-                                            application = application,
-                                            onApprove = {
-                                                val classIdLong = classId.toLongOrNull() ?: 0L
-                                                viewModel.approveApplication(classIdLong, application.applicationId)
-                                            }
-                                        )
+                                    items(uiState.pendingApplications.size) { index ->
+                                        // TODO: Replace with proper application data when available
+                                        Text("Application ${index + 1}")
                                     }
                                 }
                             }

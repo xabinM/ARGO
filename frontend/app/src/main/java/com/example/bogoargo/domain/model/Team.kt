@@ -1,4 +1,4 @@
-package com.example.bogoargo.data.model
+package com.example.bogoargo.domain.model
 
 import java.time.LocalDate
 

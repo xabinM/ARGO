@@ -3,13 +3,14 @@ package com.example.bogoargo.ui.viewmodels.team
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bogoargo.data.dto.response.TeamAssignResponse
-import com.example.bogoargo.data.model.Team
-import com.example.bogoargo.data.model.User
-import com.example.bogoargo.data.repository.AuthRepository
-import com.example.bogoargo.data.repository.TeamRepository
+import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.domain.model.Team
+import com.example.bogoargo.domain.model.User
+import com.example.bogoargo.domain.use_case.team.ManageTeamUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 data class TeamManagementUiState(
@@ -24,9 +25,9 @@ data class TeamManagementUiState(
     val createSuccess: Boolean = false
 )
 
+@HiltViewModel
 class TeamManagementViewModel @Inject constructor(
-    private val teamRepository: TeamRepository,
-    private val authRepository: AuthRepository
+    private val manageTeamUseCase: ManageTeamUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TeamManagementUiState())
@@ -36,21 +37,24 @@ class TeamManagementViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
-            teamRepository.assignTeam(classId, teamId).fold(
-                onSuccess = { assignResponse ->
+            when (val result = manageTeamUseCase.assignTeam(classId, teamId)) {
+                is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         assignSuccess = true,
-                        assignResponse = assignResponse
-                    )
-                },
-                onFailure = { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = exception.message
+                        assignResponse = result.data
                     )
                 }
-            )
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Already set loading state
+                }
+            }
         }
     }
 
@@ -58,21 +62,24 @@ class TeamManagementViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
-            teamRepository.assignTeamRandom(classId).fold(
-                onSuccess = { assignResponse ->
+            when (val result = manageTeamUseCase.assignTeamRandom(classId)) {
+                is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         randomAssignSuccess = true,
-                        assignResponse = assignResponse
-                    )
-                },
-                onFailure = { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = exception.message
+                        assignResponse = result.data
                     )
                 }
-            )
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Already set loading state
+                }
+            }
         }
     }
 
@@ -80,21 +87,24 @@ class TeamManagementViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
-            teamRepository.deleteTeam(classId, teamId).fold(
-                onSuccess = { deletedStudents ->
+            when (val result = manageTeamUseCase.deleteTeam(classId, teamId)) {
+                is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         deleteSuccess = true,
-                        deletedStudents = deletedStudents
-                    )
-                },
-                onFailure = { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = exception.message
+                        deletedStudents = result.data
                     )
                 }
-            )
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Already set loading state
+                }
+            }
         }
     }
 

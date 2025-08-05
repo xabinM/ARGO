@@ -1,13 +1,14 @@
 package com.example.bogoargo.ui.viewmodels
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bogoargo.data.repository.SettingsRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 data class SettingsUiState(
     val isLoading: Boolean = false,
@@ -18,8 +19,10 @@ data class SettingsUiState(
     val showLogoutDialog: Boolean = false
 )
 
-class SettingsViewModel(application: Application) : AndroidViewModel(application) {
-    private val settingsRepository = SettingsRepository(application)
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    private val settingsRepository: SettingsRepository
+) : ViewModel() {
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 

@@ -2,11 +2,12 @@ package com.example.bogoargo.ui.viewmodels.user
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bogoargo.data.repository.AuthRepository
-import com.example.bogoargo.data.repository.UserRepository
+import com.example.bogoargo.domain.repository.IAuthRepository
+import com.example.bogoargo.domain.repository.IUserRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 data class LogoutUiState(
@@ -15,9 +16,10 @@ data class LogoutUiState(
     val errorMessage: String? = null
 )
 
+@HiltViewModel
 class LogoutViewModel @Inject constructor(
-    private val userRepository: UserRepository,
-    private val authRepository: AuthRepository
+    private val userRepository: IUserRepository,
+    private val authRepository: IAuthRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LogoutUiState())

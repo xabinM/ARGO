@@ -1,7 +1,7 @@
 package com.example.bogoargo.data.mapper
 
 import com.example.bogoargo.data.dto.response.UserDataDto
-import com.example.bogoargo.data.model.User
+import com.example.bogoargo.domain.model.User
 
 // UserDataDto를 User Model로 변환
 fun UserDataDto.toDomainModel(): User {

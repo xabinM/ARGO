@@ -1,7 +1,7 @@
 package com.example.bogoargo.data.mapper
 
 import com.example.bogoargo.data.dto.response.ApplicationResponseDto
-import com.example.bogoargo.data.model.Application
+import com.example.bogoargo.domain.model.Application
 
 fun ApplicationResponseDto.toDomainModel(): Application? {
     return null

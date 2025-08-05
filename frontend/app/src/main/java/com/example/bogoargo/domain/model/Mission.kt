@@ -1,4 +1,4 @@
-package com.example.bogoargo.data.model
+package com.example.bogoargo.domain.model
 
 data class Mission(
     val id: String = "",

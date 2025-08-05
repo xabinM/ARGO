@@ -23,11 +23,16 @@ fun checkLocationServicesStatus(context: Context): Triple<Boolean, Boolean, Bool
     // 네트워크 위치 서비스 활성화 상태  
     val networkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
     
-    // 전체 위치 서비스 활성화 상태
-    val locationServicesEnabled = try {
-        Settings.Secure.getInt(context.contentResolver, Settings.Secure.LOCATION_MODE) != Settings.Secure.LOCATION_MODE_OFF
-    } catch (e: Exception) {
-        false
+    // 전체 위치 서비스 활성화 상태 (API 28+부터는 LocationManager 사용 권장)
+    val locationServicesEnabled = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+        locationManager.isLocationEnabled
+    } else {
+        @Suppress("DEPRECATION")
+        try {
+            Settings.Secure.getInt(context.contentResolver, Settings.Secure.LOCATION_MODE) != Settings.Secure.LOCATION_MODE_OFF
+        } catch (e: Exception) {
+            false
+        }
     }
     
     return Triple(gpsEnabled, networkEnabled, locationServicesEnabled)

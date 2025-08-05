@@ -1,8 +1,8 @@
 package com.example.bogoargo.data.repository
 
-import com.example.bogoargo.data.model.AR3DObject
-import com.example.bogoargo.data.model.ModelFormat
-import com.example.bogoargo.data.model.PlacementType
+import com.example.bogoargo.domain.model.AR3DObject
+import com.example.bogoargo.domain.model.ModelFormat
+import com.example.bogoargo.domain.model.PlacementType
 
 /**
  * AR 3D 객체들을 관리하는 저장소 (하드코딩)

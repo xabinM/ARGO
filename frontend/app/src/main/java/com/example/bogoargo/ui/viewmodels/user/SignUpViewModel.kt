@@ -2,12 +2,13 @@ package com.example.bogoargo.ui.viewmodels.user
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bogoargo.data.dto.UserSignUpRequest
 import com.example.bogoargo.data.dto.response.MessageResponseDto
-import com.example.bogoargo.data.repository.UserRepository
+import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.domain.use_case.user.SignUpUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 data class SignUpUiState(
@@ -17,8 +18,9 @@ data class SignUpUiState(
     val signUpResponse: MessageResponseDto? = null
 )
 
+@HiltViewModel
 class SignUpViewModel @Inject constructor(
-    private val userRepository: UserRepository
+    private val signUpUseCase: SignUpUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SignUpUiState())
@@ -34,29 +36,24 @@ class SignUpViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
-            val request = UserSignUpRequest(
-                username = username,
-                password = password,
-                name = name,
-                role = role,
-                agreeTerms = agreeTerms
-            )
-            
-            userRepository.signUp(request).fold(
-                onSuccess = { signUpResponse ->
+            when (val result = signUpUseCase(username, password, name, role, agreeTerms)) {
+                is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isSuccess = true,
-                        signUpResponse = signUpResponse
-                    )
-                },
-                onFailure = { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = exception.message
+                        signUpResponse = result.data
                     )
                 }
-            )
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Already set loading state
+                }
+            }
         }
     }
 

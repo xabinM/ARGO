@@ -1,10 +1,10 @@
 package com.example.bogoargo.data.api
 
-import com.example.bogoargo.data.model.LoginRequest
-import com.example.bogoargo.data.model.LoginResponse
-import com.example.bogoargo.data.model.MissionSpotsResponse
-import com.example.bogoargo.data.model.RefreshTokenRequest
-import com.example.bogoargo.data.model.RefreshTokenResponse
+import com.example.bogoargo.domain.model.LoginRequest
+import com.example.bogoargo.domain.model.LoginResponse
+import com.example.bogoargo.domain.model.MissionSpotsResponse
+import com.example.bogoargo.domain.model.RefreshTokenRequest
+import com.example.bogoargo.domain.model.RefreshTokenResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET

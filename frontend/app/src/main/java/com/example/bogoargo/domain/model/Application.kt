@@ -1,4 +1,4 @@
-package com.example.bogoargo.data.model
+package com.example.bogoargo.domain.model
 
 import com.example.bogoargo.data.dto.response.UserDataDto
 import com.example.bogoargo.data.response.ClassDataDto

@@ -2,14 +2,16 @@ package com.example.bogoargo.ui.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bogoargo.data.model.MissionSpot
+import com.example.bogoargo.domain.model.MissionSpot
 import com.example.bogoargo.data.repository.MissionRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
+@HiltViewModel
 class MissionViewModel @Inject constructor(
     private val missionRepository: MissionRepository
 ) : ViewModel() {

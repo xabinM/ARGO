@@ -1,38 +1,32 @@
 package com.example.bogoargo.data.repository
 
 import android.content.Context
-import android.util.Base64
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.longPreferencesKey
-import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import com.example.bogoargo.data.api.ApiClient
-import com.example.bogoargo.data.dto.UserLoginRequest
-import com.example.bogoargo.data.dto.response.UserDataDto
-import com.example.bogoargo.data.dto.response.UserLoginResponse
-import com.example.bogoargo.data.mapper.toDomainModel
-import com.example.bogoargo.data.model.RefreshTokenRequest
-import com.example.bogoargo.data.model.TokenInfo
-import com.example.bogoargo.data.model.User
-import com.example.bogoargo.data.preferences.PreferencesManager
+import com.example.bogoargo.data.api.AuthApiService
+import com.example.bogoargo.domain.model.DataException
+import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.domain.model.RefreshTokenRequest
+import com.example.bogoargo.domain.model.TokenInfo
 import com.example.bogoargo.data.storage.TokenStorage
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
+import com.example.bogoargo.domain.repository.IAuthRepository
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.json.JSONObject
+import retrofit2.HttpException
+import java.io.IOException
+import javax.inject.Inject
+import javax.inject.Named
 
 private val Context.authDataStore: DataStore<Preferences> by preferencesDataStore(name = "auth_preferences")
 
-class AuthRepository(private val context: Context,
-                     //private val preferencesManager: PreferencesManager
-) {
+class AuthRepositoryImpl @Inject constructor(
+    @ApplicationContext private val context: Context,
+    @Named("basic") private val authApiService: AuthApiService,
+    private val tokenStorage: TokenStorage
+) : IAuthRepository {
     
-    private val tokenStorage = TokenStorage(context)
     private val refreshMutex = Mutex()
 
 
@@ -45,7 +39,7 @@ class AuthRepository(private val context: Context,
 //    }
 
     
-    fun getTokenInfo(): TokenInfo? {
+    override fun getTokenInfo(): TokenInfo? {
         val accessToken = tokenStorage.getAccessToken()
         val refreshToken = tokenStorage.getRefreshToken()
         
@@ -56,32 +50,33 @@ class AuthRepository(private val context: Context,
         }
     }
     
-    fun saveTokens(accessToken: String, refreshToken: String) {
+    override fun saveTokens(accessToken: String, refreshToken: String) {
         tokenStorage.saveTokens(accessToken, refreshToken)
     }
     
-    fun clearTokens() {
+    override fun clearTokens() {
         tokenStorage.clearTokens()
     }
     
-    fun getAccessToken(): String? {
+    override fun getAccessToken(): String? {
         return tokenStorage.getAccessToken()
     }
     
-    fun getRefreshToken(): String? {
+    override fun getRefreshToken(): String? {
         return tokenStorage.getRefreshToken()
     }
     
-    fun hasTokens(): Boolean {
+    override fun hasTokens(): Boolean {
         return tokenStorage.hasTokens()
     }
     
-    suspend fun refreshToken(): Boolean {
+    override suspend fun refreshToken(): DataResult<Boolean> {
         return refreshMutex.withLock {
-            val refreshToken = getRefreshToken() ?: return@withLock false
+            val refreshToken = getRefreshToken() 
+                ?: return@withLock DataResult.Error(DataException.AuthenticationError)
             
             try {
-                val response = ApiClient.authApiService.refreshToken(
+                val response = authApiService.refreshToken(
                     RefreshTokenRequest(refreshToken)
                 )
                 
@@ -89,16 +84,28 @@ class AuthRepository(private val context: Context,
                     val refreshResponse = response.body()
                     if (refreshResponse != null) {
                         saveTokens(refreshResponse.accessToken, refreshResponse.refreshToken)
-                        return@withLock true
+                        return@withLock DataResult.Success(true)
                     }
                 }
                 
-                // 갱신 실패 시 토큰 클리어
                 clearTokens()
-                return@withLock false
+                return@withLock DataResult.Error(DataException.AuthenticationError)
+            } catch (e: IOException) {
+                clearTokens()
+                return@withLock DataResult.Error(DataException.NetworkError)
+            } catch (e: HttpException) {
+                clearTokens()
+                return@withLock DataResult.Error(
+                    when (e.code()) {
+                        401 -> DataException.AuthenticationError
+                        403 -> DataException.UnauthorizedError
+                        404 -> DataException.NotFoundError
+                        else -> DataException.ServerError
+                    }
+                )
             } catch (e: Exception) {
                 clearTokens()
-                return@withLock false
+                return@withLock DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
             }
         }
     }

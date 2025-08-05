@@ -2,8 +2,8 @@ package com.example.bogoargo.util
 
 import android.content.Context
 import android.util.Log
-import com.example.bogoargo.data.model.AR3DObject
-import com.example.bogoargo.data.model.ModelFormat
+import com.example.bogoargo.domain.model.AR3DObject
+import com.example.bogoargo.domain.model.ModelFormat
 
 /**
  * 3D 모델 파일 형식 관련 유틸리티 함수들

@@ -3,7 +3,7 @@ package com.example.bogoargo.data.repository
 import android.content.Context
 import com.example.bogoargo.data.api.AuthApiService
 import com.example.bogoargo.data.cache.MissionCache
-import com.example.bogoargo.data.model.MissionSpot
+import com.example.bogoargo.domain.model.MissionSpot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext

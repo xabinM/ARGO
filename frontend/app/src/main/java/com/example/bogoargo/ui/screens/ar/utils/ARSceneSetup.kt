@@ -1,18 +1,14 @@
 package com.example.bogoargo.ui.screens.ar.utils
 
 import android.util.Log
-import com.google.ar.core.Anchor
 import com.google.ar.core.Plane
 import com.google.ar.core.Session
 import com.google.ar.core.TrackingState
 import io.github.sceneview.ar.ARSceneView
-import io.github.sceneview.ar.node.AnchorNode
 import io.github.sceneview.math.Position
 import io.github.sceneview.node.ModelNode
 import com.example.bogoargo.ui.screens.ar.model.ARDebugInfo
-import com.example.bogoargo.data.model.AR3DObject
-import com.example.bogoargo.data.model.ModelFormat
-import kotlin.random.Random
+import com.example.bogoargo.domain.model.AR3DObject
 
 fun setupARScene(
     arSceneView: ARSceneView,

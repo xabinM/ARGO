@@ -7,7 +7,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.ui.viewmodels.team.TeamCreateViewModel
@@ -20,7 +20,7 @@ import com.example.bogoargo.ui.theme.NatureTypography
 fun TeamCreateScreen(
     navController: NavController,
     classId: String = "",
-    viewModel: TeamCreateViewModel = viewModel()
+    viewModel: TeamCreateViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     

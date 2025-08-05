@@ -2,16 +2,16 @@ package com.example.bogoargo.ui.viewmodels.user
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bogoargo.data.dto.UserUpdateRequest
-import com.example.bogoargo.data.dto.UserWithdrawRequest
 import com.example.bogoargo.data.dto.response.UserUpdateResponse
 import com.example.bogoargo.data.dto.response.UserWithdrawResponse
-import com.example.bogoargo.data.model.User
-import com.example.bogoargo.data.repository.AuthRepository
-import com.example.bogoargo.data.repository.UserRepository
+import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.domain.model.User
+import com.example.bogoargo.domain.use_case.user.UpdateUserProfileUseCase
+import com.example.bogoargo.domain.use_case.user.WithdrawUserUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 data class ProfileUiState(
@@ -29,9 +29,10 @@ data class ProfileUiState(
     val user: User? = null
 )
 
+@HiltViewModel
 class ProfileViewModel @Inject constructor(
-    private val userRepository: UserRepository,
-    private val authRepository: AuthRepository
+    private val updateUserProfileUseCase: UpdateUserProfileUseCase,
+    private val withdrawUserUseCase: WithdrawUserUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProfileUiState())
@@ -45,26 +46,27 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             
-            val request = UserUpdateRequest(name = name, password = _uiState.value.password)
-            
-            userRepository.updateUserInfo(request).fold(
-                onSuccess = { updateResponse ->
+            when (val result = updateUserProfileUseCase(name, _uiState.value.password)) {
+                is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         updateSuccess = true,
                         isEditing = false,
                         name = name,
                         username = username,
-                        updateResponse = updateResponse
-                    )
-                },
-                onFailure = { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = exception.message
+                        updateResponse = result.data
                     )
                 }
-            )
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Already set loading state
+                }
+            }
         }
     }
 
@@ -72,106 +74,28 @@ class ProfileViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, error = null)
             
-            val request = UserWithdrawRequest(password = _uiState.value.password)
-            
-            userRepository.withdrawUser(request).fold(
-                onSuccess = { withdrawResponse ->
+            when (val result = withdrawUserUseCase(_uiState.value.password)) {
+                is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         withdrawSuccess = true,
-                        withdrawResponse = withdrawResponse
-                    )
-                },
-                onFailure = { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = exception.message
+                        withdrawResponse = result.data
                     )
                 }
-            )
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        error = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Already set loading state
+                }
+            }
         }
     }
 
-    fun updateUserInfo(name: String, password: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            
-            val request = UserUpdateRequest(name = name, password = password)
-            
-            userRepository.updateUserInfo(request).fold(
-                onSuccess = { updateResponse ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        updateSuccess = true,
-                        updateResponse = updateResponse
-                    )
-                },
-                onFailure = { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = exception.message
-                    )
-                }
-            )
-        }
-    }
 
-    fun withdrawUser(password: String) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
-            
-            val request = UserWithdrawRequest(password = password)
-            
-            userRepository.withdrawUser(request).fold(
-                onSuccess = { withdrawResponse ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        withdrawSuccess = true,
-                        withdrawResponse = withdrawResponse
-                    )
-                },
-                onFailure = { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        error = exception.message
-                    )
-                }
-            )
-        }
-    }
-/* //TODO: 프로픨 로드
-    fun loadProfile() {
-        viewModelScope.launch {
-            userRepository.getCurrentUser().fold(
-                onSuccess = { user: User? ->
-                    if (user != null) {
-                        _uiState.value = _uiState.value.copy(
-                            user = user,
-                            name = user.name,
-                            role = user.role.toString()
-                        )
-                    } else {
-                        // user가 null인 경우 (예: 저장된 사용자 정보 없음)
-                        _uiState.value = _uiState.value.copy(
-                            user = null,
-                            name = "",
-                            role = "",
-                            error = "사용자 정보를 로드할 수 없습니다. 로그인 상태를 확인해주세요."
-                        )
-                    }
-                },
-                onFailure = { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        user = null, // 에러 발생 시 사용자 정보 초기화
-                        name = "",
-                        role = "",
-                        error = exception.message
-                    )
-                }
-            )
-        }
-    }
-*/
     fun clearState() {
         _uiState.value = ProfileUiState()
     }

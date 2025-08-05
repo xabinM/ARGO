@@ -1,6 +1,4 @@
-package com.example.bogoargo.data.model
-
-import java.time.LocalDateTime
+package com.example.bogoargo.domain.model
 
 data class MissionSpot(
     val spotId: Long,

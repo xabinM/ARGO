@@ -14,7 +14,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.example.bogoargo.ui.screens.ar.model.ARDebugInfo
 import com.example.bogoargo.ui.screens.ar.utils.formatDistance
-import com.example.bogoargo.data.model.AR3DObject
+import com.example.bogoargo.domain.model.AR3DObject
 
 @Composable
 fun AROverlay(

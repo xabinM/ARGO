@@ -10,7 +10,7 @@ import io.github.sceneview.ar.node.AnchorNode
 import io.github.sceneview.math.Position
 import io.github.sceneview.node.ModelNode
 import com.example.bogoargo.ui.screens.ar.model.ARDebugInfo
-import com.example.bogoargo.data.model.AR3DObject
+import com.example.bogoargo.domain.model.AR3DObject
 import com.example.bogoargo.data.repository.AR3DObjectRepository
 
 // Geospatial API를 통한 Terrain Anchor 생성 시도

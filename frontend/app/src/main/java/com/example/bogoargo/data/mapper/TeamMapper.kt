@@ -1,7 +1,7 @@
 package com.example.bogoargo.data.mapper
 
 import com.example.bogoargo.data.dto.response.TeamDataDto
-import com.example.bogoargo.data.model.Team
+import com.example.bogoargo.domain.model.Team
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
