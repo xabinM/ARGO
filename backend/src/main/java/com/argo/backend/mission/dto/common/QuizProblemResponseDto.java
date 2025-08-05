@@ -1,4 +1,4 @@
-package com.argo.backend.mission.dto.problemsRequest;
+package com.argo.backend.mission.dto.common;
 
 import com.argo.backend.domain.ploblem.entity.QuizProblem;
 import lombok.Getter;

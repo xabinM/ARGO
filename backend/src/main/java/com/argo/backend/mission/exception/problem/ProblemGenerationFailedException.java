@@ -1,4 +1,4 @@
-package com.argo.backend.mission.exception;
+package com.argo.backend.mission.exception.problem;
 
 import com.argo.backend.global.enums.ResponseMessage;
 import com.argo.backend.global.exception.BusinessException;
