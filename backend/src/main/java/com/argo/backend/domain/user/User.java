@@ -1,20 +1,22 @@
 package com.argo.backend.domain.user;
 
 import com.argo.backend.domain.BaseTimeEntity;
+import com.argo.backend.domain.classroom.ClassApplication;
 import com.argo.backend.domain.team.Team;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
+@Inheritance(strategy = InheritanceType.JOINED)
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class User extends BaseTimeEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId;
@@ -22,7 +24,7 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
-    @Column(nullable = false, length = 255)
+    @Column(nullable = false)
     private String password;
 
     @Column(nullable = false, length = 100)
@@ -40,9 +42,34 @@ public class User extends BaseTimeEntity {
     @JoinColumn(name = "team_id")
     private Team team;
 
-    @Column(nullable = false, precision = 10, scale = 7)
-    private BigDecimal latitude;
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    private List<ClassApplication> applications = new ArrayList<>();
 
-    @Column(nullable = false, precision = 10, scale = 7)
-    private BigDecimal longitude;
+    public static User from(String username, String encodedPassword, String name, Role role) {
+        return new User(
+                username,
+                encodedPassword,
+                name,
+                role
+        );
+    }
+
+    protected User(String username, String password, String name, Role role) {
+        this.username = username;
+        this.password = password;
+        this.name = name;
+        this.role = role;
+    }
+
+    public boolean isPasswordMatching(PasswordEncoder encoder, String rawPassword) {
+        return encoder.matches(rawPassword, this.password);
+    }
+
+    public void updateStatusByWithdraw() {
+        this.status = UserStatus.INACTIVE;
+    }
+
+    public boolean checkStatus() {
+        return this.status == UserStatus.ACTIVE;
+    }
 }

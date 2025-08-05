@@ -14,13 +14,14 @@ import com.example.bogoargo.ui.theme.BogoArgoTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        enableEdgeToEdge() // 필요에 따라 유지하거나 제거하세요
         setContent {
             BogoArgoTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    // 모든 화면 탐색은 AppNavigation 컴포저블 안에서 관리합니다.
                     AppNavigation()
                 }
             }

@@ -4,16 +4,17 @@ import com.argo.backend.domain.BaseTimeEntity;
 import com.argo.backend.domain.user.ApplicationStatus;
 import com.argo.backend.domain.user.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
+
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "class_applications")
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class ClassApplication extends BaseTimeEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,6 +28,9 @@ public class ClassApplication extends BaseTimeEntity {
     @JoinColumn(name = "class_id", nullable = false)
     private ClassRoom classRoom;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private ApplicationStatus status = ApplicationStatus.PENDING;
+
+    private LocalDateTime processedAt;
 }
