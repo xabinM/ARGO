@@ -3,6 +3,7 @@ package com.argo.backend.domain.spot.entity;
 import com.argo.backend.domain.common.Coordinates;
 import com.argo.backend.domain.location.entity.Location;
 import com.argo.backend.domain.mission.entity.MissionSession;
+import com.argo.backend.domain.ploblem.entity.Problem;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -38,4 +39,7 @@ public class Spot {
 
     @OneToMany(mappedBy = "spot", fetch = FetchType.LAZY)
     private List<MissionSession> missions = new ArrayList<>();
+
+    @OneToMany(mappedBy = "spot", fetch = FetchType.LAZY)
+    private List<Problem> problems = new ArrayList<>();
 }

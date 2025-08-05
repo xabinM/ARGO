@@ -5,7 +5,7 @@ import com.argo.backend.domain.ploblem.entity.Problem;
 import com.argo.backend.domain.spot.entity.Spot;
 import com.argo.backend.domain.team.entity.Team;
 import com.argo.backend.domain.team.repository.TeamRepository;
-import com.argo.backend.mission.dto.missionCreate.MissionCreateDto;
+import com.argo.backend.mission.dto.common.ProblemResponseDto;
 import com.argo.backend.mission.exception.ProblemNotFoundException;
 import com.argo.backend.mission.exception.SpotNotFoundException;
 import com.argo.backend.mission.exception.TeamNotFoundException;
@@ -28,7 +28,7 @@ public class MissionService {
     private final ProblemRepository problemRepository;
 
     @Transactional
-    public MissionCreateDto createMission(Long teamId, Long spotId) {
+    public ProblemResponseDto createMission(Long teamId, Long spotId) {
         Spot spot = spotRepository.findById(spotId)
                 .orElseThrow(SpotNotFoundException::new);
 
@@ -45,7 +45,7 @@ public class MissionService {
         MissionSession missionSession = MissionSession.from(spot, team, problem);
         missionSessionRepository.save(missionSession);
 
-        return new MissionCreateDto(missionSession.getProblem());
+        return ProblemResponseDto.from(missionSession.getProblem());
     }
 
     private Problem findRandomProblem(List<Problem> problems) {
