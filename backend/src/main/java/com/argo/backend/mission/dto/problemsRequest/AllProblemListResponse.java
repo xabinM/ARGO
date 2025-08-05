@@ -7,7 +7,7 @@ import java.util.List;
 
 @Getter
 @AllArgsConstructor
-public class ProblemRequestResponse {
+public class AllProblemListResponse {
 
     private List<ProblemResponseDto> problems;
 }

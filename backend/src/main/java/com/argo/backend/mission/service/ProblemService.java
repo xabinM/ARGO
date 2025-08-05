@@ -1,6 +1,7 @@
 package com.argo.backend.mission.service;
 
 import com.argo.backend.domain.ploblem.Problem;
+import com.argo.backend.domain.ploblem.ProblemType;
 import com.argo.backend.domain.ploblem.QuizProblem;
 import com.argo.backend.domain.spot.Spot;
 import com.argo.backend.mission.api.PythonApiClient;
@@ -8,14 +9,19 @@ import com.argo.backend.mission.dto.problemRegister.ProblemRegisterRequest;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestFromCli;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateResponse;
 import com.argo.backend.mission.dto.problemsRequest.ProblemResponseDto;
+import com.argo.backend.mission.dto.problemsRequest.QuizProblemResponseDto;
+import com.argo.backend.mission.dto.problemsRequest.SelfieProblemResponseDto;
 import com.argo.backend.mission.exception.SpotNotFoundException;
 import com.argo.backend.mission.repository.ProblemRepository;
+import com.argo.backend.mission.repository.QuizProblemRepository;
+import com.argo.backend.mission.repository.SelfieProblemRepository;
 import com.argo.backend.mission.repository.SpotRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +32,8 @@ public class ProblemService {
     private final ProblemRepository problemRepository;
     private final PythonApiClient pythonApiClient;
     private final SpotRepository spotRepository;
+    private final QuizProblemRepository quizProblemRepository;
+    private final SelfieProblemRepository selfieProblemRepository;
 
     @Transactional
     public void registerQuizProblem(Long spotId, ProblemRegisterRequest request) {
@@ -55,5 +63,17 @@ public class ProblemService {
 
 
         return ProblemResponseDto.from(problems);
+    }
+
+    public List<ProblemResponseDto> findProblemsBySpotIdAndType(Long spotId, ProblemType type) {
+        return switch (type) {
+            case QUIZ -> quizProblemRepository.findBySpotId(spotId).stream()
+                    .map(QuizProblemResponseDto::from)
+                    .collect(Collectors.toList());
+
+            case SELFIE -> selfieProblemRepository.findBySpotId(spotId).stream()
+                    .map(SelfieProblemResponseDto::from)
+                    .collect(Collectors.toList());
+        };
     }
 }

@@ -1,12 +1,14 @@
 package com.argo.backend.mission.controller;
 
+import com.argo.backend.domain.ploblem.ProblemType;
 import com.argo.backend.global.enums.ResponseMessage;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterRequest;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestFromCli;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateResponse;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterResponse;
+import com.argo.backend.mission.dto.problemsRequest.ProblemListPerTypeResponse;
 import com.argo.backend.mission.dto.problemsRequest.ProblemResponseDto;
-import com.argo.backend.mission.dto.problemsRequest.ProblemRequestResponse;
+import com.argo.backend.mission.dto.problemsRequest.AllProblemListResponse;
 import com.argo.backend.mission.service.ProblemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -44,6 +46,15 @@ public class ProblemController {
 
         List<ProblemResponseDto> dto = problemService.getProblemsBySpotId(spotId);
 
-        return ResponseEntity.ok(new ProblemRequestResponse(dto));
+        return ResponseEntity.ok(new AllProblemListResponse(dto));
+    }
+
+    @GetMapping("/spot/{spotId}/perType")
+    public ResponseEntity<ProblemListPerTypeResponse> getProblemsBySpotAndType(
+            @PathVariable Long spotId,
+            @RequestParam ProblemType type) {
+
+        List<ProblemResponseDto> dto = problemService.findProblemsBySpotIdAndType(spotId, type);
+        return ResponseEntity.ok(new ProblemListPerTypeResponse(dto));
     }
 }
