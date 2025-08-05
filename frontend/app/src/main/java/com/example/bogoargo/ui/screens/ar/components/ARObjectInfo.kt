@@ -20,9 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.bogoargo.data.model.AR3DObject
+import com.example.bogoargo.domain.model.AR3DObject
 
 /**
  * AR 화면에서 현재 표시 중인 객체의 정보를 보여주는 컴포넌트
@@ -145,7 +144,7 @@ fun ARObjectInfo(
                 
                 // 설명이 있는 경우 추가 표시
                 obj.description?.let { desc ->
-                    Divider(
+                    HorizontalDivider(
                         color = Color.White.copy(alpha = 0.2f),
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )

@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.ui.viewmodels.SettingsViewModel
@@ -19,7 +19,7 @@ import com.example.bogoargo.ui.viewmodels.SettingsViewModel
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    viewModel: SettingsViewModel = viewModel()
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
@@ -65,8 +65,8 @@ fun SettingsScreen(
                 ) {
                     Text("Enable Notifications")
                     Switch(
-                        checked = uiState.notificationsEnabled,
-                        onCheckedChange = { viewModel.toggleNotifications(it) }
+                        checked = uiState.settings.notificationsEnabled,
+                        onCheckedChange = { viewModel.updateNotifications(it) }
                     )
                 }
             }
@@ -85,8 +85,8 @@ fun SettingsScreen(
                 ) {
                     Text("Dark Mode")
                     Switch(
-                        checked = uiState.darkModeEnabled,
-                        onCheckedChange = { viewModel.toggleDarkMode(it) }
+                        checked = uiState.settings.darkModeEnabled,
+                        onCheckedChange = { viewModel.updateDarkMode(it) }
                     )
                 }
             }
@@ -127,19 +127,19 @@ fun SettingsScreen(
     
     if (uiState.showLogoutDialog) {
         AlertDialog(
-            onDismissRequest = { viewModel.dismissLogoutDialog() },
+            onDismissRequest = { viewModel.hideLogoutDialog() },
             title = { Text("Logout") },
             text = { Text("Are you sure you want to logout?") },
             confirmButton = {
                 TextButton(
-                    onClick = { viewModel.logout() }
+                    onClick = { viewModel.clearAllSettings() }
                 ) {
                     Text("Logout")
                 }
             },
             dismissButton = {
                 TextButton(
-                    onClick = { viewModel.dismissLogoutDialog() }
+                    onClick = { viewModel.hideLogoutDialog() }
                 ) {
                     Text("Cancel")
                 }

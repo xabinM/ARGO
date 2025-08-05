@@ -5,97 +5,163 @@ import com.example.bogoargo.data.dto.UserSignUpRequest
 import com.example.bogoargo.data.dto.UserLoginRequest
 import com.example.bogoargo.data.dto.UserUpdateRequest
 import com.example.bogoargo.data.dto.UserWithdrawRequest
-import com.example.bogoargo.data.dto.response.UserLoginResponse
 import com.example.bogoargo.data.dto.response.UserUpdateResponse
 import com.example.bogoargo.data.dto.response.UserWithdrawResponse
 import com.example.bogoargo.data.dto.response.MessageResponseDto
 import com.example.bogoargo.data.mapper.toDomainModel
-import com.example.bogoargo.data.model.User
+import com.example.bogoargo.data.storage.TokenStorage
+import com.example.bogoargo.domain.model.DataException
+import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.domain.model.User
+import com.example.bogoargo.domain.repository.IUserRepository
+import retrofit2.HttpException
+import java.io.IOException
 import javax.inject.Inject
-import javax.inject.Singleton
-@Singleton
-class UserRepository @Inject constructor(
+
+class UserRepositoryImpl @Inject constructor(
     private val userApiService: UserApiService,
-    private val authRepository: AuthRepository
-) {
+    private val tokenStorage: TokenStorage
+) : IUserRepository {
     
-    // 회원가입
-    suspend fun signUp(userSignUpRequest: UserSignUpRequest): Result<MessageResponseDto?> {
+    override suspend fun signUp(userSignUpRequest: UserSignUpRequest): DataResult<MessageResponseDto> {
         return try {
             val response = userApiService.signup(userSignUpRequest)
             if (response.isSuccessful) {
                 val messageResponse = response.body()
                 if (messageResponse?.success == true) {
-                    Result.success(messageResponse)
+                    DataResult.Success(messageResponse)
                 } else {
-                    Result.failure(Exception(messageResponse?.message ?: "회원가입에 실패했습니다."))
+                    DataResult.Error(DataException.ServerError)
                 }
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()}"))
+                DataResult.Error(DataException.ServerError)
             }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
         } catch (e: Exception) {
-            Result.failure(e)
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
         }
     }
 
-    // 로그인
-    suspend fun login(userLoginRequest: UserLoginRequest): Result<User?> {
+    override suspend fun login(request: UserLoginRequest): DataResult<User> {
         return try {
-            val response = userApiService.login(userLoginRequest)
+            val response = userApiService.login(request)
             if (response.isSuccessful) {
                 val loginResponse = response.body()
-                val jwtToken = response.headers()["Authorization"]?.replace("Bearer ", "")
-
-                if (loginResponse?.success == true && loginResponse.data != null) {
-                    //authRepository.saveAuthInfo(jwtToken, loginResponse) TODO: auth repo save기능
-                    Result.success(loginResponse.data.toDomainModel())
+                val accessToken = response.headers()["Authorization"]?.replace("Bearer ", "")
+                val refreshToken = response.headers()["Refresh-Token"] // 일반적인 헤더명
+                
+                if (loginResponse?.success == true && loginResponse.data != null && 
+                    accessToken != null && refreshToken != null) {
+                    
+                    // 토큰 저장
+                    tokenStorage.saveTokens(accessToken, refreshToken)
+                    
+                    DataResult.Success(loginResponse.data.toDomainModel())
                 } else {
-                    Result.failure(Exception(loginResponse?.message ?: "로그인에 실패했습니다."))
+                    DataResult.Error(DataException.AuthenticationError)
                 }
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()}"))
+                DataResult.Error(DataException.ServerError)
             }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
         } catch (e: Exception) {
-            Result.failure(e)
-
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
         }
     }
 
-    // 회원 정보 수정
-    suspend fun updateUserInfo(userUpdateRequest: UserUpdateRequest): Result<UserUpdateResponse?> {
+    override suspend fun getUserProfile(): DataResult<User> {
+        return try {
+            // TODO: API 호출 구현
+            DataResult.Error(DataException.UnknownError("Not implemented"))
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun updateUserProfile(user: User): DataResult<User> {
+        return try {
+            // TODO: API 호출 구현
+            DataResult.Error(DataException.UnknownError("Not implemented"))
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun updateUserInfo(userUpdateRequest: UserUpdateRequest): DataResult<UserUpdateResponse> {
         return try {
             val response = userApiService.updateUserInfo(userUpdateRequest)
             if (response.isSuccessful) {
                 val updateResponse = response.body()
                 if (updateResponse?.success == true) {
-                    Result.success(updateResponse)
+                    DataResult.Success(updateResponse)
                 } else {
-                    Result.failure(Exception(updateResponse?.message ?: "회원 정보 수정에 실패했습니다."))
+                    DataResult.Error(DataException.ServerError)
                 }
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()}"))
+                DataResult.Error(DataException.ServerError)
             }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
         } catch (e: Exception) {
-            Result.failure(e)
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
         }
     }
     
-    // 회원 탈퇴
-    suspend fun withdrawUser(userWithdrawRequest: UserWithdrawRequest): Result<UserWithdrawResponse?> {
+    override suspend fun withdrawUser(userWithdrawRequest: UserWithdrawRequest): DataResult<UserWithdrawResponse> {
         return try {
             val response = userApiService.withrawUser(userWithdrawRequest)
             if (response.isSuccessful) {
                 val withdrawResponse = response.body()
                 if (withdrawResponse?.success == true) {
-                    Result.success(withdrawResponse)
+                    DataResult.Success(withdrawResponse)
                 } else {
-                    Result.failure(Exception(withdrawResponse?.message ?: "회원 탈퇴에 실패했습니다."))
+                    DataResult.Error(DataException.ServerError)
                 }
             } else {
-                Result.failure(Exception("서버 오류: ${response.code()}"))
+                DataResult.Error(DataException.ServerError)
             }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
         } catch (e: Exception) {
-            Result.failure(e)
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
         }
     }
 }

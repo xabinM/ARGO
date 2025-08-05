@@ -11,7 +11,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.ui.viewmodels.classRoom.ClassDetailViewModel
@@ -26,7 +26,7 @@ import com.example.bogoargo.ui.theme.NatureElevation
 fun ClassDetailScreen(
     navController: NavController,
     classId: String,
-    viewModel: ClassDetailViewModel = viewModel()
+    viewModel: ClassDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     

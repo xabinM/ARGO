@@ -1,8 +1,7 @@
 package com.example.bogoargo.ui.screens.ar.utils
 
 import android.util.Log
-import com.example.bogoargo.data.model.AR3DObject
-import com.example.bogoargo.data.model.PlacementType
+import com.example.bogoargo.domain.model.AR3DObject
 import com.example.bogoargo.data.repository.AR3DObjectRepository
 
 /**

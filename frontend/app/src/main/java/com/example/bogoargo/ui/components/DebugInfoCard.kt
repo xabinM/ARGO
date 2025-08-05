@@ -48,7 +48,7 @@ fun DebugInfoCard(
                 color = MaterialTheme.colorScheme.primary
             )
             
-            Divider()
+            HorizontalDivider()
             
             // 미션 정보
             Row(
@@ -89,7 +89,7 @@ fun DebugInfoCard(
                 }
             }
             
-            Divider()
+            HorizontalDivider()
             
             // 권한 정보
             Row(
@@ -163,7 +163,7 @@ fun DebugInfoCard(
                 }
             }
             
-            Divider()
+            HorizontalDivider()
             
             // 앵커 모드
             Row(
@@ -195,7 +195,7 @@ fun DebugInfoCard(
             
             // Geospatial 오류
             geospatialError?.let { error ->
-                Divider()
+                HorizontalDivider()
                 Text(
                     text = "⚠️ $error",
                     fontSize = 11.sp,
@@ -203,7 +203,7 @@ fun DebugInfoCard(
                 )
             }
             
-            Divider()
+            HorizontalDivider()
             
             // 미션 상태
             Text(

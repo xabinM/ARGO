@@ -28,7 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.bogoargo.ui.viewmodels.classRoom.ClassCreateViewModel
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
@@ -40,7 +40,7 @@ import com.example.bogoargo.ui.theme.NatureTypography
 @Composable
 fun ClassCreateScreen(
     navController: NavController,
-    viewModel: ClassCreateViewModel = viewModel()
+    viewModel: ClassCreateViewModel = hiltViewModel()
 ) {
     var className by remember { mutableStateOf("") }
     var maxStudents by remember { mutableStateOf("") }

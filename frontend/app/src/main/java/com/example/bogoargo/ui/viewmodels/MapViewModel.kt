@@ -3,16 +3,19 @@ package com.example.bogoargo.ui.viewmodels
 import android.location.Location
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bogoargo.data.model.MissionSpot
-import com.example.bogoargo.data.repository.MissionRepository
+import com.example.bogoargo.domain.model.MissionSpot
+import com.example.bogoargo.data.repository.MissionRepositoryImpl
 import com.example.bogoargo.util.LocationUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
-class MapViewModel(
-    private val missionRepository: MissionRepository
+@HiltViewModel
+class MapViewModel @Inject constructor(
+    private val missionRepository: MissionRepositoryImpl
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MapUiState())

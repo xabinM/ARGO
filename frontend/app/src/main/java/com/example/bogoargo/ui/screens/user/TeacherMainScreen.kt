@@ -3,25 +3,18 @@ package com.example.bogoargo.ui.screens.user
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.bogoargo.data.model.UserRole
 import com.example.bogoargo.ui.viewmodels.user.TeacherMainViewModel
-import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
-import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
-import com.example.bogoargo.ui.theme.NatureElevation
+
 // R.drawable.profile_placeholder와 같은 리소스 ID를 사용하려면
 // res/drawable 폴더에 이미지를 추가해야 합니다.
 // 예시를 위해 임시로 안드로이드 아이콘을 사용합니다. 실제 앱에서는 자신의 이미지를 사용하세요.
@@ -31,7 +24,7 @@ import com.example.bogoargo.ui.theme.NatureElevation
 @Composable
 fun TeacherMainScreen(
     navController: NavController,
-    viewModel: TeacherMainViewModel = viewModel()
+    viewModel: TeacherMainViewModel = hiltViewModel()
 ) {
     /* // TODO: 교사 메인 페이지
     val user by viewModel.user.collectAsState()

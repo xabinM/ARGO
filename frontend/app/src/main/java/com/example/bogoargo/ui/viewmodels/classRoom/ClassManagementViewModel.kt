@@ -2,14 +2,17 @@ package com.example.bogoargo.ui.viewmodels.classRoom
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bogoargo.data.dto.response.MessageResponseDto
-import com.example.bogoargo.data.model.Class
-import com.example.bogoargo.data.repository.AuthRepository
-import com.example.bogoargo.data.repository.ClassRepository
-import com.example.bogoargo.data.response.applyClassResponse
+import com.example.bogoargo.domain.model.Class
+import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.domain.use_case.classroom.ApplyClassUseCase
+import com.example.bogoargo.domain.use_case.classroom.DeleteClassUseCase
+import com.example.bogoargo.domain.use_case.classroom.GetStudentClassListUseCase
+import com.example.bogoargo.domain.use_case.classroom.GetTeacherClassListUseCase
+import com.example.bogoargo.domain.use_case.classroom.LeaveClassUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 data class ClassManagementUiState(
@@ -19,13 +22,16 @@ data class ClassManagementUiState(
     val errorMessage: String? = null,
     val deleteSuccess: Boolean = false,
     val applySuccess: Boolean = false,
-    val applyResponse: applyClassResponse? = null,
     val leaveSuccess: Boolean = false
 )
 
+@HiltViewModel
 class ClassManagementViewModel @Inject constructor(
-    private val classRepository: ClassRepository,
-    private val authRepository: AuthRepository
+    private val getTeacherClassListUseCase: GetTeacherClassListUseCase,
+    private val getStudentClassListUseCase: GetStudentClassListUseCase,
+    private val deleteClassUseCase: DeleteClassUseCase,
+    private val applyClassUseCase: ApplyClassUseCase,
+    private val leaveClassUseCase: LeaveClassUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ClassManagementUiState())
@@ -35,20 +41,23 @@ class ClassManagementViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
-            classRepository.getTeacherClassList(page, size, status).fold(
-                onSuccess = { classes ->
+            when (val result = getTeacherClassListUseCase(page, size, status)) {
+                is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        teacherClasses = classes
-                    )
-                },
-                onFailure = { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = exception.message
+                        teacherClasses = result.data
                     )
                 }
-            )
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Handle loading state if needed
+                }
+            }
         }
     }
 
@@ -56,20 +65,23 @@ class ClassManagementViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
-            classRepository.getStudentClassList(page, size, status).fold(
-                onSuccess = { classes ->
+            when (val result = getStudentClassListUseCase(page, size, status)) {
+                is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        studentClasses = classes
-                    )
-                },
-                onFailure = { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = exception.message
+                        studentClasses = result.data
                     )
                 }
-            )
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Handle loading state if needed
+                }
+            }
         }
     }
 
@@ -77,21 +89,24 @@ class ClassManagementViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
-            classRepository.deleteClass(classId).fold(
-                onSuccess = { _ ->
+            when (val result = deleteClassUseCase(classId)) {
+                is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         deleteSuccess = true
                     )
                     loadTeacherClasses()
-                },
-                onFailure = { exception ->
+                }
+                is DataResult.Error -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = exception.message
+                        errorMessage = result.exception.message
                     )
                 }
-            )
+                is DataResult.Loading -> {
+                    // Handle loading state if needed
+                }
+            }
         }
     }
 
@@ -99,21 +114,23 @@ class ClassManagementViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
-            classRepository.applyClass(inviteCode).fold(
-                onSuccess = { applyResponse ->
+            when (val result = applyClassUseCase(inviteCode)) {
+                is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        applySuccess = true,
-                        applyResponse = applyResponse
-                    )
-                },
-                onFailure = { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = exception.message
+                        applySuccess = true
                     )
                 }
-            )
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Handle loading state if needed
+                }
+            }
         }
     }
 
@@ -121,21 +138,24 @@ class ClassManagementViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
-            classRepository.leaveClass(classId).fold(
-                onSuccess = { _ ->
+            when (val result = leaveClassUseCase(classId)) {
+                is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         leaveSuccess = true
                     )
                     loadStudentClasses()
-                },
-                onFailure = { exception ->
+                }
+                is DataResult.Error -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = exception.message
+                        errorMessage = result.exception.message
                     )
                 }
-            )
+                is DataResult.Loading -> {
+                    // Handle loading state if needed
+                }
+            }
         }
     }
 
@@ -147,8 +167,7 @@ class ClassManagementViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             deleteSuccess = false,
             applySuccess = false,
-            leaveSuccess = false,
-            applyResponse = null
+            leaveSuccess = false
         )
     }
 }

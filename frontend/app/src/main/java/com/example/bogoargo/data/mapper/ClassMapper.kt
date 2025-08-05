@@ -1,8 +1,7 @@
 package com.example.bogoargo.data.mapper
 
 import com.example.bogoargo.data.response.ClassDataDto
-import com.example.bogoargo.data.model.Class
-import com.example.bogoargo.data.response.ClassLeaveDataDto
+import com.example.bogoargo.domain.model.Class
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 

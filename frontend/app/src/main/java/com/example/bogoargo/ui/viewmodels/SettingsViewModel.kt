@@ -1,25 +1,32 @@
 package com.example.bogoargo.ui.viewmodels
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bogoargo.data.repository.SettingsRepository
+import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.domain.model.Settings
+import com.example.bogoargo.domain.use_case.settings.GetSettingsUseCase
+import com.example.bogoargo.domain.use_case.settings.UpdateSettingsUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 
 data class SettingsUiState(
     val isLoading: Boolean = false,
-    val notificationsEnabled: Boolean = true,
-    val darkModeEnabled: Boolean = false,
-    val language: String = "English",
+    val settings: Settings = Settings(),
     val version: String = "1.0.0",
-    val showLogoutDialog: Boolean = false
+    val showLogoutDialog: Boolean = false,
+    val errorMessage: String? = null,
+    val updateSuccess: Boolean = false
 )
 
-class SettingsViewModel(application: Application) : AndroidViewModel(application) {
-    private val settingsRepository = SettingsRepository(application)
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
+    private val getSettingsUseCase: GetSettingsUseCase,
+    private val updateSettingsUseCase: UpdateSettingsUseCase
+) : ViewModel() {
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
@@ -29,34 +36,108 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private fun observeSettings() {
         viewModelScope.launch {
-            settingsRepository.settingsFlow.collect { settings ->
+            getSettingsUseCase().collect { settings ->
                 _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    notificationsEnabled = settings.notificationsEnabled,
-                    darkModeEnabled = settings.darkModeEnabled,
-                    language = settings.language
+                    settings = settings,
+                    errorMessage = null
                 )
             }
         }
     }
 
-    fun toggleNotifications(enabled: Boolean) {
+    fun updateNotifications(enabled: Boolean) {
         viewModelScope.launch {
-            settingsRepository.updateNotificationsSetting(enabled)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            
+            when (val result = updateSettingsUseCase.updateNotificationsEnabled(enabled)) {
+                is DataResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        updateSuccess = true
+                    )
+                }
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Loading state already set
+                }
+            }
         }
     }
 
-    fun toggleDarkMode(enabled: Boolean) {
+    fun updateDarkMode(enabled: Boolean) {
         viewModelScope.launch {
-            settingsRepository.updateDarkModeSetting(enabled)
-            // TODO: Apply theme change to the app
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            
+            when (val result = updateSettingsUseCase.updateDarkModeEnabled(enabled)) {
+                is DataResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        updateSuccess = true
+                    )
+                }
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Loading state already set
+                }
+            }
         }
     }
 
-    fun changeLanguage(language: String) {
+    fun updateLanguage(language: String) {
         viewModelScope.launch {
-            settingsRepository.updateLanguageSetting(language)
-            // TODO: Apply language change to the app
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            
+            when (val result = updateSettingsUseCase.updateLanguage(language)) {
+                is DataResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        updateSuccess = true
+                    )
+                }
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Loading state already set
+                }
+            }
+        }
+    }
+
+    fun clearAllSettings() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            
+            when (val result = updateSettingsUseCase.clearAllSettings()) {
+                is DataResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        updateSuccess = true
+                    )
+                }
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Loading state already set
+                }
+            }
         }
     }
 
@@ -64,16 +145,15 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
         _uiState.value = _uiState.value.copy(showLogoutDialog = true)
     }
 
-    fun dismissLogoutDialog() {
+    fun hideLogoutDialog() {
         _uiState.value = _uiState.value.copy(showLogoutDialog = false)
     }
 
-    fun logout() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(showLogoutDialog = false)
-            // Clear settings on logout
-            settingsRepository.clearSettings()
-            // TODO: Clear user data and navigate to login
-        }
+    fun clearError() {
+        _uiState.value = _uiState.value.copy(errorMessage = null)
+    }
+
+    fun clearUpdateSuccess() {
+        _uiState.value = _uiState.value.copy(updateSuccess = false)
     }
 }

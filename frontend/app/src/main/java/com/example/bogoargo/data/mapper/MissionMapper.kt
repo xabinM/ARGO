@@ -1,10 +1,9 @@
 package com.example.bogoargo.data.mapper
 
 import com.example.bogoargo.data.dto.response.*
-import com.example.bogoargo.data.model.Mission
-import com.example.bogoargo.data.model.MissionType
+import com.example.bogoargo.domain.model.Mission
+import com.example.bogoargo.domain.model.MissionType
 import java.time.LocalDateTime
-import java.time.format.DateTimeParseException
 
 // MissionDataDto를 Mission Model로 변환하는 확장 함수
 fun MissionDataDto.toMissionModel(): Mission {
