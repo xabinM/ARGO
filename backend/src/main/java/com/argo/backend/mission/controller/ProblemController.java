@@ -5,12 +5,16 @@ import com.argo.backend.mission.dto.problemRegister.ProblemRegisterRequest;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestFromCli;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateResponse;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterResponse;
+import com.argo.backend.mission.dto.problemsRequest.ProblemResponseDto;
+import com.argo.backend.mission.dto.problemsRequest.ProblemRequestResponse;
 import com.argo.backend.mission.service.ProblemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 
 @RestController
@@ -33,5 +37,13 @@ public class ProblemController {
        ProblemGenerateResponse response = problemService.generateProblem(request);
 
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/spot/{spotId}")
+    public ResponseEntity<?> getProblemsBySpotId(@PathVariable Long spotId) {
+
+        List<ProblemResponseDto> dto = problemService.getProblemsBySpotId(spotId);
+
+        return ResponseEntity.ok(new ProblemRequestResponse(dto));
     }
 }

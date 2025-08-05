@@ -1,7 +1,6 @@
 package com.argo.backend.domain.ploblem;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -10,7 +9,6 @@ import lombok.Setter;
 @DiscriminatorValue("SELFIE")
 @Getter
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
 @PrimaryKeyJoinColumn(name = "id")
 public class SelfieProblem extends Problem{

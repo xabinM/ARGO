@@ -10,4 +10,6 @@ public interface ProblemRepository extends JpaRepository<Problem, Long> {
 
     @Query("SELECT p FROM Problem p ORDER BY function('RAND')")
     List<Problem> findRandomProblems();
+
+    List<Problem> findAllBySpotId(Long spotId);
 }

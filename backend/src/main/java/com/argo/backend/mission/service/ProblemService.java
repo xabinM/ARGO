@@ -1,17 +1,21 @@
 package com.argo.backend.mission.service;
 
+import com.argo.backend.domain.ploblem.Problem;
 import com.argo.backend.domain.ploblem.QuizProblem;
 import com.argo.backend.domain.spot.Spot;
 import com.argo.backend.mission.api.PythonApiClient;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterRequest;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestFromCli;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateResponse;
+import com.argo.backend.mission.dto.problemsRequest.ProblemResponseDto;
 import com.argo.backend.mission.exception.SpotNotFoundException;
 import com.argo.backend.mission.repository.ProblemRepository;
 import com.argo.backend.mission.repository.SpotRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -43,5 +47,13 @@ public class ProblemService {
                 .orElseThrow(SpotNotFoundException::new);
 
         return pythonApiClient.requestProblem(spot.getName(), request.getProblemCnt());
+    }
+
+    public List<ProblemResponseDto> getProblemsBySpotId(Long spotId) {
+
+        List<Problem> problems = problemRepository.findAllBySpotId(spotId);
+
+
+        return ProblemResponseDto.from(problems);
     }
 }
