@@ -2,9 +2,9 @@ package com.argo.backend.mission.api;
 
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateResponse;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestToAI;
-import com.argo.backend.mission.exception.ProblemCountMismatchException;
-import com.argo.backend.mission.exception.ProblemGenerationFailedException;
-import com.argo.backend.mission.exception.PythonServerNoResponseException;
+import com.argo.backend.mission.exception.problem.ProblemCountMismatchException;
+import com.argo.backend.mission.exception.problem.ProblemGenerationFailedException;
+import com.argo.backend.mission.exception.problem.PythonServerNoResponseException;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;

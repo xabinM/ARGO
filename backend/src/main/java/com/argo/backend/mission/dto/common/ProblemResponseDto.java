@@ -3,6 +3,7 @@ package com.argo.backend.mission.dto.common;
 import com.argo.backend.domain.ploblem.entity.Problem;
 import com.argo.backend.domain.ploblem.entity.QuizProblem;
 import com.argo.backend.domain.ploblem.entity.SelfieProblem;
+import com.argo.backend.mission.exception.problem.ProblemTypeNotExist;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -28,7 +29,7 @@ public abstract class ProblemResponseDto {
         } else if (problem instanceof SelfieProblem) {
             return SelfieProblemResponseDto.from((SelfieProblem) problem);
         } else {
-            throw new IllegalArgumentException("지원하지 않는 문제 유형입니다.");
+            throw new ProblemTypeNotExist();
         }
     }
 }

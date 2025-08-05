@@ -32,6 +32,8 @@ public enum ResponseMessage {
     // problem
     SUCCESS_REGISTER_PROBLEM("문제가 성공적으로 등록되었습니다."),
 
+    PROBLEM_TYPE_NOT_EXIST("문제 타입이 존재하지 않습니다."),
+
     // api
     PYTHON_SERVER_NO_RESPONSE("Python 서버에서 응답이 없습니다."),
     PROBLEM_GENERATION_FAILED("문제가 생성되지 않았습니다."),
