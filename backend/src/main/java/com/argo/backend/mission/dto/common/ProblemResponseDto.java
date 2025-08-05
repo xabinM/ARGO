@@ -1,4 +1,4 @@
-package com.argo.backend.mission.dto.problemsRequest;
+package com.argo.backend.mission.dto.common;
 
 import com.argo.backend.domain.ploblem.entity.Problem;
 import com.argo.backend.domain.ploblem.entity.QuizProblem;
@@ -22,7 +22,7 @@ public abstract class ProblemResponseDto {
                 .collect(Collectors.toList());
     }
 
-    private static ProblemResponseDto from(Problem problem) {
+    public static ProblemResponseDto from(Problem problem) {
         if (problem instanceof QuizProblem) {
             return QuizProblemResponseDto.from((QuizProblem) problem);
         } else if (problem instanceof SelfieProblem) {
