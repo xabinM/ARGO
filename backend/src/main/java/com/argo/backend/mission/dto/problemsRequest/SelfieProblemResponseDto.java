@@ -1,6 +1,6 @@
 package com.argo.backend.mission.dto.problemsRequest;
 
-import com.argo.backend.domain.ploblem.SelfieProblem;
+import com.argo.backend.domain.ploblem.entity.SelfieProblem;
 import lombok.Getter;
 
 @Getter

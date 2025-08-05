@@ -1,6 +1,6 @@
 package com.argo.backend.organization.dto.applicationprocess;
 
-import com.argo.backend.domain.classroom.ClassApplication;
+import com.argo.backend.domain.classroom.entity.ClassApplication;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDateTime;

@@ -1,8 +1,8 @@
 package com.argo.backend.mission.dto.problemsRequest;
 
-import com.argo.backend.domain.ploblem.Problem;
-import com.argo.backend.domain.ploblem.QuizProblem;
-import com.argo.backend.domain.ploblem.SelfieProblem;
+import com.argo.backend.domain.ploblem.entity.Problem;
+import com.argo.backend.domain.ploblem.entity.QuizProblem;
+import com.argo.backend.domain.ploblem.entity.SelfieProblem;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

@@ -1,7 +1,7 @@
 package com.argo.backend.organization.dto.teamdelete;
 
-import com.argo.backend.domain.classroom.ClassRoom;
-import com.argo.backend.domain.team.Team;
+import com.argo.backend.domain.classroom.entity.ClassRoom;
+import com.argo.backend.domain.team.entity.Team;
 import lombok.Getter;
 
 import java.time.LocalDateTime;

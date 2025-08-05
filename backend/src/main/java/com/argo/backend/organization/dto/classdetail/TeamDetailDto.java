@@ -1,6 +1,6 @@
 package com.argo.backend.organization.dto.classdetail;
 
-import com.argo.backend.domain.team.Team;
+import com.argo.backend.domain.team.entity.Team;
 import lombok.Getter;
 
 import java.util.List;
