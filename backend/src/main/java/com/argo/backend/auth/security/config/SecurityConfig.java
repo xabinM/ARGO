@@ -1,5 +1,6 @@
 package com.argo.backend.auth.security.config;
 
+import com.argo.backend.auth.security.CustomAccessDeniedHandler;
 import com.argo.backend.auth.security.JwtAuthenticationEntryPoint;
 import com.argo.backend.auth.security.jwt.JwtAuthenticationFilter;
 import com.argo.backend.auth.security.jwt.JwtTokenProvider;
@@ -36,8 +37,11 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/signup", "/api/users/login", "/api/users/reissue").permitAll()
                         .anyRequest().authenticated()
                 )
-
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, entryPoint), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, entryPoint), UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(exceptionHandling -> exceptionHandling
+                        .accessDeniedHandler(new CustomAccessDeniedHandler())
+                );
+        ;
 
         return http.build();
     }
