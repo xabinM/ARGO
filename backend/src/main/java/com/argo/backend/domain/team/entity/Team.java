@@ -1,5 +1,7 @@
 package com.argo.backend.domain.team.entity;
 
+import com.argo.backend.domain.cardgame.entity.GameResult;
+import com.argo.backend.domain.cardgame.entity.TeamCard;
 import com.argo.backend.domain.common.CreatedAtEntity;
 import com.argo.backend.domain.classroom.entity.ClassRoom;
 import com.argo.backend.domain.mission.entity.MissionSession;
@@ -29,11 +31,17 @@ public class Team extends CreatedAtEntity {
     @Column(nullable = false)
     private Integer maxMembers;
 
+    @Embedded
+    private GameResult gameResult;
+
     @OneToMany(mappedBy = "team", fetch = FetchType.LAZY)
     private List<User> users = new ArrayList<>();
 
     @OneToMany(mappedBy = "team", fetch = FetchType.LAZY)
     private List<MissionSession> missions = new ArrayList<>();
+
+    @OneToMany(mappedBy = "team", fetch = FetchType.LAZY)
+    private List<TeamCard> teamCards = new ArrayList<>();
 
     public static Team from(ClassRoom classRoom, String teamName, Integer maxMembers) {
         return new Team(classRoom, teamName, maxMembers);
@@ -43,5 +51,11 @@ public class Team extends CreatedAtEntity {
         this.classRoom = classRoom;
         this.teamName = teamName;
         this.maxMembers = maxMembers;
+    }
+
+    public void initializeGameResult() {
+        if (this.gameResult == null) {
+            this.gameResult = new GameResult();
+        }
     }
 }
