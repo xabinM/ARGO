@@ -1,13 +1,13 @@
 package com.argo.backend.organization.service;
 
-import com.argo.backend.domain.classroom.ClassApplication;
-import com.argo.backend.domain.classroom.ClassRoom;
-import com.argo.backend.domain.classroom.ClassStatus;
-import com.argo.backend.domain.location.Location;
-import com.argo.backend.domain.user.ApplicationStatus;
-import com.argo.backend.domain.user.Role;
-import com.argo.backend.domain.user.Teacher;
-import com.argo.backend.domain.user.User;
+import com.argo.backend.domain.classroom.entity.ClassApplication;
+import com.argo.backend.domain.classroom.entity.ClassRoom;
+import com.argo.backend.domain.classroom.enums.ClassStatus;
+import com.argo.backend.domain.location.entity.Location;
+import com.argo.backend.domain.user.enums.ApplicationStatus;
+import com.argo.backend.domain.user.enums.Role;
+import com.argo.backend.domain.user.entity.Teacher;
+import com.argo.backend.domain.user.entity.User;
 import com.argo.backend.organization.dto.classapply.ClassApplyResponse;
 import com.argo.backend.organization.dto.classleave.ClassLeaveResponse;
 import com.argo.backend.organization.dto.classleave.LeftClassDto;
@@ -28,18 +28,18 @@ import com.argo.backend.organization.dto.classlist.ClassInfoDto;
 import com.argo.backend.organization.dto.classlist.PaginationDto;
 import com.argo.backend.organization.dto.classdetail.*;
 import com.argo.backend.organization.dto.studentlist.*;
-import com.argo.backend.domain.team.Team;
+import com.argo.backend.domain.team.entity.Team;
 import com.argo.backend.organization.exception.types.*;
 import com.argo.backend.organization.exception.types.ClassNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import com.argo.backend.auth.repository.UserRepository;
-import com.argo.backend.organization.repository.ClassApplicationRepository;
-import com.argo.backend.organization.repository.ClassRoomRepository;
-import com.argo.backend.organization.repository.LocationRepository;
-import com.argo.backend.organization.repository.TeacherRepository;
-import com.argo.backend.organization.repository.TeamRepository;
-import com.argo.backend.organization.repository.ClassStudentRepository;
+import com.argo.backend.domain.user.repository.UserRepository;
+import com.argo.backend.domain.classroom.repository.ClassApplicationRepository;
+import com.argo.backend.domain.classroom.repository.ClassRoomRepository;
+import com.argo.backend.domain.location.repository.LocationRepository;
+import com.argo.backend.domain.user.repository.TeacherRepository;
+import com.argo.backend.domain.team.repository.TeamRepository;
+import com.argo.backend.domain.classroom.repository.ClassStudentRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -456,7 +456,7 @@ public class ClassService {
         java.time.LocalDateTime joinedAt = application.getUpdatedAt();
         java.time.LocalDateTime leftAt = java.time.LocalDateTime.now();
         
-        com.argo.backend.domain.team.Team currentTeam = student.getTeam();
+        Team currentTeam = student.getTeam();
         TeamInfoDto teamInfo = currentTeam != null 
             ? TeamInfoDto.fromTeam(currentTeam, leftAt)
             : TeamInfoDto.noTeam();

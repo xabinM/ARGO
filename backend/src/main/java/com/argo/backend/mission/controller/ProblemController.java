@@ -1,6 +1,6 @@
 package com.argo.backend.mission.controller;
 
-import com.argo.backend.domain.ploblem.ProblemType;
+import com.argo.backend.domain.ploblem.enums.ProblemType;
 import com.argo.backend.global.enums.ResponseMessage;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterRequest;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestFromCli;

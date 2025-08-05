@@ -1,6 +1,6 @@
 package com.argo.backend.organization.dto.classleave;
 
-import com.argo.backend.domain.classroom.ClassRoom;
+import com.argo.backend.domain.classroom.entity.ClassRoom;
 import lombok.Getter;
 
 import java.time.LocalDate;

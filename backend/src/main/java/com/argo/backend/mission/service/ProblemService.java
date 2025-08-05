@@ -1,9 +1,9 @@
 package com.argo.backend.mission.service;
 
-import com.argo.backend.domain.ploblem.Problem;
-import com.argo.backend.domain.ploblem.ProblemType;
-import com.argo.backend.domain.ploblem.QuizProblem;
-import com.argo.backend.domain.spot.Spot;
+import com.argo.backend.domain.ploblem.entity.Problem;
+import com.argo.backend.domain.ploblem.enums.ProblemType;
+import com.argo.backend.domain.ploblem.entity.QuizProblem;
+import com.argo.backend.domain.spot.entity.Spot;
 import com.argo.backend.mission.api.PythonApiClient;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterRequest;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestFromCli;
@@ -12,10 +12,10 @@ import com.argo.backend.mission.dto.problemsRequest.ProblemResponseDto;
 import com.argo.backend.mission.dto.problemsRequest.QuizProblemResponseDto;
 import com.argo.backend.mission.dto.problemsRequest.SelfieProblemResponseDto;
 import com.argo.backend.mission.exception.SpotNotFoundException;
-import com.argo.backend.mission.repository.ProblemRepository;
-import com.argo.backend.mission.repository.QuizProblemRepository;
-import com.argo.backend.mission.repository.SelfieProblemRepository;
-import com.argo.backend.mission.repository.SpotRepository;
+import com.argo.backend.domain.ploblem.repository.ProblemRepository;
+import com.argo.backend.domain.ploblem.repository.QuizProblemRepository;
+import com.argo.backend.domain.ploblem.repository.SelfieProblemRepository;
+import com.argo.backend.domain.spot.repository.SpotRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

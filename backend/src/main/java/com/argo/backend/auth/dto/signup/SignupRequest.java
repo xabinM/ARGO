@@ -1,6 +1,6 @@
 package com.argo.backend.auth.dto.signup;
 
-import com.argo.backend.domain.user.Role;
+import com.argo.backend.domain.user.enums.Role;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 

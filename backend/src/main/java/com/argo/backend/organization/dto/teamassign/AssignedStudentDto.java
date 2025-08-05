@@ -1,6 +1,6 @@
 package com.argo.backend.organization.dto.teamassign;
 
-import com.argo.backend.domain.user.User;
+import com.argo.backend.domain.user.entity.User;
 import com.fasterxml.jackson.annotation.JsonFormat;
 
 import java.time.LocalDateTime;

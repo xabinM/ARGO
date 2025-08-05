@@ -1,6 +1,6 @@
 package com.argo.backend.organization.dto.applicationlist;
 
-import com.argo.backend.domain.classroom.ClassApplication;
+import com.argo.backend.domain.classroom.entity.ClassApplication;
 
 import java.time.LocalDateTime;
 

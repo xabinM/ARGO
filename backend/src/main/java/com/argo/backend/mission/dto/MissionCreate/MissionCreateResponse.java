@@ -1,6 +1,6 @@
 package com.argo.backend.mission.dto.missionCreate;
 
-import com.argo.backend.domain.ploblem.Problem;
+import com.argo.backend.domain.ploblem.entity.Problem;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

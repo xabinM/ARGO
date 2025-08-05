@@ -1,6 +1,6 @@
 package com.argo.backend.mission.dto.problemsRequest;
 
-import com.argo.backend.domain.ploblem.QuizProblem;
+import com.argo.backend.domain.ploblem.entity.QuizProblem;
 import lombok.Getter;
 
 import java.util.List;
