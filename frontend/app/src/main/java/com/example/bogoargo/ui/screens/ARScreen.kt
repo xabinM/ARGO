@@ -31,6 +31,7 @@ import com.example.bogoargo.ui.screens.ar.components.AROverlay
 import com.example.bogoargo.ui.screens.ar.components.DebugInfoPanel
 import com.example.bogoargo.ui.screens.ar.components.ErrorScreen
 import com.example.bogoargo.ui.screens.ar.components.LoadingScreen
+import com.example.bogoargo.ui.screens.ar.components.MissionDiscoveredModal
 import com.example.bogoargo.ui.screens.ar.model.ARDebugInfo
 import com.example.bogoargo.ui.screens.ar.utils.checkLocationServicesStatus
 import com.example.bogoargo.ui.screens.ar.utils.setupARScene
@@ -48,6 +49,7 @@ fun ARScreen(
     latitude: Double,
     longitude: Double,
     onNavigateBack: () -> Unit,
+    onNavigateToMission: (Long) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -55,6 +57,7 @@ fun ARScreen(
     var arSceneView: ARSceneView? by remember { mutableStateOf(null) }
     var isSessionInitialized by remember { mutableStateOf(false) }
     var missionCompleted by remember { mutableStateOf(false) }
+    var showMissionDiscoveredModal by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     
     // 터치 이벤트 처리
@@ -186,7 +189,8 @@ fun ARScreen(
                                     try {
                                         setupARScene(this, session, spotId, latitude, longitude,
                                             onMissionComplete = {
-                                                missionCompleted = true
+                                                // 즉시 완료가 아닌 모달 표시
+                                                showMissionDiscoveredModal = true
                                             },
                                             onDebugInfoUpdate = { newDebugInfo ->
                                                 debugInfo = newDebugInfo
@@ -281,6 +285,19 @@ fun ARScreen(
                         arObject = selectedARObject,
                         modifier = Modifier.fillMaxSize()
                     )
+                    
+                    // 미션 발견 모달
+                    if (showMissionDiscoveredModal) {
+                        MissionDiscoveredModal(
+                            spotId = spotId,
+                            onNavigateToMission = {
+                                onNavigateToMission(spotId)
+                            },
+                            onDismiss = {
+                                showMissionDiscoveredModal = false
+                            }
+                        )
+                    }
                     
                     // 디버그 토글 버튼 (좌측 상단)
                     FloatingActionButton(

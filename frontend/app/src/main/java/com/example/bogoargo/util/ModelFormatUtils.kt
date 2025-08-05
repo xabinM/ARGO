@@ -60,36 +60,17 @@ object ModelFormatUtils {
             issues.add("Missing files: ${missingFiles.joinToString()}")
         }
         
-        // 3. OBJ 형식의 경우 추가 검증
-        if (format == ModelFormat.OBJ) {
-            // 3-1. MTL 파일 검증
-            val mtlPath = arObject.materialPath ?: arObject.getAutoMaterialPath()
-            if (mtlPath != null && !isModelFileExists(context, mtlPath)) {
-                issues.add("MTL file not found: $mtlPath (required for OBJ format)")
-            }
-            
-            // 3-2. 텍스처 파일들 검증
-            if (arObject.texturePaths.isNotEmpty()) {
-                val missingTextures = arObject.texturePaths.filter { 
-                    !isModelFileExists(context, it) 
-                }
-                if (missingTextures.isNotEmpty()) {
-                    issues.add("Missing texture files: ${missingTextures.joinToString()}")
-                }
-            }
-        }
-        
-        // 4. 스케일 값 유효성 확인
+        // 3. 스케일 값 유효성 확인
         if (arObject.scale <= 0f) {
             issues.add("Invalid scale value: ${arObject.scale} (must be > 0)")
         }
         
-        // 5. ID 유효성 확인
+        // 4. ID 유효성 확인
         if (arObject.id.isBlank()) {
             issues.add("Object ID cannot be blank")
         }
         
-        // 6. 표시 이름 유효성 확인
+        // 5. 표시 이름 유효성 확인
         if (arObject.displayName.isBlank()) {
             issues.add("Display name cannot be blank")
         }
@@ -229,16 +210,6 @@ object ModelFormatUtils {
             
             if (arObject.heightOffset != 0f) {
                 append(" - Height Offset: ${arObject.heightOffset}")
-            }
-            
-            if (requiredFiles.size > 1) {
-                append(" - Additional Files: ${requiredFiles.size - 1}")
-                if (arObject.materialPath != null) {
-                    append(" (MTL)")
-                }
-                if (arObject.texturePaths.isNotEmpty()) {
-                    append(" (${arObject.texturePaths.size} textures)")
-                }
             }
         }
     }

@@ -20,7 +20,7 @@ fun setupARScene(
     spotId: Long,
     latitude: Double,
     longitude: Double,
-    onMissionComplete: () -> Unit,
+    onMissionComplete: () -> Unit, // 미션 발견 시 호출되는 콜백 (실제로는 발견 처리)
     onDebugInfoUpdate: (ARDebugInfo) -> Unit,
     onModelNodeUpdate: (ModelNode?) -> Unit,
     onObjectClick: ((ModelNode, Float) -> Boolean)? = null, // 객체 클릭 핸들러 (거리 포함)
@@ -49,6 +49,7 @@ fun setupARScene(
     // Earth tracking이 안정화되기까지 대기 (90프레임 = 약 3초)
     var waitFrameCount = 0
     var hasTriedTerrainAnchor = false
+    var hasAnyAnchorSucceeded = false // 앵커 성공 여부 플래그
     
     // 현재 앵커 상태 추적 (mutable state로 관리)
     var currentAnchorType = "NONE" // 실제 사용 중인 앵커 타입
@@ -182,6 +183,7 @@ fun setupARScene(
                     onAnchorTypeChange = { anchorType, modelNode ->
                         if (anchorType == "TERRAIN_ANCHOR" && modelNode != null) {
                             updateAnchorState(anchorType, modelNode)
+                            hasAnyAnchorSucceeded = true // 앵커 성공 플래그 설정
                         }
                     },
                     onObjectInfoUpdate = { arObject ->
@@ -199,6 +201,7 @@ fun setupARScene(
                         onAnchorTypeChange = { anchorType, modelNode ->
                             if (anchorType == "PLANE_ANCHOR" && modelNode != null) {
                                 updateAnchorState(anchorType, modelNode)
+                                hasAnyAnchorSucceeded = true // 앵커 성공 플래그 설정
                             }
                         },
                         onObjectInfoUpdate = { arObject ->
@@ -213,7 +216,7 @@ fun setupARScene(
             }
             
             // Fallback Anchor 시도 (모든 앵커 방식 실패 시)
-            if (waitFrameCount >= 120 && hasTriedTerrainAnchor && currentAnchorType == "NONE") {
+            if (waitFrameCount >= 120 && hasTriedTerrainAnchor && currentAnchorType == "NONE" && !hasAnyAnchorSucceeded) {
                 // 모든 앵커 방식이 실패했으므로 Fallback 생성
                 Log.i("ARScreen", "Creating fallback anchor - All anchor methods failed")
                 onDebugInfoUpdate(ARDebugInfo(
@@ -227,7 +230,7 @@ fun setupARScene(
                 ))
                 createFallbackNode(arSceneView, "All anchor methods failed",
                     onAnchorTypeChange = { anchorType, modelNode ->
-                        if (anchorType == "FALLBACK_FIXED" && modelNode != null) {
+                        if ((anchorType == "FALLBACK_FIXED" || anchorType == "PRIMITIVE_FALLBACK") && modelNode != null) {
                             updateAnchorState(anchorType, modelNode)
                         }
                     },
@@ -242,7 +245,7 @@ fun setupARScene(
             if (localModelNode != null) {
                 when (currentAnchorType) {
                     // Fallback에서 Plane Anchor로 업그레이드 시도
-                    "FALLBACK_FIXED" -> {
+                    "FALLBACK_FIXED", "PRIMITIVE_FALLBACK" -> {
                         if (waitFrameCount > 120 && currentARObject != null) {
                             val upgraded = tryUpgradeToPlaneAnchor(
                                 arSceneView, session, localModelNode!!, currentARObject!!, onDebugInfoUpdate
@@ -369,7 +372,7 @@ fun setupARScene(
         
         if (handled) {
             Log.i("ARScreen", "Object interaction successful at distance: ${formatDistance(distance)}")
-            // 미션 완료 처리
+            // 미션 발견 처리 (완료가 아닌 발견으로 변경)
             onMissionComplete()
         }
         

@@ -68,7 +68,7 @@ fun ARObjectInfo(
                     ) {
                         if (obj.thumbnailPath != null) {
                             AsyncImage(
-                                model = obj.thumbnailPath,
+                                model = "file:///android_asset/${obj.thumbnailPath}",
                                 contentDescription = obj.displayName,
                                 modifier = Modifier.fillMaxSize(),
                                 contentScale = ContentScale.Crop

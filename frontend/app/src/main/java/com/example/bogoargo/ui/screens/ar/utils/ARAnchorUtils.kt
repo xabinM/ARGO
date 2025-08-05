@@ -361,13 +361,43 @@ fun createFallbackNode(
         val fallbackObject = AR3DObjectRepository.getRandomFallbackObject()
         val fallbackModelPath = fallbackObject.modelPath
         
-        Log.i("ARScreen", "Selected fallback object: ${fallbackObject.displayName} (${fallbackObject.placementType})")
+        // 선택된 객체의 상세 정보 로깅
+        Log.i("ARScreen", "=== FALLBACK OBJECT SELECTED ===")
+        Log.i("ARScreen", "ID: ${fallbackObject.id}")
+        Log.i("ARScreen", "Display Name: ${fallbackObject.displayName}")
+        Log.i("ARScreen", "Model Path: ${fallbackModelPath}")
+        Log.i("ARScreen", "Format: ${fallbackObject.getModelFormat()?.displayName ?: "Unknown"}")
+        Log.i("ARScreen", "Scale: ${fallbackObject.scale}")
+        Log.i("ARScreen", "Placement Type: ${fallbackObject.placementType}")
+        
         
         // 객체 정보 업데이트 콜백 호출
         onObjectInfoUpdate?.invoke(fallbackObject)
         
+        // 파일 존재 여부 확인 로깅
+        Log.i("ARScreen", "=== FILE EXISTENCE CHECK ===")
+        try {
+            val assetManager = arSceneView.context.assets
+            
+            // 주 모델 파일 확인
+            val modelExists = try {
+                assetManager.open(fallbackModelPath).use { true }
+            } catch (e: Exception) {
+                false
+            }
+            Log.i("ARScreen", "Main model file exists: $modelExists ($fallbackModelPath)")
+            
+        } catch (e: Exception) {
+            Log.w("ARScreen", "Error checking file existence", e)
+        }
+        
+        Log.i("ARScreen", "=== ATTEMPTING MODEL LOADING ===")
+        Log.i("ARScreen", "Trying to load model: $fallbackModelPath")
+        
         val modelInstance = arSceneView.modelLoader.createModelInstance(fallbackModelPath)
         if (modelInstance != null) {
+            Log.i("ARScreen", "✅ Model instance created successfully!")
+            
             val modelNode = ModelNode(
                 modelInstance = modelInstance,
                 scaleToUnits = fallbackObject.scale
@@ -381,20 +411,25 @@ fun createFallbackNode(
             }
             
             arSceneView.addChildNode(modelNode)
-            Log.i("ARScreen", "Fallback model loaded: ${fallbackObject.displayName} at random position")
+            Log.i("ARScreen", "✅ Fallback model loaded successfully: ${fallbackObject.displayName} at random position")
             
             // 앵커 타입 변경 알림
             onAnchorTypeChange("FALLBACK_FIXED", modelNode)
             
             Log.d("ARScreen", "Fallback model loaded - ready for interaction")
         } else {
-            Log.w("ARScreen", "Failed to create fallback model instance")
-            createPrimitiveNode(arSceneView)
+            Log.w("ARScreen", "❌ Failed to create fallback model instance!")
+            Log.w("ARScreen", "Model path that failed: $fallbackModelPath")
+            Log.w("ARScreen", "Model format: ${fallbackObject.getModelFormat()?.displayName ?: "Unknown"}")
+            Log.w("ARScreen", "Falling back to primitive node (Royal Seal Box)")
+            createPrimitiveNode(arSceneView, onAnchorTypeChange, onObjectInfoUpdate)
         }
         
     } catch (e: Exception) {
-        Log.e("ARScreen", "Error creating fallback node", e)
-        createPrimitiveNode(arSceneView)
+        Log.e("ARScreen", "❌ Error creating fallback node", e)
+        Log.e("ARScreen", "Exception details: ${e.message}")
+        Log.e("ARScreen", "Falling back to primitive node (Royal Seal Box)")
+        createPrimitiveNode(arSceneView, onAnchorTypeChange, onObjectInfoUpdate)
     }
 }
 
@@ -534,24 +569,47 @@ fun smoothUpdatePosition(modelNode: ModelNode, targetPosition: Position) {
 }
 
 // 기본 프리미티브 노드 생성 (최종 대체용)
-fun createPrimitiveNode(arSceneView: ARSceneView) {
+fun createPrimitiveNode(
+    arSceneView: ARSceneView,
+    onAnchorTypeChange: ((String, ModelNode?) -> Unit)? = null,
+    onObjectInfoUpdate: ((AR3DObject) -> Unit)? = null
+) {
     try {
         Log.i("ARScreen", "Creating primitive fallback node")
         
+        // 왕실 인장함 AR3DObject 가져오기
+        val royalSealObject = AR3DObjectRepository.getObjectById("royal_seal_box")
+        if (royalSealObject == null) {
+            Log.e("ARScreen", "Royal Seal Box object not found in repository")
+            return
+        }
+        
+        Log.i("ARScreen", "Using Royal Seal Box object: ${royalSealObject.displayName}")
+        
         // 동기적으로 기본 GLB 모델 생성 시도 (지원되는 형식 사용)
-        val fallbackPath = "models/royalsealbox.glb"  // 왕실 인장함으로 변경
+        val fallbackPath = royalSealObject.modelPath
         try {
             val modelInstance = arSceneView.modelLoader.createModelInstance(fallbackPath)
             if (modelInstance != null) {
                 val royalSealNode = ModelNode(
                     modelInstance = modelInstance,
-                    scaleToUnits = 0.8f
+                    scaleToUnits = royalSealObject.scale
                 ).apply {
-                    position = Position(0.0f, 0.0f, -2.0f)
-                    Log.d("ARScreen", "Primitive fallback model prepared (Royal Seal Box)")
+                    // 사용자 주변 랜덤 위치에 바닥에 붙게 배치 (1.5m~5m 범위, 360도)
+                    val randomPos = generateRandomPositionAroundUser()
+                    position = Position(randomPos.x, randomPos.y + royalSealObject.heightOffset, randomPos.z)
+                    // Y축(수직축) 랜덤 회전 (0-360도)
+                    rotation = generateRandomYRotation()
+                    Log.d("ARScreen", "Primitive fallback model prepared (Royal Seal Box) at random position")
                 }
                 arSceneView.addChildNode(royalSealNode)
                 Log.i("ARScreen", "Primitive fallback Royal Seal Box model loaded")
+                
+                // 상태 업데이트 콜백 호출 (평면 추적을 위해)
+                onAnchorTypeChange?.invoke("PRIMITIVE_FALLBACK", royalSealNode)
+                
+                // 객체 정보 업데이트 콜백 호출 (UI 정보 업데이트를 위해)
+                onObjectInfoUpdate?.invoke(royalSealObject)
             } else {
                 Log.w("ARScreen", "Failed to create primitive fallback Royal Seal Box model instance")
             }

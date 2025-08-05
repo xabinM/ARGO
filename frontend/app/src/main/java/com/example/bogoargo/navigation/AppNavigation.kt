@@ -12,6 +12,7 @@ import com.example.bogoargo.ui.screens.classRoom.ClassManagementScreen
 import com.example.bogoargo.ui.screens.classRoom.ClassCreateScreen
 import com.example.bogoargo.ui.screens.GameScreen
 import com.example.bogoargo.ui.screens.HomeScreen
+import com.example.bogoargo.ui.screens.MissionDetailScreen
 import com.example.bogoargo.ui.screens.user.LoginScreen
 import com.example.bogoargo.ui.screens.user.ProfileScreen
 import com.example.bogoargo.ui.screens.SettingsScreen
@@ -55,6 +56,9 @@ sealed class Screen(val route: String) {
     }
     data object ClassMemberManagement : Screen("classMemberManagement/{classId}") {
         fun createRoute(classId: String) = "classMemberManagement/$classId"
+    }
+    data object Mission : Screen("mission/{spotId}") {
+        fun createRoute(spotId: Long) = "mission/$spotId"
     }
 }
     @Composable
@@ -150,7 +154,6 @@ sealed class Screen(val route: String) {
                     classId = classId
                 )
             }
-
         }
     }
 
