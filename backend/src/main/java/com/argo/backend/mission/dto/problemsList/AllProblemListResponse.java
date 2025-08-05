@@ -1,5 +1,6 @@
-package com.argo.backend.mission.dto.problemsRequest;
+package com.argo.backend.mission.dto.problemsList;
 
+import com.argo.backend.mission.dto.common.ProblemResponseDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

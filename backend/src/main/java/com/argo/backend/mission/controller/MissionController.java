@@ -1,7 +1,7 @@
 package com.argo.backend.mission.controller;
 
 import com.argo.backend.global.enums.ResponseMessage;
-import com.argo.backend.mission.dto.missionCreate.MissionCreateDto;
+import com.argo.backend.mission.dto.common.ProblemResponseDto;
 import com.argo.backend.mission.dto.missionCreate.MissionCreateResponse;
 import com.argo.backend.mission.service.MissionService;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +22,8 @@ public class MissionController {
     public ResponseEntity<?> createMission(@PathVariable Long teamId,
                                            @PathVariable Long spotId
                                                                     ) {
-        MissionCreateDto dto = missionService.createMission(teamId, spotId);
+        ProblemResponseDto dto = missionService.createMission(teamId, spotId);
 
-        return ResponseEntity.ok(new MissionCreateResponse(ResponseMessage.SUCCESS_CREATE_MISSION.getMessage(), dto.getProblem()));
+        return ResponseEntity.ok(new MissionCreateResponse(ResponseMessage.SUCCESS_CREATE_MISSION.getMessage(), dto));
     }
 }
