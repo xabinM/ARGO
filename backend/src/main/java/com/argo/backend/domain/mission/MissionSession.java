@@ -1,7 +1,7 @@
 package com.argo.backend.domain.mission;
 
 import com.argo.backend.domain.CreatedAtEntity;
-import com.argo.backend.domain.ploblem.ProblemType;
+import com.argo.backend.domain.ploblem.Problem;
 import com.argo.backend.domain.spot.Spot;
 import com.argo.backend.domain.team.Team;
 import jakarta.persistence.*;
@@ -13,7 +13,6 @@ import lombok.*;
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-@Builder
 public class MissionSession extends CreatedAtEntity {
     
     @Id
@@ -32,10 +31,20 @@ public class MissionSession extends CreatedAtEntity {
     @Enumerated(EnumType.STRING)
     private MissionSessionStatus status = MissionSessionStatus.STARTED;
 
-    @Column(nullable = false)
-    @Enumerated(EnumType.STRING)
-    private ProblemType problemType;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "problem_id")
+    private Problem problem;
 
     private Boolean isSuccessful;
+
+    public static MissionSession from(Spot spot, Team team, Problem problem) {
+        return new MissionSession(spot, team, problem);
+    }
+
+    private MissionSession(Spot spot, Team team, Problem problem) {
+        this.spot = spot;
+        this.team = team;
+        this.problem = problem;
+    }
 }
 

@@ -21,6 +21,21 @@ public enum ResponseMessage {
 
     // Parameter
     WRONG_REQUEST_PARAMETER("요청 파라미터가 잘못되었습니다."),
+
+    // mission
+    SUCCESS_CREATE_MISSION("미션 생성에 성공하였습니다."),
+
+    TEAM_NOT_FOUND("해당 팀이 존재하지 않습니다."),
+    SPOT_NOT_FOUND("해당 스팟이 존재하지 않습니다."),
+    PROBLEM_NOT_FOUND("문제가 존재하지 않습니다."),
+
+    // problem
+    SUCCESS_REGISTER_PROBLEM("문제가 성공적으로 등록되었습니다."),
+
+    // api
+    PYTHON_SERVER_NO_RESPONSE("Python 서버에서 응답이 없습니다."),
+    PROBLEM_GENERATION_FAILED("문제가 생성되지 않았습니다."),
+    PROBLEM_COUNT_MISMATCH("요청한 문제 개수와 맞지 않습니다."),
     ;
 
     private final String message;
