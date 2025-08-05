@@ -23,6 +23,10 @@ import com.example.bogoargo.ui.screens.user.TeacherMainScreen
 import com.example.bogoargo.ui.screens.team.TeamCreateScreen
 import com.example.bogoargo.ui.screens.team.TeamManagementScreen
 import com.example.bogoargo.ui.screens.classRoom.ClassMemberManagementScreen
+import com.example.bogoargo.ui.screens.cardgame.CardGameScreen
+import com.example.bogoargo.ui.screens.cardgame.CardCollectionScreen
+import com.example.bogoargo.ui.screens.cardgame.BattleRequestScreen
+import com.example.bogoargo.ui.screens.cardgame.CardSelectionScreen
 
 sealed class Screen(val route: String) {
     data object Splash : Screen("splash")
@@ -66,6 +70,22 @@ sealed class Screen(val route: String) {
     }
     data object Mission : Screen("mission/{spotId}") {
         fun createRoute(spotId: Long) = "mission/$spotId"
+    }
+
+    data object CardGame : Screen("cardGame/{teamId}/{leaderId}") {
+        fun createRoute(teamId: Long, leaderId: Long) = "cardGame/$teamId/$leaderId"
+    }
+
+    data object CardCollection : Screen("cardCollection/{teamId}") {
+        fun createRoute(teamId: Long) = "cardCollection/$teamId"
+    }
+
+    data object BattleRequest : Screen("battleRequest/{teamId}/{leaderId}") {
+        fun createRoute(teamId: Long, leaderId: Long) = "battleRequest/$teamId/$leaderId"
+    }
+
+    data object CardSelection : Screen("cardSelection/{teamId}/{targetTeamId}") {
+        fun createRoute(teamId: Long, targetTeamId: Long) = "cardSelection/$teamId/$targetTeamId"
     }
 }
 
@@ -195,6 +215,61 @@ fun AppNavigation(
                 onNavigateToMission = { missionSpotId ->
                     navController.navigate(Screen.Mission.createRoute(missionSpotId))
                 }
+            )
+        }
+        composable(
+            route = Screen.CardGame.route,
+            arguments = listOf(
+                navArgument("teamId") { type = NavType.LongType },
+                navArgument("leaderId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
+            val leaderId = backStackEntry.arguments?.getLong("leaderId") ?: 0L
+            CardGameScreen(
+                navController = navController,
+                teamId = teamId,
+                leaderId = leaderId
+            )
+        }
+        composable(
+            route = Screen.CardCollection.route,
+            arguments = listOf(navArgument("teamId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
+            CardCollectionScreen(
+                navController = navController,
+                teamId = teamId
+            )
+        }
+        composable(
+            route = Screen.BattleRequest.route,
+            arguments = listOf(
+                navArgument("teamId") { type = NavType.LongType },
+                navArgument("leaderId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
+            val leaderId = backStackEntry.arguments?.getLong("leaderId") ?: 0L
+            BattleRequestScreen(
+                navController = navController,
+                teamId = teamId,
+                leaderId = leaderId
+            )
+        }
+        composable(
+            route = Screen.CardSelection.route,
+            arguments = listOf(
+                navArgument("teamId") { type = NavType.LongType },
+                navArgument("targetTeamId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
+            val targetTeamId = backStackEntry.arguments?.getLong("targetTeamId") ?: 0L
+            CardSelectionScreen(
+                navController = navController,
+                teamId = teamId,
+                targetTeamId = targetTeamId
             )
         }
     }

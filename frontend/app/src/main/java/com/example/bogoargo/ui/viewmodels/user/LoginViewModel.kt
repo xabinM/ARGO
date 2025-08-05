@@ -7,6 +7,7 @@ import com.example.bogoargo.domain.model.User
 import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.domain.use_case.auth.LoginUseCase
 import com.example.bogoargo.domain.use_case.auth.SaveTokensUseCase
+import com.example.bogoargo.domain.use_case.auth.SaveUserInfoUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +27,8 @@ data class LoginUiState(
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
-    private val saveTokensUseCase: SaveTokensUseCase
+    private val saveTokensUseCase: SaveTokensUseCase,
+    private val saveUserInfoUseCase: SaveUserInfoUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -46,6 +48,9 @@ class LoginViewModel @Inject constructor(
             
             when (val result = loginUseCase(_uiState.value.username, _uiState.value.password)) {
                 is DataResult.Success -> {
+                    // 사용자 정보 저장
+                    saveUserInfoUseCase(result.data)
+                    
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isLoggedIn = true,
@@ -104,6 +109,9 @@ class LoginViewModel @Inject constructor(
                     accessToken = "dummy_access_token_${if (isTeacher) "teacher" else "student"}",
                     refreshToken = "dummy_refresh_token_${if (isTeacher) "teacher" else "student"}"
                 )
+                
+                // 더미 사용자 정보 저장
+                saveUserInfoUseCase(dummyUser)
                 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

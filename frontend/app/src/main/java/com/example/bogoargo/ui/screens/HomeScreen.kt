@@ -87,6 +87,38 @@ fun HomeScreen(
                     }
                 }
                 
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // 개발용 카드게임 버튼
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "🃏 카드 배틀 (개발용)",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = { 
+                                // 개발용 더미 데이터: teamId=1, leaderId=2 (학생이 팀장)
+                                navController.navigate(Screen.CardGame.createRoute(1L, 2L)) 
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("카드게임 시작")
+                        }
+                    }
+                }
+                
                 Spacer(modifier = Modifier.height(24.dp))
                 
                 // 네비게이션 버튼들
