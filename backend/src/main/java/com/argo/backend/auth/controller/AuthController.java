@@ -34,7 +34,9 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
 
         LoginDto dto = authService.login(request);
-        return ResponseEntity.ok(new LoginResponse(dto, ResponseMessage.LOGIN_SUCCESS.getMessage()));
+        return ResponseEntity.ok(new LoginResponse(dto.getRole(), dto.getTokens(),
+                                ResponseMessage.LOGIN_SUCCESS.getMessage())
+        );
     }
 
     @PostMapping("/reissue")
