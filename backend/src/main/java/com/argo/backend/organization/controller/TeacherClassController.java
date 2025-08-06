@@ -9,6 +9,7 @@ import com.argo.backend.organization.dto.applicationprocess.ApplicationProcessRe
 import com.argo.backend.organization.dto.applicationprocess.ApplicationProcessResponse;
 import com.argo.backend.organization.dto.classlist.ClassListResponse;
 import com.argo.backend.organization.dto.classdetail.ClassDetailResponse;
+import com.argo.backend.organization.dto.location.LocationsResponse;
 import com.argo.backend.organization.dto.studentlist.StudentListResponse;
 import com.argo.backend.organization.service.ClassService;
 import com.argo.backend.organization.service.ClassApplicationService;
@@ -24,6 +25,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/teacher/classes")
@@ -32,6 +35,11 @@ public class TeacherClassController {
 
     private final ClassService classService;
     private final ClassApplicationService classApplicationService;
+
+    @GetMapping("/locations")
+    public ResponseEntity<CommonApiResponse<List<LocationsResponse>>> getLocations() {
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "지역 목록 조회 성공", classService.getLocations()));
+    }
 
     @GetMapping
     public ResponseEntity<CommonApiResponse<ClassListResponse.ClassListData>> getClassList(
