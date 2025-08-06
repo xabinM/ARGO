@@ -25,12 +25,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.bogoargo.domain.model.*
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.components.GameCardComponent
 import com.example.bogoargo.ui.components.ViewMode
+import com.example.bogoargo.ui.components.CardDetailDialog
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -177,23 +177,14 @@ fun CardCollectionScreen(
     }
     
     // 카드 상세보기 Dialog
-    if (showCardDetail && selectedCardForDetail != null) {
-        Dialog(onDismissRequest = { showCardDetail = false }) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clickable { showCardDetail = false }
-            ) {
-                GameCardComponent(
-                    card = selectedCardForDetail!!,
-                    viewMode = ViewMode.DETAILED,
-                    modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .align(Alignment.Center)
-                )
-            }
+    CardDetailDialog(
+        card = selectedCardForDetail,
+        isVisible = showCardDetail,
+        onDismiss = {
+            showCardDetail = false
+            selectedCardForDetail = null
         }
-    }
+    )
 }
 
 @Composable

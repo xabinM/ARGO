@@ -30,6 +30,7 @@ import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.components.GameCardComponent
 import com.example.bogoargo.ui.components.StatChip
 import com.example.bogoargo.ui.components.ViewMode
+import com.example.bogoargo.ui.components.CardDetailDialog
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -92,6 +93,7 @@ fun CardSelectionScreen(
     }
 
     var selectedCard by remember { mutableStateOf<Long?>(null) }
+    var selectedStance by remember { mutableStateOf<BattleStance?>(null) }
     var showCardDetail by remember { mutableStateOf(false) }
     var selectedCardForDetail by remember { mutableStateOf<GameCard?>(null) }
     var showConfirmDialog by remember { mutableStateOf(false) }
@@ -146,9 +148,19 @@ fun CardSelectionScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
                         
+                        // 스탠스 선택 UI (카드 선택 후 나타남)
+                        if (selectedCard != null) {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            StanceSelectionSection(
+                                selectedStance = selectedStance,
+                                onStanceSelected = { selectedStance = it }
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                        
                         Button(
                             onClick = { showConfirmDialog = true },
-                            enabled = selectedCard != null,
+                            enabled = selectedCard != null && selectedStance != null,
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = NatureColors.leafGreen,
@@ -157,10 +169,11 @@ fun CardSelectionScreen(
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
-                                text = if (selectedCard != null) 
-                                    "대전 신청 보내기 ⚔️" 
-                                else 
-                                    "카드를 선택해주세요",
+                                text = when {
+                                    selectedCard == null -> "카드를 선택해주세요"
+                                    selectedStance == null -> "스탠스를 선택해주세요"
+                                    else -> "대전 신청 보내기 ⚔️"
+                                },
                                 style = MaterialTheme.typography.titleSmall.copy(
                                     fontWeight = FontWeight.Bold
                                 )
@@ -259,6 +272,7 @@ fun CardSelectionScreen(
         if (showConfirmDialog) {
             BattleConfirmDialog(
                 selectedCards = listOfNotNull(availableCards.find { it.cardId == selectedCard }),
+                selectedStance = selectedStance!!,
                 targetTeamName = targetTeamName,
                 onDismiss = { showConfirmDialog = false },
                 onConfirm = {
@@ -271,19 +285,128 @@ fun CardSelectionScreen(
         }
         
         // 카드 상세보기 Dialog
-        if (showCardDetail && selectedCardForDetail != null) {
-            Dialog(onDismissRequest = { showCardDetail = false }) {
-                Box(
+        CardDetailDialog(
+            card = selectedCardForDetail,
+            isVisible = showCardDetail,
+            onDismiss = {
+                showCardDetail = false
+                selectedCardForDetail = null
+            }
+        )
+    }
+}
+
+@Composable
+fun StanceSelectionSection(
+    selectedStance: BattleStance?,
+    onStanceSelected: (BattleStance) -> Unit
+) {
+    Column {
+        Text(
+            text = "⚔️ 배틀 스탠스 선택",
+            style = MaterialTheme.typography.titleSmall.copy(
+                fontWeight = FontWeight.Bold,
+                color = NatureColors.earthBrown
+            ),
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // 공격 버튼
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onStanceSelected(BattleStance.ATTACK) },
+                colors = CardDefaults.cardColors(
+                    containerColor = if (selectedStance == BattleStance.ATTACK) 
+                        NatureColors.forestGreen 
+                    else 
+                        Color.White
+                ),
+                shape = RoundedCornerShape(8.dp),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = if (selectedStance == BattleStance.ATTACK) 8.dp else 2.dp
+                )
+            ) {
+                Column(
                     modifier = Modifier
-                        .fillMaxSize()
-                        .clickable { showCardDetail = false }
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    GameCardComponent(
-                        card = selectedCardForDetail!!,
-                        viewMode = ViewMode.DETAILED,
-                        modifier = Modifier
-                            .fillMaxWidth(0.85f)
-                            .align(Alignment.Center)
+                    Text(
+                        text = "⚔️",
+                        fontSize = 24.sp
+                    )
+                    Text(
+                        text = "공격",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = if (selectedStance == BattleStance.ATTACK) 
+                                Color.White 
+                            else 
+                                NatureColors.earthBrown
+                        )
+                    )
+                    Text(
+                        text = "이기면 100점",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = if (selectedStance == BattleStance.ATTACK) 
+                                Color.White.copy(alpha = 0.8f) 
+                            else 
+                                Color.Gray
+                        )
+                    )
+                }
+            }
+            
+            // 방어 버튼
+            Card(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onStanceSelected(BattleStance.DEFENSE) },
+                colors = CardDefaults.cardColors(
+                    containerColor = if (selectedStance == BattleStance.DEFENSE) 
+                        NatureColors.forestGreen 
+                    else 
+                        Color.White
+                ),
+                shape = RoundedCornerShape(8.dp),
+                elevation = CardDefaults.cardElevation(
+                    defaultElevation = if (selectedStance == BattleStance.DEFENSE) 8.dp else 2.dp
+                )
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "🛡️",
+                        fontSize = 24.sp
+                    )
+                    Text(
+                        text = "방어",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            color = if (selectedStance == BattleStance.DEFENSE) 
+                                Color.White 
+                            else 
+                                NatureColors.earthBrown
+                        )
+                    )
+                    Text(
+                        text = "이기면 50점",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = if (selectedStance == BattleStance.DEFENSE) 
+                                Color.White.copy(alpha = 0.8f) 
+                            else 
+                                Color.Gray
+                        )
                     )
                 }
             }
@@ -439,6 +562,7 @@ fun SelectableCardItem(
 @Composable
 fun BattleConfirmDialog(
     selectedCards: List<GameCard>,
+    selectedStance: BattleStance,
     targetTeamName: String,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit
@@ -513,6 +637,36 @@ fun BattleConfirmDialog(
                                     text = "${card.attack}/${card.defense}",
                                     style = MaterialTheme.typography.bodySmall.copy(
                                         fontWeight = FontWeight.Medium
+                                    )
+                                )
+                            }
+                        }
+
+                        Divider(color = Color.Gray.copy(alpha = 0.2f))
+                        
+                        // 선택된 스탠스 표시
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "배틀 스탠스",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Text(
+                                    text = selectedStance.emoji,
+                                    fontSize = 16.sp
+                                )
+                                Text(
+                                    text = selectedStance.displayName,
+                                    style = MaterialTheme.typography.bodyMedium.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        color = NatureColors.forestGreen
                                     )
                                 )
                             }

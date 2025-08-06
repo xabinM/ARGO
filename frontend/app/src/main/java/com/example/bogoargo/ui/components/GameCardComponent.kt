@@ -92,84 +92,85 @@ fun GameCardComponent(
                 alpha = 1f
             )
                 
-            // 콘텐츠 레이어
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                // 상단: 카드 이름과 레어도
-                Row(
+            // 콘텐츠 레이어 - DETAILED 모드에서만 표시
+            if (viewMode == ViewMode.DETAILED) {
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = (cardWidth.value * 0.05f).dp, vertical = 0.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
+                        .fillMaxSize()
+                        .padding(cardHeight * 0.05f),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // 카드 이름은 이미 위에 표시됨
-                    Spacer(modifier = Modifier.weight(1f))
-                    
-                    // 레어도 배지는 DETAILED 모드에서만 표시
-                    if (viewMode == ViewMode.DETAILED) {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(android.graphics.Color.parseColor(card.rarity.color))
-                            ),
-                            shape = RoundedCornerShape((cardWidth.value * 0.015f).dp),
-                            modifier = Modifier
-                                .padding(top = (cardHeight.value * 0.02f).dp)
-                                .widthIn(max = cardWidth * 0.25f)
+                    // 카드 이름
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Black.copy(alpha = 0.6f)
+                        ),
+                        shape = RoundedCornerShape((cardWidth.value * 0.02f).dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(cardHeight * 0.08f)
+                            .padding(
+                                start = (cardWidth.value * 0.05f).dp,
+                                top = (cardHeight.value * 0.02f).dp,
+                                end = (cardWidth.value * 0.05f).dp
+                            )
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.CenterStart
                         ) {
                             Text(
-                                text = card.rarity.displayName,
-                                modifier = Modifier.padding(
-                                    horizontal = (cardWidth.value * 0.025f).dp,
-                                    vertical = (cardHeight.value * 0.008f).dp
-                                ),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Color.White,
+                                text = card.name,
+                                style = MaterialTheme.typography.titleSmall.copy(
                                     fontWeight = FontWeight.Bold,
-                                    fontSize = (cardWidth.value * 0.05f).sp
+                                    fontSize = (cardWidth.value * 0.07f).sp,
+                                    color = Color.White
+                                ),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(
+                                    horizontal = (cardWidth.value * 0.03f).dp
                                 )
                             )
                         }
                     }
-                }
-
-                // 카드 이름은 항상 표시
-                Text(
-                    text = card.name,
-                    style = MaterialTheme.typography.titleSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = (cardWidth.value * 0.07f).sp,
-                        color = NatureColors.earthBrown
-                    ),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(
-                        start = (cardWidth.value * 0.05f).dp,
-                        top = (cardHeight.value * 0.02f).dp,
-                        end = (cardWidth.value * 0.05f).dp
-                    )
-                )
-                
-                Spacer(modifier = Modifier.weight(1f))
-                
-                // DETAILED 모드에서만 추가 정보 표시
-                if (viewMode == ViewMode.DETAILED) {
+                    
+                    Spacer(modifier = Modifier.height(cardHeight * 0.55f))
+                    
                     // 설명 텍스트
-                    Text(
-                        text = card.description,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            fontSize = (cardWidth.value * 0.055f).sp,
-                            color = Color.Gray.copy(alpha = 0.7f)
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = Color.Black.copy(alpha = 0.6f)
                         ),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(
-                            horizontal = (cardWidth.value * 0.05f).dp,
-                            vertical = (cardHeight.value * 0.015f).dp
-                        )
-                    )
+                        shape = RoundedCornerShape((cardWidth.value * 0.02f).dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(cardHeight * 0.15f)
+                            .padding(
+                                horizontal = (cardWidth.value * 0.05f).dp,
+                                vertical = (cardHeight.value * 0.01f).dp
+                            )
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Text(
+                                text = card.description,
+                                style = MaterialTheme.typography.bodySmall.copy(
+                                    fontSize = (cardWidth.value * 0.045f).sp,
+                                    color = Color.White
+                                ),
+                                maxLines = 3,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(
+                                    horizontal = (cardWidth.value * 0.04f).dp
+                                )
+                            )
+                        }
+                    }
+
 
                     // 하단: 스탯 정보
                     Row(
@@ -177,7 +178,7 @@ fun GameCardComponent(
                             .fillMaxWidth()
                             .padding(
                                 horizontal = (cardWidth.value * 0.05f).dp,
-                                vertical = (cardHeight.value * 0.02f).dp
+                                vertical = (cardHeight.value * 0.01f).dp
                             ),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
@@ -185,14 +186,14 @@ fun GameCardComponent(
                             label = "공격",
                             value = card.attack,
                             color = Color(0xFFF44336),
-                            modifier = Modifier.width(cardWidth * 0.4f),
+                            modifier = Modifier.width(cardWidth * 0.3f),
                             textSize = (cardWidth.value * 0.06f).sp
                         )
                         StatChip(
                             label = "방어",
                             value = card.defense,
                             color = Color(0xFF2196F3),
-                            modifier = Modifier.width(cardWidth * 0.4f),
+                            modifier = Modifier.width(cardWidth * 0.3f),
                             textSize = (cardWidth.value * 0.06f).sp
                         )
                     }
