@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
@@ -20,8 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.bogoargo.domain.model.GameCard
-import com.example.bogoargo.domain.model.CardRarity
-import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.domain.model.CardTier
 
 // 레어도별 캐릭터 이미지 설정
 private const val NORMAL_IMAGE_SIZE_RATIO = 0.48f
@@ -62,7 +60,7 @@ fun GameCardComponent(
             modifier = Modifier.fillMaxSize()
         ) {
             // 캐릭터 이미지 (뒤) - 레어도별 위치와 크기 조정
-            val isLegendary = card.rarity == CardRarity.LEGENDARY
+            val isLegendary = card.rarity == CardTier.LEGENDARY
             val imageSize = if (isLegendary) LEGENDARY_IMAGE_SIZE_RATIO else NORMAL_IMAGE_SIZE_RATIO
             val imageVerticalBias = if (isLegendary) LEGENDARY_IMAGE_VERTICAL_BIAS else NORMAL_IMAGE_VERTICAL_BIAS
             

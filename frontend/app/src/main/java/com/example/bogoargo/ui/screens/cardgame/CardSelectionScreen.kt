@@ -29,7 +29,6 @@ import com.example.bogoargo.domain.model.*
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.components.GameCardComponent
 import com.example.bogoargo.ui.components.StatChip
-import com.example.bogoargo.ui.components.ViewMode
 import com.example.bogoargo.ui.components.CardDetailDialog
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -46,7 +45,7 @@ fun CardSelectionScreen(
                 name = "불사조 🔥",
                 attack = 85,
                 defense = 70,
-                rarity = CardRarity.LEGENDARY,
+                rarity = CardTier.LEGENDARY,
                 description = "불타는 날개로 적을 소멸시키는 전설의 새"
             ),
             GameCard(
@@ -54,7 +53,7 @@ fun CardSelectionScreen(
                 name = "그림자 늑대 🐺",
                 attack = 75,
                 defense = 60,
-                rarity = CardRarity.EPIC,
+                rarity = CardTier.EPIC,
                 description = "어둠 속에서 빠르게 움직이는 늑대"
             ),
             GameCard(
@@ -62,7 +61,7 @@ fun CardSelectionScreen(
                 name = "치유의 요정 🧚",
                 attack = 40,
                 defense = 90,
-                rarity = CardRarity.RARE,
+                rarity = CardTier.RARE,
                 description = "아군을 치유하는 신비한 요정"
             ),
             GameCard(
@@ -70,7 +69,7 @@ fun CardSelectionScreen(
                 name = "바위 골렘 🗿",
                 attack = 60,
                 defense = 95,
-                rarity = CardRarity.EPIC,
+                rarity = CardTier.EPIC,
                 description = "단단한 바위로 만들어진 수호자"
             ),
             GameCard(
@@ -78,7 +77,7 @@ fun CardSelectionScreen(
                 name = "번개 마법사 ⚡",
                 attack = 80,
                 defense = 50,
-                rarity = CardRarity.RARE,
+                rarity = CardTier.RARE,
                 description = "번개를 조종하는 강력한 마법사"
             ),
             GameCard(
@@ -86,7 +85,7 @@ fun CardSelectionScreen(
                 name = "숲의 수호자 🌳",
                 attack = 65,
                 defense = 75,
-                rarity = CardRarity.COMMON,
+                rarity = CardTier.COMMON,
                 description = "자연을 보호하는 고대의 수호자"
             )
         )

@@ -1,9 +1,7 @@
 package com.example.bogoargo.ui.screens.cardgame
 
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -16,20 +14,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.bogoargo.domain.model.*
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.components.GameCardComponent
-import com.example.bogoargo.ui.components.ViewMode
 import com.example.bogoargo.ui.components.CardDetailDialog
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -50,7 +41,7 @@ fun CardCollectionScreen(
                     name = "불사조 🔥",
                     attack = 85,
                     defense = 70,
-                    rarity = CardRarity.LEGENDARY,
+                    rarity = CardTier.LEGENDARY,
                     description = "불타는 날개로 적을 소멸시키는 전설의 새"
                 ),
                 GameCard(
@@ -58,7 +49,7 @@ fun CardCollectionScreen(
                     name = "그림자 늑대 🐺",
                     attack = 75,
                     defense = 60,
-                    rarity = CardRarity.EPIC,
+                    rarity = CardTier.EPIC,
                     description = "어둠 속에서 빠르게 움직이는 늑대"
                 ),
                 GameCard(
@@ -66,7 +57,7 @@ fun CardCollectionScreen(
                     name = "치유의 요정 🧚",
                     attack = 40,
                     defense = 90,
-                    rarity = CardRarity.RARE,
+                    rarity = CardTier.RARE,
                     description = "아군을 치유하는 신비한 요정"
                 ),
                 GameCard(
@@ -74,7 +65,7 @@ fun CardCollectionScreen(
                     name = "바위 골렘 🗿",
                     attack = 60,
                     defense = 95,
-                    rarity = CardRarity.EPIC,
+                    rarity = CardTier.EPIC,
                     description = "단단한 바위로 만들어진 수호자"
                 ),
                 GameCard(
@@ -82,7 +73,7 @@ fun CardCollectionScreen(
                     name = "번개 마법사 ⚡",
                     attack = 80,
                     defense = 50,
-                    rarity = CardRarity.RARE,
+                    rarity = CardTier.RARE,
                     description = "번개를 조종하는 강력한 마법사"
                 ),
                 GameCard(
@@ -90,7 +81,7 @@ fun CardCollectionScreen(
                     name = "숲의 수호자 🌳",
                     attack = 65,
                     defense = 75,
-                    rarity = CardRarity.COMMON,
+                    rarity = CardTier.COMMON,
                     description = "자연을 보호하는 고대의 수호자"
                 ),
                 GameCard(
@@ -98,7 +89,7 @@ fun CardCollectionScreen(
                     name = "얼음 용 🐉",
                     attack = 90,
                     defense = 80,
-                    rarity = CardRarity.LEGENDARY,
+                    rarity = CardTier.LEGENDARY,
                     description = "차가운 얼음 브레스를 내뿜는 고대 용"
                 ),
                 GameCard(
@@ -106,14 +97,14 @@ fun CardCollectionScreen(
                     name = "기사 ⚔️",
                     attack = 70,
                     defense = 85,
-                    rarity = CardRarity.COMMON,
+                    rarity = CardTier.COMMON,
                     description = "정의를 위해 싸우는 용감한 기사"
                 )
             )
         )
     }
 
-    val rarityFilter = remember { mutableStateOf<CardRarity?>(null) }
+    val rarityFilter = remember { mutableStateOf<CardTier?>(null) }
     val filteredCards = teamCardCollection.cards.filter { card ->
         rarityFilter.value?.let { it == card.rarity } ?: true
     }
@@ -222,7 +213,7 @@ fun CollectionStats(cards: List<GameCard>) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                CardRarity.entries.forEach { rarity ->
+                CardTier.entries.forEach { rarity ->
                     val count = rarityGroups[rarity]?.size ?: 0
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -249,8 +240,8 @@ fun CollectionStats(cards: List<GameCard>) {
 
 @Composable
 fun RarityFilterRow(
-    selectedRarity: CardRarity?,
-    onRaritySelected: (CardRarity?) -> Unit
+    selectedRarity: CardTier?,
+    onRaritySelected: (CardTier?) -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -267,7 +258,7 @@ fun RarityFilterRow(
                 selectedLabelColor = Color.White
             )
         )
-        CardRarity.entries.forEach { rarity ->
+        CardTier.entries.forEach { rarity ->
             FilterChip(
                 onClick = { onRaritySelected(rarity) },
                 label = { Text(rarity.displayName) },

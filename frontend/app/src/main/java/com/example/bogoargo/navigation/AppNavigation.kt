@@ -314,14 +314,14 @@ fun AppNavigation(
             val myBattleCard = com.example.bogoargo.domain.model.BattleCard(
                 gameCard = com.example.bogoargo.domain.model.GameCard.create(
                     myCardId,
-                    com.example.bogoargo.domain.model.CardRarity.valueOf(myCardRarity)
+                    com.example.bogoargo.domain.model.CardTier.valueOf(myCardRarity)
                 ),
                 battleStance = com.example.bogoargo.domain.model.BattleStance.valueOf(myCardStance)
             )
             val opponentBattleCard = com.example.bogoargo.domain.model.BattleCard(
                 gameCard = com.example.bogoargo.domain.model.GameCard.create(
                     opponentCardId,
-                    com.example.bogoargo.domain.model.CardRarity.valueOf(opponentCardRarity)
+                    com.example.bogoargo.domain.model.CardTier.valueOf(opponentCardRarity)
                 ),
                 battleStance = com.example.bogoargo.domain.model.BattleStance.valueOf(opponentCardStance)
             )

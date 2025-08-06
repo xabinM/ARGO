@@ -1,7 +1,7 @@
 package com.example.bogoargo.util
 
 import com.example.bogoargo.R
-import com.example.bogoargo.domain.model.CardRarity
+import com.example.bogoargo.domain.model.CardTier
 
 object CardImageMapper {
     
@@ -19,10 +19,10 @@ object CardImageMapper {
     
     // 레어도별 테두리 이미지 매핑
     private val borderImageMap = mapOf(
-        CardRarity.COMMON to R.drawable.card_common,
-        CardRarity.RARE to R.drawable.card_rare,
-        CardRarity.EPIC to R.drawable.card_epic,
-        CardRarity.LEGENDARY to R.drawable.card_legendary
+        CardTier.COMMON to R.drawable.card_common,
+        CardTier.RARE to R.drawable.card_rare,
+        CardTier.EPIC to R.drawable.card_epic,
+        CardTier.LEGENDARY to R.drawable.card_legendary
     )
     
     /**
@@ -39,7 +39,7 @@ object CardImageMapper {
      * @param rarity 카드 레어도
      * @return 테두리 이미지의 리소스 ID, 매핑되지 않은 경우 기본 이미지 반환
      */
-    fun getBorderImage(rarity: CardRarity): Int {
+    fun getBorderImage(rarity: CardTier): Int {
         return borderImageMap[rarity] ?: R.drawable.my_temp_icon
     }
     

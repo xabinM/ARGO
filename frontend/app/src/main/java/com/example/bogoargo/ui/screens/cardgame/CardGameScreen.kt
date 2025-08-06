@@ -1,6 +1,5 @@
 package com.example.bogoargo.ui.screens.cardgame
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -26,7 +25,6 @@ import androidx.navigation.NavController
 import com.example.bogoargo.domain.model.*
 import com.example.bogoargo.navigation.Screen
 import com.example.bogoargo.ui.theme.NatureColors
-import com.example.bogoargo.ui.theme.NatureComponents
 import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.bogoargo.ui.viewmodels.cardgame.CardGameViewModel
@@ -78,7 +76,7 @@ fun CardGameScreen(
                 winnerTeamId = null,
                 loserTeamId = null,
                 myCard = BattleCard(
-                    gameCard = GameCard.create(1L, CardRarity.RARE),
+                    gameCard = GameCard.create(1L, CardTier.RARE, 101L), // teamCardId 포함
                     battleStance = BattleStance.ATTACK
                 ), // 내가 선택한 카드와 스탠스
                 opponentCard = null, // 상대는 아직 카드 선택 안함
@@ -100,7 +98,7 @@ fun CardGameScreen(
                 loserTeamId = null,
                 myCard = null, // 내가 아직 카드 선택 안함
                 opponentCard = BattleCard(
-                    gameCard = GameCard.create(5L, CardRarity.EPIC),
+                    gameCard = GameCard.create(5L, CardTier.EPIC),
                     battleStance = BattleStance.DEFENSE
                 ), // 상대가 선택한 카드와 스탠스
                 createdAt = "2024-08-05",
@@ -120,11 +118,11 @@ fun CardGameScreen(
                 winnerTeamId = teamId, // 내 팀이 승리
                 loserTeamId = 4L,
                 myCard = BattleCard(
-                    gameCard = GameCard.create(7L, CardRarity.LEGENDARY),
+                    gameCard = GameCard.create(7L, CardTier.LEGENDARY),
                     battleStance = BattleStance.ATTACK
                 ), // 공격으로 승리
                 opponentCard = BattleCard(
-                    gameCard = GameCard.create(3L, CardRarity.COMMON),
+                    gameCard = GameCard.create(3L, CardTier.COMMON),
                     battleStance = BattleStance.DEFENSE
                 ), // 방어로 패배
                 createdAt = "2024-08-04",
@@ -144,11 +142,11 @@ fun CardGameScreen(
                 winnerTeamId = null, // 방 vs 방은 무승부 처리
                 loserTeamId = null,
                 myCard = BattleCard(
-                    gameCard = GameCard.create(2L, CardRarity.RARE),
+                    gameCard = GameCard.create(2L, CardTier.RARE),
                     battleStance = BattleStance.DEFENSE
                 ), // 방어 선택
                 opponentCard = BattleCard(
-                    gameCard = GameCard.create(8L, CardRarity.EPIC),
+                    gameCard = GameCard.create(8L, CardTier.EPIC),
                     battleStance = BattleStance.DEFENSE
                 ), // 상대도 방어 선택
                 createdAt = "2024-08-03",
@@ -168,11 +166,11 @@ fun CardGameScreen(
                 winnerTeamId = null, // 무승부
                 loserTeamId = null,
                 myCard = BattleCard(
-                    gameCard = GameCard.create(4L, CardRarity.RARE),
+                    gameCard = GameCard.create(4L, CardTier.RARE),
                     battleStance = BattleStance.ATTACK
                 ), // 공격으로 무승부
                 opponentCard = BattleCard(
-                    gameCard = GameCard.create(6L, CardRarity.COMMON),
+                    gameCard = GameCard.create(6L, CardTier.COMMON),
                     battleStance = BattleStance.ATTACK
                 ), // 상대도 공격으로 무승부
                 createdAt = "2024-08-02",
@@ -210,11 +208,11 @@ fun CardGameScreen(
                 winnerTeamId = 8L, // 상대팀이 승리
                 loserTeamId = teamId, // 내 팀이 패배
                 myCard = BattleCard(
-                    gameCard = GameCard.create(3L, CardRarity.COMMON),
+                    gameCard = GameCard.create(3L, CardTier.COMMON),
                     battleStance = BattleStance.ATTACK
                 ), // 공격으로 패배 (카드 제거)
                 opponentCard = BattleCard(
-                    gameCard = GameCard.create(7L, CardRarity.LEGENDARY),
+                    gameCard = GameCard.create(7L, CardTier.LEGENDARY),
                     battleStance = BattleStance.DEFENSE
                 ), // 방어로 승리
                 createdAt = "2024-08-01",
@@ -234,11 +232,11 @@ fun CardGameScreen(
                 winnerTeamId = teamId, // 내 팀이 승리
                 loserTeamId = 9L,
                 myCard = BattleCard(
-                    gameCard = GameCard.create(5L, CardRarity.EPIC),
+                    gameCard = GameCard.create(5L, CardTier.EPIC),
                     battleStance = BattleStance.DEFENSE
                 ), // 방어로 승리
                 opponentCard = BattleCard(
-                    gameCard = GameCard.create(2L, CardRarity.RARE),
+                    gameCard = GameCard.create(2L, CardTier.RARE),
                     battleStance = BattleStance.ATTACK
                 ), // 공격으로 패배
                 createdAt = "2024-07-31",

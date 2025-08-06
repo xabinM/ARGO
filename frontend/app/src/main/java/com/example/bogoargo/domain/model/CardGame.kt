@@ -14,19 +14,25 @@ data class GameCard(
     val name: String,
     val attack: Int,
     val defense: Int,
-    val rarity: CardRarity,
-    val description: String
+    val rarity: CardTier,
+    val description: String,
+    val teamCardId: Long? = null // API 응답에서 받은 teamCardId (옵셔널)
 ) {
     companion object {
-        // cardId와 rarity만으로 GameCard 생성 (임시 구현)
-        fun create(cardId: Long, rarity: CardRarity): GameCard {
+        // cardId와 rarity만으로 GameCard 생성 (기존 방식)
+        fun create(cardId: Long, rarity: CardTier): GameCard {
+            return create(cardId, rarity, null)
+        }
+        
+        // cardId, rarity, teamCardId로 GameCard 생성 (API 응답용)
+        fun create(cardId: Long, rarity: CardTier, teamCardId: Long?): GameCard {
             // 임시로 cardId에 따른 기본 정보 설정 (추후 매퍼로 대체)
             val cardInfo = getCardInfo(cardId)
             val rarityMultiplier = when (rarity) {
-                CardRarity.COMMON -> 1.0
-                CardRarity.RARE -> 1.3
-                CardRarity.EPIC -> 1.6  
-                CardRarity.LEGENDARY -> 2.0
+                CardTier.COMMON -> 1.0
+                CardTier.RARE -> 1.3
+                CardTier.EPIC -> 1.6
+                CardTier.LEGENDARY -> 2.0
             }
             
             return GameCard(
@@ -35,7 +41,8 @@ data class GameCard(
                 attack = (cardInfo.baseAttack * rarityMultiplier).toInt(),
                 defense = (cardInfo.baseDefense * rarityMultiplier).toInt(),
                 rarity = rarity,
-                description = cardInfo.description
+                description = cardInfo.description,
+                teamCardId = teamCardId
             )
         }
         
@@ -69,7 +76,7 @@ data class GameCard(
         get() = com.example.bogoargo.util.CardImageMapper.getBorderImage(rarity)
 }
 
-enum class CardRarity(val displayName: String, val color: String) {
+enum class CardTier(val displayName: String, val color: String) {
     COMMON("일반", "#8E8E93"),
     RARE("레어", "#007AFF"),
     EPIC("에픽", "#AF52DE"),
@@ -84,7 +91,34 @@ enum class BattleStance(val displayName: String, val emoji: String) {
 data class BattleCard(
     val gameCard: GameCard,
     val battleStance: BattleStance
-)
+) {
+    // API 응답에서 BattleCard 생성하는 헬퍼 함수
+    companion object {
+        fun fromApiResponse(
+            teamCardId: Long,
+            cardId: Long, 
+            tier: String,
+            battleStance: String
+        ): BattleCard {
+            val rarity = when (tier) {
+                "LEGEND" -> CardTier.LEGENDARY
+                "EPIC" -> CardTier.EPIC
+                "RARE" -> CardTier.RARE
+                "COMMON" -> CardTier.COMMON
+                else -> CardTier.COMMON
+            }
+            
+            val stance = when (battleStance) {
+                "ATTACK" -> BattleStance.ATTACK
+                "DEFENSE" -> BattleStance.DEFENSE
+                else -> BattleStance.ATTACK
+            }
+            
+            val gameCard = GameCard.create(cardId, rarity, teamCardId)
+            return BattleCard(gameCard, stance)
+        }
+    }
+}
 
 enum class BattleStatus(val displayName: String) {
     PENDING("신청 중"),
@@ -103,6 +137,36 @@ enum class ResultView {
 data class TeamCardCollection(
     val teamId: Long,
     val cards: List<GameCard>
+) {
+    companion object {
+        // API 응답에서 TeamCardCollection 생성
+        fun fromApiResponse(
+            teamId: Long,
+            teamCards: List<TeamCardResponse>
+        ): TeamCardCollection {
+            val gameCards = teamCards.map { teamCard ->
+                val rarity = when (teamCard.tier) {
+                    "LEGEND" -> CardTier.LEGENDARY
+                    "EPIC" -> CardTier.EPIC
+                    "RARE" -> CardTier.RARE
+                    "COMMON" -> CardTier.COMMON
+                    else -> CardTier.COMMON
+                }
+                GameCard.create(teamCard.cardId, rarity, teamCard.teamCardId)
+            }
+            return TeamCardCollection(teamId, gameCards)
+        }
+    }
+}
+
+// API 응답 데이터 클래스
+data class TeamCardResponse(
+    val teamCardId: Long,
+    val cardId: Long,
+    val tier: String,
+    val obtainedAt: String,
+    val isLost: Boolean,
+    val isLocked: Boolean
 )
 
 data class BattleHistory(
@@ -228,6 +292,19 @@ data class BattleTeam(
 data class BattleRequest(
     val requestingTeamId: Long,
     val targetTeamId: Long,
-    val selectedCards: List<GameCard>,
-    val message: String
+    val selectedCardTeamCardId: Long, // teamCardId만 전송
+    val battleStance: BattleStance,
+    val message: String = ""
 )
+
+// API 응답용 BattleCard 데이터 클래스  
+data class BattleCardResponse(
+    val teamCardId: Long,
+    val cardId: Long,
+    val tier: String,
+    val battleStance: String
+) {
+    fun toBattleCard(): BattleCard {
+        return BattleCard.fromApiResponse(teamCardId, cardId, tier, battleStance)
+    }
+}
