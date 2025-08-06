@@ -7,11 +7,13 @@ import com.argo.backend.cardgame.dto.battle.BattleResponse;
 import com.argo.backend.cardgame.dto.battle.BattleResponseDto;
 import com.argo.backend.cardgame.dto.card.CardInfoResponse;
 import com.argo.backend.cardgame.dto.history.BattleHistoryResponse;
+import com.argo.backend.cardgame.dto.stats.TeamStatsDto;
 import com.argo.backend.cardgame.dto.teamcard.TeamCardCollectionResponse;
 import com.argo.backend.cardgame.service.BattleHistoryService;
 import com.argo.backend.cardgame.service.BattleService;
 import com.argo.backend.cardgame.service.CardService;
 import com.argo.backend.cardgame.service.TeamCardService;
+import com.argo.backend.cardgame.service.TeamStatsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -31,6 +33,7 @@ public class CardController {
     private final TeamCardService teamCardService;
     private final BattleService battleService;
     private final BattleHistoryService battleHistoryService;
+    private final TeamStatsService teamStatsService;
     
     /**
      * 카드 기본 정보 조회 (유효성 검증 목적)
@@ -146,5 +149,19 @@ public class CardController {
         BattleResponse response = battleService.viewBattleResult(matchId, userId);
         
         return ResponseEntity.ok(new CommonApiResponse<>(true, response.message(), response));
+    }
+    
+    /**
+     * 팀 카드 게임 통계 조회
+     * GET /api/teams/{teamId}/stats
+     */
+    @GetMapping("/teams/{teamId}/stats")
+    public ResponseEntity<CommonApiResponse<TeamStatsDto>> getTeamStats(
+            @PathVariable Long teamId,
+            @AuthenticationPrincipal Long userId) {
+        
+        TeamStatsDto response = teamStatsService.getTeamStats(teamId, userId);
+        
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "팀 통계 조회 성공", response));
     }
 }
