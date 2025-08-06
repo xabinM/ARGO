@@ -79,10 +79,22 @@ public class CardGameMatch extends CreatedAtEntity {
     public static CardGameMatch createMatch(Team challengerTeam, Team challengedTeam) {
         return new CardGameMatch(challengerTeam, challengedTeam);
     }
+    
+    public static CardGameMatch from(Team challengerTeam, Team challengedTeam, TeamCard challengerCard, BattleStrategy challengerStrategy) {
+        return new CardGameMatch(challengerTeam, challengedTeam, challengerCard, challengerStrategy);
+    }
 
     protected CardGameMatch(Team challengerTeam, Team challengedTeam) {
         this.challengerTeam = challengerTeam;
         this.challengedTeam = challengedTeam;
+        this.status = MatchStatus.PENDING;
+    }
+    
+    protected CardGameMatch(Team challengerTeam, Team challengedTeam, TeamCard challengerCard, BattleStrategy challengerStrategy) {
+        this.challengerTeam = challengerTeam;
+        this.challengedTeam = challengedTeam;
+        this.challengerCard = challengerCard;
+        this.challengerStrategy = challengerStrategy;
         this.status = MatchStatus.PENDING;
     }
 

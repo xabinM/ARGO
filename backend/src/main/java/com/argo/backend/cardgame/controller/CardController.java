@@ -2,11 +2,14 @@ package com.argo.backend.cardgame.controller;
 
 import com.argo.backend.cardgame.dto.CommonApiResponse;
 import com.argo.backend.cardgame.dto.battle.BattleOpponentDto;
+import com.argo.backend.cardgame.dto.battle.BattleRequestDto;
+import com.argo.backend.cardgame.dto.battle.BattleResponse;
 import com.argo.backend.cardgame.dto.card.CardInfoResponse;
 import com.argo.backend.cardgame.dto.teamcard.TeamCardCollectionResponse;
 import com.argo.backend.cardgame.service.BattleService;
 import com.argo.backend.cardgame.service.CardService;
 import com.argo.backend.cardgame.service.TeamCardService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -63,5 +66,19 @@ public class CardController {
         List<BattleOpponentDto> response = battleService.getBattleOpponents(teamId, userId);
         
         return ResponseEntity.ok(new CommonApiResponse<>(true, "대전 가능한 팀 목록 조회 성공", response));
+    }
+    
+    /**
+     * 대전 신청
+     * POST /api/battles
+     */
+    @PostMapping("/battles")
+    public ResponseEntity<CommonApiResponse<BattleResponse>> createBattle(
+            @Valid @RequestBody BattleRequestDto request,
+            @AuthenticationPrincipal Long userId) {
+        
+        BattleResponse response = battleService.createBattle(request, userId);
+        
+        return ResponseEntity.ok(new CommonApiResponse<>(true, response.message(), response));
     }
 }
