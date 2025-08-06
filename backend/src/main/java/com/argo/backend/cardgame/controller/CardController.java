@@ -6,12 +6,16 @@ import com.argo.backend.cardgame.dto.battle.BattleRequestDto;
 import com.argo.backend.cardgame.dto.battle.BattleResponse;
 import com.argo.backend.cardgame.dto.battle.BattleResponseDto;
 import com.argo.backend.cardgame.dto.card.CardInfoResponse;
+import com.argo.backend.cardgame.dto.history.BattleHistoryResponse;
 import com.argo.backend.cardgame.dto.teamcard.TeamCardCollectionResponse;
+import com.argo.backend.cardgame.service.BattleHistoryService;
 import com.argo.backend.cardgame.service.BattleService;
 import com.argo.backend.cardgame.service.CardService;
 import com.argo.backend.cardgame.service.TeamCardService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
@@ -26,6 +30,7 @@ public class CardController {
     private final CardService cardService;
     private final TeamCardService teamCardService;
     private final BattleService battleService;
+    private final BattleHistoryService battleHistoryService;
     
     /**
      * 카드 기본 정보 조회 (유효성 검증 목적)
@@ -110,5 +115,22 @@ public class CardController {
         BattleResponse response = battleService.cancelBattle(matchId, userId);
         
         return ResponseEntity.ok(new CommonApiResponse<>(true, response.message(), response));
+    }
+    
+    /**
+     * 팀 대전 기록 조회
+     * GET /api/teams/{teamId}/battle-history
+     */
+    @GetMapping("/teams/{teamId}/battle-history")
+    public ResponseEntity<CommonApiResponse<BattleHistoryResponse>> getBattleHistory(
+            @PathVariable Long teamId,
+            @RequestParam(value = "page", defaultValue = "0") int page,
+            @RequestParam(value = "size", defaultValue = "10") int size,
+            @AuthenticationPrincipal Long userId) {
+        
+        Pageable pageable = PageRequest.of(page, size);
+        BattleHistoryResponse response = battleHistoryService.getBattleHistory(teamId, userId, pageable);
+        
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "대전 기록 조회 성공", response));
     }
 }
