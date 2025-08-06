@@ -1,7 +1,10 @@
 package com.example.bogoargo.ui.screens.cardgame
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -22,16 +25,22 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.bogoargo.domain.model.*
 import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.components.GameCardComponent
+import com.example.bogoargo.ui.components.ViewMode
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun CardCollectionScreen(
     navController: NavController,
     teamId: Long
 ) {
+    var showCardDetail by remember { mutableStateOf(false) }
+    var selectedCardForDetail by remember { mutableStateOf<GameCard?>(null) }
+    
     val teamCardCollection = remember {
         TeamCardCollection(
             teamId = teamId,
@@ -42,7 +51,6 @@ fun CardCollectionScreen(
                     attack = 85,
                     defense = 70,
                     rarity = CardRarity.LEGENDARY,
-                    imageUrl = "",
                     description = "불타는 날개로 적을 소멸시키는 전설의 새"
                 ),
                 GameCard(
@@ -51,7 +59,6 @@ fun CardCollectionScreen(
                     attack = 75,
                     defense = 60,
                     rarity = CardRarity.EPIC,
-                    imageUrl = "",
                     description = "어둠 속에서 빠르게 움직이는 늑대"
                 ),
                 GameCard(
@@ -60,7 +67,6 @@ fun CardCollectionScreen(
                     attack = 40,
                     defense = 90,
                     rarity = CardRarity.RARE,
-                    imageUrl = "",
                     description = "아군을 치유하는 신비한 요정"
                 ),
                 GameCard(
@@ -69,7 +75,6 @@ fun CardCollectionScreen(
                     attack = 60,
                     defense = 95,
                     rarity = CardRarity.EPIC,
-                    imageUrl = "",
                     description = "단단한 바위로 만들어진 수호자"
                 ),
                 GameCard(
@@ -78,7 +83,6 @@ fun CardCollectionScreen(
                     attack = 80,
                     defense = 50,
                     rarity = CardRarity.RARE,
-                    imageUrl = "",
                     description = "번개를 조종하는 강력한 마법사"
                 ),
                 GameCard(
@@ -87,7 +91,6 @@ fun CardCollectionScreen(
                     attack = 65,
                     defense = 75,
                     rarity = CardRarity.COMMON,
-                    imageUrl = "",
                     description = "자연을 보호하는 고대의 수호자"
                 ),
                 GameCard(
@@ -96,7 +99,6 @@ fun CardCollectionScreen(
                     attack = 90,
                     defense = 80,
                     rarity = CardRarity.LEGENDARY,
-                    imageUrl = "",
                     description = "차가운 얼음 브레스를 내뿜는 고대 용"
                 ),
                 GameCard(
@@ -105,7 +107,6 @@ fun CardCollectionScreen(
                     attack = 70,
                     defense = 85,
                     rarity = CardRarity.COMMON,
-                    imageUrl = "",
                     description = "정의를 위해 싸우는 용감한 기사"
                 )
             )
@@ -157,9 +158,39 @@ fun CardCollectionScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(filteredCards) { card ->
-                        GameCardItem(card = card)
+                        Box(
+                            modifier = Modifier
+                                .combinedClickable(
+                                    onLongClick = {
+                                        selectedCardForDetail = card
+                                        showCardDetail = true
+                                    },
+                                    onClick = { /* 일반 클릭 처리 */ }
+                                )
+                        ) {
+                            GameCardComponent(card = card)
+                        }
                     }
                 }
+            }
+        }
+    }
+    
+    // 카드 상세보기 Dialog
+    if (showCardDetail && selectedCardForDetail != null) {
+        Dialog(onDismissRequest = { showCardDetail = false }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable { showCardDetail = false }
+            ) {
+                GameCardComponent(
+                    card = selectedCardForDetail!!,
+                    viewMode = ViewMode.DETAILED,
+                    modifier = Modifier
+                        .fillMaxWidth(0.85f)
+                        .align(Alignment.Center)
+                )
             }
         }
     }
@@ -200,7 +231,7 @@ fun CollectionStats(cards: List<GameCard>) {
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
-                CardRarity.values().forEach { rarity ->
+                CardRarity.entries.forEach { rarity ->
                     val count = rarityGroups[rarity]?.size ?: 0
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -245,134 +276,13 @@ fun RarityFilterRow(
                 selectedLabelColor = Color.White
             )
         )
-        CardRarity.values().forEach { rarity ->
+        CardRarity.entries.forEach { rarity ->
             FilterChip(
                 onClick = { onRaritySelected(rarity) },
                 label = { Text(rarity.displayName) },
-                selected = selectedRarity == rarity,
-                colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = Color(android.graphics.Color.parseColor(rarity.color)),
-                    selectedLabelColor = Color.White
-                )
+                selected = selectedRarity == rarity
             )
         }
     }
 }
 
-@Composable
-fun GameCardItem(card: GameCard) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(220.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = Color(android.graphics.Color.parseColor(card.rarity.color)).copy(alpha = 0.1f)
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
-            Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.Top
-                ) {
-                    Text(
-                        text = card.name,
-                        style = MaterialTheme.typography.titleSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = NatureColors.earthBrown
-                        ),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f)
-                    )
-                    
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(android.graphics.Color.parseColor(card.rarity.color))
-                        ),
-                        shape = RoundedCornerShape(4.dp)
-                    ) {
-                        Text(
-                            text = card.rarity.displayName,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                color = Color.White,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 10.sp
-                            )
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = card.description,
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        color = Color.Gray.copy(alpha = 0.7f)
-                    ),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                StatChip(
-                    label = "공격",
-                    value = card.attack,
-                    color = Color(0xFFF44336)
-                )
-                StatChip(
-                    label = "방어",
-                    value = card.defense,
-                    color = Color(0xFF2196F3)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun StatChip(
-    label: String,
-    value: Int,
-    color: Color
-) {
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = color.copy(alpha = 0.1f)
-        ),
-        shape = RoundedCornerShape(8.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = value.toString(),
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = color
-                )
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(
-                    color = color.copy(alpha = 0.8f),
-                    fontSize = 10.sp
-                )
-            )
-        }
-    }
-}

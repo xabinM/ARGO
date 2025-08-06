@@ -15,9 +15,15 @@ data class GameCard(
     val attack: Int,
     val defense: Int,
     val rarity: CardRarity,
-    val imageUrl: String,
     val description: String
-)
+) {
+    // 계산된 속성들 - CardImageMapper를 통해 이미지 리소스 ID를 가져옴
+    val characterImageRes: Int
+        get() = com.example.bogoargo.util.CardImageMapper.getCharacterImage(cardId)
+    
+    val borderImageRes: Int
+        get() = com.example.bogoargo.util.CardImageMapper.getBorderImage(rarity)
+}
 
 enum class CardRarity(val displayName: String, val color: String) {
     COMMON("일반", "#8E8E93"),

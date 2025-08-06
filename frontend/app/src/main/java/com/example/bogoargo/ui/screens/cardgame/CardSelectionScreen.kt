@@ -1,8 +1,10 @@
 package com.example.bogoargo.ui.screens.cardgame
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -25,8 +27,11 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.bogoargo.domain.model.*
 import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.components.GameCardComponent
+import com.example.bogoargo.ui.components.StatChip
+import com.example.bogoargo.ui.components.ViewMode
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun CardSelectionScreen(
     navController: NavController,
@@ -41,7 +46,6 @@ fun CardSelectionScreen(
                 attack = 85,
                 defense = 70,
                 rarity = CardRarity.LEGENDARY,
-                imageUrl = "",
                 description = "불타는 날개로 적을 소멸시키는 전설의 새"
             ),
             GameCard(
@@ -50,7 +54,6 @@ fun CardSelectionScreen(
                 attack = 75,
                 defense = 60,
                 rarity = CardRarity.EPIC,
-                imageUrl = "",
                 description = "어둠 속에서 빠르게 움직이는 늑대"
             ),
             GameCard(
@@ -59,7 +62,6 @@ fun CardSelectionScreen(
                 attack = 40,
                 defense = 90,
                 rarity = CardRarity.RARE,
-                imageUrl = "",
                 description = "아군을 치유하는 신비한 요정"
             ),
             GameCard(
@@ -68,7 +70,6 @@ fun CardSelectionScreen(
                 attack = 60,
                 defense = 95,
                 rarity = CardRarity.EPIC,
-                imageUrl = "",
                 description = "단단한 바위로 만들어진 수호자"
             ),
             GameCard(
@@ -77,7 +78,6 @@ fun CardSelectionScreen(
                 attack = 80,
                 defense = 50,
                 rarity = CardRarity.RARE,
-                imageUrl = "",
                 description = "번개를 조종하는 강력한 마법사"
             ),
             GameCard(
@@ -86,15 +86,15 @@ fun CardSelectionScreen(
                 attack = 65,
                 defense = 75,
                 rarity = CardRarity.COMMON,
-                imageUrl = "",
                 description = "자연을 보호하는 고대의 수호자"
             )
         )
     }
 
-    var selectedCards by remember { mutableStateOf(setOf<Long>()) }
+    var selectedCard by remember { mutableStateOf<Long?>(null) }
+    var showCardDetail by remember { mutableStateOf(false) }
+    var selectedCardForDetail by remember { mutableStateOf<GameCard?>(null) }
     var showConfirmDialog by remember { mutableStateOf(false) }
-    val maxSelection = 3
 
     val targetTeamName = remember {
         when (targetTeamId) {
@@ -110,7 +110,7 @@ fun CardSelectionScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
-                    title = { Text("카드 선택 (${selectedCards.size}/$maxSelection)") },
+                    title = { Text("카드 선택 ${if (selectedCard != null) "(1/1)" else "(0/1)"}") },
                     navigationIcon = {
                         IconButton(onClick = { navController.popBackStack() }) {
                             Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
@@ -148,7 +148,7 @@ fun CardSelectionScreen(
                         
                         Button(
                             onClick = { showConfirmDialog = true },
-                            enabled = selectedCards.size == maxSelection,
+                            enabled = selectedCard != null,
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = NatureColors.leafGreen,
@@ -157,10 +157,10 @@ fun CardSelectionScreen(
                             shape = RoundedCornerShape(12.dp)
                         ) {
                             Text(
-                                text = if (selectedCards.size == maxSelection) 
+                                text = if (selectedCard != null) 
                                     "대전 신청 보내기 ⚔️" 
                                 else 
-                                    "${maxSelection}장을 선택해주세요",
+                                    "카드를 선택해주세요",
                                 style = MaterialTheme.typography.titleSmall.copy(
                                     fontWeight = FontWeight.Bold
                                 )
@@ -196,7 +196,7 @@ fun CardSelectionScreen(
                             )
                         )
                         Text(
-                            text = "대전에서 사용할 카드 $maxSelection 장을 선택해주세요. 선택한 카드들의 능력치 합계가 승부에 영향을 줍니다.",
+                            text = "대전에서 사용할 카드 1장을 선택해주세요. 선택한 카드의 능력치가 승부에 영향을 줍니다.",
                             style = MaterialTheme.typography.bodyMedium.copy(
                                 color = Color.Gray.copy(alpha = 0.7f)
                             )
@@ -213,20 +213,44 @@ fun CardSelectionScreen(
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(availableCards) { card ->
-                        SelectableCardItem(
-                            card = card,
-                            isSelected = selectedCards.contains(card.cardId),
-                            onSelectionChanged = { isSelected ->
-                                selectedCards = if (isSelected && selectedCards.size < maxSelection) {
-                                    selectedCards + card.cardId
-                                } else if (!isSelected) {
-                                    selectedCards - card.cardId
-                                } else {
-                                    selectedCards
+                        Box(
+                            modifier = Modifier
+                                .combinedClickable(
+                                    onClick = {
+                                        selectedCard = if (selectedCard == card.cardId) {
+                                            null // 이미 선택된 카드 클릭 시 선택 해제
+                                        } else {
+                                            card.cardId // 새 카드 선택
+                                        }
+                                    },
+                                    onLongClick = {
+                                        selectedCardForDetail = card
+                                        showCardDetail = true
+                                    }
+                                )
+                        ) {
+                            GameCardComponent(card = card)
+                            
+                            // 선택 체크마크
+                            if (selectedCard == card.cardId) {
+                                Card(
+                                    modifier = Modifier
+                                        .align(Alignment.TopEnd)
+                                        .padding(8.dp),
+                                    colors = CardDefaults.cardColors(containerColor = NatureColors.leafGreen),
+                                    shape = RoundedCornerShape(50)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Check,
+                                        contentDescription = "선택됨",
+                                        tint = Color.White,
+                                        modifier = Modifier
+                                            .padding(4.dp)
+                                            .size(16.dp)
+                                    )
                                 }
-                            },
-                            isSelectable = selectedCards.size < maxSelection || selectedCards.contains(card.cardId)
-                        )
+                            }
+                        }
                     }
                 }
             }
@@ -234,7 +258,7 @@ fun CardSelectionScreen(
 
         if (showConfirmDialog) {
             BattleConfirmDialog(
-                selectedCards = availableCards.filter { selectedCards.contains(it.cardId) },
+                selectedCards = listOfNotNull(availableCards.find { it.cardId == selectedCard }),
                 targetTeamName = targetTeamName,
                 onDismiss = { showConfirmDialog = false },
                 onConfirm = {
@@ -244,6 +268,25 @@ fun CardSelectionScreen(
                     navController.popBackStack()
                 }
             )
+        }
+        
+        // 카드 상세보기 Dialog
+        if (showCardDetail && selectedCardForDetail != null) {
+            Dialog(onDismissRequest = { showCardDetail = false }) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clickable { showCardDetail = false }
+                ) {
+                    GameCardComponent(
+                        card = selectedCardForDetail!!,
+                        viewMode = ViewMode.DETAILED,
+                        modifier = Modifier
+                            .fillMaxWidth(0.85f)
+                            .align(Alignment.Center)
+                    )
+                }
+            }
         }
     }
 }
@@ -317,11 +360,6 @@ fun SelectableCardItem(
                         )
                         
                         Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color(android.graphics.Color.parseColor(card.rarity.color)).copy(
-                                    alpha = if (isSelectable) 1f else 0.5f
-                                )
-                            ),
                             shape = RoundedCornerShape(4.dp)
                         ) {
                             Text(
