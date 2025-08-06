@@ -1,14 +1,18 @@
 package com.argo.backend.cardgame.controller;
 
 import com.argo.backend.cardgame.dto.CommonApiResponse;
+import com.argo.backend.cardgame.dto.battle.BattleOpponentDto;
 import com.argo.backend.cardgame.dto.card.CardInfoResponse;
 import com.argo.backend.cardgame.dto.teamcard.TeamCardCollectionResponse;
+import com.argo.backend.cardgame.service.BattleService;
 import com.argo.backend.cardgame.service.CardService;
 import com.argo.backend.cardgame.service.TeamCardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequiredArgsConstructor
@@ -17,6 +21,7 @@ public class CardController {
     
     private final CardService cardService;
     private final TeamCardService teamCardService;
+    private final BattleService battleService;
     
     /**
      * 카드 기본 정보 조회 (유효성 검증 목적)
@@ -44,5 +49,19 @@ public class CardController {
         TeamCardCollectionResponse response = teamCardService.getTeamCardCollection(teamId, userId);
         
         return ResponseEntity.ok(new CommonApiResponse<>(true, "팀 카드 컬렉션 조회 성공", response));
+    }
+    
+    /**
+     * 대전 가능한 팀 목록 조회
+     * GET /api/teams/{teamId}/battle-opponents
+     */
+    @GetMapping("/teams/{teamId}/battle-opponents")
+    public ResponseEntity<CommonApiResponse<List<BattleOpponentDto>>> getBattleOpponents(
+            @PathVariable Long teamId,
+            @AuthenticationPrincipal Long userId) {
+        
+        List<BattleOpponentDto> response = battleService.getBattleOpponents(teamId, userId);
+        
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "대전 가능한 팀 목록 조회 성공", response));
     }
 }
