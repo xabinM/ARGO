@@ -2,7 +2,7 @@ package com.argo.backend.organization.service;
 
 import com.argo.backend.domain.classroom.entity.ClassApplication;
 import com.argo.backend.domain.classroom.entity.ClassRoom;
-import com.argo.backend.domain.user.enums.ApplicationStatus;
+import com.argo.backend.domain.classroom.enums.ApplicationStatus;
 import com.argo.backend.organization.dto.applicationlist.*;
 import com.argo.backend.organization.dto.applicationprocess.*;
 import com.argo.backend.organization.exception.types.*;
