@@ -13,6 +13,7 @@ import com.argo.backend.domain.user.enums.Role;
 import com.argo.backend.domain.user.entity.Teacher;
 import com.argo.backend.domain.user.entity.User;
 import com.argo.backend.domain.user.entity.UserWithdrawal;
+import com.argo.backend.redis.logic.AuthRedis;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +41,7 @@ public class AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
-    private final RedisService redisService;
+    private final AuthRedis authRedis;
 
     public void signup(SignupRequest request) {
         validateDuplicateUsername(request.getUsername());
@@ -98,10 +99,10 @@ public class AuthService {
 
         jwtTokenProvider.validateToken(refreshToken);
 
-        if (redisService.isBlacklisted(refreshToken)) {
+        if (authRedis.isBlacklisted(refreshToken)) {
             throw new InvalidTokenException();
         }
-        redisService.addToBlacklist(refreshToken, BLACKLIST_STATUS_REISSUE);
+        authRedis.addToBlacklist(refreshToken, BLACKLIST_STATUS_REISSUE);
 
         Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
         String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
@@ -133,10 +134,10 @@ public class AuthService {
     public void logout(String refreshToken) {
         jwtTokenProvider.validateToken(refreshToken);
 
-        if (redisService.isBlacklisted(refreshToken)) {
+        if (authRedis.isBlacklisted(refreshToken)) {
             throw new InvalidTokenException();
         }
 
-        redisService.addToBlacklist(refreshToken, BLACKLIST_STATUS_LOGOUT);
+        authRedis.addToBlacklist(refreshToken, BLACKLIST_STATUS_LOGOUT);
     }
 }

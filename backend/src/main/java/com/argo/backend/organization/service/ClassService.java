@@ -4,7 +4,7 @@ import com.argo.backend.domain.classroom.entity.ClassApplication;
 import com.argo.backend.domain.classroom.entity.ClassRoom;
 import com.argo.backend.domain.classroom.enums.ClassStatus;
 import com.argo.backend.domain.location.entity.Location;
-import com.argo.backend.domain.user.enums.ApplicationStatus;
+import com.argo.backend.domain.classroom.enums.ApplicationStatus;
 import com.argo.backend.domain.user.enums.Role;
 import com.argo.backend.domain.user.entity.Teacher;
 import com.argo.backend.domain.user.entity.User;
