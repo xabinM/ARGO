@@ -32,7 +32,7 @@ public class TeamCard extends CreatedAtEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, columnDefinition = "enum('SILVER', 'GOLD', 'DIAMOND') default 'SILVER'")
-    private CardTier tier = CardTier.SILVER;
+    private CardTier tier = CardTier.EPIC;
 
     @Column(name = "obtained_at", columnDefinition = "datetime(6) default CURRENT_TIMESTAMP(6)")
     private LocalDateTime obtainedAt;
@@ -54,23 +54,4 @@ public class TeamCard extends CreatedAtEntity {
         this.obtainedAt = LocalDateTime.now();
     }
 
-    public void upgradeTier() {
-        switch (this.tier) {
-            case SILVER -> this.tier = CardTier.GOLD;
-            case GOLD -> this.tier = CardTier.DIAMOND;
-            case DIAMOND -> {} // Already max tier
-        }
-    }
-
-    public void loseCard() {
-        this.isLost = true;
-    }
-
-    public void lockCard() {
-        this.isLocked = true;
-    }
-
-    public void unlockCard() {
-        this.isLocked = false;
-    }
 }

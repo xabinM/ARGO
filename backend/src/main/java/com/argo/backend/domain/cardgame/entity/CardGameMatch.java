@@ -59,6 +59,9 @@ public class CardGameMatch extends CreatedAtEntity {
     @JoinColumn(name = "loser_team_id")
     private Team loserTeam;
 
+    @Column(name = "is_draw")
+    private boolean isDraw;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "winner_card_id")
     private TeamCard winnerCard;
@@ -84,11 +87,11 @@ public class CardGameMatch extends CreatedAtEntity {
     }
 
     public void acceptMatch() {
-        this.status = MatchStatus.ACCEPTED;
+        this.status = MatchStatus.COMPLETED;
     }
 
     public void startMatch() {
-        this.status = MatchStatus.IN_PROGRESS;
+        this.status = MatchStatus.PENDING;
         this.startedAt = LocalDateTime.now();
     }
 
