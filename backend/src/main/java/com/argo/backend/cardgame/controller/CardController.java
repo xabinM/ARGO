@@ -133,4 +133,18 @@ public class CardController {
         
         return ResponseEntity.ok(new CommonApiResponse<>(true, "대전 기록 조회 성공", response));
     }
+    
+    /**
+     * 대전 결과 확인
+     * PUT /api/battles/{matchId}/view-result
+     */
+    @PutMapping("/battles/{matchId}/view-result")
+    public ResponseEntity<CommonApiResponse<BattleResponse>> viewBattleResult(
+            @PathVariable Long matchId,
+            @AuthenticationPrincipal Long userId) {
+        
+        BattleResponse response = battleService.viewBattleResult(matchId, userId);
+        
+        return ResponseEntity.ok(new CommonApiResponse<>(true, response.message(), response));
+    }
 }

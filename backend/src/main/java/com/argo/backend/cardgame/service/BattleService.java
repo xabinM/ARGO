@@ -158,6 +158,35 @@ public class BattleService {
         return BattleResponse.success("대전 신청이 취소되었습니다");
     }
     
+    @Transactional
+    public BattleResponse viewBattleResult(Long matchId, Long userId) {
+        validateUser(userId);
+        
+        CardGameMatch match = cardGameMatchRepository.findById(matchId)
+                .orElseThrow(() -> new CardNotFoundException("해당 대전을 찾을 수 없습니다"));
+        
+        if (match.getStatus() != MatchStatus.COMPLETED) {
+            throw new CardValidationException("완료된 대전만 결과를 확인할 수 있습니다");
+        }
+        
+        // 사용자가 해당 대전의 참여자인지 확인
+        User user = userRepository.findById(userId).get();
+        Long userTeamId = user.getTeam() != null ? user.getTeam().getTeamId() : null;
+        
+        if (userTeamId == null || 
+            (!userTeamId.equals(match.getChallengerTeam().getTeamId()) && 
+             !userTeamId.equals(match.getChallengedTeam().getTeamId()))) {
+            throw new UnauthorizedClassAccessException();
+        }
+        
+        // resultView 상태 업데이트 로직 (현재는 기본 처리)
+        // 실제로는 누가 확인했는지에 따라 CHALLENGER_SEE, CHALLENGED_SEE 등으로 업데이트
+        // 여기서는 간단하게 처리
+        // 추가 구현 해야함
+        
+        return BattleResponse.success("대전 결과 확인이 처리되었습니다");
+    }
+    
     private void validateChallengerAccess(Team challengerTeam, Long userId) {
         User user = userRepository.findById(userId).get();
         
