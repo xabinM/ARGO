@@ -1,4 +1,4 @@
-package com.argo.backend.auth.service;
+package com.argo.backend.redis;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;

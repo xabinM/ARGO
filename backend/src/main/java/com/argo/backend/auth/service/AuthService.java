@@ -13,6 +13,7 @@ import com.argo.backend.domain.user.enums.Role;
 import com.argo.backend.domain.user.entity.Teacher;
 import com.argo.backend.domain.user.entity.User;
 import com.argo.backend.domain.user.entity.UserWithdrawal;
+import com.argo.backend.redis.RedisService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
