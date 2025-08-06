@@ -135,6 +135,29 @@ public class BattleService {
 
     }
     
+    @Transactional
+    public BattleResponse cancelBattle(Long matchId, Long userId) {
+        validateUser(userId);
+        
+        CardGameMatch match = cardGameMatchRepository.findById(matchId)
+                .orElseThrow(() -> new CardNotFoundException("해당 대전을 찾을 수 없습니다"));
+        
+        if (match.getStatus() != MatchStatus.PENDING) {
+            throw new CardValidationException("이미 처리된 대전은 취소할 수 없습니다");
+        }
+        
+        validateChallengerAccess(match.getChallengerTeam(), userId);
+        
+        match.setStatus(MatchStatus.CANCELLED);
+        
+        // 신청자 카드 잠금 해제
+        if (match.getChallengerCard() != null) {
+            match.getChallengerCard().setIsLocked(false);
+        }
+        
+        return BattleResponse.success("대전 신청이 취소되었습니다");
+    }
+    
     private void validateChallengerAccess(Team challengerTeam, Long userId) {
         User user = userRepository.findById(userId).get();
         

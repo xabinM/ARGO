@@ -97,4 +97,18 @@ public class CardController {
         
         return ResponseEntity.ok(new CommonApiResponse<>(true, response.message(), response));
     }
+    
+    /**
+     * 대전 신청 취소
+     * DELETE /api/battles/{matchId}
+     */
+    @DeleteMapping("/battles/{matchId}")
+    public ResponseEntity<CommonApiResponse<BattleResponse>> cancelBattle(
+            @PathVariable Long matchId,
+            @AuthenticationPrincipal Long userId) {
+        
+        BattleResponse response = battleService.cancelBattle(matchId, userId);
+        
+        return ResponseEntity.ok(new CommonApiResponse<>(true, response.message(), response));
+    }
 }
