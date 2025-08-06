@@ -22,7 +22,7 @@ import com.example.bogoargo.ui.theme.NatureTypography
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TeacherMainScreen(
+fun TeacherHomeScreen(
     navController: NavController,
     viewModel: TeacherMainViewModel = hiltViewModel()
 ) {
@@ -277,5 +277,5 @@ fun InfoItem(
 @Composable
 fun PreviewTeacherMainScreen() {
     val navController = rememberNavController()
-    TeacherMainScreen(navController = navController)
+    TeacherHomeScreen(navController = navController)
 }

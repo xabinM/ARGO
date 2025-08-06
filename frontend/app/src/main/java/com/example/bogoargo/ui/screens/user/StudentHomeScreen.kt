@@ -1,4 +1,4 @@
-package com.example.bogoargo.ui.screens
+package com.example.bogoargo.ui.screens.user
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,7 +20,7 @@ import com.example.bogoargo.ui.viewmodels.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(
+fun StudentHomeScreen(
     navController: NavController,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
@@ -155,6 +155,6 @@ fun HomeScreen(
 @Composable
 fun HomeScreenPreview() {
     MaterialTheme {
-        HomeScreen(navController = rememberNavController())
+        StudentHomeScreen(navController = rememberNavController())
     }
 }
