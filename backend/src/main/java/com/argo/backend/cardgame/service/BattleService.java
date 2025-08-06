@@ -3,6 +3,7 @@ package com.argo.backend.cardgame.service;
 import com.argo.backend.cardgame.dto.battle.BattleOpponentDto;
 import com.argo.backend.cardgame.dto.battle.BattleRequestDto;
 import com.argo.backend.cardgame.dto.battle.BattleResponse;
+import com.argo.backend.cardgame.dto.battle.BattleResponseDto;
 import com.argo.backend.cardgame.exception.types.CardNotFoundException;
 import com.argo.backend.cardgame.exception.types.CardValidationException;
 import com.argo.backend.domain.cardgame.entity.CardGameMatch;
@@ -72,6 +73,66 @@ public class BattleService {
         cardGameMatchRepository.save(match);
         
         return BattleResponse.success("대전 신청이 성공적으로 전송되었습니다");
+    }
+    
+    @Transactional
+    public BattleResponse respondToBattle(Long matchId, BattleResponseDto request, Long userId) {
+        validateUser(userId);
+        
+        CardGameMatch match = cardGameMatchRepository.findById(matchId)
+                .orElseThrow(() -> new CardNotFoundException("해당 대전을 찾을 수 없습니다"));
+        
+        if (match.getStatus() != MatchStatus.PENDING) {
+            throw new CardValidationException("이미 처리된 대전입니다");
+        }
+        
+        validateChallengedAccess(match.getChallengedTeam(), userId);
+        
+        if ("ACCEPT".equals(request.action())) {
+            TeamCard challengedCard = validateAndLockCard(request.selectedCard().teamCardId(), match.getChallengedTeam());
+            
+            match.setChallengedCard(challengedCard);
+            match.setChallengedStrategy(request.selectedCard().battleStance());
+            match.setStatus(MatchStatus.COMPLETED);
+            
+            // 대전 결과 계산 및 처리는 별도 메서드로 분리 가능
+            processBattleResult(match);
+            
+            return BattleResponse.success("대전 수락이 완료되었습니다");
+        } else {
+            match.setStatus(MatchStatus.CANCELLED);
+            
+            // 신청자 카드 잠금 해제
+            if (match.getChallengerCard() != null) {
+                match.getChallengerCard().setIsLocked(false);
+            }
+            
+            return BattleResponse.success("대전을 거절하였습니다");
+        }
+    }
+    
+    private void validateChallengedAccess(Team challengedTeam, Long userId) {
+        User user = userRepository.findById(userId).get();
+        
+        if (user.getTeam() == null || !user.getTeam().getTeamId().equals(challengedTeam.getTeamId())) {
+            throw new UnauthorizedClassAccessException();
+        }
+    }
+    
+    private void processBattleResult(CardGameMatch match) {
+        // 간단한 대전 로직 (추후 확장 가능)
+        // match에 대해서 누가 이겼는지와
+        // 각 팀에 대해 점수 반영
+        match.setStatus(MatchStatus.COMPLETED);
+        
+        // 카드 잠금 해제
+        if (match.getChallengerCard() != null) {
+            match.getChallengerCard().setIsLocked(false);
+        }
+        if (match.getChallengedCard() != null) {
+            match.getChallengedCard().setIsLocked(false);
+        }
+
     }
     
     private void validateChallengerAccess(Team challengerTeam, Long userId) {

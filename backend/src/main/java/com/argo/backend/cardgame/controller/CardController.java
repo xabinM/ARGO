@@ -4,6 +4,7 @@ import com.argo.backend.cardgame.dto.CommonApiResponse;
 import com.argo.backend.cardgame.dto.battle.BattleOpponentDto;
 import com.argo.backend.cardgame.dto.battle.BattleRequestDto;
 import com.argo.backend.cardgame.dto.battle.BattleResponse;
+import com.argo.backend.cardgame.dto.battle.BattleResponseDto;
 import com.argo.backend.cardgame.dto.card.CardInfoResponse;
 import com.argo.backend.cardgame.dto.teamcard.TeamCardCollectionResponse;
 import com.argo.backend.cardgame.service.BattleService;
@@ -78,6 +79,21 @@ public class CardController {
             @AuthenticationPrincipal Long userId) {
         
         BattleResponse response = battleService.createBattle(request, userId);
+        
+        return ResponseEntity.ok(new CommonApiResponse<>(true, response.message(), response));
+    }
+    
+    /**
+     * 대전 응답 (수락/거절)
+     * PUT /api/battles/{matchId}/respond
+     */
+    @PutMapping("/battles/{matchId}/respond")
+    public ResponseEntity<CommonApiResponse<BattleResponse>> respondToBattle(
+            @PathVariable Long matchId,
+            @Valid @RequestBody BattleResponseDto request,
+            @AuthenticationPrincipal Long userId) {
+        
+        BattleResponse response = battleService.respondToBattle(matchId, request, userId);
         
         return ResponseEntity.ok(new CommonApiResponse<>(true, response.message(), response));
     }
