@@ -6,10 +6,7 @@ import com.argo.backend.mission.dto.missionCreate.MissionCreateResponse;
 import com.argo.backend.mission.service.MissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
@@ -26,4 +23,21 @@ public class MissionController {
 
         return ResponseEntity.ok(new MissionCreateResponse(ResponseMessage.SUCCESS_CREATE_MISSION.getMessage(), dto));
     }
+//
+//    @GetMapping("/overview/team/{teamId}/")
+//    public ResponseEntity<?>
+//
+
+//    // 미션 제출 (퀴즈)
+//    @PostMapping("/{missionId}/submit/quiz")
+//    public ResponseEntity<?> submitQuiz() {
+//
+//        return ResponseEntity.ok();
+//    }
+//    // 미션 제출 (셀카)
+//    @PostMapping("/{missionId}/submit/selfie")
+//    public ResponseEntity<?> submitSelfie() {
+//
+//        return ResponseEntity.ok();
+//    }
 }

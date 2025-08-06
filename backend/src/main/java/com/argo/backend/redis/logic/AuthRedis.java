@@ -1,5 +1,7 @@
-package com.argo.backend.redis;
+package com.argo.backend.redis.logic;
 
+import com.argo.backend.redis.common.RedisKeyFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -7,19 +9,20 @@ import org.springframework.stereotype.Service;
 import java.util.concurrent.TimeUnit;
 
 @Service
-public class RedisService {
-
-    private static final String BLACKLIST_PREFIX = "BL:";
+public class AuthRedis {
 
     private final RedisTemplate<String, String> redisTemplate;
     private final long refreshTokenExpirationMs;
+    private final RedisKeyFactory redisKeyFactory;
 
-    public RedisService(
-            RedisTemplate<String, String> redisTemplate,
-            @Value("${jwt.refreshTokenExpirationMs}") long refreshTokenExpirationMs
+    public AuthRedis(
+            @Qualifier("authRedisTemplate") RedisTemplate<String, String> redisTemplate,
+            @Value("${jwt.refreshTokenExpirationMs}") long refreshTokenExpirationMs,
+            RedisKeyFactory redisKeyFactory
     ) {
         this.redisTemplate = redisTemplate;
         this.refreshTokenExpirationMs = refreshTokenExpirationMs;
+        this.redisKeyFactory = redisKeyFactory;
     }
 
     public void saveRefreshToken(String username, String refreshToken) {
@@ -35,11 +38,13 @@ public class RedisService {
     }
 
     public void addToBlacklist(String token, String value) {
-        redisTemplate.opsForValue().set(BLACKLIST_PREFIX + token, value, refreshTokenExpirationMs, TimeUnit.MILLISECONDS);
+        String key = redisKeyFactory.getBlacklistKey(token);
+        redisTemplate.opsForValue().set(key, value, refreshTokenExpirationMs, TimeUnit.MILLISECONDS);
     }
 
     public boolean isBlacklisted(String token) {
-        return redisTemplate.hasKey(BLACKLIST_PREFIX + token);
+        String key = redisKeyFactory.getBlacklistKey(token);
+        return redisTemplate.hasKey(key);
     }
 
     public void deleteRefreshToken(String username) {
