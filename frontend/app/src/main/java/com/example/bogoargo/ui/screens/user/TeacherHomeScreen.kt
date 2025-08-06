@@ -3,33 +3,33 @@ package com.example.bogoargo.ui.screens.user
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.bogoargo.ui.viewmodels.user.TeacherMainViewModel
+import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureElevation
+import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
-
-// R.drawable.profile_placeholder와 같은 리소스 ID를 사용하려면
-// res/drawable 폴더에 이미지를 추가해야 합니다.
-// 예시를 위해 임시로 안드로이드 아이콘을 사용합니다. 실제 앱에서는 자신의 이미지를 사용하세요.
-//import android.R
+import com.example.bogoargo.ui.viewmodels.user.TeacherHomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeacherHomeScreen(
     navController: NavController,
-    viewModel: TeacherMainViewModel = hiltViewModel()
+    viewModel: TeacherHomeViewModel = hiltViewModel()
 ) {
-    /* // TODO: 교사 메인 페이지
-    val user by viewModel.user.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val uiState by viewModel.uiState.collectAsState()
+     val uiState by viewModel.uiState.collectAsState()
     
     Scaffold(
         topBar = {
@@ -81,7 +81,7 @@ fun TeacherHomeScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = user?.nickname?.let { "$it 님" } ?: "로딩중...",
+                                text = uiState.currentUser?.name?.let { "$it 님" } ?: "로딩중...",
                                 style = NatureTypography.titleLarge.copy(fontSize = 24.sp)
                             )
                         }
@@ -142,7 +142,7 @@ fun TeacherHomeScreen(
                     ) {
                         Button(
                             onClick = {
-                                navController.navigate("programManagement")
+                                navController.navigate("") //TODO: 미션 생성 버튼
                             },
                             modifier = Modifier.fillMaxSize(),
                             colors = ButtonDefaults.buttonColors(
@@ -186,49 +186,66 @@ fun TeacherHomeScreen(
                             emoji = "📋"
                         )
                         
-                        when (uiState) {
-                            is TeacherMainViewModel.UiState.Loading -> {
-                                NatureComponents.NatureLoadingIndicator(
-                                    modifier = Modifier.height(100.dp)
+                        if (uiState.isLoading) {
+                            Box(
+                                modifier = Modifier.height(100.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator(
+                                    color = NatureColors.leafGreen
                                 )
                             }
-                            is TeacherMainViewModel.UiState.Authenticated -> {
-                                Column(
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                        } else if (uiState.errorMessage != null) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = "⚠️",
+                                    fontSize = 32.sp
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "정보를 불러올 수 없어요",
+                                    style = NatureTypography.titleMedium
+                                )
+                                Text(
+                                    text = uiState.errorMessage.toString(),
+                                    style = NatureTypography.bodySmall,
+                                    color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Button(
+                                    onClick = { viewModel.refreshUserInfo() },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = NatureColors.leafGreen
+                                    )
                                 ) {
-                                    InfoItem(
-                                        emoji = "👤",
-                                        label = "이름",
-                                        value = user?.name ?: "정보 없음"
-                                    )
-                                    InfoItem(
-                                        emoji = "🏷️",
-                                        label = "역할",
-                                        value = when(user?.role) {
-                                            UserRole.TEACHER -> "선생님"
-                                            UserRole.STUDENT -> "학생"
-                                            else -> "정보 없음"
-                                        }
-                                    )
-                                    InfoItem(
-                                        emoji = "🆔",
-                                        label = "사용자 ID",
-                                        value = user?.id?.toString() ?: "정보 없음"
-                                    )
+                                    Text("다시 시도")
                                 }
                             }
-                            is TeacherMainViewModel.UiState.Error -> {
-                                NatureComponents.EmptyStateCard(
-                                    emoji = "⚠️",
-                                    title = "정보를 불러올 수 없어요",
-                                    description = "잠시 후 다시 시도해주세요"
+                        } else {
+                            Column(
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                InfoItem(
+                                    emoji = "👤",
+                                    label = "이름",
+                                    value = uiState.currentUser?.name ?: "정보 없음"
                                 )
-                            }
-                            else -> {
-                                NatureComponents.EmptyStateCard(
-                                    emoji = "🔍",
-                                    title = "정보를 찾을 수 없어요",
-                                    description = "사용자 정보를 확인해주세요"
+                                InfoItem(
+                                    emoji = "🏷️",
+                                    label = "역할",
+                                    value = when(uiState.currentUser?.role) {
+                                        UserRole.TEACHER -> "선생님"
+                                        UserRole.STUDENT -> "학생"
+                                        else -> "정보 없음"
+                                    }
+                                )
+                                InfoItem(
+                                    emoji = "🆔",
+                                    label = "사용자 ID",
+                                    value = uiState.currentUser?.userId?.toString() ?: "정보 없음"
                                 )
                             }
                         }
@@ -237,7 +254,7 @@ fun TeacherHomeScreen(
             }
         }
     }
-    */
+
 
 }
 
