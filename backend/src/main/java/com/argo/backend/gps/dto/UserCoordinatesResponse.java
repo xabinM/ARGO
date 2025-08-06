@@ -7,8 +7,10 @@ import java.math.BigDecimal;
 
 @Getter
 @AllArgsConstructor
-public class UserCoordinates {
+public class UserCoordinatesResponse {
 
+    private Long userId;
     private BigDecimal latitude;
     private BigDecimal longitude;
+    private Long timestamp;
 }
