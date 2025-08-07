@@ -37,10 +37,9 @@ fun StudentClassDetailScreen(
         topBar = {
             NatureComponents.NatureTopAppBar(
                 title = "우리반",
-                emoji = "🎒"
-            ) { 
-                navController.popBackStack() 
-            }
+                emoji = "🎒",
+                onNavigationClick = { navController.popBackStack() }
+            )
         }
     ) { paddingValues ->
         NatureComponents.NatureBackground {

@@ -351,19 +351,17 @@ fun BattleRequestModal(
                 ) {
                     NatureComponents.NatureOutlinedButton(
                         onClick = onDismiss,
+                        text = "취소",
                         modifier = Modifier.weight(1f)
-                    ) {
-                        Text("취소")
-                    }
+                    )
                     
                     NatureComponents.NatureButton(
                         onClick = { onConfirm(targetTeam) },
+                        text = "신청하기",
                         modifier = Modifier.weight(1f),
-                        containerColor = NatureColors.leafGreen,
+                        backgroundColor = NatureColors.leafGreen,
                         contentColor = Color.White
-                    ) {
-                        Text("신청하기")
-                    }
+                    )
                 }
             }
         }

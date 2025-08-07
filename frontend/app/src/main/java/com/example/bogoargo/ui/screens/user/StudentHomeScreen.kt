@@ -36,10 +36,9 @@ fun StudentHomeScreen(
         topBar = {
             NatureComponents.NatureTopAppBar(
                 title = "내 반들",
-                emoji = "🎒"
-            ) { 
-                // 홈 화면이므로 뒤로가기 없음
-            }
+                emoji = "🎒",
+                onNavigationClick = null
+            )
         }
     ) { paddingValues ->
         NatureComponents.NatureBackground {

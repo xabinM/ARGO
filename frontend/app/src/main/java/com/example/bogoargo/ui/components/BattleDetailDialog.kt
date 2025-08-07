@@ -11,10 +11,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.example.bogoargo.domain.model.BattleHistory
 import com.example.bogoargo.domain.model.GameCard
 import com.example.bogoargo.domain.model.BattleCard
 import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NatureElevation
 import com.example.bogoargo.ui.components.GameCardComponent
 import com.example.bogoargo.ui.components.ViewMode
 import com.example.bogoargo.ui.components.CardDetailDialog
@@ -30,124 +35,125 @@ fun BattleDetailDialog(
     // 카드 상세보기 상태 관리
     var showCardDetail by remember { mutableStateOf(false) }
     var selectedCardForDetail by remember { mutableStateOf<GameCard?>(null) }
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                text = "대전 상세 정보 🎮",
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = NatureColors.forestGreen
-                )
-            )
-        },
-        text = {
+    
+    Dialog(onDismissRequest = onDismiss) {
+        NatureComponents.NatureCard(
+            modifier = Modifier
+                .fillMaxWidth(0.95f)
+                .fillMaxHeight(0.85f),
+            shape = NatureShapes.large,
+            containerColor = NatureColors.whiteTransparent,
+            elevation = NatureElevation.extraLarge
+        ) {
             Column(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // 대전 기본 정보
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = NatureColors.whiteTransparent),
-                    shape = RoundedCornerShape(12.dp)
+                // 제목
+                Text(
+                    text = "대전 상세 정보 🎮",
+                    style = NatureTypography.titleLarge,
+                    color = NatureColors.forestGreen
+                )
+                
+                // 스크롤 가능한 컨텐츠 영역
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    // 대전 기본 정보
+                    NatureComponents.NatureCard(
+                        containerColor = NatureColors.whiteTransparent90,
+                        shape = NatureShapes.medium,
+                        elevation = NatureElevation.small
                     ) {
-                        Text(
-                            text = "vs ${battle.opponentTeamName}",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "vs ${battle.opponentTeamName}",
+                                style = NatureTypography.titleMedium
                             )
-                        )
-                        Text(
-                            text = "대전일: ${battle.endedAt}",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Text(
-                            text = when (battle.isWin) {
-                                true -> "결과: 승리 🏆 (+${battle.scoreGained}점)"
-                                false -> "결과: 패배 💔 (${battle.scoreGained}점)"
-                                null -> "결과: 무승부 🤝"
-                            },
-                            style = MaterialTheme.typography.bodyMedium.copy(
+                            Text(
+                                text = "대전일: ${battle.endedAt}",
+                                style = NatureTypography.bodyMedium
+                            )
+                            Text(
+                                text = when (battle.isWin) {
+                                    true -> "결과: 승리 🏆 (+${battle.scoreGained}점)"
+                                    false -> "결과: 패배 💔 (${battle.scoreGained}점)"
+                                    null -> "결과: 무승부 🤝"
+                                },
+                                style = NatureTypography.bodyMedium,
                                 color = when (battle.isWin) {
                                     true -> Color(0xFF4CAF50)
                                     false -> Color(0xFFF44336)
                                     null -> Color(0xFF9E9E9E)
-                                },
-                                fontWeight = FontWeight.Bold
+                                }
                             )
+                        }
+                    }
+                    
+                    // 카드 비교
+                    if (battle.myCard != null && battle.opponentCard != null) {
+                        Text(
+                            text = "사용된 카드",
+                            style = NatureTypography.titleMedium,
+                            color = NatureColors.earthBrown
                         )
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // 내 카드
+                            BattleCardDisplay(
+                                battleCard = battle.myCard,
+                                title = "내 카드",
+                                isWinner = battle.isWin == true,
+                                onCardLongPress = { card ->
+                                    selectedCardForDetail = card
+                                    showCardDetail = true
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                            
+                            // VS 표시
+                            Text(
+                                text = "VS",
+                                style = NatureTypography.titleLarge,
+                                color = NatureColors.forestGreen
+                            )
+                            
+                            // 상대 카드
+                            BattleCardDisplay(
+                                battleCard = battle.opponentCard,
+                                title = "상대 카드", 
+                                isWinner = battle.isWin == false,
+                                onCardLongPress = { card ->
+                                    selectedCardForDetail = card
+                                    showCardDetail = true
+                                },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
                     }
                 }
                 
-                // 카드 비교
-                if (battle.myCard != null && battle.opponentCard != null) {
-                    Text(
-                        text = "사용된 카드",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = NatureColors.earthBrown
-                        )
-                    )
-                    
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // 내 카드
-                        BattleCardDisplay(
-                            battleCard = battle.myCard,
-                            title = "내 카드",
-                            isWinner = battle.isWin == true,
-                            onCardLongPress = { card ->
-                                selectedCardForDetail = card
-                                showCardDetail = true
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                        
-                        // VS 표시
-                        Text(
-                            text = "VS",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = NatureColors.forestGreen
-                            )
-                        )
-                        
-                        // 상대 카드
-                        BattleCardDisplay(
-                            battleCard = battle.opponentCard,
-                            title = "상대 카드", 
-                            isWinner = battle.isWin == false,
-                            onCardLongPress = { card ->
-                                selectedCardForDetail = card
-                                showCardDetail = true
-                            },
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                }
+                // 버튼 영역
+                NatureComponents.NatureButton(
+                    onClick = onDismiss,
+                    text = "닫기",
+                    modifier = Modifier.fillMaxWidth(),
+                    backgroundColor = NatureColors.leafGreen
+                )
             }
-        },
-        confirmButton = {
-            Button(
-                onClick = onDismiss,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = NatureColors.leafGreen
-                ),
-                shape = RoundedCornerShape(8.dp)
-            ) {
-                Text("닫기")
-            }
-        },
-        containerColor = NatureColors.whiteTransparent,
-        shape = RoundedCornerShape(16.dp)
-    )
+        }
+    }
     
     // 카드 상세보기 Dialog
     CardDetailDialog(
@@ -176,19 +182,15 @@ fun BattleCardDisplay(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // 제목과 승자 표시
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isWinner) Color(0xFFE8F5E8) else Color(0xFFFFF8E1)
-                ),
-                shape = RoundedCornerShape(8.dp),
-                border = if (isWinner) BorderStroke(2.dp, Color(0xFF4CAF50)) else null
+            NatureComponents.NatureCard(
+                containerColor = if (isWinner) Color(0xFFE8F5E8) else Color(0xFFFFF8E1),
+                shape = NatureShapes.small,
+                elevation = if (isWinner) NatureElevation.medium else NatureElevation.small
             ) {
                 Text(
                     text = title + if (isWinner) " 🏆" else "",
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
+                    style = NatureTypography.labelMedium,
                     color = if (isWinner) Color(0xFF4CAF50) else NatureColors.earthBrown
                 )
             }
@@ -208,21 +210,13 @@ fun BattleCardDisplay(
             }
             
             // 스탠스 표시
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = when (battleCard.battleStance) {
-                        com.example.bogoargo.domain.model.BattleStance.ATTACK -> Color(0xFFF44336).copy(alpha = 0.1f)
-                        com.example.bogoargo.domain.model.BattleStance.DEFENSE -> Color(0xFF2196F3).copy(alpha = 0.1f)
-                    }
-                ),
-                shape = RoundedCornerShape(12.dp),
-                border = BorderStroke(
-                    1.dp,
-                    when (battleCard.battleStance) {
-                        com.example.bogoargo.domain.model.BattleStance.ATTACK -> Color(0xFFF44336)
-                        com.example.bogoargo.domain.model.BattleStance.DEFENSE -> Color(0xFF2196F3)
-                    }
-                )
+            NatureComponents.NatureCard(
+                containerColor = when (battleCard.battleStance) {
+                    com.example.bogoargo.domain.model.BattleStance.ATTACK -> Color(0xFFF44336).copy(alpha = 0.1f)
+                    com.example.bogoargo.domain.model.BattleStance.DEFENSE -> Color(0xFF2196F3).copy(alpha = 0.1f)
+                },
+                shape = NatureShapes.medium,
+                elevation = NatureElevation.small
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -236,13 +230,11 @@ fun BattleCardDisplay(
                     )
                     Text(
                         text = battleCard.battleStance.displayName,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = when (battleCard.battleStance) {
-                                com.example.bogoargo.domain.model.BattleStance.ATTACK -> Color(0xFFF44336)
-                                com.example.bogoargo.domain.model.BattleStance.DEFENSE -> Color(0xFF2196F3)
-                            }
-                        )
+                        style = NatureTypography.labelSmall,
+                        color = when (battleCard.battleStance) {
+                            com.example.bogoargo.domain.model.BattleStance.ATTACK -> Color(0xFFF44336)
+                            com.example.bogoargo.domain.model.BattleStance.DEFENSE -> Color(0xFF2196F3)
+                        }
                     )
                 }
             }
@@ -254,27 +246,21 @@ fun BattleCardDisplay(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFF5F5F5)
-                ),
-                shape = RoundedCornerShape(8.dp)
+            NatureComponents.NatureCard(
+                containerColor = Color(0xFFF5F5F5),
+                shape = NatureShapes.small
             ) {
                 Text(
                     text = title,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    style = MaterialTheme.typography.labelMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
+                    style = NatureTypography.labelMedium,
                     color = Color.Gray
                 )
             }
             
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFF5F5F5)
-                ),
-                shape = RoundedCornerShape(8.dp),
+            NatureComponents.NatureCard(
+                containerColor = Color(0xFFF5F5F5),
+                shape = NatureShapes.small,
                 modifier = Modifier.size(width = 90.dp, height = 135.dp)
             ) {
                 Box(
@@ -283,7 +269,7 @@ fun BattleCardDisplay(
                 ) {
                     Text(
                         text = "선택 안함",
-                        style = MaterialTheme.typography.bodySmall,
+                        style = NatureTypography.bodySmall,
                         color = Color.Gray
                     )
                 }

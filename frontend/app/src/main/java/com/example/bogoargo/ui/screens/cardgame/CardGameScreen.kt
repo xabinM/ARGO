@@ -456,7 +456,7 @@ fun ActionButtonsRow(
         NatureComponents.NatureButton(
             onClick = onViewCards,
             modifier = Modifier.weight(1f),
-            containerColor = NatureColors.sunnyYellow,
+            backgroundColor = NatureColors.sunnyYellow,
             contentColor = NatureColors.earthBrown
         ) {
             Icon(
@@ -472,7 +472,7 @@ fun ActionButtonsRow(
             onClick = onRequestBattle,
             enabled = isTeamLeader,
             modifier = Modifier.weight(1f),
-            containerColor = if (isTeamLeader) NatureColors.leafGreen else Color.Gray,
+            backgroundColor = if (isTeamLeader) NatureColors.leafGreen else Color.Gray,
             contentColor = Color.White
         ) {
             Icon(
@@ -579,7 +579,7 @@ fun BattleHistoryItem(
                     NatureComponents.NatureButton(
                         onClick = { onCancelRequest(battle.matchId) },
                         modifier = Modifier.fillMaxWidth(),
-                        containerColor = Color(0xFFF44336),
+                        backgroundColor = Color(0xFFF44336),
                         contentColor = Color.White
                     ) {
                         Icon(
@@ -602,7 +602,7 @@ fun BattleHistoryItem(
                         NatureComponents.NatureButton(
                             onClick = { onAcceptBattle(battle.matchId) },
                             modifier = Modifier.weight(1f),
-                            containerColor = NatureColors.leafGreen,
+                            backgroundColor = NatureColors.leafGreen,
                             contentColor = Color.White
                         ) {
                             Icon(
@@ -618,7 +618,7 @@ fun BattleHistoryItem(
                         NatureComponents.NatureButton(
                             onClick = { onRejectBattle(battle.matchId) },
                             modifier = Modifier.weight(1f),
-                            containerColor = Color(0xFFF44336),
+                            backgroundColor = Color(0xFFF44336),
                             contentColor = Color.White
                         ) {
                             Icon(
@@ -637,7 +637,7 @@ fun BattleHistoryItem(
                     NatureComponents.NatureButton(
                         onClick = { onViewResult(battle.matchId) },
                         modifier = Modifier.fillMaxWidth(),
-                        containerColor = NatureColors.sunnyYellow,
+                        backgroundColor = NatureColors.sunnyYellow,
                         contentColor = NatureColors.earthBrown
                     ) {
                         Icon(
@@ -686,7 +686,7 @@ fun BattleHistoryItem(
                         NatureComponents.NatureButton(
                             onClick = { onViewDetail(battle) },
                             modifier = Modifier.fillMaxWidth(),
-                            containerColor = NatureColors.earthBrown.copy(alpha = 0.8f),
+                            backgroundColor = NatureColors.earthBrown.copy(alpha = 0.8f),
                             contentColor = Color.White
                         ) {
                             Icon(

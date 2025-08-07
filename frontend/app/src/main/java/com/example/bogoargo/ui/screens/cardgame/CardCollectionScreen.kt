@@ -243,14 +243,34 @@ fun RarityFilterRow(
             selected = selectedRarity == null,
             colors = FilterChipDefaults.filterChipColors(
                 selectedContainerColor = NatureColors.forestGreen,
-                selectedLabelColor = Color.White
+                selectedLabelColor = Color.White,
+                containerColor = NatureColors.whiteTransparent,
+                labelColor = NatureColors.earthBrown
+            ),
+            border = FilterChipDefaults.filterChipBorder(
+                enabled = true,
+                selected = selectedRarity == null,
+                borderColor = NatureColors.forestGreen.copy(alpha = 0.3f),
+                selectedBorderColor = NatureColors.forestGreen
             )
         )
         CardTier.entries.forEach { rarity ->
             FilterChip(
                 onClick = { onRaritySelected(rarity) },
                 label = { Text(rarity.displayName, style = NatureTypography.labelMedium) },
-                selected = selectedRarity == rarity
+                selected = selectedRarity == rarity,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Color(android.graphics.Color.parseColor(rarity.color)),
+                    selectedLabelColor = Color.White,
+                    containerColor = NatureColors.whiteTransparent,
+                    labelColor = NatureColors.earthBrown
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedRarity == rarity,
+                    borderColor = Color(android.graphics.Color.parseColor(rarity.color)).copy(alpha = 0.3f),
+                    selectedBorderColor = Color(android.graphics.Color.parseColor(rarity.color))
+                )
             )
         }
     }

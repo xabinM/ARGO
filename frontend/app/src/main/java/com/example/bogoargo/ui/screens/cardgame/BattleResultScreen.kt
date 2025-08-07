@@ -638,7 +638,7 @@ fun BattleResultScreen(
                         NatureComponents.NatureButton(
                             onClick = { navController.popBackStack() },
                             modifier = Modifier.fillMaxWidth(),
-                            containerColor = NatureColors.forestGreen,
+                            backgroundColor = NatureColors.forestGreen,
                             contentColor = Color.White
                         ) {
                             Text(
