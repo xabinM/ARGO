@@ -503,7 +503,7 @@ object NatureComponents {
                         modifier = Modifier.size(60.dp),
                         shape = CircleShape,
                         colors = CardDefaults.cardColors(
-                            containerColor = if (member.role == UserRole.TEACHER)
+                            containerColor = if (member.role == UserRole.ROLE_TEACHER)
                                 earthBrown
                             else
                                 when ((member.name.length) % 4) {
@@ -520,7 +520,7 @@ object NatureComponents {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = if (member.role == UserRole.TEACHER) "👩‍🏫" else "👦",
+                                text = if (member.role == UserRole.ROLE_TEACHER) "👩‍🏫" else "👦",
                                 fontSize = 24.sp
                             )
                         }
@@ -568,20 +568,20 @@ object NatureComponents {
                         shape = RoundedCornerShape(6.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = when (member.role) {
-                                UserRole.TEACHER -> earthBrown.copy(alpha = 0.15f)
-                                UserRole.STUDENT -> sunnyYellow.copy(alpha = 0.2f)
+                                UserRole.ROLE_TEACHER -> earthBrown.copy(alpha = 0.15f)
+                                UserRole.ROLE_STUDENT -> sunnyYellow.copy(alpha = 0.2f)
                             }
                         )
                     ) {
                         Text(
                             text = when (member.role) {
-                                UserRole.TEACHER -> "📚 선생님"
-                                UserRole.STUDENT -> "✏️ 학생"
+                                UserRole.ROLE_TEACHER -> "📚 선생님"
+                                UserRole.ROLE_STUDENT -> "✏️ 학생"
                             },
                             fontSize = 12.sp,
                             color = when (member.role) {
-                                UserRole.TEACHER -> earthBrown
-                                UserRole.STUDENT -> sunnyYellow.copy(alpha = 0.8f)
+                                UserRole.ROLE_TEACHER -> earthBrown
+                                UserRole.ROLE_STUDENT -> sunnyYellow.copy(alpha = 0.8f)
                             },
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)

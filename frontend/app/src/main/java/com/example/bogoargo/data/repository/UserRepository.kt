@@ -9,6 +9,7 @@ import com.example.bogoargo.data.dto.response.UserUpdateResponse
 import com.example.bogoargo.data.dto.response.UserWithdrawResponse
 import com.example.bogoargo.data.dto.response.MessageResponseDto
 import com.example.bogoargo.data.mapper.toDomainModel
+import com.example.bogoargo.data.preferences.UserPreferences
 import com.example.bogoargo.data.storage.TokenStorage
 import com.example.bogoargo.domain.model.DataException
 import com.example.bogoargo.domain.model.DataResult
@@ -20,7 +21,8 @@ import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
     private val userApiService: UserApiService,
-    private val tokenStorage: TokenStorage
+    private val tokenStorage: TokenStorage,
+    private val userPreferences: UserPreferences
 ) : IUserRepository {
     
     override suspend fun signUp(userSignUpRequest: UserSignUpRequest): DataResult<MessageResponseDto> {
@@ -65,6 +67,9 @@ class UserRepositoryImpl @Inject constructor(
                     
                     // 토큰 저장
                     tokenStorage.saveTokens(accessToken, refreshToken)
+
+                    // 유저 저장
+                    userPreferences.saveUser(loginResponse.data.toDomainModel())
                     
                     DataResult.Success(loginResponse.data.toDomainModel())
                 } else {
@@ -163,5 +168,9 @@ class UserRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
         }
+    }
+
+    override suspend fun getLoggedInUser(): User? {
+        return userPreferences.getUser()
     }
 }

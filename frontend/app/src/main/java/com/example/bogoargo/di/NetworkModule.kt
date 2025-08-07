@@ -17,7 +17,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
     
-    private const val BASE_URL = "http://localhost:8080/"
+    private const val BASE_URL = "http://i13a301.p.ssafy.io"
     
     @Provides
     @Singleton
@@ -121,5 +121,11 @@ object NetworkModule {
     @Singleton
     fun provideApplicationApiService(retrofit: Retrofit): AppliationApiService {
         return retrofit.create(AppliationApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideLocationApiService(retrofit: Retrofit): LocationApiService {
+        return retrofit.create(LocationApiService::class.java)
     }
 }

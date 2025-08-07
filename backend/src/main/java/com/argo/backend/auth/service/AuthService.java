@@ -6,13 +6,14 @@ import com.argo.backend.auth.dto.signup.SignupRequest;
 import com.argo.backend.auth.dto.common.Tokens;
 import com.argo.backend.auth.dto.withdraw.WithdrawalRequest;
 import com.argo.backend.auth.exception.*;
-import com.argo.backend.auth.repository.UserRepository;
-import com.argo.backend.auth.repository.UserWithdrawalRepository;
+import com.argo.backend.domain.user.repository.UserRepository;
+import com.argo.backend.domain.user.repository.UserWithdrawalRepository;
 import com.argo.backend.auth.security.jwt.JwtTokenProvider;
-import com.argo.backend.domain.user.Role;
-import com.argo.backend.domain.user.Teacher;
-import com.argo.backend.domain.user.User;
-import com.argo.backend.domain.user.UserWithdrawal;
+import com.argo.backend.domain.user.enums.Role;
+import com.argo.backend.domain.user.entity.Teacher;
+import com.argo.backend.domain.user.entity.User;
+import com.argo.backend.domain.user.entity.UserWithdrawal;
+import com.argo.backend.redis.logic.AuthRedis;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -40,7 +41,7 @@ public class AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
-    private final RedisService redisService;
+    private final AuthRedis authRedis;
 
     public void signup(SignupRequest request) {
         validateDuplicateUsername(request.getUsername());
@@ -84,7 +85,7 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId(), user.getUsername(), roles);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUserId(), user.getUsername(), roles);
 
-        return new LoginDto(new Tokens(accessToken, refreshToken), user.getRole());
+        return new LoginDto(new Tokens(accessToken, refreshToken), user.getName(), user.getRole());
     }
 
     private List<String> getRole(Authentication authentication) {
@@ -98,10 +99,10 @@ public class AuthService {
 
         jwtTokenProvider.validateToken(refreshToken);
 
-        if (redisService.isBlacklisted(refreshToken)) {
+        if (authRedis.isBlacklisted(refreshToken)) {
             throw new InvalidTokenException();
         }
-        redisService.addToBlacklist(refreshToken, BLACKLIST_STATUS_REISSUE);
+        authRedis.addToBlacklist(refreshToken, BLACKLIST_STATUS_REISSUE);
 
         Long userId = jwtTokenProvider.getUserIdFromToken(refreshToken);
         String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
@@ -133,10 +134,10 @@ public class AuthService {
     public void logout(String refreshToken) {
         jwtTokenProvider.validateToken(refreshToken);
 
-        if (redisService.isBlacklisted(refreshToken)) {
+        if (authRedis.isBlacklisted(refreshToken)) {
             throw new InvalidTokenException();
         }
 
-        redisService.addToBlacklist(refreshToken, BLACKLIST_STATUS_LOGOUT);
+        authRedis.addToBlacklist(refreshToken, BLACKLIST_STATUS_LOGOUT);
     }
 }

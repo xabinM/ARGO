@@ -12,14 +12,14 @@ import com.example.bogoargo.ui.screens.classRoom.ClassDetailScreen
 import com.example.bogoargo.ui.screens.classRoom.ClassManagementScreen
 import com.example.bogoargo.ui.screens.classRoom.ClassCreateScreen
 import com.example.bogoargo.ui.screens.GameScreen
-import com.example.bogoargo.ui.screens.HomeScreen
+import com.example.bogoargo.ui.screens.user.StudentHomeScreen
 import com.example.bogoargo.ui.screens.MissionDetailScreen
 import com.example.bogoargo.ui.screens.user.LoginScreen
 import com.example.bogoargo.ui.screens.user.ProfileScreen
 import com.example.bogoargo.ui.screens.user.SignUpScreen
 import com.example.bogoargo.ui.screens.SettingsScreen
 import com.example.bogoargo.ui.screens.SplashScreen
-import com.example.bogoargo.ui.screens.user.TeacherMainScreen
+import com.example.bogoargo.ui.screens.user.TeacherHomeScreen
 import com.example.bogoargo.ui.screens.team.TeamCreateScreen
 import com.example.bogoargo.ui.screens.team.TeamManagementScreen
 import com.example.bogoargo.ui.screens.classRoom.ClassMemberManagementScreen
@@ -33,7 +33,7 @@ sealed class Screen(val route: String) {
     data object Splash : Screen("splash")
     data object Login : Screen("login")
     data object SignUp : Screen("signUp")
-    data object Home : Screen("home")
+    data object StudentHome : Screen("studentHome")
     data object Game : Screen("game")
     data object Profile : Screen("profile")
     data object Settings : Screen("settings")
@@ -42,7 +42,7 @@ sealed class Screen(val route: String) {
             "ar/$spotId/$latitude/$longitude"
     }
 
-    data object TeacherMain : Screen("teacherMain")
+    data object TeacherHome : Screen("teacherHome")
     data object ClassCreate : Screen("classCreate")
     data object ClassManagement : Screen("classManagement")
     data object ClassDetail :
@@ -121,8 +121,8 @@ fun AppNavigation(
         composable(Screen.SignUp.route) {
             SignUpScreen(navController = navController)
         }
-        composable(Screen.Home.route) {
-            HomeScreen(navController = navController)
+        composable(Screen.StudentHome.route) {
+            StudentHomeScreen(navController = navController)
         }
         composable(Screen.Game.route) {
             GameScreen(navController = navController)
@@ -133,8 +133,8 @@ fun AppNavigation(
         composable(Screen.Settings.route) {
             SettingsScreen(navController = navController)
         }
-        composable(Screen.TeacherMain.route) {
-            TeacherMainScreen(navController = navController)
+        composable(Screen.TeacherHome.route) {
+            TeacherHomeScreen(navController = navController)
         }
         composable(Screen.ClassCreate.route) {
             ClassCreateScreen(navController = navController)

@@ -1,6 +1,6 @@
 package com.example.bogoargo.domain.model
 
 enum class UserRole {
-    TEACHER,
-    STUDENT
+    ROLE_TEACHER,
+    ROLE_STUDENT
 }

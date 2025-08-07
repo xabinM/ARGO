@@ -2,6 +2,7 @@ package com.example.bogoargo.ui.viewmodels.user
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.bogoargo.data.preferences.UserPreferences
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.User
 import com.example.bogoargo.domain.model.UserRole
@@ -28,7 +29,7 @@ data class LoginUiState(
 class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
     private val saveTokensUseCase: SaveTokensUseCase,
-    private val saveUserInfoUseCase: SaveUserInfoUseCase
+    private val userPreferences: UserPreferences
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -78,6 +79,10 @@ class LoginViewModel @Inject constructor(
         _uiState.value = LoginUiState()
     }
 
+    suspend fun getLoggedInUser(): User? {
+        return loginUseCase.getLoggedInUser()
+    }
+
     // 더미 로그인 함수
     fun dummyLogin(isTeacher: Boolean) {
         viewModelScope.launch {
@@ -92,14 +97,14 @@ class LoginViewModel @Inject constructor(
                     User(
                         userId = 1L,
                         name = "김선생",
-                        role = UserRole.TEACHER,
+                        role = UserRole.ROLE_TEACHER,
                         team = null
                     )
                 } else {
                     User(
                         userId = 2L,
                         name = "이학생",
-                        role = UserRole.STUDENT,
+                        role = UserRole.ROLE_STUDENT,
                         team = null
                     )
                 }
@@ -109,6 +114,9 @@ class LoginViewModel @Inject constructor(
                     accessToken = "dummy_access_token_${if (isTeacher) "teacher" else "student"}",
                     refreshToken = "dummy_refresh_token_${if (isTeacher) "teacher" else "student"}"
                 )
+
+                // 더미 유저 저장
+                userPreferences.saveUser(dummyUser)
                 
                 // 더미 사용자 정보 저장
                 saveUserInfoUseCase(dummyUser)

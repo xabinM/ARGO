@@ -71,30 +71,6 @@ fun ClassManagementScreen(
                     .padding(paddingValues)
                     .padding(20.dp)
             ) {
-                // 탭 선택
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    NatureComponents.NatureButton(
-                        onClick = { 
-                            isTeacher = true
-                            viewModel.loadTeacherClasses()
-                        },
-                        text = "선생님 반",
-                        modifier = Modifier.weight(1f),
-                        backgroundColor = if (isTeacher) NatureColors.forestGreen else NatureColors.earthBrown.copy(alpha = 0.3f)
-                    )
-                    NatureComponents.NatureButton(
-                        onClick = { 
-                            isTeacher = false
-                            viewModel.loadStudentClasses()
-                        },
-                        text = "학생 반",
-                        modifier = Modifier.weight(1f),
-                        backgroundColor = if (!isTeacher) NatureColors.forestGreen else NatureColors.earthBrown.copy(alpha = 0.3f)
-                    )
-                }
                 
                 // Statistics Card
                 NatureComponents.StatsCard(
@@ -103,8 +79,8 @@ fun ClassManagementScreen(
                     emoji = "🌟"
                 ) {
                     NatureComponents.StatItem(
-                        label = "참여 중인 반",
-                        value = if (isTeacher) uiState.teacherClasses.size.toString() else uiState.studentClasses.size.toString(),
+                        label = "생성된 반",
+                        value = uiState.teacherClasses.size.toString(),
                         emoji = "🏠",
                         color = NatureColors.forestGreen
                     )
@@ -113,7 +89,7 @@ fun ClassManagementScreen(
                 Spacer(modifier = Modifier.height(20.dp))
 
                 NatureComponents.SectionHeader(
-                    text = if (isTeacher) "내가 만든 반" else "참여 중인 반",
+                    text = "반 목록",
                     emoji = "🏠"
                 )
                 
@@ -151,8 +127,7 @@ fun ClassManagementScreen(
                                 ClassInfoCard(
                                     classInfo = classInfo,
                                     isTeacher = isTeacher,
-                                    onDeleteClick = if (isTeacher) { { viewModel.deleteClass(classInfo.classId) } } else null,
-                                    onLeaveClick = if (!isTeacher) { { viewModel.leaveClass(classInfo.classId) } } else null
+                                    onDeleteClick = if (isTeacher) { { viewModel.deleteClass(classInfo.classId) } } else null
                                 ) {
                                     navController.navigate("classDetail/${classInfo.classId}")
                                 }
@@ -174,7 +149,6 @@ fun ClassInfoCard(
     classInfo: Class, 
     isTeacher: Boolean,
     onDeleteClick: (() -> Unit)? = null,
-    onLeaveClick: (() -> Unit)? = null,
     onClick: () -> Unit
 ) {
     NatureComponents.NatureCard(
@@ -253,21 +227,6 @@ fun ClassInfoCard(
                         )
                     ) {
                         Text("반 삭제")
-                    }
-                }
-            } else if (!isTeacher && onLeaveClick != null) {
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
-                ) {
-                    OutlinedButton(
-                        onClick = onLeaveClick,
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = NatureColors.softOrange
-                        )
-                    ) {
-                        Text("반 탈퇴")
                     }
                 }
             }
