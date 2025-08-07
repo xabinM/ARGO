@@ -16,6 +16,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -35,7 +36,7 @@ public class MissionService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(TeamNotFoundException::new);
 
-        List<Problem> problems = problemRepository.findRandomProblems();
+        List<Problem> problems = spot.getProblems();
 
         Problem problem = findRandomProblem(problems);
         if (problem == null) {
@@ -52,6 +53,7 @@ public class MissionService {
         if (problems.isEmpty()) {
             return null;
         }
+        Collections.shuffle(problems);
         return problems.get(0);
     }
 }
