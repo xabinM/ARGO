@@ -43,14 +43,6 @@ public class Card extends CreatedAtEntity {
     @Column(name = "is_spot_card", columnDefinition = "boolean default false")
     private Boolean isSpotCard = false;
 
-    public static Card createLocationCard(Location location, String name, String description, Integer baseAttack, Integer baseDefense) {
-        return new Card(location, null, name, description, baseAttack, baseDefense, false);
-    }
-
-    public static Card createSpotCard(Location location, Spot spot, String name, String description, Integer baseAttack, Integer baseDefense) {
-        return new Card(location, spot, name, description, baseAttack, baseDefense, true);
-    }
-
     protected Card(Location location, Spot spot, String name, String description, Integer baseAttack, Integer baseDefense, Boolean isSpotCard) {
         this.location = location;
         this.spot = spot;

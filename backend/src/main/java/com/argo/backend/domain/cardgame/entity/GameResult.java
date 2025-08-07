@@ -20,6 +20,9 @@ public class GameResult {
     @Column(name = "losses", columnDefinition = "int default 0")
     private Integer losses = 0;
 
+    @Column(name = "draws", columnDefinition = "int default 0")
+    private Integer draws = 0;
+
     @Column(name = "total_points", columnDefinition = "int default 0")
     private Integer totalPoints = 0;
 
@@ -36,6 +39,7 @@ public class GameResult {
 
     public void addDraw() {
         this.totalGames++;
+        this.draws++;
     }
 
     public double getWinRate() {

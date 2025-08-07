@@ -2,6 +2,7 @@ package com.argo.backend.domain.cardgame.entity;
 
 import com.argo.backend.domain.cardgame.enums.BattleStrategy;
 import com.argo.backend.domain.cardgame.enums.MatchStatus;
+import com.argo.backend.domain.cardgame.enums.ResultView;
 import com.argo.backend.domain.common.CreatedAtEntity;
 import com.argo.backend.domain.team.entity.Team;
 import jakarta.persistence.*;
@@ -59,6 +60,9 @@ public class CardGameMatch extends CreatedAtEntity {
     @JoinColumn(name = "loser_team_id")
     private Team loserTeam;
 
+    @Column(name = "is_draw")
+    private boolean isDraw;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "winner_card_id")
     private TeamCard winnerCard;
@@ -72,9 +76,17 @@ public class CardGameMatch extends CreatedAtEntity {
 
     @Column(name = "ended_at")
     private LocalDateTime endedAt;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "result_view")
+    private ResultView resultView = ResultView.BOTH_NOT_SEE;
 
     public static CardGameMatch createMatch(Team challengerTeam, Team challengedTeam) {
         return new CardGameMatch(challengerTeam, challengedTeam);
+    }
+    
+    public static CardGameMatch from(Team challengerTeam, Team challengedTeam, TeamCard challengerCard, BattleStrategy challengerStrategy) {
+        return new CardGameMatch(challengerTeam, challengedTeam, challengerCard, challengerStrategy);
     }
 
     protected CardGameMatch(Team challengerTeam, Team challengedTeam) {
@@ -82,13 +94,21 @@ public class CardGameMatch extends CreatedAtEntity {
         this.challengedTeam = challengedTeam;
         this.status = MatchStatus.PENDING;
     }
+    
+    protected CardGameMatch(Team challengerTeam, Team challengedTeam, TeamCard challengerCard, BattleStrategy challengerStrategy) {
+        this.challengerTeam = challengerTeam;
+        this.challengedTeam = challengedTeam;
+        this.challengerCard = challengerCard;
+        this.challengerStrategy = challengerStrategy;
+        this.status = MatchStatus.PENDING;
+    }
 
     public void acceptMatch() {
-        this.status = MatchStatus.ACCEPTED;
+        this.status = MatchStatus.COMPLETED;
     }
 
     public void startMatch() {
-        this.status = MatchStatus.IN_PROGRESS;
+        this.status = MatchStatus.PENDING;
         this.startedAt = LocalDateTime.now();
     }
 

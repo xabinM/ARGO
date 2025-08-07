@@ -27,6 +27,7 @@ import com.argo.backend.organization.dto.classlist.ClassListResponse;
 import com.argo.backend.organization.dto.classlist.ClassInfoDto;
 import com.argo.backend.organization.dto.classlist.PaginationDto;
 import com.argo.backend.organization.dto.classdetail.*;
+import com.argo.backend.organization.dto.location.LocationsResponse;
 import com.argo.backend.organization.dto.studentlist.*;
 import com.argo.backend.domain.team.entity.Team;
 import com.argo.backend.organization.exception.types.*;
@@ -65,6 +66,15 @@ public class ClassService {
 
     private static final String INVITE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int INVITE_CODE_LENGTH = 6;
+
+
+    @Transactional
+    public List<LocationsResponse> getLocations() {
+        return locationRepository.findAll().stream()
+                .map(LocationsResponse::from)
+                .collect(Collectors.toList());
+    }
+
 
     @Transactional
     public ClassCreateResponse createClass(Long teacherId, ClassCreateRequest request){
