@@ -25,6 +25,10 @@ public class Team extends CreatedAtEntity {
     @JoinColumn(name = "class_id", nullable = false)
     private ClassRoom classRoom;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "leader_id")
+    private User leader;
+
     @Column(nullable = false, length = 100)
     private String teamName;
 
@@ -57,5 +61,10 @@ public class Team extends CreatedAtEntity {
         if (this.gameResult == null) {
             this.gameResult = new GameResult();
         }
+    }
+
+    // 팀 내에 있는 user만 들어오도록 막아야함
+    public void updateTeamLeader(User leader){
+        this.leader = leader;
     }
 }
