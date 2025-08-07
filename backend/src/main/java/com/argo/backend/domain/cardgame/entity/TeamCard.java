@@ -31,7 +31,7 @@ public class TeamCard extends CreatedAtEntity {
     private Card card;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "enum('SILVER', 'GOLD', 'DIAMOND') default 'SILVER'")
+    @Column(nullable = false)
     private CardTier tier = CardTier.EPIC;
 
     @Column(name = "obtained_at", columnDefinition = "datetime(6) default CURRENT_TIMESTAMP(6)")

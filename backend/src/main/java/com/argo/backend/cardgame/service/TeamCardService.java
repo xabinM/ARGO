@@ -77,7 +77,7 @@ public class TeamCardService {
                 "COMMON", tierCounts.getOrDefault(CardTier.COMMON, 0L).intValue(),
                 "RARE", tierCounts.getOrDefault(CardTier.RARE, 0L).intValue(),
                 "EPIC", tierCounts.getOrDefault(CardTier.EPIC, 0L).intValue(),
-                "LEGEND", tierCounts.getOrDefault(CardTier.LEGENDARY, 0L).intValue()
+                "LEGENDARY", tierCounts.getOrDefault(CardTier.LEGENDARY, 0L).intValue()
         );
     }
 }
