@@ -10,5 +10,6 @@ import java.util.List;
 @AllArgsConstructor
 public class ProblemListPerTypeResponse {
 
+    private boolean success;
     private List<ProblemResponseDto> dto;
 }

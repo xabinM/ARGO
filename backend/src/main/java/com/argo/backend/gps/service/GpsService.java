@@ -3,7 +3,7 @@ package com.argo.backend.gps.service;
 import com.argo.backend.domain.classroom.enums.ApplicationStatus;
 import com.argo.backend.domain.classroom.repository.ClassApplicationRepository;
 import com.argo.backend.gps.dto.UserCoordinatesRequest;
-import com.argo.backend.gps.dto.UserCoordinatesResponse;
+import com.argo.backend.gps.dto.UserCoordinatesDto;
 import com.argo.backend.redis.logic.GpsRedis;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,14 +37,14 @@ public class GpsService {
         }
     }
 
-    public List<UserCoordinatesResponse> getLocationsByClass(Long classId) {
+    public List<UserCoordinatesDto> getLocationsByClass(Long classId) {
         Map<Long, Map<String, String>> userLocations = gpsRedis.getUserLocationsByClassId(classId);
 
         return userLocations.entrySet().stream()
                 .map(entry -> {
                     Long userId = entry.getKey();
                     Map<String, String> coordinates = entry.getValue();
-                    return new UserCoordinatesResponse(
+                    return new UserCoordinatesDto(
                             userId,
                             new BigDecimal(coordinates.get("lat")),
                             new BigDecimal(coordinates.get("lng")),

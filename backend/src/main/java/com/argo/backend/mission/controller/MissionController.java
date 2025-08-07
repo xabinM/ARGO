@@ -21,7 +21,8 @@ public class MissionController {
                                                                     ) {
         ProblemResponseDto dto = missionService.createMission(teamId, spotId);
 
-        return ResponseEntity.ok(new MissionCreateResponse(ResponseMessage.SUCCESS_CREATE_MISSION.getMessage(), dto));
+        return ResponseEntity.ok(new MissionCreateResponse(true,
+                ResponseMessage.SUCCESS_CREATE_MISSION.getMessage(), dto));
     }
 //
 //    @GetMapping("/overview/team/{teamId}/")

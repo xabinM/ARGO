@@ -8,6 +8,9 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class LoginResponse {
+
+    private boolean success;
+    private String name;
     private Role role;
     private Tokens tokens;
     private String message;

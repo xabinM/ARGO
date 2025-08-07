@@ -1,7 +1,10 @@
 package com.argo.backend.gps.controller;
 
+import com.argo.backend.global.enums.ResponseMessage;
+import com.argo.backend.gps.dto.RequestUsersCoordinatesResponse;
+import com.argo.backend.gps.dto.UpdateCoordinatesResponse;
 import com.argo.backend.gps.dto.UserCoordinatesRequest;
-import com.argo.backend.gps.dto.UserCoordinatesResponse;
+import com.argo.backend.gps.dto.UserCoordinatesDto;
 import com.argo.backend.gps.service.GpsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -19,18 +22,25 @@ public class GpsController {
     private final GpsService gpsService;
 
     @PostMapping()
-    public ResponseEntity<Void> updateLocation(@AuthenticationPrincipal Long userId,
+    public ResponseEntity<?> updateLocation(@AuthenticationPrincipal Long userId,
                                                @RequestBody UserCoordinatesRequest coordinates) {
         gpsService.saveUserLocation(userId, coordinates);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(
+                new UpdateCoordinatesResponse(true,
+                ResponseMessage.SUCCESS_USER_COORDINATES_POST.getMessage())
+        );
     }
 
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/class/{classId}/students")
-    public ResponseEntity<List<UserCoordinatesResponse>> getLocationsByClass(
+    public ResponseEntity<?> getCoordinatesByClass(
             @PathVariable Long classId
     ) {
-        List<UserCoordinatesResponse> locations = gpsService.getLocationsByClass(classId);
-        return ResponseEntity.ok(locations);
+        List<UserCoordinatesDto> coordinates = gpsService.getLocationsByClass(classId);
+        return ResponseEntity.ok(new RequestUsersCoordinatesResponse(
+                true,
+                coordinates,
+                ResponseMessage.SUCCESS_USERS_COORDINATES_RESPONSE.getMessage())
+        );
     }
 }
