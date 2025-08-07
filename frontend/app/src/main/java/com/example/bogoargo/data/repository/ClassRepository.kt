@@ -1,17 +1,12 @@
 package com.example.bogoargo.data.repository
 
 import com.example.bogoargo.data.api.ClassApiService
-import com.example.bogoargo.data.dto.ClassCreateRequest
-import com.example.bogoargo.data.response.ClassLeaveResponse
-import com.example.bogoargo.data.response.applyClassResponse
+import com.example.bogoargo.data.dto.request.ClassCreateRequest
 import com.example.bogoargo.data.mapper.toDomainModel
 import com.example.bogoargo.domain.model.Class
 import com.example.bogoargo.domain.model.DataException
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.repository.IClassRepository
-import com.example.bogoargo.data.dto.response.ApplicationResponseDto
-import com.example.bogoargo.data.dto.response.MessageResponseDto
-import com.example.bogoargo.data.dto.response.UserDataDto
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
@@ -25,7 +20,8 @@ class ClassRepositoryImpl @Inject constructor(
         description: String,
         location: String,
         activityDate: String,
-        maxStudents: Int
+        maxStudents: Int,
+        grade: Int
     ): DataResult<Class> {
         return try {
             val request = ClassCreateRequest(
@@ -33,7 +29,8 @@ class ClassRepositoryImpl @Inject constructor(
                 description = description,
                 location = location,
                 activityDate = activityDate,
-                maxStudents = maxStudents
+                maxStudents = maxStudents,
+                grade = grade
             )
             val response = classApiService.createClass(request)
             if (response.isSuccessful) {
@@ -67,8 +64,8 @@ class ClassRepositoryImpl @Inject constructor(
             val response = classApiService.getTeacherClassList(1, 100, "active")
             if (response.isSuccessful) {
                 val classListResponse = response.body()
-                if (classListResponse?.success == true && classListResponse.data != null) {
-                    val classes = classListResponse.data.map { it.toDomainModel() }
+                if (classListResponse?.success == true && classListResponse.data?.classes != null) {
+                    val classes = classListResponse.data.classes.map { it.toDomainModel() }
                     DataResult.Success(classes)
                 } else {
                     DataResult.Error(DataException.ServerError)
@@ -129,7 +126,8 @@ class ClassRepositoryImpl @Inject constructor(
                 description = "",
                 location = "",
                 activityDate = "",
-                maxStudents = 0
+                maxStudents = 0,
+                grade = 1
             )
             val response = classApiService.createClass(request)
             if (response.isSuccessful) {
@@ -250,8 +248,8 @@ class ClassRepositoryImpl @Inject constructor(
             val response = classApiService.getTeacherClassList(page, size, status)
             if (response.isSuccessful) {
                 val classListResponse = response.body()
-                if (classListResponse?.success == true && classListResponse.data != null) {
-                    val classes = classListResponse.data.map { it.toDomainModel() }
+                if (classListResponse?.success == true && classListResponse.data?.classes != null) {
+                    val classes = classListResponse.data.classes.map { it.toDomainModel() }
                     DataResult.Success(classes)
                 } else {
                     DataResult.Error(DataException.ServerError)
@@ -280,8 +278,8 @@ class ClassRepositoryImpl @Inject constructor(
             val response = classApiService.getStudentClassList(page, size, status)
             if (response.isSuccessful) {
                 val classListResponse = response.body()
-                if (classListResponse?.success == true && classListResponse.data != null) {
-                    val classes = classListResponse.data.map { it.toDomainModel() }
+                if (classListResponse?.success == true && classListResponse.data?.classes != null) {
+                    val classes = classListResponse.data.classes.map { it.toDomainModel() }
                     DataResult.Success(classes)
                 } else {
                     DataResult.Error(DataException.ServerError)

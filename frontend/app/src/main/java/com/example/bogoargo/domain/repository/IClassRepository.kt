@@ -9,7 +9,8 @@ interface IClassRepository {
         description: String,
         location: String,
         activityDate: String,
-        maxStudents: Int
+        maxStudents: Int,
+        grade: Int
     ): DataResult<Class>
     suspend fun getClasses(): DataResult<List<Class>>
     suspend fun getClassById(classId: Long): DataResult<Class>

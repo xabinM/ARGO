@@ -1,6 +1,6 @@
 package com.example.bogoargo.data.api
 
-import com.example.bogoargo.data.dto.ClassCreateRequest
+import com.example.bogoargo.data.dto.request.ClassCreateRequest
 import com.example.bogoargo.data.dto.response.ApplicationResponseDto
 import com.example.bogoargo.data.dto.response.MessageResponseDto
 import com.example.bogoargo.data.response.ClassDataDto
@@ -43,7 +43,7 @@ interface ClassApiService {
     ): Response<ClassDataDto>
 
     // 반 생성 (교사 기능)
-    @POST("api/teacher/classes/create")
+    @POST("api/teacher/classes")
     suspend fun createClass(
         @Body  classCreateRequest: ClassCreateRequest
     ) : Response<ClassDetailResponse>

@@ -16,9 +16,9 @@ fun ClassDataDto.toDomainModel(): Class {
         } catch (e: DateTimeParseException) {
             LocalDate.MIN
         },
-        currentStudents = this.studentCount,
+        //currentStudents = this.studentCount,
         maxStudents = this.maxStudents,
-        studentCount = this.students.size,
+        studentCount = this.studentCount,
         teamCount = this.teamCount,
         status = when (this.status) {
             "ACTIVE" -> Class.ClassStatus.ACTIVE

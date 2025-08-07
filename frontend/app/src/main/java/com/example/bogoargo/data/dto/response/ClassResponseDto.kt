@@ -14,6 +14,7 @@ data class ClassDataDto(
     val studentCount:Int,
     val maxStudents: Int,
     val teamCount: Int,
+    val grade: Int,
     val status: String,
     val inviteCode: String,
     val createdAt: String,
@@ -25,7 +26,12 @@ data class ClassDataDto(
 data class ClassListResponse(
     val success: Boolean,
     val message: String,
-    val data: List<ClassDataDto>?
+    val data: ClassListDataDto?
+)
+
+// 반 리스트 데이터 DTO
+data class ClassListDataDto(
+    val classes: List<ClassDataDto>
 )
 
 // 반 상세 정보 응답 DTO

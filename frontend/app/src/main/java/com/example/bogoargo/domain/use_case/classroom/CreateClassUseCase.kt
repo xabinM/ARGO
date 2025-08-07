@@ -13,8 +13,9 @@ class CreateClassUseCase @Inject constructor(
         description: String,
         location: String,
         activityDate: String,
-        maxStudents: Int
+        maxStudents: Int,
+        grade: Int
     ): DataResult<Class> {
-        return classRepository.createClass(className, description, location, activityDate, maxStudents)
+        return classRepository.createClass(className, description, location, activityDate, maxStudents, grade)
     }
 }

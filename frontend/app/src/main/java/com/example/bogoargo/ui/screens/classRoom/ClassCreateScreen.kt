@@ -1,6 +1,7 @@
 package com.example.bogoargo.ui.screens.classRoom
 
 import android.util.Log
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
@@ -37,7 +40,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -50,6 +55,7 @@ import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
+import java.time.LocalDate
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -63,7 +69,9 @@ fun ClassCreateScreen(
     var description by remember { mutableStateOf("") }
     var selectedLocation by remember { mutableStateOf("") }
     var showLocationDropdown by remember { mutableStateOf(false) }
-    var activityDate by remember { mutableStateOf("2024-12-31") }
+    var selectedGrade by remember { mutableStateOf("") }
+    var showGradeDropdown by remember { mutableStateOf(false) }
+    var activityDate by remember { mutableStateOf(LocalDate.now().toString()) }
     var showDatePicker by remember { mutableStateOf(false) }
     
     val uiState by viewModel.uiState.collectAsState()
@@ -164,14 +172,16 @@ fun ClassCreateScreen(
                 )
 
                 // Location Dropdown
-                Box {
+                Box(modifier = Modifier.fillMaxWidth()) {
                     OutlinedTextField(
                         value = selectedLocation,
                         onValueChange = { },
                         label = { Text("활동 장소", style = NatureTypography.bodyMedium) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable { showLocationDropdown = true },
+                            .clickable(enabled = !uiState.isLoading) { 
+                                showLocationDropdown = !showLocationDropdown 
+                            },
                         singleLine = true,
                         readOnly = true,
                         shape = NatureShapes.medium,
@@ -185,22 +195,30 @@ fun ClassCreateScreen(
                             Icon(
                                 imageVector = Icons.Default.ArrowDropDown,
                                 contentDescription = "위치 선택",
-                                tint = NatureColors.forestGreen
+                                tint = NatureColors.forestGreen,
+                                modifier = Modifier.clickable(enabled = !uiState.isLoading) { 
+                                    showLocationDropdown = !showLocationDropdown 
+                                }
                             )
                         }
                     )
-                    
+
                     DropdownMenu(
                         expanded = showLocationDropdown,
                         onDismissRequest = { showLocationDropdown = false },
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White)
                     ) {
                         if (uiState.isLoadingLocations) {
                             DropdownMenuItem(
-                                text = { 
+                                text = {
                                     Row {
                                         CircularProgressIndicator(
-                                            modifier = Modifier.padding(end = 8.dp)
+                                            modifier = Modifier
+                                                .padding(end = 8.dp)
+                                                .size(16.dp),
+                                            strokeWidth = 2.dp
                                         )
                                         Text("로딩 중...")
                                     }
@@ -217,6 +235,57 @@ fun ClassCreateScreen(
                                     }
                                 )
                             }
+                        }
+                    }
+                }
+
+                // Grade Dropdown
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = selectedGrade,
+                        onValueChange = { },
+                        label = { Text("학년 (1-9)", style = NatureTypography.bodyMedium) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(enabled = !uiState.isLoading) { 
+                                showGradeDropdown = !showGradeDropdown 
+                            },
+                        singleLine = true,
+                        readOnly = true,
+                        shape = NatureShapes.medium,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = NatureColors.forestGreen,
+                            focusedLabelColor = NatureColors.forestGreen,
+                            unfocusedBorderColor = NatureColors.earthBrown.copy(alpha = 0.5f)
+                        ),
+                        enabled = !uiState.isLoading,
+                        trailingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.ArrowDropDown,
+                                contentDescription = "학년 선택",
+                                tint = NatureColors.forestGreen,
+                                modifier = Modifier.clickable(enabled = !uiState.isLoading) { 
+                                    showGradeDropdown = !showGradeDropdown 
+                                }
+                            )
+                        }
+                    )
+
+                    DropdownMenu(
+                        expanded = showGradeDropdown,
+                        onDismissRequest = { showGradeDropdown = false },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.White)
+                    ) {
+                        (1..9).forEach { grade ->
+                            DropdownMenuItem(
+                                text = { Text("${grade}학년") },
+                                onClick = {
+                                    selectedGrade = "${grade}학년"
+                                    showGradeDropdown = false
+                                }
+                            )
                         }
                     }
                 }
@@ -293,17 +362,21 @@ fun ClassCreateScreen(
                     NatureComponents.NatureButton(
                         onClick = {
                             val maxStudentsInt = maxStudents.toIntOrNull()
+                            val gradeInt = selectedGrade.replace("학년", "").toIntOrNull()
                             if (className.trim().isNotEmpty() &&
                                 maxStudentsInt != null &&
                                 maxStudentsInt > 0 &&
                                 selectedLocation.trim().isNotEmpty() &&
+                                selectedGrade.trim().isNotEmpty() &&
+                                gradeInt != null &&
                                 activityDate.isNotBlank()) {
                                 viewModel.createClass(
                                     className = className,
                                     description = description,
                                     location = selectedLocation,
                                     activityDate = activityDate,
-                                    maxStudents = maxStudentsInt
+                                    maxStudents = maxStudentsInt,
+                                    grade = gradeInt
                                 )
                             }
                         },
@@ -314,6 +387,7 @@ fun ClassCreateScreen(
                         enabled = className.isNotBlank() && 
                                  maxStudents.isNotBlank() &&
                                 selectedLocation.isNotBlank() &&
+                                selectedGrade.isNotBlank() &&
                                  activityDate.isNotBlank(),
                         backgroundColor = NatureColors.leafGreen
                     )

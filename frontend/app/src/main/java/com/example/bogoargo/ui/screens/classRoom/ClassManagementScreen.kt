@@ -19,6 +19,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.domain.model.Class
 import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.ui.viewmodels.classRoom.ClassManagementViewModel
+import com.example.bogoargo.navigation.Screen
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
@@ -138,7 +139,7 @@ fun ClassManagementScreen(
                                     isTeacher = isTeacher,
                                     onDeleteClick = if (isTeacher) { { viewModel.deleteClass(classInfo.classId) } } else null
                                 ) {
-                                    navController.navigate("classDetail/${classInfo.classId}")
+                                    navController.navigate(Screen.ClassDetail.createRoute(classInfo.classId.toString()))
                                 }
                             }
                             // 빈 공간 추가 (FAB와의 겹침 방지)
