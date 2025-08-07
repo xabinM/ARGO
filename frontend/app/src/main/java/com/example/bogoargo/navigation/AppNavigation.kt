@@ -23,6 +23,11 @@ import com.example.bogoargo.ui.screens.user.TeacherHomeScreen
 import com.example.bogoargo.ui.screens.team.TeamCreateScreen
 import com.example.bogoargo.ui.screens.team.TeamManagementScreen
 import com.example.bogoargo.ui.screens.classRoom.ClassMemberManagementScreen
+import com.example.bogoargo.ui.screens.cardgame.CardGameScreen
+import com.example.bogoargo.ui.screens.cardgame.CardCollectionScreen
+import com.example.bogoargo.ui.screens.cardgame.BattleRequestScreen
+import com.example.bogoargo.ui.screens.cardgame.CardSelectionScreen
+import com.example.bogoargo.ui.screens.cardgame.BattleResultScreen
 
 sealed class Screen(val route: String) {
     data object Splash : Screen("splash")
@@ -66,6 +71,36 @@ sealed class Screen(val route: String) {
     }
     data object Mission : Screen("mission/{spotId}") {
         fun createRoute(spotId: Long) = "mission/$spotId"
+    }
+
+    data object CardGame : Screen("cardGame/{teamId}/{leaderId}") {
+        fun createRoute(teamId: Long, leaderId: Long) = "cardGame/$teamId/$leaderId"
+    }
+
+    data object CardCollection : Screen("cardCollection/{teamId}") {
+        fun createRoute(teamId: Long) = "cardCollection/$teamId"
+    }
+
+    data object BattleRequest : Screen("battleRequest/{teamId}/{leaderId}") {
+        fun createRoute(teamId: Long, leaderId: Long) = "battleRequest/$teamId/$leaderId"
+    }
+
+    data object CardSelection : Screen("cardSelection/{teamId}/{targetTeamId}") {
+        fun createRoute(teamId: Long, targetTeamId: Long) = "cardSelection/$teamId/$targetTeamId"
+    }
+    
+    data object BattleResult : Screen("battleResult/{myCardId}/{myCardRarity}/{myCardStance}/{opponentCardId}/{opponentCardRarity}/{opponentCardStance}/{isWin}/{myTeamName}/{opponentTeamName}") {
+        fun createRoute(
+            myCardId: Long,
+            myCardRarity: String,
+            myCardStance: String,
+            opponentCardId: Long,
+            opponentCardRarity: String,
+            opponentCardStance: String,
+            isWin: Boolean,
+            myTeamName: String,
+            opponentTeamName: String
+        ) = "battleResult/$myCardId/$myCardRarity/$myCardStance/$opponentCardId/$opponentCardRarity/$opponentCardStance/$isWin/$myTeamName/$opponentTeamName"
     }
 }
 
@@ -195,6 +230,109 @@ fun AppNavigation(
                 onNavigateToMission = { missionSpotId ->
                     navController.navigate(Screen.Mission.createRoute(missionSpotId))
                 }
+            )
+        }
+        composable(
+            route = Screen.CardGame.route,
+            arguments = listOf(
+                navArgument("teamId") { type = NavType.LongType },
+                navArgument("leaderId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
+            val leaderId = backStackEntry.arguments?.getLong("leaderId") ?: 0L
+            CardGameScreen(
+                navController = navController,
+                teamId = teamId,
+                leaderId = leaderId
+            )
+        }
+        composable(
+            route = Screen.CardCollection.route,
+            arguments = listOf(navArgument("teamId") { type = NavType.LongType })
+        ) { backStackEntry ->
+            val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
+            CardCollectionScreen(
+                navController = navController,
+                teamId = teamId
+            )
+        }
+        composable(
+            route = Screen.BattleRequest.route,
+            arguments = listOf(
+                navArgument("teamId") { type = NavType.LongType },
+                navArgument("leaderId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
+            val leaderId = backStackEntry.arguments?.getLong("leaderId") ?: 0L
+            BattleRequestScreen(
+                navController = navController,
+                teamId = teamId,
+                leaderId = leaderId
+            )
+        }
+        composable(
+            route = Screen.CardSelection.route,
+            arguments = listOf(
+                navArgument("teamId") { type = NavType.LongType },
+                navArgument("targetTeamId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
+            val targetTeamId = backStackEntry.arguments?.getLong("targetTeamId") ?: 0L
+            CardSelectionScreen(
+                navController = navController,
+                teamId = teamId,
+                targetTeamId = targetTeamId
+            )
+        }
+        composable(
+            route = Screen.BattleResult.route,
+            arguments = listOf(
+                navArgument("myCardId") { type = NavType.LongType },
+                navArgument("myCardRarity") { type = NavType.StringType },
+                navArgument("myCardStance") { type = NavType.StringType },
+                navArgument("opponentCardId") { type = NavType.LongType },
+                navArgument("opponentCardRarity") { type = NavType.StringType },
+                navArgument("opponentCardStance") { type = NavType.StringType },
+                navArgument("isWin") { type = NavType.BoolType },
+                navArgument("myTeamName") { type = NavType.StringType },
+                navArgument("opponentTeamName") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val myCardId = backStackEntry.arguments?.getLong("myCardId") ?: 0L
+            val myCardRarity = backStackEntry.arguments?.getString("myCardRarity") ?: "COMMON"
+            val myCardStance = backStackEntry.arguments?.getString("myCardStance") ?: "ATTACK"
+            val opponentCardId = backStackEntry.arguments?.getLong("opponentCardId") ?: 0L
+            val opponentCardRarity = backStackEntry.arguments?.getString("opponentCardRarity") ?: "COMMON"
+            val opponentCardStance = backStackEntry.arguments?.getString("opponentCardStance") ?: "DEFENSE"
+            val isWin = backStackEntry.arguments?.getBoolean("isWin") ?: false
+            val myTeamName = backStackEntry.arguments?.getString("myTeamName") ?: "우리 팀"
+            val opponentTeamName = backStackEntry.arguments?.getString("opponentTeamName") ?: "상대 팀"
+            
+            val myBattleCard = com.example.bogoargo.domain.model.BattleCard(
+                gameCard = com.example.bogoargo.domain.model.GameCard.create(
+                    myCardId,
+                    com.example.bogoargo.domain.model.CardTier.valueOf(myCardRarity)
+                ),
+                battleStance = com.example.bogoargo.domain.model.BattleStance.valueOf(myCardStance)
+            )
+            val opponentBattleCard = com.example.bogoargo.domain.model.BattleCard(
+                gameCard = com.example.bogoargo.domain.model.GameCard.create(
+                    opponentCardId,
+                    com.example.bogoargo.domain.model.CardTier.valueOf(opponentCardRarity)
+                ),
+                battleStance = com.example.bogoargo.domain.model.BattleStance.valueOf(opponentCardStance)
+            )
+            
+            BattleResultScreen(
+                navController = navController,
+                myBattleCard = myBattleCard,
+                opponentBattleCard = opponentBattleCard,
+                isWin = isWin,
+                myTeamName = myTeamName,
+                opponentTeamName = opponentTeamName
             )
         }
     }

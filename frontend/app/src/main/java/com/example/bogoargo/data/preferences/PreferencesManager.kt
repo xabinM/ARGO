@@ -3,6 +3,10 @@ package com.example.bogoargo.data.preferences
 import android.content.Context
 import android.content.SharedPreferences
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -17,6 +21,16 @@ class PreferencesManager @Inject constructor(
 
     // SharedPreferences 인스턴스
     private val prefs: SharedPreferences = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+
+    // StateFlow for reactive user info
+    private val _currentUserId = MutableStateFlow<Long?>(getUserId())
+    val currentUserId: StateFlow<Long?> = _currentUserId.asStateFlow()
+
+    private val _currentUserName = MutableStateFlow<String?>(getUserName())
+    val currentUserName: StateFlow<String?> = _currentUserName.asStateFlow()
+
+    private val _currentUserRole = MutableStateFlow<String?>(getUserRole())
+    val currentUserRole: StateFlow<String?> = _currentUserRole.asStateFlow()
 
     // --- JWT 토큰 관련 키와 메서드 ---
     private val KEY_JWT_TOKEN = "jwt_token"
@@ -34,6 +48,7 @@ class PreferencesManager @Inject constructor(
 
     fun saveUserId(userId: Long) {
         prefs.edit().putLong(KEY_USER_ID, userId).apply()
+        _currentUserId.value = userId
     }
 
     fun getUserId(): Long? {
@@ -46,6 +61,7 @@ class PreferencesManager @Inject constructor(
 
     fun saveUserName(userName: String) {
         prefs.edit().putString(KEY_USER_NAME, userName).apply()
+        _currentUserName.value = userName
     }
 
     fun getUserName(): String? {
@@ -57,6 +73,7 @@ class PreferencesManager @Inject constructor(
 
     fun saveUserRole(role: String) { // Enum의 name 또는 toString() 값을 String으로 저장
         prefs.edit().putString(KEY_USER_ROLE, role).apply()
+        _currentUserRole.value = role
     }
 
     fun getUserRole(): String? {
@@ -71,10 +88,20 @@ class PreferencesManager @Inject constructor(
             .remove(KEY_USER_NAME)
             .remove(KEY_USER_ROLE)
             .apply()
+        
+        // StateFlow도 초기화
+        _currentUserId.value = null
+        _currentUserName.value = null
+        _currentUserRole.value = null
     }
 
     // (옵션) 모든 앱 설정 데이터 삭제 (주의해서 사용)
     fun clearAllPreferences() {
         prefs.edit().clear().apply()
+        
+        // StateFlow도 초기화
+        _currentUserId.value = null
+        _currentUserName.value = null
+        _currentUserRole.value = null
     }
 }

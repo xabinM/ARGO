@@ -58,7 +58,8 @@ bundle exec fastlane build_apk
 ## Architecture Overview
 
 ### Core Architecture
-- **MVVM Pattern**: ViewModels manage UI state and business logic
+- **Clean Architecture**: Clear separation between data, domain, and UI layers
+- **MVVM Pattern**: ViewModels manage UI state, UseCases handle business logic
 - **Repository Pattern**: Data repositories abstract API and local storage
 - **Dependency Injection**: Hilt manages dependencies across the app
 - **Single Activity**: MainActivity hosts all Compose screens via Navigation
@@ -66,17 +67,30 @@ bundle exec fastlane build_apk
 ### Key Components
 
 **Data Layer (`data/`)**:
-- `api/`: Retrofit services with dual authentication setup (basic/authenticated)
-- `repository/`: Data repositories implementing business logic
-- `model/`: Data classes for domain objects
-- `storage/`: Token storage with encrypted preferences
-- `di/`: Hilt modules for dependency injection
+- `api/`: Retrofit services (AuthApiService, ClassApiService, TeamApiService, UserApiService, ApplicationApiService)
+- `repository/`: Repository implementations (AuthRepository, ClassRepository, TeamRepository, etc.)
+- `dto/`: Request/Response DTOs organized by feature
+- `mapper/`: Mapper classes converting DTOs to domain models
+- `storage/`: TokenStorage with encrypted SharedPreferences
+- `cache/`: In-memory caching (MissionCache)
+- `preferences/`: PreferencesManager for app settings
+
+**Domain Layer (`domain/`)**:
+- `model/`: Domain models (User, Class, Team, Mission, AR3DObject, etc.)
+- `repository/`: Repository interfaces (IAuthRepository, IClassRepository, etc.)
+- `use_case/`: Business logic use cases organized by feature (auth/, classroom/, team/, mission/, etc.)
 
 **UI Layer (`ui/`)**:
 - `screens/`: Compose screens organized by feature (user/, classRoom/, team/, ar/)
 - `viewmodels/`: ViewModels with @HiltViewModel annotation using StateFlow
 - `theme/`: Custom "Nature Theme" with child-friendly colors and components
-- `navigation/`: Centralized navigation with sealed class routes
+- `components/`: Reusable UI components
+
+**Dependency Injection (`di/`)**:
+- `NetworkModule.kt`: Retrofit setup with dual authentication
+- `RepositoryModule.kt`: Repository bindings
+- `UseCaseModule.kt`: UseCase dependencies
+- `ViewModelModule.kt`: ViewModel dependencies
 
 **Features**:
 - **Authentication**: Login/signup with dummy data support for development
@@ -116,17 +130,23 @@ Custom "NatureTheme" designed for elementary students:
 - **API Configuration**: Backend URL in `NetworkModule.BASE_URL` (currently localhost:8080)
 - **Permissions**: Requires camera, location, and AR permissions
 - **Min SDK**: 33 (Android 13) due to ARCore requirements
+- **Target SDK**: 36 with Compile SDK 36
+- **Java Version**: 11 for both source and target compatibility
 
 ### Common Patterns
-- StateFlow for reactive UI state management
-- Repository pattern with Result wrapper for API calls
-- Mapper classes for DTO to domain model conversion
-- Compose navigation with type-safe arguments
-- Encrypted token storage for security
+- **UseCase Pattern**: Business logic encapsulated in individual use cases
+- **StateFlow**: Reactive UI state management with StateFlow/Flow
+- **Repository Pattern**: Data abstraction with Result wrapper for API calls
+- **Mapper Pattern**: DTO to domain model conversion with dedicated mapper classes
+- **Compose Navigation**: Type-safe navigation with sealed class routes
+- **Encrypted Storage**: TokenStorage using Android Security library
+- **Dual Network Setup**: Separate Retrofit instances for authenticated/unauthenticated requests
 
 ### Key Files for Understanding
-- `AppNavigation.kt`: Central navigation configuration
-- `NetworkModule.kt`: API setup with authentication handling
-- `ArgoApplication.kt`: Hilt application setup
-- `NatureTheme.kt`: Custom UI components and theming
-- `LoginViewModel.kt`: Example of proper Hilt ViewModel setup with dummy data
+- `AppNavigation.kt`: Central navigation configuration with sealed class routes
+- `NetworkModule.kt`: Dual Retrofit setup with TokenManagementInterceptor
+- `ArgoApplication.kt`: Hilt application entry point
+- `NatureTheme.kt`: Custom UI components and child-friendly theming
+- `LoginViewModel.kt`: Example ViewModel with UseCase integration and dummy data
+- `TokenStorage.kt`: Encrypted token management with Android Security
+- `*UseCase.kt` files: Business logic layer between ViewModels and Repositories
