@@ -3,8 +3,11 @@ package com.example.bogoargo.ui.screens.user
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -17,18 +20,41 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.navigation.Screen
 import com.example.bogoargo.ui.viewmodels.HomeViewModel
+import com.example.bogoargo.ui.viewmodels.user.LogoutViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudentHomeScreen(
     navController: NavController,
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel = hiltViewModel(),
+    logoutViewModel: LogoutViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val logoutUiState by logoutViewModel.uiState.collectAsState()
+    
+    // 로그아웃 성공 시 로그인 화면으로 이동
+    LaunchedEffect(logoutUiState.isLoggedOut) {
+        if (logoutUiState.isLoggedOut) {
+            navController.navigate("login") {
+                popUpTo("studentHome") { inclusive = true }
+            }
+        }
+    }
+    
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Home") }
+                title = { Text("Home") },
+                actions = {
+                    IconButton(
+                        onClick = { logoutViewModel.logout() }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp,
+                            contentDescription = "로그아웃"
+                        )
+                    }
+                }
             )
         }
     ) { paddingValues ->

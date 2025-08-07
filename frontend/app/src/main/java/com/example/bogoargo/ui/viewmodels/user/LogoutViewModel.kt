@@ -2,8 +2,7 @@ package com.example.bogoargo.ui.viewmodels.user
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bogoargo.domain.repository.IAuthRepository
-import com.example.bogoargo.domain.repository.IUserRepository
+import com.example.bogoargo.domain.use_case.auth.LogoutUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -18,8 +17,7 @@ data class LogoutUiState(
 
 @HiltViewModel
 class LogoutViewModel @Inject constructor(
-    private val userRepository: IUserRepository,
-    private val authRepository: IAuthRepository
+    private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LogoutUiState())
@@ -46,7 +44,7 @@ class LogoutViewModel @Inject constructor(
     }
 
     private suspend fun clearUserSession() {
-        
+        logoutUseCase.invoke()
     }
 
     fun clearState() {
