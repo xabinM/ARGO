@@ -17,6 +17,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.domain.model.Class
+import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.ui.viewmodels.classRoom.ClassManagementViewModel
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
@@ -30,13 +31,17 @@ fun ClassManagementScreen(
     viewModel: ClassManagementViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var isTeacher by remember { mutableStateOf(true) }
+    var currentUser by remember { mutableStateOf(null as com.example.bogoargo.domain.model.User?) }
+    
+    // 로그인한 사용자 정보 로드
+    val loginViewModel = hiltViewModel<com.example.bogoargo.ui.viewmodels.user.LoginViewModel>()
     
     LaunchedEffect(Unit) {
+        currentUser = loginViewModel.getLoggedInUser()
+        val isTeacher = currentUser?.role == UserRole.ROLE_TEACHER
+        
         if (isTeacher) {
             viewModel.loadTeacherClasses()
-        } else {
-            viewModel.loadStudentClasses()
         }
     }
 
@@ -49,18 +54,21 @@ fun ClassManagementScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    navController.navigate("classCreate")
-                },
-                containerColor = NatureColors.leafGreen,
-                shape = NatureShapes.large
-            ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = "반 추가",
-                    tint = Color.White
-                )
+            // 선생님일 때만 반 추가 버튼 표시
+            if (currentUser?.role == UserRole.ROLE_TEACHER) {
+                FloatingActionButton(
+                    onClick = {
+                        navController.navigate("classCreate")
+                    },
+                    containerColor = NatureColors.leafGreen,
+                    shape = NatureShapes.large
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "반 추가",
+                        tint = Color.White
+                    )
+                }
             }
         }
     ) { paddingValues ->
@@ -109,6 +117,7 @@ fun ClassManagementScreen(
                 if (uiState.isLoading) {
                     NatureComponents.NatureLoadingIndicator()
                 } else {
+                    val isTeacher = currentUser?.role == UserRole.ROLE_TEACHER
                     val classes = if (isTeacher) uiState.teacherClasses else uiState.studentClasses
                     
                     if (classes.isEmpty()) {
