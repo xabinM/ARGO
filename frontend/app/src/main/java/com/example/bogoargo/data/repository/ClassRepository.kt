@@ -95,7 +95,7 @@ class ClassRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val classData = response.body()
                 if (classData != null) {
-                    DataResult.Success(classData.toDomainModel())
+                    DataResult.Success(classData.data?.classInfo!!.toDomainModel())
                 } else {
                     DataResult.Error(DataException.NotFoundError)
                 }

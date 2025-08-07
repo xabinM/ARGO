@@ -41,28 +41,28 @@ class ClassCreateViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoadingLocations = true)
 
-//            val dummyLocations = listOf(
-//                Location(locationId = 1, name = "강남 캠퍼스", Coordinates(latitude = BigDecimal("10.03"), longitude = BigDecimal("20.00"))),
-//            )
-//
-//            _uiState.value = _uiState.value.copy(
-//                locations = dummyLocations,
-//                isLoadingLocations = false
-//            )
+            val dummyLocations = listOf(
+                Location(locationId = 1, name = "강남 캠퍼스", Coordinates(latitude = BigDecimal("10.03"), longitude = BigDecimal("20.00"))),
+            )
+
+            _uiState.value = _uiState.value.copy(
+                locations = dummyLocations,
+                isLoadingLocations = false
+            )
 
 
-            try {
-                val locations = getLocationsUseCase()
-                _uiState.value = _uiState.value.copy(
-                    locations = locations,
-                    isLoadingLocations = false
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoadingLocations = false,
-                    errorMessage = "위치 정보를 불러올 수 없습니다: ${e.message}"
-                )
-            }
+//            try {
+//                val locations = getLocationsUseCase()
+//                _uiState.value = _uiState.value.copy(
+//                    locations = locations,
+//                    isLoadingLocations = false
+//                )
+//            } catch (e: Exception) {
+//                _uiState.value = _uiState.value.copy(
+//                    isLoadingLocations = false,
+//                    errorMessage = "위치 정보를 불러올 수 없습니다: ${e.message}"
+//                )
+//            }
 
         }
     }
