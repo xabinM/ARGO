@@ -38,7 +38,7 @@ class TeacherHomeViewModel @Inject constructor(
             
             try {
                 val currentUser = getCurrentUser()
-                val isTeacher = currentUser?.role == UserRole.TEACHER
+                val isTeacher = currentUser?.role == UserRole.ROLE_TEACHER
                 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

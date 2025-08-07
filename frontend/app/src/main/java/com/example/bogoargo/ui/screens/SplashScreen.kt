@@ -39,7 +39,7 @@ fun SplashScreen(
                 if (response.isSuccessful && user != null) {
 
                     // 토큰이 유효하고 유저 데이터 있으면 각 홈으로 이동
-                    if(user.role == UserRole.TEACHER) {
+                    if(user.role == UserRole.ROLE_TEACHER) {
                         navController.navigate("teacherHome") {
                             popUpTo("splash"){ inclusive = true }
                         }

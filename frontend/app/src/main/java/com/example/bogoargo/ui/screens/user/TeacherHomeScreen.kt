@@ -237,8 +237,8 @@ fun TeacherHomeScreen(
                                     emoji = "🏷️",
                                     label = "역할",
                                     value = when(uiState.currentUser?.role) {
-                                        UserRole.TEACHER -> "선생님"
-                                        UserRole.STUDENT -> "학생"
+                                        UserRole.ROLE_TEACHER -> "선생님"
+                                        UserRole.ROLE_STUDENT -> "학생"
                                         else -> "정보 없음"
                                     }
                                 )

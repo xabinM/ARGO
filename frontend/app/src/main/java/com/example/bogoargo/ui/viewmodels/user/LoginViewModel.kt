@@ -93,14 +93,14 @@ class LoginViewModel @Inject constructor(
                     User(
                         userId = 1L,
                         name = "김선생",
-                        role = UserRole.TEACHER,
+                        role = UserRole.ROLE_TEACHER,
                         team = null
                     )
                 } else {
                     User(
                         userId = 2L,
                         name = "이학생",
-                        role = UserRole.STUDENT,
+                        role = UserRole.ROLE_STUDENT,
                         team = null
                     )
                 }

@@ -40,7 +40,7 @@ fun LoginScreen(
     LaunchedEffect(uiState.isLoggedIn) {
         val user = viewModel.getLoggedInUser()
         if (uiState.isLoggedIn && user != null) {
-            if(user.role == UserRole.TEACHER) {
+            if(user.role == UserRole.ROLE_TEACHER) {
                 navController.navigate("teacherHome") {
                     popUpTo("login") { inclusive = true }
                 }
