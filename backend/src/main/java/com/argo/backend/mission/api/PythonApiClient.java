@@ -1,8 +1,10 @@
 package com.argo.backend.mission.api;
 
+import com.argo.backend.domain.ploblem.enums.PhotoPose;
 import com.argo.backend.mission.dto.selfieDetermine.MultipartInputStreamFileResource;
-import com.argo.backend.mission.dto.selfieDetermine.SelfieResultResponse;
-import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateResponse;
+import com.argo.backend.mission.dto.selfieDetermine.SelfieRequestDto;
+import com.argo.backend.mission.dto.selfieDetermine.SelfieResultDto;
+import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateDto;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestToAI;
 import com.argo.backend.mission.exception.problem.ProblemCountMismatchException;
 import com.argo.backend.mission.exception.problem.ProblemGenerationFailedException;
@@ -30,7 +32,7 @@ public class PythonApiClient {
         this.restTemplate = restTemplate;
     }
 
-    public ProblemGenerateResponse requestProblem(String spotName, int problemCnt) {
+    public ProblemGenerateDto requestProblem(String spotName, int problemCnt) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
@@ -38,13 +40,13 @@ public class PythonApiClient {
 
         HttpEntity<ProblemGenerateRequestToAI> entity = new HttpEntity<>(request, headers);
 
-        ResponseEntity<ProblemGenerateResponse> response = restTemplate.postForEntity(
+        ResponseEntity<ProblemGenerateDto> response = restTemplate.postForEntity(
                 PROBLEM_GENERATE_API_URL,
                 entity,
-                ProblemGenerateResponse.class
+                ProblemGenerateDto.class
         );
 
-        ProblemGenerateResponse body = response.getBody();
+        ProblemGenerateDto body = response.getBody();
         if (body == null) {
             throw new PythonServerNoResponseException();
         }
@@ -58,19 +60,21 @@ public class PythonApiClient {
         return body;
     }
 
-    public SelfieResultResponse requestDeterMineSelfie(MultipartFile imageFile) throws IOException {
+    public SelfieResultDto requestDeterMineSelfie(SelfieRequestDto request) throws IOException {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("image", new MultipartInputStreamFileResource(imageFile.getInputStream(), imageFile.getOriginalFilename()));
+        body.add("image", new MultipartInputStreamFileResource(request.getMultipartFile().getInputStream(),
+                                                                request.getMultipartFile().getOriginalFilename()));
+        body.add("pose", request.getPose());
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-        ResponseEntity<SelfieResultResponse> response = restTemplate.postForEntity(
+        ResponseEntity<SelfieResultDto> response = restTemplate.postForEntity(
                 SELFIE_POSE_API_URL,
                 requestEntity,
-                SelfieResultResponse.class
+                SelfieResultDto.class
         );
 
         return response.getBody();

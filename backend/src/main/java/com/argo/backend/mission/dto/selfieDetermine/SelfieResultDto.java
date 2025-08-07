@@ -5,8 +5,9 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class SelfieResultResponse {
+public class SelfieResultDto {
 
     private boolean success;
-    private SelfieResultDto result;
+    private boolean result;
+    private String image;
 }
