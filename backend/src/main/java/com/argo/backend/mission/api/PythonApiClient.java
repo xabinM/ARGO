@@ -1,6 +1,5 @@
 package com.argo.backend.mission.api;
 
-import com.argo.backend.domain.ploblem.enums.PhotoPose;
 import com.argo.backend.mission.dto.selfieDetermine.MultipartInputStreamFileResource;
 import com.argo.backend.mission.dto.selfieDetermine.SelfieRequestDto;
 import com.argo.backend.mission.dto.selfieDetermine.SelfieResultDto;
@@ -17,7 +16,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 

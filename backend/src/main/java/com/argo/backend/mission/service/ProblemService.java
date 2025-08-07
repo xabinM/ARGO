@@ -1,7 +1,6 @@
 package com.argo.backend.mission.service;
 
 import com.argo.backend.domain.ploblem.entity.Problem;
-import com.argo.backend.domain.ploblem.enums.PhotoPose;
 import com.argo.backend.domain.ploblem.enums.ProblemType;
 import com.argo.backend.domain.ploblem.entity.QuizProblem;
 import com.argo.backend.domain.spot.entity.Spot;
@@ -22,7 +21,6 @@ import com.argo.backend.domain.spot.repository.SpotRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.util.List;
