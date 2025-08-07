@@ -68,7 +68,7 @@ class ClassRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val classListResponse = response.body()
                 if (classListResponse?.success == true && classListResponse.data != null) {
-                    val classes = classListResponse.data.map { it.toDomainModel() }
+                    val classes = classListResponse.data.classes.map { it.toDomainModel() }
                     DataResult.Success(classes)
                 } else {
                     DataResult.Error(DataException.ServerError)
@@ -251,7 +251,7 @@ class ClassRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val classListResponse = response.body()
                 if (classListResponse?.success == true && classListResponse.data != null) {
-                    val classes = classListResponse.data.map { it.toDomainModel() }
+                    val classes = classListResponse.data.classes.map { it.toDomainModel() }
                     DataResult.Success(classes)
                 } else {
                     DataResult.Error(DataException.ServerError)
@@ -281,7 +281,7 @@ class ClassRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val classListResponse = response.body()
                 if (classListResponse?.success == true && classListResponse.data != null) {
-                    val classes = classListResponse.data.map { it.toDomainModel() }
+                    val classes = classListResponse.data.classes.map { it.toDomainModel() }
                     DataResult.Success(classes)
                 } else {
                     DataResult.Error(DataException.ServerError)

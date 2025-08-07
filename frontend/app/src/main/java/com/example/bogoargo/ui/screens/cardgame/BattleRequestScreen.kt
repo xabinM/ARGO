@@ -24,6 +24,10 @@ import androidx.navigation.NavController
 import com.example.bogoargo.domain.model.*
 import com.example.bogoargo.navigation.Screen
 import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NatureElevation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,38 +72,29 @@ fun BattleRequestScreen(
     var showBattleRequestModal by remember { mutableStateOf(false) }
     var selectedTeam by remember { mutableStateOf<BattleTeam?>(null) }
 
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("대전 상대 선택") },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = NatureColors.forestGreen,
-                        titleContentColor = Color.White,
-                        navigationIconContentColor = Color.White
-                    )
-                )
-            }
-        ) { paddingValues ->
+    Scaffold(
+        topBar = {
+            NatureComponents.NatureTopAppBar(
+                title = "대전 상대 선택",
+                emoji = "⚔️",
+                onNavigationClick = { navController.popBackStack() }
+            )
+        }
+    ) { paddingValues ->
+        NatureComponents.NatureBackground {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .background(NatureColors.lightBeige)
-                    .padding(16.dp),
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 item {
-                    Card(
+                    NatureComponents.NatureCard(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = NatureColors.whiteTransparent),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                        shape = NatureShapes.large,
+                        containerColor = NatureColors.whiteTransparent,
+                        elevation = NatureElevation.small
                     ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
@@ -107,16 +102,13 @@ fun BattleRequestScreen(
                         ) {
                             Text(
                                 text = "⚔️ 대전 상대를 선택하세요",
-                                style = MaterialTheme.typography.titleLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = NatureColors.forestGreen
-                                )
+                                style = NatureTypography.titleLarge,
+                                color = NatureColors.forestGreen
                             )
                             Text(
                                 text = "현재 온라인인 팀들을 대상으로 대전을 신청할 수 있습니다.",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    color = Color.Gray.copy(alpha = 0.7f)
-                                )
+                                style = NatureTypography.bodyMedium,
+                                color = Color.Gray.copy(alpha = 0.7f)
                             )
                         }
                     }
@@ -160,20 +152,16 @@ fun BattleTeamItem(
     team: BattleTeam,
     onClick: () -> Unit
 ) {
-    Card(
+    NatureComponents.NatureCard(
         modifier = Modifier
             .fillMaxWidth()
             .clickable(enabled = team.isAvailable) { onClick() },
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (team.isAvailable) 
-                NatureColors.whiteTransparent
-            else 
-                NatureColors.whiteTransparent.copy(alpha = 0.5f)
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (team.isAvailable) 6.dp else 2.dp
-        )
+        shape = NatureShapes.medium,
+        containerColor = if (team.isAvailable) 
+            NatureColors.whiteTransparent
+        else 
+            NatureColors.whiteTransparent.copy(alpha = 0.5f),
+        elevation = if (team.isAvailable) NatureElevation.medium else NatureElevation.small
     ) {
         Row(
             modifier = Modifier
@@ -191,27 +179,23 @@ fun BattleTeamItem(
                 ) {
                     Text(
                         text = team.teamName,
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = if (team.isAvailable) 
-                                NatureColors.earthBrown
-                            else 
-                                NatureColors.earthBrown.copy(alpha = 0.5f)
-                        )
+                        style = NatureTypography.titleMedium,
+                        color = if (team.isAvailable) 
+                            NatureColors.earthBrown
+                        else 
+                            NatureColors.earthBrown.copy(alpha = 0.5f)
                     )
                     
                     if (!team.isAvailable) {
-                        Card(
-                            colors = CardDefaults.cardColors(containerColor = Color.Gray),
-                            shape = RoundedCornerShape(4.dp)
+                        NatureComponents.NatureCard(
+                            containerColor = Color.Gray,
+                            shape = NatureShapes.extraSmall
                         ) {
                             Text(
                                 text = "대전 중",
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                style = NatureTypography.labelSmall,
+                                color = Color.White
                             )
                         }
                     }
@@ -234,10 +218,9 @@ fun BattleTeamItem(
                         )
                         Text(
                             text = "${team.memberCount}명",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = Color.Gray.copy(
-                                    alpha = if (team.isAvailable) 0.7f else 0.4f
-                                )
+                            style = NatureTypography.labelSmall,
+                            color = Color.Gray.copy(
+                                alpha = if (team.isAvailable) 0.7f else 0.4f
                             )
                         )
                     }
@@ -256,10 +239,9 @@ fun BattleTeamItem(
                         )
                         Text(
                             text = "${team.averageScore}점",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = Color.Gray.copy(
-                                    alpha = if (team.isAvailable) 0.7f else 0.4f
-                                )
+                            style = NatureTypography.labelSmall,
+                            color = Color.Gray.copy(
+                                alpha = if (team.isAvailable) 0.7f else 0.4f
                             )
                         )
                     }
@@ -267,17 +249,15 @@ fun BattleTeamItem(
             }
 
             if (team.isAvailable) {
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = NatureColors.leafGreen),
-                    shape = RoundedCornerShape(8.dp)
+                NatureComponents.NatureCard(
+                    containerColor = NatureColors.leafGreen,
+                    shape = NatureShapes.small
                 ) {
                     Text(
                         text = "도전하기 ⚔️",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
+                        style = NatureTypography.labelMedium,
+                        color = Color.White
                     )
                 }
             }
@@ -292,13 +272,13 @@ fun BattleRequestModal(
     onConfirm: (BattleTeam) -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        Card(
+        NatureComponents.NatureCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = NatureColors.whiteTransparent),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            shape = NatureShapes.large,
+            containerColor = NatureColors.whiteTransparent,
+            elevation = NatureElevation.high
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -312,24 +292,20 @@ fun BattleRequestModal(
                 
                 Text(
                     text = "대전 신청",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = NatureColors.forestGreen
-                    )
+                    style = NatureTypography.titleLarge,
+                    color = NatureColors.forestGreen
                 )
 
                 Text(
                     text = "${targetTeam.teamName}에게 대전을 신청하시겠습니까?",
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = NatureTypography.bodyLarge,
                     textAlign = TextAlign.Center
                 )
 
-                Card(
+                NatureComponents.NatureCard(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = NatureColors.forestGreen.copy(alpha = 0.1f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                    containerColor = NatureColors.forestGreen.copy(alpha = 0.1f),
+                    shape = NatureShapes.medium
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -337,10 +313,8 @@ fun BattleRequestModal(
                     ) {
                         Text(
                             text = "상대팀 정보",
-                            style = MaterialTheme.typography.titleSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = NatureColors.forestGreen
-                            )
+                            style = NatureTypography.titleSmall,
+                            color = NatureColors.forestGreen
                         )
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -348,13 +322,11 @@ fun BattleRequestModal(
                         ) {
                             Text(
                                 text = "팀원 수",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = NatureTypography.bodyMedium
                             )
                             Text(
                                 text = "${targetTeam.memberCount}명",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.Medium
-                                )
+                                style = NatureTypography.bodyMedium
                             )
                         }
                         Row(
@@ -363,13 +335,11 @@ fun BattleRequestModal(
                         ) {
                             Text(
                                 text = "평균 점수",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = NatureTypography.bodyMedium
                             )
                             Text(
                                 text = "${targetTeam.averageScore}점",
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = FontWeight.Medium
-                                )
+                                style = NatureTypography.bodyMedium
                             )
                         }
                     }
@@ -379,21 +349,18 @@ fun BattleRequestModal(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    OutlinedButton(
+                    NatureComponents.NatureOutlinedButton(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp)
+                        modifier = Modifier.weight(1f)
                     ) {
                         Text("취소")
                     }
                     
-                    Button(
+                    NatureComponents.NatureButton(
                         onClick = { onConfirm(targetTeam) },
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = NatureColors.leafGreen
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                        containerColor = NatureColors.leafGreen,
+                        contentColor = Color.White
                     ) {
                         Text("신청하기")
                     }

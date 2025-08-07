@@ -25,6 +25,10 @@ import androidx.navigation.NavController
 import com.example.bogoargo.domain.model.*
 import com.example.bogoargo.navigation.Screen
 import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NatureElevation
 import androidx.compose.runtime.LaunchedEffect
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.bogoargo.ui.viewmodels.cardgame.CardGameViewModel
@@ -246,29 +250,21 @@ fun CardGameScreen(
         )
     }
 
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("카드 배틀 🃏") },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = NatureColors.forestGreen,
-                        titleContentColor = Color.White,
-                        navigationIconContentColor = Color.White
-                    )
-                )
-            }
-        ) { paddingValues ->
+    Scaffold(
+        topBar = {
+            NatureComponents.NatureTopAppBar(
+                title = "카드 배틀",
+                emoji = "🃏",
+                onNavigationClick = { navController.popBackStack() }
+            )
+        }
+    ) { paddingValues ->
+        NatureComponents.NatureBackground {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(16.dp),
+                    .padding(paddingValues),
+                contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
 
@@ -291,10 +287,8 @@ fun CardGameScreen(
                 item {
                     Text(
                         text = "🏆 대전 기록",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = NatureColors.forestGreen
-                        ),
+                        style = NatureTypography.titleLarge,
+                        color = NatureColors.forestGreen,
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
@@ -359,11 +353,11 @@ fun CardGameScreen(
 
 @Composable
 fun TeamStatsCard(teamStats: TeamCardStats) {
-    Card(
+    NatureComponents.NatureCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = NatureColors.whiteTransparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        shape = NatureShapes.large,
+        containerColor = NatureColors.whiteTransparent,
+        elevation = NatureElevation.medium
     ) {
         Column(
             modifier = Modifier.padding(20.dp),
@@ -376,27 +370,23 @@ fun TeamStatsCard(teamStats: TeamCardStats) {
             ) {
                 Text(
                     text = "🛡️ ${teamStats.teamName}",
-                    style = MaterialTheme.typography.headlineSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = NatureColors.forestGreen
-                    )
+                    style = NatureTypography.titleMedium,
+                    color = NatureColors.forestGreen
                 )
-                Card(
-                    colors = CardDefaults.cardColors(containerColor = NatureColors.leafGreen),
-                    shape = RoundedCornerShape(8.dp)
+                NatureComponents.NatureCard(
+                    containerColor = NatureColors.leafGreen,
+                    shape = NatureShapes.small
                 ) {
                     Text(
                         text = "랭킹 ${teamStats.rank}위",
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
+                        style = NatureTypography.labelMedium,
+                        color = Color.White
                     )
                 }
             }
 
-            Divider(color = Color.Gray.copy(alpha = 0.2f))
+            HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -442,16 +432,13 @@ fun StatItem(
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.headlineSmall.copy(
-                fontWeight = FontWeight.Bold,
-                color = color
-            )
+            style = NatureTypography.titleMedium,
+            color = color
         )
         Text(
             text = label,
-            style = MaterialTheme.typography.bodySmall.copy(
-                color = Color.Gray.copy(alpha = 0.7f)
-            )
+            style = NatureTypography.labelSmall,
+            color = Color.Gray.copy(alpha = 0.7f)
         )
     }
 }
@@ -466,13 +453,11 @@ fun ActionButtonsRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Button(
+        NatureComponents.NatureButton(
             onClick = onViewCards,
             modifier = Modifier.weight(1f),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = NatureColors.sunnyYellow
-            ),
-            shape = RoundedCornerShape(12.dp)
+            containerColor = NatureColors.sunnyYellow,
+            contentColor = NatureColors.earthBrown
         ) {
             Icon(
                 Icons.Default.Group,
@@ -483,14 +468,12 @@ fun ActionButtonsRow(
             Text("우리 팀 카드 보기")
         }
 
-        Button(
+        NatureComponents.NatureButton(
             onClick = onRequestBattle,
             enabled = isTeamLeader,
             modifier = Modifier.weight(1f),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = if (isTeamLeader) NatureColors.leafGreen else Color.Gray
-            ),
-            shape = RoundedCornerShape(12.dp)
+            containerColor = if (isTeamLeader) NatureColors.leafGreen else Color.Gray,
+            contentColor = Color.White
         ) {
             Icon(
                 Icons.Default.EmojiEvents,
@@ -530,11 +513,11 @@ fun BattleHistoryItem(
         BattleStatus.EXPIRED -> Color(0xFFFFEBEE)    // 만료됨 - 연한 빨강
     }
 
-    Card(
+    NatureComponents.NatureCard(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = backgroundColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = NatureShapes.medium,
+        containerColor = backgroundColor,
+        elevation = NatureElevation.small
     ) {
         Column(
             modifier = Modifier
@@ -552,10 +535,8 @@ fun BattleHistoryItem(
                 ) {
                     Text(
                         text = "vs ${battle.opponentTeamName}",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = NatureColors.earthBrown
-                        )
+                        style = NatureTypography.titleMedium,
+                        color = NatureColors.earthBrown
                     )
                     
                     val dateText = when (battle.status) {
@@ -572,26 +553,21 @@ fun BattleHistoryItem(
                                 BattleStatus.EXPIRED -> "만료일: $dateText"
                                 else -> "신청일: $dateText"
                             },
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = Color.Gray.copy(alpha = 0.6f)
-                            )
+                            style = NatureTypography.labelSmall,
+                            color = Color.Gray.copy(alpha = 0.6f)
                         )
                     }
                 }
 
-                Card(
-                    colors = CardDefaults.cardColors(
-                        containerColor = Color(battle.displayColor)
-                    ),
-                    shape = RoundedCornerShape(6.dp)
+                NatureComponents.NatureCard(
+                    containerColor = Color(battle.displayColor),
+                    shape = NatureShapes.extraSmall
                 ) {
                     Text(
                         text = battle.displayStatus,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
-                        )
+                        style = NatureTypography.labelSmall,
+                        color = Color.White
                     )
                 }
             }
@@ -600,13 +576,11 @@ fun BattleHistoryItem(
             when {
                 // 1. PENDING 상태 - 내가 신청한 경우: 취소 버튼
                 battle.canCancel -> {
-                    Button(
+                    NatureComponents.NatureButton(
                         onClick = { onCancelRequest(battle.matchId) },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFF44336)
-                        ),
-                        shape = RoundedCornerShape(8.dp)
+                        containerColor = Color(0xFFF44336),
+                        contentColor = Color.White
                     ) {
                         Icon(
                             Icons.Default.Cancel,
@@ -625,13 +599,11 @@ fun BattleHistoryItem(
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         // 왼쪽: 카드 선택 버튼 (긍정적 행동)
-                        Button(
+                        NatureComponents.NatureButton(
                             onClick = { onAcceptBattle(battle.matchId) },
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = NatureColors.leafGreen
-                            ),
-                            shape = RoundedCornerShape(8.dp)
+                            containerColor = NatureColors.leafGreen,
+                            contentColor = Color.White
                         ) {
                             Icon(
                                 Icons.Default.Style,
@@ -643,13 +615,11 @@ fun BattleHistoryItem(
                         }
                         
                         // 오른쪽: 대전 거절 버튼 (부정적 행동)
-                        Button(
+                        NatureComponents.NatureButton(
                             onClick = { onRejectBattle(battle.matchId) },
                             modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFFF44336)
-                            ),
-                            shape = RoundedCornerShape(8.dp)
+                            containerColor = Color(0xFFF44336),
+                            contentColor = Color.White
                         ) {
                             Icon(
                                 Icons.Default.Block,
@@ -664,13 +634,11 @@ fun BattleHistoryItem(
                 
                 // 3. COMPLETED 상태 - 결과 보기 가능한 경우
                 battle.canViewResult -> {
-                    Button(
+                    NatureComponents.NatureButton(
                         onClick = { onViewResult(battle.matchId) },
                         modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = NatureColors.sunnyYellow
-                        ),
-                        shape = RoundedCornerShape(8.dp)
+                        containerColor = NatureColors.sunnyYellow,
+                        contentColor = NatureColors.earthBrown
                     ) {
                         Icon(
                             Icons.Default.PlayArrow,
@@ -696,36 +664,30 @@ fun BattleHistoryItem(
                             ) {
                                 Text(
                                     text = "대전 결과 확인됨",
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        color = Color.Gray.copy(alpha = 0.6f)
-                                    )
+                                    style = NatureTypography.labelSmall,
+                                    color = Color.Gray.copy(alpha = 0.6f)
                                 )
                                 Text(
                                     text = "${if (battle.scoreGained > 0) "+" else ""}${battle.scoreGained}점",
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        color = if (battle.scoreGained > 0) Color(0xFF4CAF50) else Color(0xFFF44336),
-                                        fontWeight = FontWeight.Bold
-                                    )
+                                    style = NatureTypography.bodyMedium,
+                                    color = if (battle.scoreGained > 0) Color(0xFF4CAF50) else Color(0xFFF44336)
                                 )
                             }
                         } else {
                             Text(
                                 text = "대전 결과 확인됨",
-                                style = MaterialTheme.typography.bodySmall.copy(
-                                    color = Color.Gray.copy(alpha = 0.6f)
-                                ),
+                                style = NatureTypography.labelSmall,
+                                color = Color.Gray.copy(alpha = 0.6f),
                                 modifier = Modifier.fillMaxWidth()
                             )
                         }
                         
                         // 상세정보 버튼
-                        Button(
+                        NatureComponents.NatureButton(
                             onClick = { onViewDetail(battle) },
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = NatureColors.earthBrown.copy(alpha = 0.8f)
-                            ),
-                            shape = RoundedCornerShape(8.dp)
+                            containerColor = NatureColors.earthBrown.copy(alpha = 0.8f),
+                            contentColor = Color.White
                         ) {
                             Icon(
                                 Icons.Default.Person,
@@ -742,9 +704,8 @@ fun BattleHistoryItem(
                 battle.status == BattleStatus.PENDING -> {
                     Text(
                         text = if (battle.isMyChallenge) "상대방 응답 대기 중..." else "대전 신청을 받았습니다",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = Color.Gray.copy(alpha = 0.6f)
-                        ),
+                        style = NatureTypography.labelSmall,
+                        color = Color.Gray.copy(alpha = 0.6f),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }
@@ -753,9 +714,8 @@ fun BattleHistoryItem(
                 battle.status == BattleStatus.COMPLETED && !battle.canViewResult && !battle.hasViewedResult -> {
                     Text(
                         text = "대전이 완료되었습니다",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = Color.Gray.copy(alpha = 0.6f)
-                        ),
+                        style = NatureTypography.labelSmall,
+                        color = Color.Gray.copy(alpha = 0.6f),
                         modifier = Modifier.fillMaxWidth()
                     )
                 }

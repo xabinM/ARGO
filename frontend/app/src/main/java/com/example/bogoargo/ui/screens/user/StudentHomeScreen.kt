@@ -1,7 +1,9 @@
 package com.example.bogoargo.ui.screens.user
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -16,164 +18,274 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.navigation.Screen
-import com.example.bogoargo.ui.viewmodels.HomeViewModel
+import com.example.bogoargo.ui.viewmodels.StudentHomeViewModel
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NatureElevation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudentHomeScreen(
     navController: NavController,
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: StudentHomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Home") }
-            )
+            NatureComponents.NatureTopAppBar(
+                title = "내 반들",
+                emoji = "🎒"
+            ) { 
+                // 홈 화면이므로 뒤로가기 없음
+            }
         }
     ) { paddingValues ->
-        if (uiState.isLoading) {
-            Box(
-                modifier = Modifier.fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(16.dp)
-            ) {
-                Text(
-                    text = uiState.welcomeMessage,
-                    style = MaterialTheme.typography.headlineMedium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // 메인 게임 버튼
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer
-                    )
+        NatureComponents.NatureBackground {
+            if (uiState.isLoading) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "🗺️ Argo Game",
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "지도를 활용한 위치 기반 게임",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { navController.navigate(Screen.Game.route) },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("게임 시작", style = MaterialTheme.typography.labelLarge)
-                        }
-                    }
+                    NatureComponents.NatureLoadingIndicator()
                 }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // 개발용 카드게임 버튼
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "🃏 카드 배틀 (개발용)",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(
-                            onClick = { 
-                                // 개발용 더미 데이터: teamId=1, leaderId=2 (학생이 팀장)
-                                navController.navigate(Screen.CardGame.createRoute(1L, 2L)) 
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("카드게임 시작")
-                        }
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(24.dp))
-                
-                // 네비게이션 버튼들
-                Text(
-                    text = "메뉴",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { navController.navigate(Screen.Profile.route) },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("프로필")
-                    }
-                    
-                    OutlinedButton(
-                        onClick = { navController.navigate(Screen.Settings.route) },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("설정")
-                    }
-                    
-                    OutlinedButton(
-                        onClick = { viewModel.refreshData() },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("새로고침")
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
+            } else {
                 LazyColumn(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentPadding = PaddingValues(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    itemsIndexed(uiState.items) { index, item ->
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            onClick = { viewModel.selectItem(index) },
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (uiState.selectedItemIndex == index)
-                                    MaterialTheme.colorScheme.primaryContainer
-                                else MaterialTheme.colorScheme.surface
+                    // 환영 메시지
+                    item {
+                        Text(
+                            text = uiState.welcomeMessage,
+                            style = NatureTypography.titleLarge,
+                            textAlign = TextAlign.Center,
+                            color = NatureColors.earthBrown,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                    
+                    // 개발용 더미 데이터 로드 버튼
+                    item {
+                        NatureComponents.NatureCard(
+                            containerColor = NatureColors.sunnyYellow.copy(alpha = 0.2f)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "🔧 개발용 테스트",
+                                    style = NatureTypography.titleMedium,
+                                    color = NatureColors.earthBrown
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "API 준비 중이니 더미 데이터로 테스트해보세요",
+                                    style = NatureTypography.bodySmall,
+                                    color = NatureColors.earthBrown.copy(alpha = 0.7f),
+                                    textAlign = TextAlign.Center
+                                )
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Button(
+                                    onClick = { viewModel.loadDummyClasses() },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = NatureColors.sunnyYellow
+                                    ),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                        text = "더미 반 데이터 로드",
+                                        color = NatureColors.earthBrown
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 참여한 반 목록
+                    if (uiState.classes.isNotEmpty()) {
+                        item {
+                            Text(
+                                text = "🌟 내가 참여한 반",
+                                style = NatureTypography.titleMedium,
+                                color = NatureColors.forestGreen,
+                                modifier = Modifier.padding(bottom = 8.dp)
                             )
+                        }
+                        
+                        items(uiState.classes) { classItem ->
+                            NatureComponents.NatureCard(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { navController.navigate(Screen.StudentClassDetail.createRoute(classItem.classId)) },
+                                containerColor = NatureColors.leafGreen.copy(alpha = 0.1f),
+                                shape = NatureShapes.large
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(20.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = classItem.className,
+                                            style = NatureTypography.titleMedium,
+                                            color = NatureColors.earthBrown,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        NatureComponents.NatureCard(
+                                            containerColor = NatureColors.forestGreen.copy(alpha = 0.1f),
+                                            shape = NatureShapes.small
+                                        ) {
+                                            Text(
+                                                text = "${classItem.currentStudents}/${classItem.maxStudents}명",
+                                                style = NatureTypography.labelSmall,
+                                                color = NatureColors.forestGreen,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                                            )
+                                        }
+                                    }
+                                    if (classItem.description.isNotEmpty()) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = classItem.description,
+                                            style = NatureTypography.bodyMedium,
+                                            color = NatureColors.earthBrown.copy(alpha = 0.8f),
+                                            maxLines = 2
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        Text(
+                                            text = "📍 ${classItem.location}",
+                                            style = NatureTypography.labelMedium,
+                                            color = NatureColors.forestGreen
+                                        )
+                                        Text(
+                                            text = "📅 ${classItem.activityDate}",
+                                            style = NatureTypography.labelMedium,
+                                            color = NatureColors.forestGreen
+                                        )
+                                        Text(
+                                            text = "🏆 ${classItem.teamCount}팀",
+                                            style = NatureTypography.labelMedium,
+                                            color = NatureColors.forestGreen
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 네비게이션 메뉴
+                    item {
+                        NatureComponents.NatureCard(
+                            containerColor = NatureColors.earthBrown.copy(alpha = 0.1f)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(20.dp)
+                            ) {
+                                Text(
+                                    text = "⚙️ 메뉴",
+                                    style = NatureTypography.titleMedium,
+                                    color = NatureColors.earthBrown,
+                                    modifier = Modifier.padding(bottom = 12.dp)
+                                )
+                                
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Button(
+                                        onClick = { navController.navigate(Screen.Profile.route) },
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = NatureColors.leafGreen.copy(alpha = 0.3f),
+                                            contentColor = NatureColors.earthBrown
+                                        )
+                                    ) {
+                                        Text("👤 프로필", style = NatureTypography.labelMedium)
+                                    }
+                                    
+                                    Button(
+                                        onClick = { navController.navigate(Screen.Settings.route) },
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = NatureColors.leafGreen.copy(alpha = 0.3f),
+                                            contentColor = NatureColors.earthBrown
+                                        )
+                                    ) {
+                                        Text("⚙️ 설정", style = NatureTypography.labelMedium)
+                                    }
+                                    
+                                    Button(
+                                        onClick = { viewModel.refreshData() },
+                                        modifier = Modifier.weight(1f),
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = NatureColors.leafGreen.copy(alpha = 0.3f),
+                                            contentColor = NatureColors.earthBrown
+                                        )
+                                    ) {
+                                        Text("🔄 새로고침", style = NatureTypography.labelMedium)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 에러 메시지 표시
+                    uiState.errorMessage?.let { error ->
+                        item {
+                            NatureComponents.NatureCard(
+                                containerColor = NatureColors.earthBrown.copy(alpha = 0.2f)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(16.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "⚠️",
+                                        style = NatureTypography.titleLarge
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = error,
+                                        color = NatureColors.earthBrown,
+                                        style = NatureTypography.bodyMedium,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    
+                    // 기타 테스트 아이템들 (개발용)
+                    itemsIndexed(uiState.items) { index, item ->
+                        NatureComponents.NatureCard(
+                            modifier = Modifier.clickable { viewModel.selectItem(index) },
+                            containerColor = if (uiState.selectedItemIndex == index)
+                                NatureColors.sunnyYellow.copy(alpha = 0.3f)
+                            else NatureColors.leafGreen.copy(alpha = 0.05f)
                         ) {
                             Text(
                                 text = item,
                                 modifier = Modifier.padding(16.dp),
-                                style = MaterialTheme.typography.bodyLarge
+                                style = NatureTypography.bodyMedium,
+                                color = NatureColors.earthBrown
                             )
                         }
                     }
@@ -185,7 +297,7 @@ fun StudentHomeScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun HomeScreenPreview() {
+fun StudentHomeScreenPreview() {
     MaterialTheme {
         StudentHomeScreen(navController = rememberNavController())
     }
