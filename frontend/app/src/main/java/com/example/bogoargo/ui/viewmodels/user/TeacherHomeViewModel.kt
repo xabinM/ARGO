@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
-data class TeacherMainUiState(
+data class TeacherHomeUiState(
     val isLoading: Boolean = false,
     val currentUser: User? = null,
     val isTeacher: Boolean = false,
@@ -20,13 +20,13 @@ data class TeacherMainUiState(
 )
 
 @HiltViewModel
-class TeacherMainViewModel @Inject constructor(
+class TeacherHomeViewModel @Inject constructor(
     private val userRepository: IUserRepository,
     private val authRepository: IAuthRepository
 ) : ViewModel() {
     
-    private val _uiState = MutableStateFlow(TeacherMainUiState())
-    val uiState: StateFlow<TeacherMainUiState> = _uiState
+    private val _uiState = MutableStateFlow(TeacherHomeUiState())
+    val uiState: StateFlow<TeacherHomeUiState> = _uiState
 
     init {
         checkTeacherRole()
@@ -38,7 +38,7 @@ class TeacherMainViewModel @Inject constructor(
             
             try {
                 val currentUser = getCurrentUser()
-                val isTeacher = currentUser?.role == UserRole.TEACHER
+                val isTeacher = currentUser?.role == UserRole.ROLE_TEACHER
                 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -55,7 +55,7 @@ class TeacherMainViewModel @Inject constructor(
     }
 
     private suspend fun getCurrentUser(): User? {
-        return null
+        return userRepository.getLoggedInUser()
     }
 
     fun refreshUserInfo() {
@@ -63,6 +63,6 @@ class TeacherMainViewModel @Inject constructor(
     }
 
     fun clearState() {
-        _uiState.value = TeacherMainUiState()
+        _uiState.value = TeacherHomeUiState()
     }
 }

@@ -13,4 +13,8 @@ class LoginUseCase @Inject constructor(
         val request = UserLoginRequest(username = username, password = password)
         return userRepository.login(request)
     }
+
+    suspend fun getLoggedInUser(): User? {
+        return userRepository.getLoggedInUser()
+    }
 }

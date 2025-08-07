@@ -3,6 +3,7 @@ package com.example.bogoargo.di
 import com.example.bogoargo.data.repository.AR3DObjectRepository
 import com.example.bogoargo.domain.repository.IAuthRepository
 import com.example.bogoargo.domain.repository.IClassRepository
+import com.example.bogoargo.domain.repository.ILocationRepository
 import com.example.bogoargo.domain.repository.IMissionRepository
 import com.example.bogoargo.domain.repository.ISettingsRepository
 import com.example.bogoargo.domain.repository.ITeamRepository
@@ -31,6 +32,7 @@ import com.example.bogoargo.domain.use_case.mission.ManageMissionUseCase
 import com.example.bogoargo.domain.use_case.settings.GetSettingsUseCase
 import com.example.bogoargo.domain.use_case.settings.UpdateSettingsUseCase
 import com.example.bogoargo.domain.use_case.ar.GetAR3DObjectsUseCase
+import com.example.bogoargo.domain.use_case.location.getLocationsUseCase
 import com.example.bogoargo.data.repository.MissionRepositoryImpl
 import dagger.Module
 import dagger.Provides
@@ -191,5 +193,12 @@ object UseCaseModule {
     @Singleton
     fun provideGetAR3DObjectsUseCase(ar3DObjectRepository: AR3DObjectRepository): GetAR3DObjectsUseCase {
         return GetAR3DObjectsUseCase(ar3DObjectRepository)
+    }
+
+    // Location Use Cases
+    @Provides
+    @Singleton
+    fun provideGetLocationsUseCase(locationRepository: ILocationRepository): getLocationsUseCase {
+        return getLocationsUseCase(locationRepository)
     }
 }

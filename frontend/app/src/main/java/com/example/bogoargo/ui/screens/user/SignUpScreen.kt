@@ -35,7 +35,7 @@ fun SignUpScreen(
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
-    var selectedRole by remember { mutableStateOf("STUDENT") }
+    var selectedRole by remember { mutableStateOf("ROLE_STUDENT") }
     var agreeTerms by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
@@ -248,17 +248,17 @@ fun SignUpScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             NatureComponents.NatureButton(
-                                onClick = { selectedRole = "STUDENT" },
+                                onClick = { selectedRole = "ROLE_STUDENT" },
                                 text = "👶 학생",
                                 modifier = Modifier.weight(1f),
-                                backgroundColor = if (selectedRole == "STUDENT") NatureColors.forestGreen else NatureColors.earthBrown.copy(alpha = 0.3f),
+                                backgroundColor = if (selectedRole == "ROLE_STUDENT") NatureColors.forestGreen else NatureColors.earthBrown.copy(alpha = 0.3f),
                                 enabled = !uiState.isLoading
                             )
                             NatureComponents.NatureButton(
-                                onClick = { selectedRole = "TEACHER" },
+                                onClick = { selectedRole = "ROLE_TEACHER" },
                                 text = "👩‍🏫 선생님",
                                 modifier = Modifier.weight(1f),
-                                backgroundColor = if (selectedRole == "TEACHER") NatureColors.forestGreen else NatureColors.earthBrown.copy(alpha = 0.3f),
+                                backgroundColor = if (selectedRole == "ROLE_TEACHER") NatureColors.forestGreen else NatureColors.earthBrown.copy(alpha = 0.3f),
                                 enabled = !uiState.isLoading
                             )
                         }
