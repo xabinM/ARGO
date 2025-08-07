@@ -6,9 +6,12 @@ import com.argo.backend.cardgame.dto.battle.BattleResponse;
 import com.argo.backend.cardgame.dto.battle.BattleResponseDto;
 import com.argo.backend.cardgame.exception.types.CardNotFoundException;
 import com.argo.backend.cardgame.exception.types.CardValidationException;
+import com.argo.backend.domain.cardgame.entity.Card;
 import com.argo.backend.domain.cardgame.entity.CardGameMatch;
 import com.argo.backend.domain.cardgame.entity.TeamCard;
+import com.argo.backend.domain.cardgame.enums.BattleStrategy;
 import com.argo.backend.domain.cardgame.enums.MatchStatus;
+import com.argo.backend.domain.cardgame.enums.ResultView;
 import com.argo.backend.domain.cardgame.repository.CardGameMatchRepository;
 import com.argo.backend.domain.cardgame.repository.TeamCardRepository;
 import com.argo.backend.domain.team.entity.Team;
@@ -72,6 +75,8 @@ public class BattleService {
         
         cardGameMatchRepository.save(match);
         
+        // 이 떄 FCM으로 요청 날려야함
+        
         return BattleResponse.success("대전 신청이 성공적으로 전송되었습니다");
     }
     
@@ -94,8 +99,7 @@ public class BattleService {
             match.setChallengedCard(challengedCard);
             match.setChallengedStrategy(request.selectedCard().battleStance());
             match.setStatus(MatchStatus.COMPLETED);
-            
-            // 대전 결과 계산 및 처리는 별도 메서드로 분리 가능
+
             processBattleResult(match);
             
             return BattleResponse.success("대전 수락이 완료되었습니다");
@@ -120,19 +124,36 @@ public class BattleService {
     }
     
     private void processBattleResult(CardGameMatch match) {
-        // 간단한 대전 로직 (추후 확장 가능)
-        // match에 대해서 누가 이겼는지와
-        // 각 팀에 대해 점수 반영
+        TeamCard challengerCard = match.getChallengerCard();
+        TeamCard challengedCard = match.getChallengedCard();
+        
+        // 전략 가져오기
+        var challengerStrategy = match.getChallengerStrategy();
+        var challengedStrategy = match.getChallengedStrategy();
+        
+        // 전략에 따른 카드 능력치 계산
+        double challengerPower = calculateCardPower(challengerCard, challengerStrategy);
+        double challengedPower = calculateCardPower(challengedCard, challengedStrategy);
+        
+        // 대전 결과 계산
+        BattleResult result = determineBattleResult(
+            challengerPower, challengedPower, 
+            challengerStrategy, challengedStrategy
+        );
+        
+        // 점수 및 카드 상태 업데이트
+        applyBattleResult(match, result);
+        
+        // 매치 상태 완료로 변경
         match.setStatus(MatchStatus.COMPLETED);
         
         // 카드 잠금 해제
-        if (match.getChallengerCard() != null) {
-            match.getChallengerCard().setIsLocked(false);
+        if (challengerCard != null) {
+            challengerCard.setIsLocked(false);
         }
-        if (match.getChallengedCard() != null) {
-            match.getChallengedCard().setIsLocked(false);
+        if (challengedCard != null) {
+            challengedCard.setIsLocked(false);
         }
-
     }
     
     @Transactional
@@ -179,10 +200,8 @@ public class BattleService {
             throw new UnauthorizedClassAccessException();
         }
         
-        // resultView 상태 업데이트 로직 (현재는 기본 처리)
-        // 실제로는 누가 확인했는지에 따라 CHALLENGER_SEE, CHALLENGED_SEE 등으로 업데이트
-        // 여기서는 간단하게 처리
-        // 추가 구현 해야함
+        // resultView 상태 업데이트 로직
+        updateResultViewStatus(match, userTeamId);
         
         return BattleResponse.success("대전 결과 확인이 처리되었습니다");
     }
@@ -242,4 +261,167 @@ public class BattleService {
                team.getLeader().getName() : 
                "리더 없음";
     }
+    
+    private double calculateCardPower(TeamCard teamCard, BattleStrategy strategy) {
+        Card card = teamCard.getCard();
+        double tierWeight = teamCard.getTier().getWeight();
+        
+        if (strategy == BattleStrategy.ATTACK) {
+            return card.getBaseAttack() * tierWeight;  // 최종 공격력
+        } else {
+            return card.getBaseDefense() * tierWeight; // 최종 방어력
+        }
+    }
+    
+    private BattleResult determineBattleResult(double challengerPower, double challengedPower, 
+                                             BattleStrategy challengerStrategy, BattleStrategy challengedStrategy) {
+        
+        boolean challengerWins = challengerPower > challengedPower;
+        boolean isEqual = challengerPower == challengedPower;
+        
+        // 공격 vs 공격
+        if (challengerStrategy == BattleStrategy.ATTACK && challengedStrategy == BattleStrategy.ATTACK) {
+            if (isEqual) {
+                return new BattleResult(true, 20, 20, true, true); // 공=공: 카드제거 + 20점씩
+            } else if (challengerWins) {
+                return new BattleResult(true, 20, 0, false, false); // 공>공: 승자 +20점
+            } else {
+                return new BattleResult(false, 0, 20, false, false); // 공<공: 승자 +20점
+            }
+        }
+        
+        // 공격 vs 수비
+        if (challengerStrategy == BattleStrategy.ATTACK && challengedStrategy == BattleStrategy.DEFENSE) {
+            if (isEqual) {
+                return new BattleResult(true, 20, 0, true, false); // 공=수: 공격자 카드제거+20점, 수비자 0점
+            } else if (challengerWins) {
+                return new BattleResult(true, 20, 0, false, false); // 공>수: 공격자 +20점
+            } else {
+                return new BattleResult(false, 0, 10, false, false); // 공<수: 수비자 +10점
+            }
+        }
+        
+        // 수비 vs 공격  
+        if (challengerStrategy == BattleStrategy.DEFENSE && challengedStrategy == BattleStrategy.ATTACK) {
+            if (isEqual) {
+                return new BattleResult(false, 0, 20, false, true); // 수=공: 수비자 0점, 공격자 카드제거+20점
+            } else if (challengerWins) {
+                return new BattleResult(true, 10, 0, false, false); // 수>공: 수비자 승리, 수비자 +10점
+            } else {
+                return new BattleResult(false, 0, 20, false, false); // 수<공: 공격자 승리 +20점
+            }
+        }
+        
+        // 수비 vs 수비
+        if (challengerStrategy == BattleStrategy.DEFENSE && challengedStrategy == BattleStrategy.DEFENSE) {
+            if (isEqual) {
+                return new BattleResult(true, 10, 10, true, true); // 수=수: 카드제거 + 10점씩
+            } else if (challengerWins) {
+                return new BattleResult(true, 10, 0, false, false); // 수>수: 승자 +10점
+            } else {
+                return new BattleResult(false, 0, 10, false, false); // 수<수: 승자 +10점
+            }
+        }
+        
+        return new BattleResult(true, 0, 0, false, false); // 기본값
+    }
+    
+    private void applyBattleResult(CardGameMatch match, BattleResult result) {
+        Team challengerTeam = match.getChallengerTeam();
+        Team challengedTeam = match.getChallengedTeam();
+        
+        // 카드 능력치 비교 (무승부 판단용)
+        TeamCard challengerCard = match.getChallengerCard();
+        TeamCard challengedCard = match.getChallengedCard();
+        double challengerPower = calculateCardPower(challengerCard, match.getChallengerStrategy());
+        double challengedPower = calculateCardPower(challengedCard, match.getChallengedStrategy());
+        boolean isPowerEqual = challengerPower == challengedPower;
+        
+        // 팀 점수 업데이트
+        updateTeamScore(challengerTeam, result.challengerScore(), result.challengerWins() && !isPowerEqual);
+        updateTeamScore(challengedTeam, result.challengedScore(), !result.challengerWins() && !isPowerEqual);
+        
+        // 카드 제거 처리
+        if (result.challengerLoseCard() && match.getChallengerCard() != null) {
+            match.getChallengerCard().setIsLost(true);
+        }
+        if (result.challengedLoseCard() && match.getChallengedCard() != null) {
+            match.getChallengedCard().setIsLost(true);
+        }
+        
+        // 승부 결과 설정 (power가 같으면 무승부)
+        if (isPowerEqual) {
+            // 무승부 - power가 같을 때
+            match.setWinnerTeam(null);
+            match.setLoserTeam(null);
+            match.setDraw(true);
+        } else if (result.challengerWins()) {
+            match.setWinnerTeam(challengerTeam);
+            match.setLoserTeam(challengedTeam);
+            match.setDraw(false);
+        } else {
+            match.setWinnerTeam(challengedTeam);
+            match.setLoserTeam(challengerTeam);
+            match.setDraw(false);
+        }
+    }
+    
+    private void updateTeamScore(Team team, int score, boolean isWinner) {
+        if (score > 0) {
+            team.initializeGameResult();
+            
+            if (isWinner) {
+                team.getGameResult().addWin(score);
+            } else {
+                // 점수는 받지만 승리는 아닌 경우
+                team.getGameResult().addLoss();
+                team.getGameResult().setTotalPoints(team.getGameResult().getTotalPoints() + score);
+            }
+        }
+    }
+    
+    private void updateResultViewStatus(CardGameMatch match, Long viewerTeamId) {
+        Long challengerTeamId = match.getChallengerTeam().getTeamId();
+        Long challengedTeamId = match.getChallengedTeam().getTeamId();
+        
+        boolean isChallengerViewing = viewerTeamId.equals(challengerTeamId);
+        boolean isChallengedViewing = viewerTeamId.equals(challengedTeamId);
+        
+        ResultView currentStatus = match.getResultView();
+        
+        switch (currentStatus) {
+            case BOTH_NOT_SEE:
+                if (isChallengerViewing) {
+                    match.setResultView(ResultView.SEE_CHALLENGER);
+                } else if (isChallengedViewing) {
+                    match.setResultView(ResultView.SEE_CHALLENGED);
+                }
+                break;
+                
+            case SEE_CHALLENGER:
+                if (isChallengedViewing) {
+                    match.setResultView(ResultView.BOTH_SEE);
+                }
+                break;
+                
+            case SEE_CHALLENGED:
+                if (isChallengerViewing) {
+                    match.setResultView(ResultView.BOTH_SEE);
+                }
+                break;
+                
+            case BOTH_SEE:
+                // 이미 양쪽 다 확인함 - 상태 변경 없음
+                break;
+        }
+    }
+    
+    // 대전 결과를 담는 내부 클래스
+    private record BattleResult(
+        boolean challengerWins,
+        int challengerScore, 
+        int challengedScore,
+        boolean challengerLoseCard,
+        boolean challengedLoseCard
+    ) {}
 }

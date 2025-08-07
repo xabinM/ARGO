@@ -2,6 +2,7 @@ package com.argo.backend.domain.cardgame.entity;
 
 import com.argo.backend.domain.cardgame.enums.BattleStrategy;
 import com.argo.backend.domain.cardgame.enums.MatchStatus;
+import com.argo.backend.domain.cardgame.enums.ResultView;
 import com.argo.backend.domain.common.CreatedAtEntity;
 import com.argo.backend.domain.team.entity.Team;
 import jakarta.persistence.*;
@@ -75,6 +76,10 @@ public class CardGameMatch extends CreatedAtEntity {
 
     @Column(name = "ended_at")
     private LocalDateTime endedAt;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(name = "result_view")
+    private ResultView resultView = ResultView.BOTH_NOT_SEE;
 
     public static CardGameMatch createMatch(Team challengerTeam, Team challengedTeam) {
         return new CardGameMatch(challengerTeam, challengedTeam);
