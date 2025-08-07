@@ -52,9 +52,8 @@ public class TeamStatsService {
     }
     
     private String getTeamLeaderName(Team team) {
-        return team.getUsers().stream()
-                .findFirst()
-                .map(User::getName)
-                .orElse("리더 없음");
+        return team.getLeader() != null ? 
+               team.getLeader().getName() : 
+               "리더 없음";
     }
 }

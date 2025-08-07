@@ -1,4 +1,4 @@
-ckage com.argo.backend.organization.service;
+package com.argo.backend.organization.service;
 
 import com.argo.backend.domain.classroom.entity.ClassApplication;
 import com.argo.backend.domain.classroom.entity.ClassRoom;
