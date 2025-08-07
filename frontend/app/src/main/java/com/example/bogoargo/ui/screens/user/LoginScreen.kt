@@ -21,11 +21,13 @@ import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.data.preferences.UserPreferences
 import com.example.bogoargo.domain.model.User
 import com.example.bogoargo.domain.model.UserRole
+import com.example.bogoargo.navigation.Screen
 import com.example.bogoargo.ui.viewmodels.user.LoginViewModel
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
+import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,17 +39,11 @@ fun LoginScreen(
     val uiState by viewModel.uiState.collectAsState()
     var passwordVisible by remember { mutableStateOf(false) }
     
-    LaunchedEffect(uiState.isLoggedIn) {
-        val user = viewModel.getLoggedInUser()
-        if (uiState.isLoggedIn && user != null) {
-            if(user.role == UserRole.ROLE_TEACHER) {
-                navController.navigate("teacherHome") {
-                    popUpTo("login") { inclusive = true }
-                }
-            } else {
-                navController.navigate("studentHome") {
-                    popUpTo("login") { inclusive = true }
-                }
+    // NavigationEvent 처리
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collectLatest { screen ->
+            navController.navigate(screen.route) {
+                popUpTo(Screen.Login.route) { inclusive = true }
             }
         }
     }

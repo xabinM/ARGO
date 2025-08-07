@@ -14,6 +14,7 @@ import com.example.bogoargo.data.storage.TokenStorage
 import com.example.bogoargo.domain.model.DataException
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.User
+import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.domain.repository.IUserRepository
 import retrofit2.HttpException
 import java.io.IOException
@@ -59,19 +60,24 @@ class UserRepositoryImpl @Inject constructor(
             val response = userApiService.login(request)
             if (response.isSuccessful) {
                 val loginResponse = response.body()
-                val accessToken = response.headers()["Authorization"]?.replace("Bearer ", "")
-                val refreshToken = response.headers()["Refresh-Token"] // 일반적인 헤더명
-                
-                if (loginResponse?.success == true && loginResponse.data != null && 
+                val accessToken = response.body()?.tokens?.accessToken
+                val refreshToken = response.body()?.tokens?.refreshToken
+                //TODO: success 변경
+                if (loginResponse?.message.equals("로그인에 성공했습니다.") && loginResponse?.name != null &&
                     accessToken != null && refreshToken != null) {
                     
                     // 토큰 저장
                     tokenStorage.saveTokens(accessToken, refreshToken)
 
                     // 유저 저장
-                    userPreferences.saveUser(loginResponse.data.toDomainModel())
+                    val loggedInUser = User(
+                        name = loginResponse.name,
+                        role = UserRole.valueOf(loginResponse.role),
+                        team = null
+                    )
+                    userPreferences.saveUser(loggedInUser)
                     
-                    DataResult.Success(loginResponse.data.toDomainModel())
+                    DataResult.Success(loggedInUser)
                 } else {
                     DataResult.Error(DataException.AuthenticationError)
                 }

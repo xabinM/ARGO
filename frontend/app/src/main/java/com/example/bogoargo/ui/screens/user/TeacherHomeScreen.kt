@@ -245,7 +245,7 @@ fun TeacherHomeScreen(
                                 InfoItem(
                                     emoji = "🆔",
                                     label = "사용자 ID",
-                                    value = uiState.currentUser?.userId?.toString() ?: "정보 없음"
+                                    value = uiState.currentUser?.name?.toString() ?: "정보 없음"
                                 )
                             }
                         }

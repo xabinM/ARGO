@@ -42,6 +42,8 @@ fun SignUpScreen(
     
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
+            // 성공 메시지를 잠시 보여준 후 로그인 화면으로 이동
+            kotlinx.coroutines.delay(1500)
             navController.popBackStack()
         }
     }

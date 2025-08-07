@@ -1,12 +1,15 @@
 package com.example.bogoargo.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.bogoargo.data.preferences.UserPreferences
+import javax.inject.Inject
 import com.example.bogoargo.ui.screens.ARScreen
 import com.example.bogoargo.ui.screens.classRoom.ClassDetailScreen
 import com.example.bogoargo.ui.screens.classRoom.ClassManagementScreen
@@ -17,6 +20,7 @@ import com.example.bogoargo.ui.screens.MissionDetailScreen
 import com.example.bogoargo.ui.screens.user.LoginScreen
 import com.example.bogoargo.ui.screens.user.ProfileScreen
 import com.example.bogoargo.ui.screens.user.SignUpScreen
+import com.example.bogoargo.ui.screens.SelectHomeScreen
 import com.example.bogoargo.ui.screens.SettingsScreen
 import com.example.bogoargo.ui.screens.SplashScreen
 import com.example.bogoargo.ui.screens.user.TeacherHomeScreen
@@ -28,6 +32,7 @@ sealed class Screen(val route: String) {
     data object Splash : Screen("splash")
     data object Login : Screen("login")
     data object SignUp : Screen("signUp")
+    data object SelectHome : Screen("selectHome")
     data object StudentHome : Screen("studentHome")
     data object Game : Screen("game")
     data object Profile : Screen("profile")
@@ -85,6 +90,9 @@ fun AppNavigation(
         }
         composable(Screen.SignUp.route) {
             SignUpScreen(navController = navController)
+        }
+        composable(Screen.SelectHome.route) {
+            SelectHomeScreen(navController = navController)
         }
         composable(Screen.StudentHome.route) {
             StudentHomeScreen(navController = navController)

@@ -31,7 +31,7 @@ class PreferencesManager @Inject constructor(
 
     // --- 사용자 ID 관련 키와 메서드 ---
     private val KEY_USER_ID = "user_id"
-
+/*
     fun saveUserId(userId: Long) {
         prefs.edit().putLong(KEY_USER_ID, userId).apply()
     }
@@ -40,7 +40,7 @@ class PreferencesManager @Inject constructor(
         val id = prefs.getLong(KEY_USER_ID, -1L) // 기본값 -1L. 실제 ID가 -1일 가능성을 고려해야 함.
         return if (id == -1L) null else id
     }
-
+*/
     // --- 사용자 닉네임 관련 키와 메서드 (User 객체에 'name' 대신 'nickname'이 있다고 가정) ---
     private val KEY_USER_NAME = "user_nickname"
 
