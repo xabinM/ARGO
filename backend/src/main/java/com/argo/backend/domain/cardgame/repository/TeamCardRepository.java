@@ -8,4 +8,6 @@ import java.util.List;
 
 public interface TeamCardRepository extends JpaRepository<TeamCard, Long> {
     List<TeamCard> findByTeamOrderByObtainedAtDesc(Team team);
+
+    List<TeamCard> findByTeamOrderByTierAsc(Team team);
 }

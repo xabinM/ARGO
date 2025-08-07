@@ -33,7 +33,7 @@ public class TeamCardService {
         validateUser(userId);
         Team team = validateTeamAccess(teamId, userId);
         
-        List<TeamCard> teamCards = teamCardRepository.findByTeamOrderByObtainedAtDesc(team);
+        List<TeamCard> teamCards = teamCardRepository.findByTeamOrderByTierAsc(team);
         
         List<TeamCardDto> teamCardDtos = teamCards.stream()
                 .map(TeamCardDto::from)
