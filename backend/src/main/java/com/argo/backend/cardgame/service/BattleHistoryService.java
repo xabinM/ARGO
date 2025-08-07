@@ -34,21 +34,13 @@ public class BattleHistoryService {
         validateUser(userId);
         Team team = validateTeamAccess(teamId, userId);
         
-        // 해당 팀이 참여한 모든 매치 조회 (challenger 또는 challenged)
-        List<CardGameMatch> matches = cardGameMatchRepository.findByTeamIdOrderByCreatedAtDesc(teamId);
+        Page<CardGameMatch> matchPage = cardGameMatchRepository.findByTeamIdOrderByCreatedAtDesc(teamId, pageable);
         
-        List<BattleHistoryDto> battleHistories = matches.stream()
-                .map(match -> BattleHistoryDto.from(match, teamId))
-                .collect(Collectors.toList());
+        Page<BattleHistoryDto> battleHistoryPage = matchPage.map(match -> 
+            BattleHistoryDto.from(match, teamId)
+        );
         
-        // 페이징 처리
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), battleHistories.size());
-        
-        List<BattleHistoryDto> pageContent = battleHistories.subList(start, end);
-        Page<BattleHistoryDto> page = new PageImpl<>(pageContent, pageable, battleHistories.size());
-        
-        return BattleHistoryResponse.from(page);
+        return BattleHistoryResponse.from(battleHistoryPage);
     }
     
     private void validateUser(Long userId) {

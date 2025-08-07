@@ -24,10 +24,7 @@ public record BattleHistoryDto(
 ) {
     public static BattleHistoryDto from(CardGameMatch match, Long currentTeamId) {
         boolean isChallenger = match.getChallengerTeam().getTeamId().equals(currentTeamId);
-        
-        // 대전 진행 상태에 따른 카드 정보 처리
-        // PENDING: 신청자 카드만 있음 (상대방이 아직 응답 안함)
-        // COMPLETED/CANCELLED: 모든 카드 정보 있음
+
         BattleCardDto myCard = null;
         BattleCardDto opponentCard = null;
         
@@ -54,7 +51,7 @@ public record BattleHistoryDto(
                 match.getChallengerTeam().getTeamName(),
                 match.getChallengedTeam().getTeamName(),
                 match.getStatus(),
-                ResultView.BOTH_NOT_SEE, // 기본값
+                match.getResultView(),
                 match.getWinnerTeam() != null ? match.getWinnerTeam().getTeamId() : null,
                 match.getLoserTeam() != null ? match.getLoserTeam().getTeamId() : null,
                 match.isDraw(),
