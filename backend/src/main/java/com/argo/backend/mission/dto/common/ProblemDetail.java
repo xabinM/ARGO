@@ -12,22 +12,22 @@ import java.util.stream.Collectors;
 
 @Getter
 @AllArgsConstructor
-public abstract class ProblemResponseDto {
+public abstract class ProblemDetail {
 
     private Long id;
     private String dtype;
 
-    public static List<ProblemResponseDto> from(List<Problem> problems) {
+    public static List<ProblemDetail> from(List<Problem> problems) {
         return problems.stream()
-                .map(ProblemResponseDto::from)
+                .map(ProblemDetail::from)
                 .collect(Collectors.toList());
     }
 
-    public static ProblemResponseDto from(Problem problem) {
+    public static ProblemDetail from(Problem problem) {
         if (problem instanceof QuizProblem) {
-            return QuizProblemResponseDto.from((QuizProblem) problem);
+            return QuizProblemDetail.from((QuizProblem) problem);
         } else if (problem instanceof SelfieProblem) {
-            return SelfieProblemResponseDto.from((SelfieProblem) problem);
+            return SelfieProblemDetail.from((SelfieProblem) problem);
         } else {
             throw new ProblemTypeNotExist();
         }

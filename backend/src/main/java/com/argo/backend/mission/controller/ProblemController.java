@@ -9,7 +9,7 @@ import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestFromCl
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateDto;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterResponse;
 import com.argo.backend.mission.dto.problemsList.ProblemListPerTypeResponse;
-import com.argo.backend.mission.dto.common.ProblemResponseDto;
+import com.argo.backend.mission.dto.common.ProblemDetail;
 import com.argo.backend.mission.dto.problemsList.AllProblemListResponse;
 import com.argo.backend.mission.dto.selfieDetermine.SelfieRequestDto;
 import com.argo.backend.mission.dto.selfieDetermine.SelfieResultDto;
@@ -54,7 +54,7 @@ public class ProblemController {
     @GetMapping("/spot/{spotId}")
     public ResponseEntity<?> getProblemsBySpotId(@PathVariable Long spotId) {
 
-        List<ProblemResponseDto> problems = problemService.getProblemsBySpotId(spotId);
+        List<ProblemDetail> problems = problemService.getProblemsBySpotId(spotId);
 
         return ResponseEntity.ok(new AllProblemListResponse(true, problems));
     }
@@ -64,7 +64,7 @@ public class ProblemController {
             @PathVariable Long spotId,
             @RequestParam ProblemType type) {
 
-        List<ProblemResponseDto> problems = problemService.findProblemsBySpotIdAndType(spotId, type);
+        List<ProblemDetail> problems = problemService.findProblemsBySpotIdAndType(spotId, type);
         return ResponseEntity.ok(new ProblemListPerTypeResponse(true, problems));
     }
 

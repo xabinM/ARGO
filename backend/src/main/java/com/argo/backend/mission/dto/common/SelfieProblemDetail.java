@@ -4,14 +4,14 @@ import com.argo.backend.domain.ploblem.entity.SelfieProblem;
 import lombok.Getter;
 
 @Getter
-public class SelfieProblemResponseDto extends ProblemResponseDto {
+public class SelfieProblemDetail extends ProblemDetail {
 
     private final String guideline;
     private final String pose;
     private final String poseHint;
 
-    public static SelfieProblemResponseDto from(SelfieProblem selfieProblem) {
-        return new SelfieProblemResponseDto(
+    public static SelfieProblemDetail from(SelfieProblem selfieProblem) {
+        return new SelfieProblemDetail(
                 selfieProblem.getId(),
                 "SELFIE",
                 selfieProblem.getGuideline(),
@@ -20,9 +20,9 @@ public class SelfieProblemResponseDto extends ProblemResponseDto {
         );
     }
 
-    public SelfieProblemResponseDto(Long id, String dtype,
-                                    String guideline, String pose,
-                                    String poseHint) {
+    public SelfieProblemDetail(Long id, String dtype,
+                               String guideline, String pose,
+                               String poseHint) {
         super(id, dtype);
         this.guideline = guideline;
         this.pose = pose;

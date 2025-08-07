@@ -8,9 +8,9 @@ import com.argo.backend.mission.api.PythonApiClient;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterRequest;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestFromCli;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateDto;
-import com.argo.backend.mission.dto.common.ProblemResponseDto;
-import com.argo.backend.mission.dto.common.QuizProblemResponseDto;
-import com.argo.backend.mission.dto.common.SelfieProblemResponseDto;
+import com.argo.backend.mission.dto.common.ProblemDetail;
+import com.argo.backend.mission.dto.common.QuizProblemDetail;
+import com.argo.backend.mission.dto.common.SelfieProblemDetail;
 import com.argo.backend.mission.dto.selfieDetermine.SelfieRequestDto;
 import com.argo.backend.mission.dto.selfieDetermine.SelfieResultDto;
 import com.argo.backend.mission.exception.SpotNotFoundException;
@@ -60,22 +60,22 @@ public class ProblemService {
         return pythonApiClient.requestProblem(spot.getName(), request.getProblemCnt());
     }
 
-    public List<ProblemResponseDto> getProblemsBySpotId(Long spotId) {
+    public List<ProblemDetail> getProblemsBySpotId(Long spotId) {
 
         List<Problem> problems = problemRepository.findAllBySpotId(spotId);
 
 
-        return ProblemResponseDto.from(problems);
+        return ProblemDetail.from(problems);
     }
 
-    public List<ProblemResponseDto> findProblemsBySpotIdAndType(Long spotId, ProblemType type) {
+    public List<ProblemDetail> findProblemsBySpotIdAndType(Long spotId, ProblemType type) {
         return switch (type) {
             case QUIZ -> quizProblemRepository.findBySpotId(spotId).stream()
-                    .map(QuizProblemResponseDto::from)
+                    .map(QuizProblemDetail::from)
                     .collect(Collectors.toList());
 
             case SELFIE -> selfieProblemRepository.findBySpotId(spotId).stream()
-                    .map(SelfieProblemResponseDto::from)
+                    .map(SelfieProblemDetail::from)
                     .collect(Collectors.toList());
         };
     }
