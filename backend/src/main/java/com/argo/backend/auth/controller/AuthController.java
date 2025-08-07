@@ -37,7 +37,7 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
 
         LoginDto dto = authService.login(request);
-        return ResponseEntity.ok(new LoginResponse(true, dto.getRole(), dto.getTokens(),
+        return ResponseEntity.ok(new LoginResponse(true, dto.getName(), dto.getRole(), dto.getTokens(),
                                 ResponseMessage.LOGIN_SUCCESS.getMessage())
         );
     }
