@@ -1,7 +1,6 @@
 package com.argo.backend.mission.dto.SubmitMission;
 
 import com.argo.backend.domain.cardgame.enums.CardTier;
-import lombok.Getter;
 
 public record MissionSubmitDto(boolean successful, Long cardId, CardTier tier) {
 

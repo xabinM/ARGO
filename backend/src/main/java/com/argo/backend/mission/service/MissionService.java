@@ -67,7 +67,7 @@ public class MissionService {
     }
 
     @Transactional
-    public MissionSubmitDto submitQuiz(Long missionId, boolean isSuccessful) {
+    public MissionSubmitDto submitMission(Long missionId, boolean isSuccessful) {
         MissionSession missionSession = missionSessionRepository.findById(missionId)
                 .orElseThrow(MissionSessionNotFoundException::new);
 
@@ -75,10 +75,7 @@ public class MissionService {
             throw new InvalidMissionSessionException();
         }
 
-        System.out.println("-----------------isSuccessful : " + isSuccessful);
-
         if (isSuccessful) {
-            System.out.println("성공 옴");
             missionSession.alterSuccessfulTrue();
 
             Card card = pickRandomCard(missionSession.getSpot().getId());
@@ -95,7 +92,6 @@ public class MissionService {
 
             return MissionSubmitDto.success(card.getCardId(), tier);
         } else {
-            System.out.println("실패 옴");
             missionSession.alterSuccessfulFalse();
             missionSession.alterMissionStatus();
 

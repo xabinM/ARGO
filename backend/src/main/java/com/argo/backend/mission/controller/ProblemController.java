@@ -46,7 +46,7 @@ public class ProblemController {
 
     @PostMapping("/generate")
     public ResponseEntity<?> generateProblem(@RequestBody ProblemGenerateRequestFromCli request) {
-       ProblemGenerateDto problems = problemService.generateProblem(request);
+        ProblemGenerateDto problems = problemService.generateProblem(request);
 
         return ResponseEntity.ok(new ProblemGenerateResponse(true, problems));
     }

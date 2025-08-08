@@ -64,7 +64,6 @@ public class ProblemService {
 
         List<Problem> problems = problemRepository.findAllBySpotId(spotId);
 
-
         return ProblemDetail.from(problems);
     }
 

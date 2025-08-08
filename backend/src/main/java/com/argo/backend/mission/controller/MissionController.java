@@ -21,7 +21,7 @@ public class MissionController {
     @PostMapping("/create/team/{teamId}/spot/{spotId}")
     public ResponseEntity<?> createMission(@PathVariable Long teamId,
                                            @PathVariable Long spotId
-                                                                    ) {
+    ) {
         MissionCreateDto dto = missionService.createMission(teamId, spotId);
 
         return ResponseEntity.ok(new MissionCreateResponse(true,
@@ -30,29 +30,20 @@ public class MissionController {
         );
     }
 
-    // 미션 제출 (퀴즈)
-    @PostMapping("/{missionId}/submit/quiz")
-    public ResponseEntity<?> submitQuiz(@PathVariable Long missionId,
-                                        @RequestBody MissionSubmitRequest request) {
+    // 미션 제출 (Card 배정)
+    @PostMapping("/{missionId}/submit")
+    public ResponseEntity<?> submitMission(@PathVariable Long missionId,
+                                           @RequestBody MissionSubmitRequest request) {
 
-        System.out.println("Controller : " + request.isSuccess());
-        MissionSubmitDto dto = missionService.submitQuiz(missionId, request.isSuccess());
+        MissionSubmitDto dto = missionService.submitMission(missionId, request.isSuccess());
 
         return ResponseEntity.ok(new MissionSubmitResponse(dto.successful(),
-                                    ResponseMessage.SUCCESS_SUBMIT_MISSION.getMessage(),
-                                    dto.cardId(), dto.tier())
+                ResponseMessage.SUCCESS_SUBMIT_MISSION.getMessage(),
+                dto.cardId(), dto.tier())
         );
     }
-
 //
 //    @GetMapping("/overview/team/{teamId}/")
 //    public ResponseEntity<?>
 //
-
-//    // 미션 제출 (셀카)
-//    @PostMapping("/{missionId}/submit/selfie")
-//    public ResponseEntity<?> submitSelfie() {
-//
-//        return ResponseEntity.ok();
-//    }
 }

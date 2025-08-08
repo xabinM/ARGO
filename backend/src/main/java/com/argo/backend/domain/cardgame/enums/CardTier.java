@@ -22,7 +22,7 @@ public enum CardTier {
         this.probability = probability;
     }
 
-    private static final Random  random = new Random();
+    private static final Random random = new Random();
 
     public static CardTier getRandomByCardTier(Card card) {
         boolean hasSpot = card.getSpot() != null;
