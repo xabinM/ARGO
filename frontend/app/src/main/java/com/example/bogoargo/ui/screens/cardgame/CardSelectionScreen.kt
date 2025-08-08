@@ -27,6 +27,10 @@ import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import com.example.bogoargo.domain.model.*
 import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NatureElevation
 import com.example.bogoargo.ui.components.GameCardComponent
 import com.example.bogoargo.ui.components.StatChip
 import com.example.bogoargo.ui.components.CardDetailDialog
@@ -107,31 +111,22 @@ fun CardSelectionScreen(
         }
     }
 
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("카드 선택 ${if (selectedCard != null) "(1/1)" else "(0/1)"}") },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = NatureColors.forestGreen,
-                        titleContentColor = Color.White,
-                        navigationIconContentColor = Color.White
-                    )
-                )
-            },
+    Scaffold(
+        topBar = {
+            NatureComponents.NatureTopAppBar(
+                title = "카드 선택 ${if (selectedCard != null) "(1/1)" else "(0/1)"}",
+                emoji = "🎴",
+                onNavigationClick = { navController.popBackStack() }
+            )
+        },
             bottomBar = {
-                Card(
+                NatureComponents.NatureCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(16.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = NatureColors.whiteTransparent),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    shape = NatureShapes.large,
+                    containerColor = NatureColors.whiteTransparent,
+                    elevation = NatureElevation.large
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -139,10 +134,8 @@ fun CardSelectionScreen(
                     ) {
                         Text(
                             text = "vs $targetTeamName",
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = NatureColors.forestGreen
-                            ),
+                            style = NatureTypography.titleMedium,
+                            color = NatureColors.forestGreen,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -157,15 +150,11 @@ fun CardSelectionScreen(
                             Spacer(modifier = Modifier.height(8.dp))
                         }
                         
-                        Button(
+                        NatureComponents.NatureButton(
                             onClick = { showConfirmDialog = true },
                             enabled = selectedCard != null && selectedStance != null,
                             modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = NatureColors.leafGreen,
-                                disabledContainerColor = Color.Gray
-                            ),
-                            shape = RoundedCornerShape(12.dp)
+                            backgroundColor = NatureColors.leafGreen
                         ) {
                             Text(
                                 text = when {
@@ -173,9 +162,7 @@ fun CardSelectionScreen(
                                     selectedStance == null -> "스탠스를 선택해주세요"
                                     else -> "대전 신청 보내기 ⚔️"
                                 },
-                                style = MaterialTheme.typography.titleSmall.copy(
-                                    fontWeight = FontWeight.Bold
-                                )
+                                style = NatureTypography.labelLarge
                             )
                         }
                     }
@@ -293,7 +280,6 @@ fun CardSelectionScreen(
             }
         )
     }
-}
 
 @Composable
 fun StanceSelectionSection(
@@ -303,10 +289,8 @@ fun StanceSelectionSection(
     Column {
         Text(
             text = "⚔️ 배틀 스탠스 선택",
-            style = MaterialTheme.typography.titleSmall.copy(
-                fontWeight = FontWeight.Bold,
-                color = NatureColors.earthBrown
-            ),
+            style = NatureTypography.titleSmall,
+            color = NatureColors.earthBrown,
             modifier = Modifier.padding(bottom = 8.dp)
         )
         
@@ -315,20 +299,16 @@ fun StanceSelectionSection(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             // 공격 버튼
-            Card(
+            NatureComponents.NatureCard(
                 modifier = Modifier
                     .weight(1f)
                     .clickable { onStanceSelected(BattleStance.ATTACK) },
-                colors = CardDefaults.cardColors(
-                    containerColor = if (selectedStance == BattleStance.ATTACK) 
-                        NatureColors.forestGreen 
-                    else 
-                        Color.White
-                ),
-                shape = RoundedCornerShape(8.dp),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = if (selectedStance == BattleStance.ATTACK) 8.dp else 2.dp
-                )
+                containerColor = if (selectedStance == BattleStance.ATTACK) 
+                    NatureColors.forestGreen 
+                else 
+                    Color.White,
+                shape = NatureShapes.small,
+                elevation = if (selectedStance == BattleStance.ATTACK) NatureElevation.large else NatureElevation.small
             ) {
                 Column(
                     modifier = Modifier
@@ -342,41 +322,34 @@ fun StanceSelectionSection(
                     )
                     Text(
                         text = "공격",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = if (selectedStance == BattleStance.ATTACK) 
-                                Color.White 
-                            else 
-                                NatureColors.earthBrown
-                        )
+                        style = NatureTypography.labelMedium,
+                        color = if (selectedStance == BattleStance.ATTACK) 
+                            Color.White 
+                        else 
+                            NatureColors.earthBrown
                     )
                     Text(
                         text = "이기면 100점",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            color = if (selectedStance == BattleStance.ATTACK) 
-                                Color.White.copy(alpha = 0.8f) 
-                            else 
-                                Color.Gray
-                        )
+                        style = NatureTypography.labelSmall,
+                        color = if (selectedStance == BattleStance.ATTACK) 
+                            Color.White.copy(alpha = 0.8f) 
+                        else 
+                            Color.Gray
                     )
                 }
             }
             
             // 방어 버튼
-            Card(
+            NatureComponents.NatureCard(
                 modifier = Modifier
                     .weight(1f)
                     .clickable { onStanceSelected(BattleStance.DEFENSE) },
-                colors = CardDefaults.cardColors(
-                    containerColor = if (selectedStance == BattleStance.DEFENSE) 
-                        NatureColors.forestGreen 
-                    else 
-                        Color.White
-                ),
-                shape = RoundedCornerShape(8.dp),
-                elevation = CardDefaults.cardElevation(
-                    defaultElevation = if (selectedStance == BattleStance.DEFENSE) 8.dp else 2.dp
-                )
+                containerColor = if (selectedStance == BattleStance.DEFENSE) 
+                    NatureColors.forestGreen 
+                else 
+                    Color.White,
+                shape = NatureShapes.small,
+                elevation = if (selectedStance == BattleStance.DEFENSE) NatureElevation.large else NatureElevation.small
             ) {
                 Column(
                     modifier = Modifier
@@ -390,22 +363,19 @@ fun StanceSelectionSection(
                     )
                     Text(
                         text = "방어",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = if (selectedStance == BattleStance.DEFENSE) 
-                                Color.White 
-                            else 
-                                NatureColors.earthBrown
-                        )
+                        style = NatureTypography.labelMedium,
+                        color = if (selectedStance == BattleStance.DEFENSE) 
+                            Color.White 
+                        else 
+                            NatureColors.earthBrown
                     )
                     Text(
                         text = "이기면 50점",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            color = if (selectedStance == BattleStance.DEFENSE) 
-                                Color.White.copy(alpha = 0.8f) 
-                            else 
-                                Color.Gray
-                        )
+                        style = NatureTypography.labelSmall,
+                        color = if (selectedStance == BattleStance.DEFENSE) 
+                            Color.White.copy(alpha = 0.8f) 
+                        else 
+                            Color.Gray
                     )
                 }
             }
@@ -571,13 +541,13 @@ fun BattleConfirmDialog(
     val totalPower = totalAttack + totalDefense
 
     Dialog(onDismissRequest = onDismiss) {
-        Card(
+        NatureComponents.NatureCard(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = NatureColors.whiteTransparent),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            shape = NatureShapes.extraLarge,
+            containerColor = NatureColors.whiteTransparent,
+            elevation = NatureElevation.large
         ) {
             Column(
                 modifier = Modifier.padding(24.dp),
@@ -591,24 +561,20 @@ fun BattleConfirmDialog(
                 
                 Text(
                     text = "대전 신청 확인",
-                    style = MaterialTheme.typography.titleLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        color = NatureColors.forestGreen
-                    )
+                    style = NatureTypography.titleLarge,
+                    color = NatureColors.forestGreen
                 )
 
                 Text(
                     text = "$targetTeamName 에게 대전 신청을 보내시겠습니까?",
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = NatureTypography.bodyLarge,
                     textAlign = TextAlign.Center
                 )
 
-                Card(
+                NatureComponents.NatureCard(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = NatureColors.forestGreen.copy(alpha = 0.1f)
-                    ),
-                    shape = RoundedCornerShape(12.dp)
+                    containerColor = NatureColors.forestGreen.copy(alpha = 0.1f),
+                    shape = NatureShapes.medium
                 ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
@@ -616,10 +582,8 @@ fun BattleConfirmDialog(
                     ) {
                         Text(
                             text = "선택한 카드",
-                            style = MaterialTheme.typography.titleSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = NatureColors.forestGreen
-                            )
+                            style = NatureTypography.titleSmall,
+                            color = NatureColors.forestGreen
                         )
                         
                         selectedCards.forEach { card ->
@@ -630,13 +594,11 @@ fun BattleConfirmDialog(
                             ) {
                                 Text(
                                     text = card.name,
-                                    style = MaterialTheme.typography.bodyMedium
+                                    style = NatureTypography.bodyMedium
                                 )
                                 Text(
                                     text = "${card.attack}/${card.defense}",
-                                    style = MaterialTheme.typography.bodySmall.copy(
-                                        fontWeight = FontWeight.Medium
-                                    )
+                                    style = NatureTypography.bodySmall
                                 )
                             }
                         }
@@ -651,7 +613,7 @@ fun BattleConfirmDialog(
                         ) {
                             Text(
                                 text = "배틀 스탠스",
-                                style = MaterialTheme.typography.bodyMedium
+                                style = NatureTypography.bodyMedium
                             )
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
@@ -663,10 +625,8 @@ fun BattleConfirmDialog(
                                 )
                                 Text(
                                     text = selectedStance.displayName,
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = NatureColors.forestGreen
-                                    )
+                                    style = NatureTypography.bodyMedium,
+                                    color = NatureColors.forestGreen
                                 )
                             }
                         }
@@ -680,40 +640,34 @@ fun BattleConfirmDialog(
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
                                     text = totalAttack.toString(),
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFFF44336)
-                                    )
+                                    style = NatureTypography.titleMedium,
+                                    color = Color(0xFFF44336)
                                 )
                                 Text(
                                     text = "총 공격력",
-                                    style = MaterialTheme.typography.bodySmall
+                                    style = NatureTypography.bodySmall
                                 )
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
                                     text = totalDefense.toString(),
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = Color(0xFF2196F3)
-                                    )
+                                    style = NatureTypography.titleMedium,
+                                    color = Color(0xFF2196F3)
                                 )
                                 Text(
                                     text = "총 방어력",
-                                    style = MaterialTheme.typography.bodySmall
+                                    style = NatureTypography.bodySmall
                                 )
                             }
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(
                                     text = totalPower.toString(),
-                                    style = MaterialTheme.typography.titleMedium.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        color = NatureColors.leafGreen
-                                    )
+                                    style = NatureTypography.titleMedium,
+                                    color = NatureColors.leafGreen
                                 )
                                 Text(
                                     text = "종합 전투력",
-                                    style = MaterialTheme.typography.bodySmall
+                                    style = NatureTypography.bodySmall
                                 )
                             }
                         }
@@ -724,24 +678,18 @@ fun BattleConfirmDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    OutlinedButton(
+                    NatureComponents.NatureOutlinedButton(
                         onClick = onDismiss,
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("취소")
-                    }
+                        text = "취소",
+                        modifier = Modifier.weight(1f)
+                    )
                     
-                    Button(
+                    NatureComponents.NatureButton(
                         onClick = onConfirm,
+                        text = "신청 보내기",
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = NatureColors.leafGreen
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("신청 보내기")
-                    }
+                        backgroundColor = NatureColors.leafGreen
+                    )
                 }
             }
         }

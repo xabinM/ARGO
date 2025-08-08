@@ -30,6 +30,10 @@ import com.example.bogoargo.domain.model.BattleStance
 import com.example.bogoargo.ui.components.GameCardComponent
 import com.example.bogoargo.ui.components.ViewMode
 import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NatureElevation
 import kotlinx.coroutines.delay
 import kotlin.math.absoluteValue
 import kotlin.random.Random
@@ -55,28 +59,33 @@ fun BattleResultScreen(
     opponentTeamName: String = "상대 팀"
 ) {
     var animationPhase by remember { mutableStateOf(BattleAnimationPhase.INITIAL) }
-    
+
     // 게임 규칙에 따른 점수 계산
     val scoreChange = remember {
         calculateScore(myBattleCard.battleStance, opponentBattleCard.battleStance, isWin, isDraw)
     }
-    
+
     // 카드 파괴 여부 계산
     val isMyCardDestroyed = remember {
         isCardDestroyed(myBattleCard.battleStance, opponentBattleCard.battleStance, isWin, isDraw)
     }
-    
+
     val isOpponentCardDestroyed = remember {
         val isOpponentWin = when {
             isDraw -> false  // 무승부는 아무도 이기지 않음
             else -> !isWin   // 내가 패배 = 상대 승리
         }
-        isCardDestroyed(opponentBattleCard.battleStance, myBattleCard.battleStance, isOpponentWin, isDraw)
+        isCardDestroyed(
+            opponentBattleCard.battleStance,
+            myBattleCard.battleStance,
+            isOpponentWin,
+            isDraw
+        )
     }
-    
+
     var displayedScore by remember { mutableStateOf(0) }
     var showParticles by remember { mutableStateOf(false) }
-    
+
     // 스탠스 팝업 애니메이션 상태
     val stancePopupScale = animateFloatAsState(
         targetValue = when (animationPhase) {
@@ -93,7 +102,7 @@ fun BattleResultScreen(
         },
         label = "stancePopupScale"
     )
-    
+
     val stancePopupAlpha = animateFloatAsState(
         targetValue = when (animationPhase) {
             BattleAnimationPhase.STANCE_SHOWING -> 1f
@@ -104,7 +113,7 @@ fun BattleResultScreen(
         ),
         label = "stancePopupAlpha"
     )
-    
+
     // 카드 정보 알파 (STANCE_SHOWING부터 표시)
     val cardInfoAlpha = animateFloatAsState(
         targetValue = when (animationPhase) {
@@ -113,12 +122,13 @@ fun BattleResultScreen(
             BattleAnimationPhase.RESULT_SHOWING,
             BattleAnimationPhase.SCORE_SHOWING,
             BattleAnimationPhase.COMPLETED -> 1f
+
             else -> 0f
         },
         animationSpec = tween(500),
         label = "cardInfoAlpha"
     )
-    
+
     val myCardOffset = animateFloatAsState(
         targetValue = when (animationPhase) {
             BattleAnimationPhase.INITIAL -> -1000f
@@ -131,7 +141,7 @@ fun BattleResultScreen(
         ),
         label = "myCardOffset"
     )
-    
+
     val opponentCardOffset = animateFloatAsState(
         targetValue = when (animationPhase) {
             BattleAnimationPhase.INITIAL -> 1000f
@@ -144,7 +154,7 @@ fun BattleResultScreen(
         ),
         label = "opponentCardOffset"
     )
-    
+
     val collisionScale = animateFloatAsState(
         targetValue = when (animationPhase) {
             BattleAnimationPhase.COLLIDING -> 1.2f
@@ -158,7 +168,7 @@ fun BattleResultScreen(
         ),
         label = "collisionScale"
     )
-    
+
     val opponentScale = animateFloatAsState(
         targetValue = when (animationPhase) {
             BattleAnimationPhase.COLLIDING -> 1.2f
@@ -172,7 +182,7 @@ fun BattleResultScreen(
         ),
         label = "opponentScale"
     )
-    
+
     val resultAlpha = animateFloatAsState(
         targetValue = when (animationPhase) {
             BattleAnimationPhase.RESULT_SHOWING, BattleAnimationPhase.SCORE_SHOWING, BattleAnimationPhase.COMPLETED -> 1f
@@ -181,7 +191,7 @@ fun BattleResultScreen(
         animationSpec = tween(500),
         label = "resultAlpha"
     )
-    
+
     val scoreAlpha = animateFloatAsState(
         targetValue = when (animationPhase) {
             BattleAnimationPhase.SCORE_SHOWING, BattleAnimationPhase.COMPLETED -> 1f
@@ -190,9 +200,9 @@ fun BattleResultScreen(
         animationSpec = tween(500),
         label = "scoreAlpha"
     )
-    
+
     val shakeOffset = remember { Animatable(0f) }
-    
+
     LaunchedEffect(Unit) {
         delay(100)
         animationPhase = BattleAnimationPhase.ENTERING
@@ -200,7 +210,7 @@ fun BattleResultScreen(
         animationPhase = BattleAnimationPhase.STANCE_SHOWING
         delay(1500)  // 스탠스 표시 시간
         animationPhase = BattleAnimationPhase.COLLIDING
-        
+
         shakeOffset.snapTo(10f)
         shakeOffset.animateTo(
             targetValue = 0f,
@@ -209,467 +219,434 @@ fun BattleResultScreen(
                 stiffness = 5000f
             )
         )
-        
+
         delay(500)
         animationPhase = BattleAnimationPhase.RESULT_SHOWING
         showParticles = isWin
         delay(1500)
         animationPhase = BattleAnimationPhase.SCORE_SHOWING
-        
+
         val step = if (scoreChange > 0) 5 else -2
         while (displayedScore != scoreChange) {
             delay(30)
-            displayedScore = if ((scoreChange - displayedScore).absoluteValue < step.absoluteValue) {
-                scoreChange
-            } else {
-                displayedScore + step
-            }
+            displayedScore =
+                if ((scoreChange - displayedScore).absoluteValue < step.absoluteValue) {
+                    scoreChange
+                } else {
+                    displayedScore + step
+                }
         }
-        
+
         delay(500)
         animationPhase = BattleAnimationPhase.COMPLETED
     }
-    
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        NatureColors.warmBeige,
-                        NatureColors.lightBeige
-                    )
-                )
-            )
-            .graphicsLayer {
-                translationX = shakeOffset.value
-            }
-    ) {
-        IconButton(
-            onClick = { navController.popBackStack() },
-            modifier = Modifier
-                .padding(16.dp)
-                .align(Alignment.TopStart)
-        ) {
-            Icon(
-                imageVector = Icons.Default.ArrowBack,
-                contentDescription = "뒤로가기",
-                tint = NatureColors.earthBrown
-            )
-        }
-        
-        Column(
+
+    NatureComponents.NatureBackground {
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .graphicsLayer {
+                    translationX = shakeOffset.value
+                }
         ) {
-            Text(
-                text = "⚔️ 배틀 결과 ⚔️",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = NatureColors.earthBrown
-                ),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
-            
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                verticalAlignment = Alignment.CenterVertically
+            IconButton(
+                onClick = { navController.popBackStack() },
+                modifier = Modifier
+                    .padding(16.dp)
+                    .align(Alignment.TopStart)
             ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(vertical = 24.dp)
-                ) {
-                    Text(
-                        text = myTeamName,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = NatureColors.forestGreen
-                        ),
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    
-                    // 카드 이름 - STANCE_SHOWING 단계부터 페이드인
-                    AnimatedVisibility(
-                        visible = animationPhase >= BattleAnimationPhase.STANCE_SHOWING,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
-                    ) {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = NatureColors.forestGreen
-                            ),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        ) {
-                            Text(
-                                text = myBattleCard.gameCard.name,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                ),
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-                    
-                    Box(
-                        modifier = Modifier.padding(vertical = 16.dp)
-                    ) {
-                        GameCardComponent(
-                            card = myBattleCard.gameCard,
-                            modifier = Modifier
-                                .width(140.dp)
-                                .graphicsLayer {
-                                    translationX = myCardOffset.value
-                                    scaleX = collisionScale.value
-                                    scaleY = collisionScale.value
-                                    // 카드 파괴 시 알파값 감소
-                                    alpha = if (isMyCardDestroyed && animationPhase >= BattleAnimationPhase.RESULT_SHOWING) {
-                                        0.3f
-                                    } else 1f
-                                },
-                            viewMode = ViewMode.SIMPLE
-                        )
-                        
-                        // 카드 파괴 이펙트
-                        if (isMyCardDestroyed && animationPhase >= BattleAnimationPhase.RESULT_SHOWING) {
-                            DestroyedCardEffect(
-                                modifier = Modifier.matchParentSize()
-                            )
-                        }
-                        
-                        // 스탠스 팝업 애니메이션
-                        if (animationPhase == BattleAnimationPhase.STANCE_SHOWING) {
-                            Text(
-                                text = myBattleCard.battleStance.emoji,
-                                fontSize = 24.sp,
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .scale(stancePopupScale.value)
-                                    .alpha(stancePopupAlpha.value)
-                            )
-                        }
-                        
-                        if (showParticles && isWin) {
-                            ParticleEffect(
-                                modifier = Modifier.matchParentSize()
-                            )
-                        }
-                    }
-                    
-                    // 스탯 정보 - STANCE_SHOWING 단계부터 페이드인
-                    AnimatedVisibility(
-                        visible = animationPhase >= BattleAnimationPhase.STANCE_SHOWING,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
-                    ) {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color.Black.copy(alpha = 0.7f)
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.padding(top = 8.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        text = "⚔️",
-                                        fontSize = 20.sp
-                                    )
-                                    Text(
-                                        text = "${myBattleCard.gameCard.attack}",
-                                        style = MaterialTheme.typography.titleLarge.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White
-                                        )
-                                    )
-                                }
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        text = "🛡️",
-                                        fontSize = 20.sp
-                                    )
-                                    Text(
-                                        text = "${myBattleCard.gameCard.defense}",
-                                        style = MaterialTheme.typography.titleLarge.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier.padding(horizontal = 16.dp)
-                ) {
-                    Text(
-                        text = "VS",
-                        style = MaterialTheme.typography.headlineLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 32.sp,
-                            color = NatureColors.sunnyYellow
-                        ),
-                        modifier = Modifier.padding(vertical = 24.dp)
-                    )
-                }
-                
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(vertical = 24.dp)
-                ) {
-                    Text(
-                        text = opponentTeamName,
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            color = NatureColors.earthBrown
-                        ),
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                    
-                    // 카드 이름 - STANCE_SHOWING 단계부터 페이드인
-                    AnimatedVisibility(
-                        visible = animationPhase >= BattleAnimationPhase.STANCE_SHOWING,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
-                    ) {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = NatureColors.earthBrown
-                            ),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        ) {
-                            Text(
-                                text = opponentBattleCard.gameCard.name,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                ),
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                            )
-                        }
-                    }
-                    
-                    Box(
-                        modifier = Modifier.padding(vertical = 16.dp)
-                    ) {
-                        GameCardComponent(
-                            card = opponentBattleCard.gameCard,
-                            modifier = Modifier
-                                .width(140.dp)
-                                .graphicsLayer {
-                                    translationX = opponentCardOffset.value
-                                    scaleX = opponentScale.value
-                                    scaleY = opponentScale.value
-                                    // 카드 파괴 시 알파값 감소
-                                    alpha = if (isOpponentCardDestroyed && animationPhase >= BattleAnimationPhase.RESULT_SHOWING) {
-                                        0.3f
-                                    } else 1f
-                                },
-                            viewMode = ViewMode.SIMPLE
-                        )
-                        
-                        // 카드 파괴 이펙트
-                        if (isOpponentCardDestroyed && animationPhase >= BattleAnimationPhase.RESULT_SHOWING) {
-                            DestroyedCardEffect(
-                                modifier = Modifier.matchParentSize()
-                            )
-                        }
-                        
-                        // 스탠스 팝업 애니메이션
-                        if (animationPhase == BattleAnimationPhase.STANCE_SHOWING) {
-                            Text(
-                                text = opponentBattleCard.battleStance.emoji,
-                                fontSize = 32.sp,
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .scale(stancePopupScale.value)
-                                    .alpha(stancePopupAlpha.value)
-                            )
-                        }
-                        
-                        if (showParticles && !isWin) {
-                            ParticleEffect(
-                                modifier = Modifier.matchParentSize()
-                            )
-                        }
-                    }
-                    
-                    // 스탯 정보 - STANCE_SHOWING 단계부터 페이드인
-                    AnimatedVisibility(
-                        visible = animationPhase >= BattleAnimationPhase.STANCE_SHOWING,
-                        enter = expandVertically() + fadeIn(),
-                        exit = shrinkVertically() + fadeOut()
-                    ) {
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = Color.Black.copy(alpha = 0.7f)
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.padding(top = 8.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                                horizontalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        text = "⚔️",
-                                        fontSize = 20.sp
-                                    )
-                                    Text(
-                                        text = "${opponentBattleCard.gameCard.attack}",
-                                        style = MaterialTheme.typography.titleLarge.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White
-                                        )
-                                    )
-                                }
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        text = "🛡️",
-                                        fontSize = 20.sp
-                                    )
-                                    Text(
-                                        text = "${opponentBattleCard.gameCard.defense}",
-                                        style = MaterialTheme.typography.titleLarge.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White
-                                        )
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "뒤로가기",
+                    tint = NatureColors.earthBrown
+                )
             }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            AnimatedVisibility(
-                visible = animationPhase >= BattleAnimationPhase.RESULT_SHOWING,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
+
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
-                Card(
+                Text(
+                    text = "⚔️ 배틀 결과 ⚔️",
+                    style = NatureTypography.titleLarge,
+                    color = NatureColors.earthBrown,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 24.dp)
+                    ) {
+                        Text(
+                            text = myTeamName,
+                            style = NatureTypography.titleMedium,
+                            color = NatureColors.forestGreen,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        // 카드 이름 - STANCE_SHOWING 단계부터 페이드인
+                        AnimatedVisibility(
+                            visible = animationPhase >= BattleAnimationPhase.STANCE_SHOWING,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            NatureComponents.NatureCard(
+                                containerColor = NatureColors.forestGreen,
+                                shape = NatureShapes.small,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            ) {
+                                Text(
+                                    text = myBattleCard.gameCard.name,
+                                    style = NatureTypography.titleMedium,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        ) {
+                            GameCardComponent(
+                                card = myBattleCard.gameCard,
+                                modifier = Modifier
+                                    .width(140.dp)
+                                    .graphicsLayer {
+                                        translationX = myCardOffset.value
+                                        scaleX = collisionScale.value
+                                        scaleY = collisionScale.value
+                                        // 카드 파괴 시 알파값 감소
+                                        alpha =
+                                            if (isMyCardDestroyed && animationPhase >= BattleAnimationPhase.RESULT_SHOWING) {
+                                                0.3f
+                                            } else 1f
+                                    },
+                                viewMode = ViewMode.SIMPLE
+                            )
+
+                            // 카드 파괴 이펙트
+                            if (isMyCardDestroyed && animationPhase >= BattleAnimationPhase.RESULT_SHOWING) {
+                                DestroyedCardEffect(
+                                    modifier = Modifier.matchParentSize()
+                                )
+                            }
+
+                            // 스탠스 팝업 애니메이션
+                            if (animationPhase == BattleAnimationPhase.STANCE_SHOWING) {
+                                Text(
+                                    text = myBattleCard.battleStance.emoji,
+                                    fontSize = 24.sp,
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .scale(stancePopupScale.value)
+                                        .alpha(stancePopupAlpha.value)
+                                )
+                            }
+
+                            if (showParticles && isWin) {
+                                ParticleEffect(
+                                    modifier = Modifier.matchParentSize()
+                                )
+                            }
+                        }
+
+                        // 스탯 정보 - STANCE_SHOWING 단계부터 페이드인
+                        AnimatedVisibility(
+                            visible = animationPhase >= BattleAnimationPhase.STANCE_SHOWING,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            NatureComponents.NatureCard(
+                                containerColor = Color.Black.copy(alpha = 0.7f),
+                                shape = NatureShapes.medium,
+                                modifier = Modifier.padding(top = 8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(
+                                        horizontal = 16.dp,
+                                        vertical = 8.dp
+                                    ),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "⚔️",
+                                            fontSize = 20.sp
+                                        )
+                                        Text(
+                                            text = "${myBattleCard.gameCard.attack}",
+                                            style = NatureTypography.titleMedium,
+                                            color = Color.White
+                                        )
+                                    }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "🛡️",
+                                            fontSize = 20.sp
+                                        )
+                                        Text(
+                                            text = "${myBattleCard.gameCard.defense}",
+                                            style = NatureTypography.titleMedium,
+                                            color = Color.White
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        Text(
+                            text = "VS",
+                            style = NatureTypography.titleLarge.copy(
+                                fontSize = 32.sp
+                            ),
+                            color = NatureColors.sunnyYellow,
+                            modifier = Modifier.padding(vertical = 24.dp)
+                        )
+                    }
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 24.dp)
+                    ) {
+                        Text(
+                            text = opponentTeamName,
+                            style = NatureTypography.titleMedium,
+                            color = NatureColors.earthBrown,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        // 카드 이름 - STANCE_SHOWING 단계부터 페이드인
+                        AnimatedVisibility(
+                            visible = animationPhase >= BattleAnimationPhase.STANCE_SHOWING,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            NatureComponents.NatureCard(
+                                containerColor = NatureColors.earthBrown,
+                                shape = NatureShapes.small,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            ) {
+                                Text(
+                                    text = opponentBattleCard.gameCard.name,
+                                    style = NatureTypography.titleMedium,
+                                    color = Color.White,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+
+                        Box(
+                            modifier = Modifier.padding(vertical = 16.dp)
+                        ) {
+                            GameCardComponent(
+                                card = opponentBattleCard.gameCard,
+                                modifier = Modifier
+                                    .width(140.dp)
+                                    .graphicsLayer {
+                                        translationX = opponentCardOffset.value
+                                        scaleX = opponentScale.value
+                                        scaleY = opponentScale.value
+                                        // 카드 파괴 시 알파값 감소
+                                        alpha =
+                                            if (isOpponentCardDestroyed && animationPhase >= BattleAnimationPhase.RESULT_SHOWING) {
+                                                0.3f
+                                            } else 1f
+                                    },
+                                viewMode = ViewMode.SIMPLE
+                            )
+
+                            // 카드 파괴 이펙트
+                            if (isOpponentCardDestroyed && animationPhase >= BattleAnimationPhase.RESULT_SHOWING) {
+                                DestroyedCardEffect(
+                                    modifier = Modifier.matchParentSize()
+                                )
+                            }
+
+                            // 스탠스 팝업 애니메이션
+                            if (animationPhase == BattleAnimationPhase.STANCE_SHOWING) {
+                                Text(
+                                    text = opponentBattleCard.battleStance.emoji,
+                                    fontSize = 32.sp,
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .scale(stancePopupScale.value)
+                                        .alpha(stancePopupAlpha.value)
+                                )
+                            }
+
+                            if (showParticles && !isWin) {
+                                ParticleEffect(
+                                    modifier = Modifier.matchParentSize()
+                                )
+                            }
+                        }
+
+                        // 스탯 정보 - STANCE_SHOWING 단계부터 페이드인
+                        AnimatedVisibility(
+                            visible = animationPhase >= BattleAnimationPhase.STANCE_SHOWING,
+                            enter = expandVertically() + fadeIn(),
+                            exit = shrinkVertically() + fadeOut()
+                        ) {
+                            NatureComponents.NatureCard(
+                                containerColor = Color.Black.copy(alpha = 0.7f),
+                                shape = NatureShapes.medium,
+                                modifier = Modifier.padding(top = 8.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(
+                                        horizontal = 16.dp,
+                                        vertical = 8.dp
+                                    ),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "⚔️",
+                                            fontSize = 20.sp
+                                        )
+                                        Text(
+                                            text = "${opponentBattleCard.gameCard.attack}",
+                                            style = NatureTypography.titleMedium,
+                                            color = Color.White
+                                        )
+                                    }
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                        Text(
+                                            text = "🛡️",
+                                            fontSize = 20.sp
+                                        )
+                                        Text(
+                                            text = "${opponentBattleCard.gameCard.defense}",
+                                            style = NatureTypography.titleMedium,
+                                            color = Color.White
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                AnimatedVisibility(
+                    visible = animationPhase >= BattleAnimationPhase.RESULT_SHOWING,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    NatureComponents.NatureCard(
+                        modifier = Modifier.fillMaxWidth(),
                         containerColor = when {
                             isDraw -> Color(0xFF9E9E9E)  // 무승부 - 회색
                             isWin -> Color(0xFF4CAF50)   // 승리 - 초록
                             else -> Color(0xFFF44336)    // 패배 - 빨강
-                        }
-                    ),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                        },
+                        shape = NatureShapes.large
                     ) {
-                        val resultText = when {
-                            isDraw -> "🤝 무승부 🤝"
-                            isWin -> "🏆 승리! 🏆"
-                            else -> "💔 패배 💔"
-                        }
-                        
-                        Text(
-                            text = resultText,
-                            style = MaterialTheme.typography.headlineMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                fontSize = 24.sp
-                            ),
-                            textAlign = TextAlign.Center
-                        )
-                        
-                        AnimatedVisibility(
-                            visible = animationPhase >= BattleAnimationPhase.SCORE_SHOWING,
-                            enter = expandVertically() + fadeIn(),
-                            exit = shrinkVertically() + fadeOut()
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally
+                            val resultText = when {
+                                isDraw -> "🤝 무승부 🤝"
+                                isWin -> "🏆 승리! 🏆"
+                                else -> "💔 패배 💔"
+                            }
+
+                            Text(
+                                text = resultText,
+                                style = NatureTypography.titleLarge.copy(
+                                    fontSize = 24.sp
+                                ),
+                                color = Color.White,
+                                textAlign = TextAlign.Center
+                            )
+
+                            AnimatedVisibility(
+                                visible = animationPhase >= BattleAnimationPhase.SCORE_SHOWING,
+                                enter = expandVertically() + fadeIn(),
+                                exit = shrinkVertically() + fadeOut()
                             ) {
-                                Spacer(modifier = Modifier.height(12.dp))
                                 Column(
                                     horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
-                                    Text(
-                                        text = "${if (scoreChange > 0) "+" else ""}$displayedScore 점",
-                                        style = MaterialTheme.typography.headlineSmall.copy(
-                                            fontWeight = FontWeight.Bold,
-                                            color = Color.White,
-                                            fontSize = 20.sp
-                                        )
-                                    )
-                                    
-                                    // 카드 파괴 메시지 표시
-                                    val destroyMessage = when {
-                                        isMyCardDestroyed && isOpponentCardDestroyed -> "💥 양쪽 카드가 모두 파괴되었습니다"
-                                        isMyCardDestroyed -> "💔 내 카드가 파괴되었습니다"
-                                        isOpponentCardDestroyed -> "⚡ 상대 카드가 파괴되었습니다"
-                                        else -> null
-                                    }
-                                    
-                                    destroyMessage?.let { message ->
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
                                         Text(
-                                            text = message,
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                color = Color.White.copy(alpha = 0.9f),
-                                                fontSize = 14.sp
+                                            text = "${if (scoreChange > 0) "+" else ""}$displayedScore 점",
+                                            style = NatureTypography.titleMedium.copy(
+                                                fontSize = 20.sp
                                             ),
-                                            textAlign = TextAlign.Center
+                                            color = Color.White
                                         )
+
+                                        // 카드 파괴 메시지 표시
+                                        val destroyMessage = when {
+                                            isMyCardDestroyed && isOpponentCardDestroyed -> "💥 양쪽 카드가 모두 파괴되었습니다"
+                                            isMyCardDestroyed -> "💔 내 카드가 파괴되었습니다"
+                                            isOpponentCardDestroyed -> "⚡ 상대 카드가 파괴되었습니다"
+                                            else -> null
+                                        }
+
+                                        destroyMessage?.let { message ->
+                                            Spacer(modifier = Modifier.height(4.dp))
+                                            Text(
+                                                text = message,
+                                                style = NatureTypography.bodyMedium.copy(
+                                                    fontSize = 14.sp
+                                                ),
+                                                color = Color.White.copy(alpha = 0.9f),
+                                                textAlign = TextAlign.Center
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
-            
-            AnimatedVisibility(
-                visible = animationPhase == BattleAnimationPhase.COMPLETED,
-                enter = expandVertically() + fadeIn(),
-                exit = shrinkVertically() + fadeOut()
-            ) {
-                Column {
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(
-                        onClick = { navController.popBackStack() },
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = NatureColors.forestGreen
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text(
-                            text = "돌아가기",
-                            style = MaterialTheme.typography.bodyLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White
-                            ),
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
+
+                AnimatedVisibility(
+                    visible = animationPhase == BattleAnimationPhase.COMPLETED,
+                    enter = expandVertically() + fadeIn(),
+                    exit = shrinkVertically() + fadeOut()
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(24.dp))
+                        NatureComponents.NatureButton(
+                            onClick = { navController.popBackStack() },
+                            modifier = Modifier.fillMaxWidth(),
+                            backgroundColor = NatureColors.forestGreen,
+                            contentColor = Color.White
+                        ) {
+                            Text(
+                                text = "돌아가기",
+                                style = NatureTypography.titleMedium,
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -689,7 +666,7 @@ fun DestroyedCardEffect(modifier: Modifier = Modifier) {
             )
         }
     }
-    
+
     Box(modifier = modifier) {
         particles.forEach { particle ->
             val infiniteTransition = rememberInfiniteTransition(label = "destroyParticle")
@@ -702,7 +679,7 @@ fun DestroyedCardEffect(modifier: Modifier = Modifier) {
                 ),
                 label = "destroyParticleY"
             )
-            
+
             val animatedAlpha = infiniteTransition.animateFloat(
                 initialValue = 1f,
                 targetValue = 0f,
@@ -712,7 +689,7 @@ fun DestroyedCardEffect(modifier: Modifier = Modifier) {
                 ),
                 label = "destroyParticleAlpha"
             )
-            
+
             val animatedScale = infiniteTransition.animateFloat(
                 initialValue = 0.5f,
                 targetValue = 1.5f,
@@ -722,7 +699,7 @@ fun DestroyedCardEffect(modifier: Modifier = Modifier) {
                 ),
                 label = "destroyParticleScale"
             )
-            
+
             Text(
                 text = particle.emoji,
                 fontSize = 20.sp,
@@ -749,7 +726,7 @@ fun ParticleEffect(modifier: Modifier = Modifier) {
             )
         }
     }
-    
+
     Box(modifier = modifier) {
         particles.forEach { particle ->
             val infiniteTransition = rememberInfiniteTransition(label = "particle")
@@ -762,7 +739,7 @@ fun ParticleEffect(modifier: Modifier = Modifier) {
                 ),
                 label = "particleY"
             )
-            
+
             val animatedAlpha = infiniteTransition.animateFloat(
                 initialValue = 1f,
                 targetValue = 0f,
@@ -772,7 +749,7 @@ fun ParticleEffect(modifier: Modifier = Modifier) {
                 ),
                 label = "particleAlpha"
             )
-            
+
             Text(
                 text = particle.emoji,
                 fontSize = 24.sp,
@@ -794,7 +771,12 @@ data class Particle(
 )
 
 // 게임 규칙에 따른 점수 계산 함수
-private fun calculateScore(myStance: BattleStance, opponentStance: BattleStance, isMyWin: Boolean, isDraw: Boolean): Int {
+private fun calculateScore(
+    myStance: BattleStance,
+    opponentStance: BattleStance,
+    isMyWin: Boolean,
+    isDraw: Boolean
+): Int {
     return when {
         // 방 vs 방 특수 조건
         myStance == BattleStance.DEFENSE && opponentStance == BattleStance.DEFENSE -> 50
@@ -809,12 +791,18 @@ private fun calculateScore(myStance: BattleStance, opponentStance: BattleStance,
             isMyWin -> 50
             else -> 0      // 비김/짐 = pass
         }
+
         else -> 0
     }
 }
 
 // 카드 파괴 여부 계산 함수
-private fun isCardDestroyed(myStance: BattleStance, opponentStance: BattleStance, isMyWin: Boolean, isDraw: Boolean): Boolean {
+private fun isCardDestroyed(
+    myStance: BattleStance,
+    opponentStance: BattleStance,
+    isMyWin: Boolean,
+    isDraw: Boolean
+): Boolean {
     return when {
         // 방 vs 방 = 양쪽 카드 제거 (무승부 특수 케이스)
         myStance == BattleStance.DEFENSE && opponentStance == BattleStance.DEFENSE -> true

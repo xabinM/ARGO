@@ -20,6 +20,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.bogoargo.domain.model.*
 import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NatureElevation
 import com.example.bogoargo.ui.components.GameCardComponent
 import com.example.bogoargo.ui.components.CardDetailDialog
 
@@ -109,29 +113,20 @@ fun CardCollectionScreen(
         rarityFilter.value?.let { it == card.rarity } ?: true
     }
 
-    MaterialTheme {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = { Text("우리 팀 카드 컬렉션 🃏") },
-                    navigationIcon = {
-                        IconButton(onClick = { navController.popBackStack() }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "뒤로가기")
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = NatureColors.forestGreen,
-                        titleContentColor = Color.White,
-                        navigationIconContentColor = Color.White
-                    )
-                )
-            }
-        ) { paddingValues ->
+    Scaffold(
+        topBar = {
+            NatureComponents.NatureTopAppBar(
+                title = "우리 팀 카드 컬렉션",
+                emoji = "🃏",
+                onNavigationClick = { navController.popBackStack() }
+            )
+        }
+    ) { paddingValues ->
+        NatureComponents.NatureBackground {
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
-                    .background(NatureColors.lightBeige)
             ) {
                 CollectionStats(cards = teamCardCollection.cards)
                 
@@ -182,13 +177,13 @@ fun CardCollectionScreen(
 fun CollectionStats(cards: List<GameCard>) {
     val rarityGroups = cards.groupBy { it.rarity }
     
-    Card(
+    NatureComponents.NatureCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = NatureColors.whiteTransparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        shape = NatureShapes.large,
+        containerColor = NatureColors.whiteTransparent,
+        elevation = NatureElevation.medium
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -196,17 +191,13 @@ fun CollectionStats(cards: List<GameCard>) {
         ) {
             Text(
                 text = "📊 컬렉션 현황",
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = NatureColors.forestGreen
-                )
+                style = NatureTypography.titleLarge,
+                color = NatureColors.forestGreen
             )
             
             Text(
                 text = "총 카드 수: ${cards.size}장",
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontWeight = FontWeight.Medium
-                )
+                style = NatureTypography.bodyLarge
             )
 
             Row(
@@ -220,16 +211,13 @@ fun CollectionStats(cards: List<GameCard>) {
                     ) {
                         Text(
                             text = count.toString(),
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = Color(android.graphics.Color.parseColor(rarity.color))
-                            )
+                            style = NatureTypography.titleMedium,
+                            color = Color(android.graphics.Color.parseColor(rarity.color))
                         )
                         Text(
                             text = rarity.displayName,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                color = Color.Gray.copy(alpha = 0.7f)
-                            )
+                            style = NatureTypography.labelSmall,
+                            color = Color.Gray.copy(alpha = 0.7f)
                         )
                     }
                 }
@@ -251,18 +239,38 @@ fun RarityFilterRow(
     ) {
         FilterChip(
             onClick = { onRaritySelected(null) },
-            label = { Text("전체") },
+            label = { Text("전체", style = NatureTypography.labelMedium) },
             selected = selectedRarity == null,
             colors = FilterChipDefaults.filterChipColors(
                 selectedContainerColor = NatureColors.forestGreen,
-                selectedLabelColor = Color.White
+                selectedLabelColor = Color.White,
+                containerColor = NatureColors.whiteTransparent,
+                labelColor = NatureColors.earthBrown
+            ),
+            border = FilterChipDefaults.filterChipBorder(
+                enabled = true,
+                selected = selectedRarity == null,
+                borderColor = NatureColors.forestGreen.copy(alpha = 0.3f),
+                selectedBorderColor = NatureColors.forestGreen
             )
         )
         CardTier.entries.forEach { rarity ->
             FilterChip(
                 onClick = { onRaritySelected(rarity) },
-                label = { Text(rarity.displayName) },
-                selected = selectedRarity == rarity
+                label = { Text(rarity.displayName, style = NatureTypography.labelMedium) },
+                selected = selectedRarity == rarity,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = Color(android.graphics.Color.parseColor(rarity.color)),
+                    selectedLabelColor = Color.White,
+                    containerColor = NatureColors.whiteTransparent,
+                    labelColor = NatureColors.earthBrown
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = selectedRarity == rarity,
+                    borderColor = Color(android.graphics.Color.parseColor(rarity.color)).copy(alpha = 0.3f),
+                    selectedBorderColor = Color(android.graphics.Color.parseColor(rarity.color))
+                )
             )
         }
     }

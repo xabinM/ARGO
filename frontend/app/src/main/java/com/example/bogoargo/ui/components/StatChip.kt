@@ -9,6 +9,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NatureElevation
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,12 +29,11 @@ fun StatChip(
     modifier: Modifier = Modifier,
     textSize: androidx.compose.ui.unit.TextUnit = 12.sp
 ) {
-    Card(
+    NatureComponents.NatureCard(
         modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Black.copy(alpha = 0.6f)
-        ),
-        shape = RoundedCornerShape(8.dp)
+        containerColor = NatureColors.forestGreen.copy(alpha = 0.8f),
+        shape = NatureShapes.medium,
+        elevation = NatureElevation.small
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -38,7 +42,7 @@ fun StatChip(
         ) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelSmall.copy(
+                style = NatureTypography.labelSmall.copy(
                     color = color.copy(alpha = 0.8f),
                     fontSize = textSize * 0.8f
                 )
@@ -46,7 +50,7 @@ fun StatChip(
             Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text = value.toString(),
-                style = MaterialTheme.typography.titleSmall.copy(
+                style = NatureTypography.titleSmall.copy(
                     fontWeight = FontWeight.Bold,
                     fontSize = textSize,
                     color = color

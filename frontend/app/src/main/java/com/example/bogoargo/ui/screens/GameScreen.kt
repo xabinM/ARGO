@@ -8,6 +8,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NatureElevation
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -101,10 +106,11 @@ fun GameScreen(
     
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Argo Game") },
+            NatureComponents.NatureTopAppBar(
+                title = "Argo 체험학습",
+                emoji = "🎓",
                 actions = {
-                    TextButton(
+                    NatureComponents.NatureButton(
                         onClick = { 
                             if (isGameStarted) {
                                 // 게임 종료 후 홈으로 이동
@@ -115,10 +121,10 @@ fun GameScreen(
                                 // 게임 시작 로직
                                 isGameStarted = true
                             }
-                        }
-                    ) {
-                        Text(if (isGameStarted) "홈으로" else "게임 시작")
-                    }
+                        },
+                        text = if (isGameStarted) "홈으로" else "게임 시작",
+                        backgroundColor = NatureColors.leafGreen
+                    )
                 }
             )
         }
@@ -212,15 +218,14 @@ fun GameScreen(
                 )
                 
                 // 디버그 AR 버튼 (우측 상단)
-                Card(
+                NatureComponents.NatureCard(
                     modifier = Modifier
                         .align(Alignment.TopEnd)
                         .padding(top = 80.dp, end = 16.dp),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.9f)
-                    )
+                    containerColor = NatureColors.sunnyYellow.copy(alpha = 0.9f),
+                    elevation = NatureElevation.medium
                 ) {
-                    TextButton(
+                    NatureComponents.NatureButton(
                         onClick = {
                             // 현재 위치 기준으로 가상의 미션 위치 생성 (±5m)
                             val currentLat = uiState.userLocation?.latitude ?: 37.5665
@@ -231,15 +236,10 @@ fun GameScreen(
                             // 디버그용 하드코딩된 미션 ID와 위치로 AR 화면 이동
                             navController.navigate("ar/999/$debugLat/$debugLon")
                         },
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    ) {
-                        Text(
-                            text = "🔧 Debug AR",
-                            color = MaterialTheme.colorScheme.onErrorContainer,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                        text = "🔧 Debug AR",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        backgroundColor = NatureColors.sunnyYellow
+                    )
                 }
                 
                 // 근처 미션 AR 버튼들 (포켓몬GO 스타일)
@@ -250,22 +250,21 @@ fun GameScreen(
                             .padding(16.dp)
                     ) {
                         // 진동 효과 및 알림 텍스트
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.9f)
-                            ),
-                            modifier = Modifier.padding(bottom = 8.dp)
+                        NatureComponents.NatureCard(
+                            containerColor = NatureColors.leafGreen.copy(alpha = 0.9f),
+                            modifier = Modifier.padding(bottom = 8.dp),
+                            elevation = NatureElevation.medium
                         ) {
                             Text(
                                 text = "🎯 미션 지점에 도착했습니다!",
                                 modifier = Modifier.padding(12.dp),
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onTertiary
+                                style = NatureTypography.titleMedium,
+                                color = androidx.compose.ui.graphics.Color.White
                             )
                         }
                         
                         uiState.nearbyMissionSpots.forEach { spot ->
-                            Button(
+                            NatureComponents.NatureButton(
                                 onClick = { 
                                     // AR 화면으로 이동 (위치 정보 포함)
                                     navController.navigate("ar/${spot.spotId}/${spot.latitude}/${spot.longitude}")
@@ -273,10 +272,7 @@ fun GameScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                ),
-                                shape = RoundedCornerShape(16.dp)
+                                backgroundColor = NatureColors.forestGreen
                             ) {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
@@ -289,8 +285,10 @@ fun GameScreen(
                                     )
                                     Text(
                                         text = "${spot.spotName} AR 시작",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 16.sp
+                                        style = NatureTypography.titleMedium.copy(
+                                            fontWeight = FontWeight.Bold
+                                        ),
+                                        color = androidx.compose.ui.graphics.Color.White
                                     )
                                 }
                             }
@@ -323,11 +321,10 @@ fun GameOverlay(
     missionSpots: List<MissionSpot>,
     completedCount: Int
 ) {
-    Card(
+    NatureComponents.NatureCard(
         modifier = modifier.padding(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
-        )
+        containerColor = NatureColors.whiteTransparent,
+        elevation = NatureElevation.medium
     ) {
         Row(
             modifier = Modifier.padding(16.dp),
@@ -337,13 +334,14 @@ fun GameOverlay(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = "현장체험학습 진행중",
-                    style = MaterialTheme.typography.titleSmall
+                    text = "현장체험학습 진행중 🎓",
+                    style = NatureTypography.titleMedium,
+                    color = NatureColors.forestGreen
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "진행률: $completedCount/${missionSpots.size} 완료",
-                    style = MaterialTheme.typography.bodySmall
+                    style = NatureTypography.bodyMedium
                 )
             }
             
@@ -351,13 +349,14 @@ fun GameOverlay(
                 horizontalAlignment = Alignment.End
             ) {
                 Text(
-                    text = "점수: ${completedCount * 100}",
-                    style = MaterialTheme.typography.titleSmall
+                    text = "점수: ${completedCount * 100} 🎆",
+                    style = NatureTypography.titleMedium,
+                    color = NatureColors.sunnyYellow
                 )
                 Text(
                     text = "🎯 가까운 미션 찾기",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
+                    style = NatureTypography.bodySmall,
+                    color = NatureColors.leafGreen
                 )
             }
         }
@@ -369,8 +368,10 @@ fun GameStartOverlay(
     modifier: Modifier = Modifier,
     onStartGame: () -> Unit
 ) {
-    Card(
-        modifier = modifier.padding(16.dp)
+    NatureComponents.NatureCard(
+        modifier = modifier.padding(16.dp),
+        containerColor = NatureColors.whiteTransparent90,
+        elevation = NatureElevation.large
     ) {
         Column(
             modifier = Modifier.padding(24.dp),
@@ -378,7 +379,8 @@ fun GameStartOverlay(
         ) {
             Text(
                 text = "🎓 Argo 현장체험학습",
-                style = MaterialTheme.typography.headlineMedium
+                style = NatureTypography.headlineMedium,
+                color = NatureColors.forestGreen
             )
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -389,7 +391,8 @@ fun GameStartOverlay(
             ) {
                 Text(
                     text = "📍 게임 방법:",
-                    style = MaterialTheme.typography.titleMedium,
+                    style = NatureTypography.titleLarge,
+                    color = NatureColors.earthBrown,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 
@@ -412,12 +415,12 @@ fun GameStartOverlay(
             }
             
             Spacer(modifier = Modifier.height(24.dp))
-            Button(
+            NatureComponents.NatureButton(
                 onClick = onStartGame,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("체험학습 시작하기")
-            }
+                text = "체험학습 시작하기 🌱",
+                modifier = Modifier.fillMaxWidth(),
+                backgroundColor = NatureColors.leafGreen
+            )
         }
     }
 }
@@ -435,12 +438,13 @@ fun GameInstructionItem(
     ) {
         Text(
             text = icon,
-            style = MaterialTheme.typography.titleMedium,
+            style = NatureTypography.titleMedium,
             modifier = Modifier.padding(end = 12.dp)
         )
         Text(
             text = text,
-            style = MaterialTheme.typography.bodyMedium
+            style = NatureTypography.bodyMedium,
+            color = NatureColors.earthBrown
         )
     }
 }
@@ -450,40 +454,39 @@ fun CurrentLocationOverlay(
     modifier: Modifier = Modifier,
     userLocation: android.location.Location?
 ) {
-    Card(
+    NatureComponents.NatureCard(
         modifier = modifier.padding(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f)
-        )
+        containerColor = NatureColors.whiteTransparent,
+        elevation = NatureElevation.small
     ) {
         Column(
             modifier = Modifier.padding(12.dp)
         ) {
             Text(
                 text = "📍 현재 위치",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold
+                style = NatureTypography.titleSmall,
+                color = NatureColors.forestGreen
             )
             Spacer(modifier = Modifier.height(4.dp))
             if (userLocation != null) {
                 Text(
                     text = "위도: ${String.format("%.6f", userLocation.latitude)}",
-                    style = MaterialTheme.typography.bodySmall
+                    style = NatureTypography.bodySmall
                 )
                 Text(
                     text = "경도: ${String.format("%.6f", userLocation.longitude)}",
-                    style = MaterialTheme.typography.bodySmall
+                    style = NatureTypography.bodySmall
                 )
                 Text(
                     text = "정확도: ${userLocation.accuracy.toInt()}m",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.secondary
+                    style = NatureTypography.bodySmall,
+                    color = NatureColors.leafGreen
                 )
             } else {
                 Text(
                     text = "위치 정보 없음",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
+                    style = NatureTypography.bodySmall,
+                    color = androidx.compose.ui.graphics.Color.Red
                 )
             }
         }
