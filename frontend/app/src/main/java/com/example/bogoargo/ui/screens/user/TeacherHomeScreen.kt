@@ -192,7 +192,7 @@ fun TeacherHomeScreen(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "프로그램 관리",
+                                    text = "미션 추가 생성",
                                     style = NatureTypography.bodyMedium,
                                     textAlign = TextAlign.Center
                                 )
