@@ -118,10 +118,13 @@ class ProblemGenerateResponse(BaseModel):
     generation_info: Dict = Field(default_factory=dict, description="생성 정보")
 
 # === 포즈 분석용 응답 모델 (추가) ===
-class SimplePoseResponse(BaseModel):
-    """간소화된 포즈 분석 응답 (백엔드 전용)"""
-    success: bool = Field(..., description="포즈 조건 만족 여부")
-    result: str = Field(..., description="분석 결과 메시지"))
+class PoseAnalysisResponse(BaseModel):
+    """포즈 분석 응답"""
+    success: bool = Field(default=True)
+    detected_people: int = Field(..., description="감지된 사람 수")
+    pose_result: str = Field(..., description="포즈 분석 결과")
+    confidence: float = Field(..., description="신뢰도")
+    analysis_time_ms: float = Field(..., description="분석 소요 시간")
 
 # === 초기화 함수들 (기존 backend_integrated_fastapi.py에서 가져옴) ===
 def setup_openai_client():
@@ -409,66 +412,12 @@ async def generate_problem_by_spot_id(request: ProblemGenerateRequestFromSpotId)
         logger.error(f"❌ SpotID 퀴즈 생성 실패: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-# === 포즈 분석 엔드포인트 ===
-@app.post("/pose/predict", response_model=SimplePoseResponse)
-async def analyze_pose_simple(
+@app.post("/pose/predict", response_model=PoseAnalysisResponse)
+async def analyze_pose(
     file: UploadFile = File(...), 
     pose_select: str = Form(...)
 ):
-    """포즈 분석 API (백엔드용 - 간소화된 응답)"""
-    
-    if not system_status["pose_service_ready"]:
-        raise HTTPException(
-            status_code=503, 
-            detail="포즈 분석 서비스가 준비되지 않았습니다"
-        )
-    
-    try:
-        # 이미지 읽기
-        contents = await file.read()
-        np_arr = np.frombuffer(contents, np.uint8)
-        image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-        
-        if image is None:
-            return SimplePoseResponse(success=False, result="이미지 디코딩 실패")
-
-        # YOLO + 포즈 분석
-        image, results, poses_info = ai_pose_model.Load_image(image)
-        
-        if results is None or not poses_info:
-            return SimplePoseResponse(success=False, result="사람을 찾을 수 없습니다")
-
-        # 포즈 분석
-        analyzer = AI_Analyze(image, results, poses_info)
-        pose_result = analyzer.print_keypoints(pose_select=pose_select)
-        
-        # 결과 처리 - 핵심 부분!
-        if isinstance(pose_result, str):
-            # 문자열인 경우 (실패 메시지)
-            success = "Success" in pose_result
-            result_msg = pose_result
-        elif pose_result is True:
-            # True인 경우 (성공)
-            success = True
-            result_msg = "포즈 인식 성공"
-        else:
-            # 기타 경우
-            success = False
-            result_msg = "포즈 분석 실패"
-        
-        return SimplePoseResponse(success=success, result=result_msg)
-        
-    except Exception as e:
-        logger.error(f"❌ 포즈 분석 실패: {e}")
-        return SimplePoseResponse(success=False, result=f"분석 오류: {str(e)}")
-
-# 디버깅용 상세 엔드포인트 (선택사항)
-@app.post("/pose/predict-debug")
-async def analyze_pose_debug(
-    file: UploadFile = File(...), 
-    pose_select: str = Form(...)
-):
-    """포즈 분석 API (디버깅용 - 상세한 응답)"""
+    """포즈 분석 API"""
     start_time = datetime.now()
     
     if not system_status["pose_service_ready"]:
@@ -490,43 +439,28 @@ async def analyze_pose_debug(
         image, results, poses_info = ai_pose_model.Load_image(image)
         
         if results is None or not poses_info:
-            processing_time = (datetime.now() - start_time).total_seconds() * 1000
-            return {
-                "success": False,
-                "result": "사람을 찾을 수 없습니다",
-                "detected_people": 0,
-                "confidence": 0.0,
-                "analysis_time_ms": round(processing_time, 2)
-            }
+            raise HTTPException(status_code=404, detail="사람 감지 실패")
 
         # 포즈 분석
         analyzer = AI_Analyze(image, results, poses_info)
-        pose_result = analyzer.print_keypoints(pose_select=pose_select)
+        analysis_result = analyzer.print_keypoints(pose_select=pose_select)
         
         processing_time = (datetime.now() - start_time).total_seconds() * 1000
         
-        # 결과 처리
-        if isinstance(pose_result, str):
-            success = "Success" in pose_result
-            result_msg = pose_result
-        elif pose_result is True:
-            success = True
-            result_msg = "포즈 인식 성공"
-        else:
-            success = False
-            result_msg = "분석 실패"
+        return PoseAnalysisResponse(
+            success=True,
+            detected_people=len(poses_info),
+            pose_result=str(analysis_result),
+            confidence=0.8,  # 임시 값
+            analysis_time_ms=round(processing_time, 2)
+        )
         
-        return {
-            "success": success,
-            "result": result_msg,
-            "detected_people": len(poses_info),
-            "confidence": 0.8,  # 임시 값
-            "analysis_time_ms": round(processing_time, 2)
-        }
-        
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"❌ 포즈 분석 실패: {e}")
         raise HTTPException(status_code=500, detail=f"포즈 분석 오류: {str(e)}")
+
 @app.get("/health")
 async def health_check():
     """시스템 상태 확인"""
