@@ -121,7 +121,7 @@ class ProblemGenerateResponse(BaseModel):
 class SimplePoseResponse(BaseModel):
     """간소화된 포즈 분석 응답 (백엔드 전용)"""
     success: bool = Field(..., description="포즈 조건 만족 여부")
-    result: str = Field(..., description="분석 결과 메시지"))
+    result: str = Field(..., description="분석 결과 메시지")
 
 # === 초기화 함수들 (기존 backend_integrated_fastapi.py에서 가져옴) ===
 def setup_openai_client():
