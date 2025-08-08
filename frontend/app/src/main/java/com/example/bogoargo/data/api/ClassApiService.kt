@@ -8,6 +8,7 @@ import com.example.bogoargo.data.response.ClassDetailResponse
 import com.example.bogoargo.data.response.ClassLeaveResponse
 import com.example.bogoargo.data.response.ClassListResponse
 import com.example.bogoargo.data.response.ClassMemberResponse
+import com.example.bogoargo.data.response.StudentClassDetailResponse
 import com.example.bogoargo.data.response.applyClassResponse
 import retrofit2.Response
 import retrofit2.http.Body
@@ -36,11 +37,18 @@ interface ClassApiService {
     ): Response<ClassListResponse>
 
 
-    // 반 상세 정보 조회
+    // 반 상세 정보 조회 (기존)
     @GET("api/classes/{classId}")
     suspend fun getClassDetail(
         @Path("classId") classId: Long
     ): Response<ClassDataDto>
+
+    // 학생용 반 상세 정보 조회 (백엔드 StudentClassController와 일치)
+    @GET("api/student/classes/{classId}")
+    suspend fun getStudentClassDetail(
+        @Path("classId") classId: Long,
+        @Query("include") include: String? = null
+    ): Response<StudentClassDetailResponse>
 
     // 반 생성 (교사 기능)
     @POST("api/teacher/classes/create")

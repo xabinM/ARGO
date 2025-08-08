@@ -80,12 +80,34 @@ enum class CardTier(val displayName: String, val color: String) {
     COMMON("일반", "#8E8E93"),
     RARE("레어", "#007AFF"),
     EPIC("에픽", "#AF52DE"),
-    LEGENDARY("전설", "#FF9500")
+    LEGENDARY("전설", "#FF9500");
+    
+    companion object {
+        fun fromString(tier: String): CardTier {
+            return when (tier.uppercase()) {
+                "COMMON" -> COMMON
+                "RARE" -> RARE
+                "EPIC" -> EPIC
+                "LEGENDARY", "LEGEND" -> LEGENDARY
+                else -> COMMON
+            }
+        }
+    }
 }
 
 enum class BattleStance(val displayName: String, val emoji: String) {
     ATTACK("공격", "⚔️"),
-    DEFENSE("방어", "🛡️")
+    DEFENSE("방어", "🛡️");
+    
+    companion object {
+        fun fromString(battleStance: String): BattleStance {
+            return when (battleStance.uppercase()) {
+                "ATTACK" -> ATTACK
+                "DEFENSE" -> DEFENSE
+                else -> ATTACK
+            }
+        }
+    }
 }
 
 data class BattleCard(
@@ -124,14 +146,38 @@ enum class BattleStatus(val displayName: String) {
     PENDING("신청 중"),
     CANCELLED("취소됨"),
     EXPIRED("만료됨"),
-    COMPLETED("완료")
+    COMPLETED("완료");
+    
+    companion object {
+        fun fromString(status: String): BattleStatus {
+            return when (status.uppercase()) {
+                "PENDING" -> PENDING
+                "CANCELLED" -> CANCELLED
+                "EXPIRED" -> EXPIRED
+                "COMPLETED" -> COMPLETED
+                else -> PENDING
+            }
+        }
+    }
 }
 
 enum class ResultView {
-    SeeChallenger,
-    SeeChallenged, 
-    BothSee,
-    BothNotSee
+    SEE_CHALLENGER,
+    SEE_CHALLENGED, 
+    BOTH_SEE,
+    BOTH_NOT_SEE;
+    
+    companion object {
+        fun fromString(resultView: String): ResultView {
+            return when (resultView.uppercase()) {
+                "SEE_CHALLENGER" -> SEE_CHALLENGER
+                "SEE_CHALLENGED" -> SEE_CHALLENGED
+                "BOTH_SEE" -> BOTH_SEE
+                "BOTH_NOT_SEE" -> BOTH_NOT_SEE
+                else -> BOTH_NOT_SEE
+            }
+        }
+    }
 }
 
 data class TeamCardCollection(
@@ -205,10 +251,10 @@ data class BattleHistory(
     // 이미 결과를 본 상태인지 (resultView 기반으로 계산)
     val hasViewedResult: Boolean
         get() = when (resultView) {
-            ResultView.BothSee -> true
-            ResultView.SeeChallenger -> isMyChallenge
-            ResultView.SeeChallenged -> !isMyChallenge
-            ResultView.BothNotSee -> false
+            ResultView.BOTH_SEE -> true
+            ResultView.SEE_CHALLENGER -> isMyChallenge
+            ResultView.SEE_CHALLENGED -> !isMyChallenge
+            ResultView.BOTH_NOT_SEE -> false
         }
     
     // 승패 결과 계산 (이미 확인했을 때만 반환)

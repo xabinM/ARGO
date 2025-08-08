@@ -8,6 +8,7 @@ import com.example.bogoargo.domain.repository.IMissionRepository
 import com.example.bogoargo.domain.repository.ISettingsRepository
 import com.example.bogoargo.domain.repository.ITeamRepository
 import com.example.bogoargo.domain.repository.IUserRepository
+import com.example.bogoargo.domain.repository.ICardGameRepository
 import com.example.bogoargo.domain.use_case.auth.LoginUseCase
 import com.example.bogoargo.domain.use_case.auth.LogoutUseCase
 import com.example.bogoargo.domain.use_case.auth.RefreshTokenUseCase
@@ -33,6 +34,7 @@ import com.example.bogoargo.domain.use_case.settings.GetSettingsUseCase
 import com.example.bogoargo.domain.use_case.settings.UpdateSettingsUseCase
 import com.example.bogoargo.domain.use_case.ar.GetAR3DObjectsUseCase
 import com.example.bogoargo.domain.use_case.location.getLocationsUseCase
+import com.example.bogoargo.domain.use_case.cardgame.GetBattleHistoryUseCase
 import com.example.bogoargo.data.repository.MissionRepositoryImpl
 import dagger.Module
 import dagger.Provides
@@ -200,5 +202,12 @@ object UseCaseModule {
     @Singleton
     fun provideGetLocationsUseCase(locationRepository: ILocationRepository): getLocationsUseCase {
         return getLocationsUseCase(locationRepository)
+    }
+
+    // CardGame Use Cases
+    @Provides
+    @Singleton
+    fun provideGetBattleHistoryUseCase(cardGameRepository: ICardGameRepository): GetBattleHistoryUseCase {
+        return GetBattleHistoryUseCase(cardGameRepository)
     }
 }
