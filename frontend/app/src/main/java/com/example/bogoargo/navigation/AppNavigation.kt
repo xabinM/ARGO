@@ -1,15 +1,14 @@
 package com.example.bogoargo.navigation
 
+import android.util.Log
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.bogoargo.data.preferences.UserPreferences
-import javax.inject.Inject
 import com.example.bogoargo.ui.screens.ARScreen
 import com.example.bogoargo.ui.screens.classRoom.ClassDetailScreen
 import com.example.bogoargo.ui.screens.classRoom.ClassManagementScreen
@@ -71,7 +70,7 @@ sealed class Screen(val route: String) {
     }
 
     data object ClassMemberManagement : Screen("classMemberManagement/{classId}") {
-        fun createRoute(classId: String) = "classMemberManagement/$classId"
+        fun createRoute(classId: Long) = "classMemberManagement/$classId"
     }
     data object Mission : Screen("mission/{spotId}?classId={classId}&teamId={teamId}") {
         fun createRoute(spotId: Long, classId: Long = 1L, teamId: Long = 0L) =
@@ -175,10 +174,11 @@ fun AppNavigation(
             )
         ) { backStackEntry ->
             val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
+            Log.d("DEBUG", "classId = $classId")
 
             ClassDetailScreen(
                 navController = navController,
-                classId = classId.toString()
+                classId = classId
             )
         }
         composable(
@@ -218,7 +218,7 @@ fun AppNavigation(
             route = Screen.ClassMemberManagement.route,
             arguments = listOf(navArgument("classId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val classId = backStackEntry.arguments?.getString("classId") ?: ""
+            val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
             ClassMemberManagementScreen(
                 navController = navController,
                 classId = classId

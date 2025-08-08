@@ -137,10 +137,11 @@ fun ClassManagementScreen(
                                 ClassInfoCard(
                                     classInfo = classInfo,
                                     isTeacher = isTeacher,
-                                    onDeleteClick = if (isTeacher) { { viewModel.deleteClass(classInfo.classId) } } else null
-                                ) {
-                                    navController.navigate(Screen.ClassDetail.createRoute(classInfo.classId))
-                                }
+                                    navController = navController
+                                    //onDeleteClick = if (isTeacher) { { viewModel.deleteClass(classInfo.classId) } } else null
+                                ) //{
+                                    //navController.navigate(Screen.ClassDetail.createRoute(classInfo.classId))
+                                //}
                             }
                             // 빈 공간 추가 (FAB와의 겹침 방지)
                             item {
@@ -159,12 +160,13 @@ fun ClassInfoCard(
     classInfo: Class, 
     isTeacher: Boolean,
     onDeleteClick: (() -> Unit)? = null,
-    onClick: () -> Unit
+    //onClick: () -> Unit,
+    navController: NavController
 ) {
     NatureComponents.NatureCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable { navController.navigate(Screen.ClassDetail.createRoute(classInfo.classId)) },
         shape = NatureShapes.card
     ) {
         Column(
