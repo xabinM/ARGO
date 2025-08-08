@@ -36,11 +36,13 @@ public class TeacherClassController {
     private final ClassService classService;
     private final ClassApplicationService classApplicationService;
 
+    // 클리어
     @GetMapping("/locations")
     public ResponseEntity<CommonApiResponse<List<LocationsResponse>>> getLocations() {
         return ResponseEntity.ok(new CommonApiResponse<>(true, "지역 목록 조회 성공", classService.getLocations()));
     }
 
+    // 클리어
     @GetMapping
     public ResponseEntity<CommonApiResponse<ClassListResponse.ClassListData>> getClassList(
             @RequestParam(value = "page", defaultValue = "1") int page,
@@ -55,16 +57,18 @@ public class TeacherClassController {
         return ResponseEntity.ok(new CommonApiResponse<>(true, "반 목록 조회 성공", response.getData()));
     }
 
+    // 통합된 반 상세정보 조회 (선생/학생 공통)
     @GetMapping("/{classId}")
     public ResponseEntity<CommonApiResponse<ClassDetailResponse>> getClassDetail(
             @PathVariable Long classId,
             @RequestParam(value = "include", required = false) String include,
-            @AuthenticationPrincipal Long teacherId
+            @AuthenticationPrincipal Long userId
     ) {
-        ClassDetailResponse response = classService.getTeacherClassDetail(teacherId, classId, include);
+        ClassDetailResponse response = classService.getClassDetail(userId, classId, include);
         return ResponseEntity.ok(new CommonApiResponse<>(true, "반 상세정보 조회 성공", response));
     }
 
+    // 클리어
     @PostMapping
     public ResponseEntity<CommonApiResponse<ClassCreateResponse>> createClass(
             @Valid @RequestBody ClassCreateRequest request,
@@ -74,6 +78,7 @@ public class TeacherClassController {
         return ResponseEntity.ok(new CommonApiResponse<>(true, "반 생성 성공", response));
     }
 
+    // 클리어
     @GetMapping("/{classId}/applications")
     public ResponseEntity<CommonApiResponse<ApplicationListResponse>> getApplicationList(
             @PathVariable Long classId,
@@ -87,6 +92,7 @@ public class TeacherClassController {
         return ResponseEntity.ok(new CommonApiResponse<>(true, "신청 목록 조회 성공", response));
     }
 
+    // 클리어
     @PutMapping("/{classId}/applications")
     public ResponseEntity<CommonApiResponse<ApplicationProcessResponse>> processApplications(
             @PathVariable Long classId,
@@ -97,6 +103,7 @@ public class TeacherClassController {
         return ResponseEntity.ok(new CommonApiResponse<>(true, "신청 처리 성공", response));
     }
 
+    // 확인해야하는데 거의 클리어인듯
     @GetMapping("/{classId}/students")
     public ResponseEntity<CommonApiResponse<StudentListResponse>> getClassStudents(
             @PathVariable Long classId,
@@ -110,6 +117,7 @@ public class TeacherClassController {
         return ResponseEntity.ok(new CommonApiResponse<>(true, "학생 목록 조회 성공", response));
     }
 
+    // 클리어
     @DeleteMapping("/{classId}")
     public ResponseEntity<CommonApiResponse<ClassDeleteResponse>> deleteClass(
             @PathVariable Long classId,

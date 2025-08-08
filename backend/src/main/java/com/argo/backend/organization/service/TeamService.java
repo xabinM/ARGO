@@ -25,6 +25,8 @@ import com.argo.backend.domain.classroom.repository.ClassStudentRepository;
 import com.argo.backend.domain.user.repository.UserRepository;
 import com.argo.backend.domain.user.repository.TeacherRepository;
 import com.argo.backend.domain.team.repository.TeamRepository;
+import com.argo.backend.domain.user.repository.UserTeamRepository;
+import com.argo.backend.domain.user.entity.UserTeam;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -42,6 +44,7 @@ public class TeamService {
     private final TeacherRepository teacherRepository;
     private final ClassStudentRepository classStudentRepository;
     private final UserRepository userRepository;
+    private final UserTeamRepository userTeamRepository;
 
     @Transactional
     public TeamCreateResponse createTeam(Long classId, TeamCreateRequest request, Long teacherId) {
@@ -105,7 +108,7 @@ public class TeamService {
         
         // 5. 학생들을 팀에 배정
         LocalDateTime assignedAt = LocalDateTime.now();
-        List<AssignedStudentDto> assignedStudents = assignStudentsToTeam(team, students, assignedAt);
+        List<AssignedStudentDto> assignedStudents = assignStudentsToTeam(team, students, assignedAt, classId);
         
         // 6. 응답 생성
         long currentMembers = classStudentRepository.countByTeamId(teamId);
@@ -123,16 +126,19 @@ public class TeamService {
     }
     
     private List<User> findAndValidateStudents(Long classId, List<Long> studentIds) {
-        List<User> students = classStudentRepository.findApprovedStudentsByIdsAndClassId(studentIds, classId);
+        List<Object[]> studentResults = classStudentRepository.findApprovedStudentsByIdsAndClassIdWithTeam(studentIds, classId);
+        List<User> students = studentResults.stream()
+                .map(result -> (User) result[0])
+                .toList();
         
         // 존재 검증
         if (students.size() != studentIds.size()) {
             throw new StudentNotFoundException();
         }
         
-        // 팀 배정 상태 검증
+        // 팀 배정 상태 검증 (UserTeam 기반)
         for (User student : students) {
-            if (student.getTeam() != null) {
+            if (student.isInTeamForClass(classId)) {
                 throw new StudentAlreadyAssignedException();
             }
         }
@@ -149,11 +155,15 @@ public class TeamService {
         }
     }
     
-    private List<AssignedStudentDto> assignStudentsToTeam(Team team, List<User> students, LocalDateTime assignedAt) {
+    private List<AssignedStudentDto> assignStudentsToTeam(Team team, List<User> students, LocalDateTime assignedAt, Long classId) {
         return students.stream()
                 .map(student -> {
-                    student.setTeam(team);
-                    userRepository.save(student);
+                    // UserTeam 생성으로 팀 배정
+                    if (!student.isInTeamForClass(classId)) {
+                        UserTeam userTeam = UserTeam.create(student, team);
+                        userTeamRepository.save(userTeam);
+                        student.getUserTeams().add(userTeam);
+                    }
                     return AssignedStudentDto.from(student, assignedAt);
                 })
                 .toList();
@@ -185,8 +195,10 @@ public class TeamService {
             for (int i = 0; i < teams.size() && !unassignedStudents.isEmpty(); i++) {
                 if (teams.get(i).getMaxMembers() == null || teamCounts[i] < teams.get(i).getMaxMembers()) {
                     User student = unassignedStudents.remove(0);
-                    student.setTeam(teams.get(i));
-                    userRepository.save(student);
+                    // UserTeam 생성으로 팀 배정
+                    UserTeam userTeam = UserTeam.create(student, teams.get(i));
+                    userTeamRepository.save(userTeam);
+                    student.getUserTeams().add(userTeam);
                     teamCounts[i]++;
                     totalAssigned++;
                     anyAssignment = true;
@@ -209,7 +221,7 @@ public class TeamService {
     private List<TeamAssignmentDto> createTeamAssignments(List<Team> teams) {
         return teams.stream()
                 .map(team -> {
-                    List<User> members = userRepository.findByTeamId(team.getTeamId());
+                    List<User> members = team.getActiveMembers(); // Team 헬퍼 메서드 사용
                     return members.isEmpty() ? null : TeamAssignmentDto.of(team,
                             members.stream().map(AssignedStudentInfoDto::from).toList(),
                             TeamStatusDto.of(team, members.size()));
@@ -223,8 +235,15 @@ public class TeamService {
         ClassRoom classRoom = validateTeamAccess(classId, teamId, teacherId);
         Team team = teamRepository.findByTeamIdAndClassRoom(teamId, classRoom);
         
-        List<User> teamMembers = userRepository.findByTeamId(teamId);
-        teamMembers.forEach(student -> student.setTeam(null));
+        // UserTeam 기반으로 팀 멤버 조회 및 해제
+        List<UserTeam> activeUserTeams = userTeamRepository.findActiveByTeamId(teamId);
+        List<User> teamMembers = activeUserTeams.stream()
+                .map(UserTeam::getUser)
+                .toList();
+        
+        // UserTeam 비활성화
+        activeUserTeams.forEach(UserTeam::deactivate);
+        userTeamRepository.saveAll(activeUserTeams);
         
         LocalDateTime now = LocalDateTime.now();
         DeletedTeamDto deletedTeam = DeletedTeamDto.from(team, now);
@@ -258,7 +277,7 @@ public class TeamService {
         List<Object[]> results = classStudentRepository.findApprovedStudentsWithTeamAndJoinDateByClassId(classId);
         int totalStudents = results.size();
         int assignedStudents = (int) results.stream()
-                .filter(result -> ((User) result[0]).getTeam() != null)
+                .filter(result -> result[2] != null) // Team 객체가 null이 아니면 배정됨
                 .count();
         int totalTeams = teamRepository.findTeamsByClassId(classId).size();
         

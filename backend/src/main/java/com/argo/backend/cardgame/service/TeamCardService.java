@@ -12,6 +12,7 @@ import com.argo.backend.domain.user.repository.UserRepository;
 import com.argo.backend.organization.exception.types.TeamNotFoundException;
 import com.argo.backend.organization.exception.types.UnauthorizedClassAccessException;
 import com.argo.backend.organization.exception.types.UserNotFoundException;
+import com.argo.backend.cardgame.util.TeamAccessValidator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,10 +29,10 @@ public class TeamCardService {
     private final TeamCardRepository teamCardRepository;
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
+    private final TeamAccessValidator teamAccessValidator;
     
     public TeamCardCollectionResponse getTeamCardCollection(Long teamId, Long userId) {
-        validateUser(userId);
-        Team team = validateTeamAccess(teamId, userId);
+        Team team = teamAccessValidator.validateTeamAccess(teamId, userId);
         
         List<TeamCard> teamCards = teamCardRepository.findByTeamOrderByTierAsc(team);
         
@@ -42,28 +43,6 @@ public class TeamCardService {
         Map<String, Integer> tierStats = calculateTierStats(teamCards);
         
         return TeamCardCollectionResponse.of(teamId, teamCardDtos, tierStats);
-    }
-    
-    private void validateUser(Long userId) {
-        if (userId == null) {
-            throw new UserNotFoundException();
-        }
-        
-        User user = userRepository.findById(userId)
-                .orElseThrow(UserNotFoundException::new);
-    }
-    
-    private Team validateTeamAccess(Long teamId, Long userId) {
-        Team team = teamRepository.findById(teamId)
-                .orElseThrow(TeamNotFoundException::new);
-        
-        User user = userRepository.findById(userId).get();
-        
-        if (user.getTeam() == null || !user.getTeam().getTeamId().equals(teamId)) {
-            throw new UnauthorizedClassAccessException();
-        }
-        
-        return team;
     }
     
     private Map<String, Integer> calculateTierStats(List<TeamCard> teamCards) {

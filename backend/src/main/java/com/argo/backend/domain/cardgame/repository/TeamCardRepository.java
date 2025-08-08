@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface TeamCardRepository extends JpaRepository<TeamCard, Long> {
-    List<TeamCard> findByTeamOrderByObtainedAtDesc(Team team);
+    List<TeamCard> findByTeamOrderByCreatedAtDesc(Team team);
 
     List<TeamCard> findByTeamOrderByTierAsc(Team team);
 }

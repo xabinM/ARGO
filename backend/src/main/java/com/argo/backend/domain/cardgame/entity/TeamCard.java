@@ -32,10 +32,7 @@ public class TeamCard extends CreatedAtEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private CardTier tier = CardTier.EPIC;
-
-    @Column(name = "obtained_at", columnDefinition = "datetime(6) default CURRENT_TIMESTAMP(6)")
-    private LocalDateTime obtainedAt;
+    private CardTier tier;
 
     @Column(name = "is_lost", columnDefinition = "boolean default false")
     private Boolean isLost = false;
@@ -51,7 +48,6 @@ public class TeamCard extends CreatedAtEntity {
         this.team = team;
         this.card = card;
         this.tier = tier;
-        this.obtainedAt = LocalDateTime.now();
     }
 
 }

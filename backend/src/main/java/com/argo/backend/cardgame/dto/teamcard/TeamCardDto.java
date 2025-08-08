@@ -18,7 +18,7 @@ public record TeamCardDto(
                 teamCard.getTeamCardId(),
                 teamCard.getCard().getCardId(),
                 teamCard.getTier(),
-                teamCard.getObtainedAt(),
+                teamCard.getCreatedAt(),
                 teamCard.getIsLost(),
                 teamCard.getIsLocked()
         );

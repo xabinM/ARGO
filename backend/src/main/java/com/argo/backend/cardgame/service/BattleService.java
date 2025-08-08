@@ -39,7 +39,7 @@ public class BattleService {
     private final CardGameMatchRepository cardGameMatchRepository;
     
     public List<BattleOpponentDto> getBattleOpponents(Long teamId, Long userId) {
-        validateUser(userId);
+        User user = validateAndGetUser(userId);
         Team currentTeam = validateTeamAccess(teamId, userId);
         
         List<Team> allTeams = teamRepository.findByClassRoomOrderByCreatedAtAsc(currentTeam.getClassRoom());
@@ -55,7 +55,7 @@ public class BattleService {
     
     @Transactional
     public BattleResponse createBattle(BattleRequestDto request, Long userId) {
-        validateUser(userId);
+        User user = validateAndGetUser(userId);
         
         Team challengerTeam = teamRepository.findById(request.challengerTeamId())
                 .orElseThrow(TeamNotFoundException::new);
@@ -82,7 +82,7 @@ public class BattleService {
     
     @Transactional
     public BattleResponse respondToBattle(Long matchId, BattleResponseDto request, Long userId) {
-        validateUser(userId);
+        User user = validateAndGetUser(userId);
         
         CardGameMatch match = cardGameMatchRepository.findById(matchId)
                 .orElseThrow(() -> new CardNotFoundException("해당 대전을 찾을 수 없습니다"));
@@ -117,9 +117,12 @@ public class BattleService {
     }
     
     private void validateChallengedAccess(Team challengedTeam, Long userId) {
-        User user = userRepository.findById(userId).get();
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
         
-        if (user.getTeam() == null || !user.getTeam().getTeamId().equals(challengedTeam.getTeamId())) {
+        // UserTeam 기반으로 팀 접근 권한 검증
+        Team userTeam = user.getActiveTeamByClass(challengedTeam.getClassRoom().getClassId());
+        if (userTeam == null || !userTeam.getTeamId().equals(challengedTeam.getTeamId())) {
             throw new UnauthorizedClassAccessException();
         }
     }
@@ -159,7 +162,7 @@ public class BattleService {
     
     @Transactional
     public BattleResponse cancelBattle(Long matchId, Long userId) {
-        validateUser(userId);
+        User user = validateAndGetUser(userId);
         
         CardGameMatch match = cardGameMatchRepository.findById(matchId)
                 .orElseThrow(() -> new CardNotFoundException("해당 대전을 찾을 수 없습니다"));
@@ -182,7 +185,7 @@ public class BattleService {
     
     @Transactional
     public BattleResponse viewBattleResult(Long matchId, Long userId) {
-        validateUser(userId);
+        User user = validateAndGetUser(userId);
         
         CardGameMatch match = cardGameMatchRepository.findById(matchId)
                 .orElseThrow(() -> new CardNotFoundException("해당 대전을 찾을 수 없습니다"));
@@ -191,15 +194,17 @@ public class BattleService {
             throw new CardValidationException("완료된 대전만 결과를 확인할 수 있습니다");
         }
         
-        // 사용자가 해당 대전의 참여자인지 확인
-        User user = userRepository.findById(userId).get();
-        Long userTeamId = user.getTeam() != null ? user.getTeam().getTeamId() : null;
+        // 사용자가 해당 대전의 참여자인지 확인 (UserTeam 기반) - user는 위에서 이미 조회됨
+        Long classId = match.getChallengerTeam().getClassRoom().getClassId();
+        Team userTeam = user.getActiveTeamByClass(classId);
         
-        if (userTeamId == null || 
-            (!userTeamId.equals(match.getChallengerTeam().getTeamId()) && 
-             !userTeamId.equals(match.getChallengedTeam().getTeamId()))) {
+        if (userTeam == null || 
+            (!userTeam.getTeamId().equals(match.getChallengerTeam().getTeamId()) && 
+             !userTeam.getTeamId().equals(match.getChallengedTeam().getTeamId()))) {
             throw new UnauthorizedClassAccessException();
         }
+        
+        Long userTeamId = userTeam.getTeamId();
         
         // resultView 상태 업데이트 로직
         updateResultViewStatus(match, userTeamId);
@@ -208,9 +213,12 @@ public class BattleService {
     }
     
     private void validateChallengerAccess(Team challengerTeam, Long userId) {
-        User user = userRepository.findById(userId).get();
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
         
-        if (user.getTeam() == null || !user.getTeam().getTeamId().equals(challengerTeam.getTeamId())) {
+        // UserTeam 기반으로 팀 접근 권한 검증
+        Team userTeam = user.getActiveTeamByClass(challengerTeam.getClassRoom().getClassId());
+        if (userTeam == null || !userTeam.getTeamId().equals(challengerTeam.getTeamId())) {
             throw new UnauthorizedClassAccessException();
         }
     }
@@ -235,12 +243,12 @@ public class BattleService {
         return teamCard;
     }
     
-    private void validateUser(Long userId) {
+    private User validateAndGetUser(Long userId) {
         if (userId == null) {
             throw new UserNotFoundException();
         }
         
-        User user = userRepository.findById(userId)
+        return userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
     }
     
@@ -248,9 +256,12 @@ public class BattleService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(TeamNotFoundException::new);
         
-        User user = userRepository.findById(userId).get();
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
         
-        if (user.getTeam() == null || !user.getTeam().getTeamId().equals(teamId)) {
+        // UserTeam 기반으로 팀 접근 권한 검증
+        Team userTeam = user.getActiveTeamByClass(team.getClassRoom().getClassId());
+        if (userTeam == null || !userTeam.getTeamId().equals(teamId)) {
             throw new UnauthorizedClassAccessException();
         }
         
@@ -335,9 +346,6 @@ public class BattleService {
         // 카드 능력치 비교 (무승부 판단용)
         TeamCard challengerCard = match.getChallengerCard();
         TeamCard challengedCard = match.getChallengedCard();
-//        double challengerPower = calculateCardPower(challengerCard, match.getChallengerStrategy());
-//        double challengedPower = calculateCardPower(challengedCard, match.getChallengedStrategy());
-//        boolean isPowerEqual = challengerPower == challengedPower;
 
         // 팀 점수 및 통계 업데이트
         if (result.isDraw()) {
