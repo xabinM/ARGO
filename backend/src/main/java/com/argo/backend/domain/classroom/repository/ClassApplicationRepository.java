@@ -2,7 +2,7 @@ package com.argo.backend.domain.classroom.repository;
 
 import com.argo.backend.domain.classroom.entity.ClassApplication;
 import com.argo.backend.domain.classroom.entity.ClassRoom;
-import com.argo.backend.domain.user.enums.ApplicationStatus;
+import com.argo.backend.domain.classroom.enums.ApplicationStatus;
 import com.argo.backend.domain.user.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -47,4 +47,6 @@ public interface ClassApplicationRepository extends JpaRepository<ClassApplicati
     // 특정 학생의 특정 반 승인된 신청 조회
     @Query("SELECT ca FROM ClassApplication ca WHERE ca.user.userId = :studentId AND ca.classRoom.classId = :classId AND ca.status = 'APPROVED'")
     ClassApplication findApprovedApplicationByStudentAndClass(@Param("studentId") Long studentId, @Param("classId") Long classId);
+
+    List<ClassApplication> findAllByUser_UserIdAndStatus(Long userId, ApplicationStatus status);
 }

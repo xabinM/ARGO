@@ -9,6 +9,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -17,6 +18,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.example.bogoargo.data.preferences.UserPreferences
+import com.example.bogoargo.domain.model.User
+import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.ui.viewmodels.user.LoginViewModel
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
@@ -28,16 +32,22 @@ import com.example.bogoargo.ui.theme.NatureTypography
 fun LoginScreen(
     navController: NavHostController,
     viewModel: LoginViewModel = hiltViewModel(),
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
     var passwordVisible by remember { mutableStateOf(false) }
     
     LaunchedEffect(uiState.isLoggedIn) {
-        if (uiState.isLoggedIn) {
-            navController.navigate("home") {
-                popUpTo("login") { inclusive = true }
+        val user = viewModel.getLoggedInUser()
+        if (uiState.isLoggedIn && user != null) {
+            if(user.role == UserRole.ROLE_TEACHER) {
+                navController.navigate("teacherHome") {
+                    popUpTo("login") { inclusive = true }
+                }
+            } else {
+                navController.navigate("studentHome") {
+                    popUpTo("login") { inclusive = true }
+                }
             }
         }
     }

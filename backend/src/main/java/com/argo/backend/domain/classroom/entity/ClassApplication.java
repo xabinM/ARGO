@@ -1,7 +1,7 @@
 package com.argo.backend.domain.classroom.entity;
 
 import com.argo.backend.domain.common.BaseTimeEntity;
-import com.argo.backend.domain.user.enums.ApplicationStatus;
+import com.argo.backend.domain.classroom.enums.ApplicationStatus;
 import com.argo.backend.domain.user.entity.User;
 import jakarta.persistence.*;
 import lombok.*;

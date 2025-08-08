@@ -59,6 +59,12 @@ object NatureTypography {
         color = NatureColors.earthBrown
     )
 
+    val headlineMedium = androidx.compose.ui.text.TextStyle(
+        fontSize = 24.sp,
+        fontWeight = FontWeight.Bold,
+        color = NatureColors.forestGreen
+    )
+
     val headlineSmall = androidx.compose.ui.text.TextStyle(
         fontSize = 16.sp,
         fontWeight = FontWeight.Bold,
@@ -104,6 +110,7 @@ object NatureTypography {
  * 자연 테마 모양 정의
  */
 object NatureShapes {
+    val extraSmall = RoundedCornerShape(4.dp)
     val small = RoundedCornerShape(8.dp)
     val medium = RoundedCornerShape(12.dp)
     val large = RoundedCornerShape(16.dp)
@@ -121,6 +128,7 @@ object NatureElevation {
     val small = 4.dp
     val medium = 6.dp
     val large = 8.dp
+    val high = 10.dp
     val extraLarge = 12.dp
 }
 
@@ -132,12 +140,13 @@ object NatureComponents {
     /**
      * 자연 테마의 TopAppBar
      */
-    @OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class)
     @Composable
     fun NatureTopAppBar(
         title: String,
         emoji: String = "🌱",
-        onNavigationClick: () -> Unit
+        onNavigationClick: (() -> Unit)? = null,
+        actions: (@Composable RowScope.() -> Unit)? = null
     ) {
         TopAppBar(
             title = {
@@ -147,16 +156,22 @@ object NatureComponents {
                 )
             },
             navigationIcon = {
-                IconButton(onClick = onNavigationClick) {
-                    Icon(
-                        Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "뒤로가기",
-                        tint = NatureColors.forestGreen
-                    )
+                if (onNavigationClick != null) {
+                    IconButton(onClick = onNavigationClick) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "뒤로 가기",
+                            tint = NatureColors.forestGreen
+                        )
+                    }
                 }
             },
+            actions = {
+                actions?.invoke(this)
+            },
             colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = NatureColors.warmBeige
+                containerColor = NatureColors.whiteTransparent,
+                titleContentColor = NatureColors.forestGreen
             )
         )
     }
@@ -347,7 +362,7 @@ object NatureComponents {
     }
 
     /**
-     * 자연 테마 버튼
+     * 자연 테마 버튼 (텍스트 방식)
      */
     @Composable
     fun NatureButton(
@@ -376,7 +391,32 @@ object NatureComponents {
     }
 
     /**
-     * 자연 테마 아웃라인 버튼
+     * 자연 테마 버튼 (content 블록 방식)
+     */
+    @Composable
+    fun NatureButton(
+        onClick: () -> Unit,
+        modifier: Modifier = Modifier,
+        backgroundColor: Color = NatureColors.leafGreen,
+        contentColor: Color = Color.White,
+        enabled: Boolean = true,
+        content: @Composable RowScope.() -> Unit
+    ) {
+        Button(
+            onClick = onClick,
+            modifier = modifier.height(50.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = backgroundColor,
+                contentColor = contentColor
+            ),
+            shape = NatureShapes.button,
+            enabled = enabled,
+            content = content
+        )
+    }
+
+    /**
+     * 자연 테마 아웃라인 버튼 (텍스트 방식)
      */
     @Composable
     fun NatureOutlinedButton(
@@ -397,6 +437,29 @@ object NatureComponents {
         ) {
             Text(text, style = NatureTypography.bodyMedium.copy(color = contentColor))
         }
+    }
+
+    /**
+     * 자연 테마 아웃라인 버튼 (content 블록 방식)
+     */
+    @Composable
+    fun NatureOutlinedButton(
+        onClick: () -> Unit,
+        modifier: Modifier = Modifier,
+        borderColor: Color = NatureColors.forestGreen,
+        contentColor: Color = NatureColors.forestGreen,
+        content: @Composable RowScope.() -> Unit
+    ) {
+        OutlinedButton(
+            onClick = onClick,
+            modifier = modifier,
+            border = androidx.compose.foundation.BorderStroke(1.dp, borderColor),
+            shape = NatureShapes.medium,
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = contentColor
+            ),
+            content = content
+        )
     }
 
     /**
@@ -503,7 +566,7 @@ object NatureComponents {
                         modifier = Modifier.size(60.dp),
                         shape = CircleShape,
                         colors = CardDefaults.cardColors(
-                            containerColor = if (member.role == UserRole.TEACHER)
+                            containerColor = if (member.role == UserRole.ROLE_TEACHER)
                                 earthBrown
                             else
                                 when ((member.name.length) % 4) {
@@ -520,7 +583,7 @@ object NatureComponents {
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
-                                text = if (member.role == UserRole.TEACHER) "👩‍🏫" else "👦",
+                                text = if (member.role == UserRole.ROLE_TEACHER) "👩‍🏫" else "👦",
                                 fontSize = 24.sp
                             )
                         }
@@ -568,20 +631,20 @@ object NatureComponents {
                         shape = RoundedCornerShape(6.dp),
                         colors = CardDefaults.cardColors(
                             containerColor = when (member.role) {
-                                UserRole.TEACHER -> earthBrown.copy(alpha = 0.15f)
-                                UserRole.STUDENT -> sunnyYellow.copy(alpha = 0.2f)
+                                UserRole.ROLE_TEACHER -> earthBrown.copy(alpha = 0.15f)
+                                UserRole.ROLE_STUDENT -> sunnyYellow.copy(alpha = 0.2f)
                             }
                         )
                     ) {
                         Text(
                             text = when (member.role) {
-                                UserRole.TEACHER -> "📚 선생님"
-                                UserRole.STUDENT -> "✏️ 학생"
+                                UserRole.ROLE_TEACHER -> "📚 선생님"
+                                UserRole.ROLE_STUDENT -> "✏️ 학생"
                             },
                             fontSize = 12.sp,
                             color = when (member.role) {
-                                UserRole.TEACHER -> earthBrown
-                                UserRole.STUDENT -> sunnyYellow.copy(alpha = 0.8f)
+                                UserRole.ROLE_TEACHER -> earthBrown
+                                UserRole.ROLE_STUDENT -> sunnyYellow.copy(alpha = 0.8f)
                             },
                             fontWeight = FontWeight.Medium,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)

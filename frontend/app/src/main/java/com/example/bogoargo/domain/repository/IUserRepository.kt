@@ -17,4 +17,5 @@ interface IUserRepository {
     suspend fun signUp(userSignUpRequest: UserSignUpRequest): DataResult<MessageResponseDto>
     suspend fun updateUserInfo(userUpdateRequest: UserUpdateRequest): DataResult<UserUpdateResponse>
     suspend fun withdrawUser(userWithdrawRequest: UserWithdrawRequest): DataResult<UserWithdrawResponse>
+    suspend fun getLoggedInUser(): User?
 }

@@ -215,7 +215,7 @@ fun ProfileScreen(
                                             )
                                         )
                                         NatureComponents.StatusBadge(
-                                            text = if(uiState.user?.role.toString().equals("TEACHER")) {"선생"} else {"학생"},
+                                            text = if(uiState.user?.role.toString().equals("ROLE_TEACHER")) {"선생"} else {"학생"},
                                             backgroundColor = NatureColors.leafGreen.copy(alpha = 0.2f),
                                             textColor = NatureColors.leafGreen
                                         )

@@ -8,6 +8,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class MissionCreateResponse {
 
+    private boolean success;
     private String message;
     private ProblemResponseDto problem;
 }

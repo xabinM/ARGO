@@ -192,7 +192,7 @@ fun MemberCard(member: UserDataDto) {
                 Spacer(modifier = Modifier.height(4.dp))
                 NatureComponents.StatusBadge(
                     text = when (member.role.name) {
-                        "TEACHER" -> "👩‍🏫 선생님"
+                        "ROLE_TEACHER" -> "👩‍🏫 선생님"
                         else -> "👶 학생"
                     },
                     backgroundColor = NatureColors.leafGreen.copy(alpha = 0.2f),

@@ -2,11 +2,13 @@ package com.example.bogoargo.ui.viewmodels.user
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.bogoargo.data.preferences.UserPreferences
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.User
 import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.domain.use_case.auth.LoginUseCase
 import com.example.bogoargo.domain.use_case.auth.SaveTokensUseCase
+import com.example.bogoargo.domain.use_case.auth.SaveUserInfoUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +28,9 @@ data class LoginUiState(
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
-    private val saveTokensUseCase: SaveTokensUseCase
+    private val saveTokensUseCase: SaveTokensUseCase,
+    private val userPreferences: UserPreferences,
+    private val saveUserInfoUseCase: SaveUserInfoUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -46,6 +50,9 @@ class LoginViewModel @Inject constructor(
             
             when (val result = loginUseCase(_uiState.value.username, _uiState.value.password)) {
                 is DataResult.Success -> {
+                    // 사용자 정보 저장
+                    saveUserInfoUseCase(result.data)
+                    
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isLoggedIn = true,
@@ -73,6 +80,10 @@ class LoginViewModel @Inject constructor(
         _uiState.value = LoginUiState()
     }
 
+    suspend fun getLoggedInUser(): User? {
+        return loginUseCase.getLoggedInUser()
+    }
+
     // 더미 로그인 함수
     fun dummyLogin(isTeacher: Boolean) {
         viewModelScope.launch {
@@ -87,14 +98,14 @@ class LoginViewModel @Inject constructor(
                     User(
                         userId = 1L,
                         name = "김선생",
-                        role = UserRole.TEACHER,
+                        role = UserRole.ROLE_TEACHER,
                         team = null
                     )
                 } else {
                     User(
                         userId = 2L,
                         name = "이학생",
-                        role = UserRole.STUDENT,
+                        role = UserRole.ROLE_STUDENT,
                         team = null
                     )
                 }
@@ -104,6 +115,12 @@ class LoginViewModel @Inject constructor(
                     accessToken = "dummy_access_token_${if (isTeacher) "teacher" else "student"}",
                     refreshToken = "dummy_refresh_token_${if (isTeacher) "teacher" else "student"}"
                 )
+
+                // 더미 유저 저장
+                userPreferences.saveUser(dummyUser)
+                
+                // 더미 사용자 정보 저장
+                saveUserInfoUseCase(dummyUser)
                 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
