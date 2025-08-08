@@ -6,6 +6,7 @@ import com.example.bogoargo.domain.model.Class
 import com.example.bogoargo.domain.model.Team
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.use_case.classroom.GetClassDetailUseCase
+import com.example.bogoargo.data.preferences.PreferencesManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,13 +26,15 @@ data class StudentClassDetailUiState(
 data class StudentTeamInfo(
     val teamId: Long,
     val teamName: String,
+    val memberIds: List<Long>, // 팀원 userId 리스트
     val memberCount: Int,
     val isMyTeam: Boolean = false
 )
 
 @HiltViewModel
 class StudentClassDetailViewModel @Inject constructor(
-    private val getClassDetailUseCase: GetClassDetailUseCase
+    private val getClassDetailUseCase: GetClassDetailUseCase,
+    private val preferencesManager: PreferencesManager
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(StudentClassDetailUiState())
     val uiState: StateFlow<StudentClassDetailUiState> = _uiState.asStateFlow()
@@ -65,49 +68,58 @@ class StudentClassDetailViewModel @Inject constructor(
     }
     
     private fun loadDummyTeamData(classId: Long) {
+        // 현재 로그인한 사용자의 ID 가져오기
+        val currentUserId = preferencesManager.getUserId() ?: 1L // 기본값 1L (더미 데이터용)
+        
         // 실제로는 백엔드에서 가져와야 하지만, 더미 데이터로 대체
+        // 각 팀에 멤버 ID 리스트 추가
         val dummyTeams = when (classId) {
             1L -> listOf(
-                StudentTeamInfo(1L, "역사탐험대", 3, true),
-                StudentTeamInfo(2L, "문화유산지킴이", 3),
-                StudentTeamInfo(3L, "궁궐수호대", 3),
-                StudentTeamInfo(4L, "전통문화사랑단", 3),
-                StudentTeamInfo(5L, "한국사마스터", 3)
+                StudentTeamInfo(1L, "역사탐험대", listOf(1L, 2L, 3L), 3),
+                StudentTeamInfo(2L, "문화유산지킴이", listOf(4L, 5L, 6L), 3),
+                StudentTeamInfo(3L, "궁궐수호대", listOf(7L, 8L, 9L), 3),
+                StudentTeamInfo(4L, "전통문화사랑단", listOf(10L, 11L, 12L), 3),
+                StudentTeamInfo(5L, "한국사마스터", listOf(13L, 14L, 15L), 3)
             )
             2L -> listOf(
-                StudentTeamInfo(6L, "바다탐험대", 4, true),
-                StudentTeamInfo(7L, "해양생물연구팀", 3),
-                StudentTeamInfo(8L, "환경보호단", 4),
-                StudentTeamInfo(9L, "푸른바다지킴이", 3),
-                StudentTeamInfo(10L, "해운대탐험대", 3),
-                StudentTeamInfo(11L, "물고기친구들", 3)
+                StudentTeamInfo(6L, "바다탐험대", listOf(1L, 16L, 17L, 18L), 4),
+                StudentTeamInfo(7L, "해양생물연구팀", listOf(19L, 20L, 21L), 3),
+                StudentTeamInfo(8L, "환경보호단", listOf(22L, 23L, 24L, 25L), 4),
+                StudentTeamInfo(9L, "푸른바다지킴이", listOf(26L, 27L, 28L), 3),
+                StudentTeamInfo(10L, "해운대탐험대", listOf(29L, 30L, 31L), 3),
+                StudentTeamInfo(11L, "물고기친구들", listOf(32L, 33L, 34L), 3)
             )
             3L -> listOf(
-                StudentTeamInfo(12L, "불국사탐험대", 4, true),
-                StudentTeamInfo(13L, "석굴암수호대", 5),
-                StudentTeamInfo(14L, "신라역사단", 4),
-                StudentTeamInfo(15L, "경주문화지킴이", 5)
+                StudentTeamInfo(12L, "불국사탐험대", listOf(1L, 35L, 36L, 37L), 4),
+                StudentTeamInfo(13L, "석굴암수호대", listOf(38L, 39L, 40L, 41L, 42L), 5),
+                StudentTeamInfo(14L, "신라역사단", listOf(43L, 44L, 45L, 46L), 4),
+                StudentTeamInfo(15L, "경주문화지킴이", listOf(47L, 48L, 49L, 50L, 51L), 5)
             )
             4L -> listOf(
-                StudentTeamInfo(16L, "과학실험단", 4, true),
-                StudentTeamInfo(17L, "미래과학자", 4),
-                StudentTeamInfo(18L, "로봇친구들", 4)
+                StudentTeamInfo(16L, "과학실험단", listOf(1L, 52L, 53L, 54L), 4),
+                StudentTeamInfo(17L, "미래과학자", listOf(55L, 56L, 57L, 58L), 4),
+                StudentTeamInfo(18L, "로봇친구들", listOf(59L, 60L, 61L, 62L), 4)
             )
             5L -> listOf(
-                StudentTeamInfo(19L, "숲속탐험대", 5, true),
-                StudentTeamInfo(20L, "자연사랑단", 5),
-                StudentTeamInfo(21L, "생태계지킴이", 5),
-                StudentTeamInfo(22L, "동식물친구들", 5),
-                StudentTeamInfo(23L, "지리산탐험대", 5)
+                StudentTeamInfo(19L, "숲속탐험대", listOf(1L, 63L, 64L, 65L, 66L), 5),
+                StudentTeamInfo(20L, "자연사랑단", listOf(67L, 68L, 69L, 70L, 71L), 5),
+                StudentTeamInfo(21L, "생태계지킴이", listOf(72L, 73L, 74L, 75L, 76L), 5),
+                StudentTeamInfo(22L, "동식물친구들", listOf(77L, 78L, 79L, 80L, 81L), 5),
+                StudentTeamInfo(23L, "지리산탐험대", listOf(82L, 83L, 84L, 85L, 86L), 5)
             )
             else -> emptyList()
         }
         
-        val myTeam = dummyTeams.find { it.isMyTeam }
+        // 현재 사용자가 속한 팀 찾기
+        val teamsWithMyFlag = dummyTeams.map { team ->
+            team.copy(isMyTeam = team.memberIds.contains(currentUserId))
+        }
+        
+        val myTeam = teamsWithMyFlag.find { it.isMyTeam }
         
         _uiState.value = _uiState.value.copy(
             myTeam = myTeam,
-            allTeams = dummyTeams
+            allTeams = teamsWithMyFlag
         )
     }
     

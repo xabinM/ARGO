@@ -35,12 +35,15 @@ sealed class Screen(val route: String) {
     data object Login : Screen("login")
     data object SignUp : Screen("signUp")
     data object StudentHome : Screen("studentHome")
-    data object Game : Screen("game")
+    data object Game : Screen("game?classId={classId}&teamId={teamId}") {
+        fun createRoute(classId: Long = 1L, teamId: Long = 0L) = 
+            "game?classId=$classId&teamId=$teamId"
+    }
     data object Profile : Screen("profile")
     data object Settings : Screen("settings")
-    data object AR : Screen("ar/{spotId}/{latitude}/{longitude}") {
-        fun createRoute(spotId: Long, latitude: Double, longitude: Double) =
-            "ar/$spotId/$latitude/$longitude"
+    data object AR : Screen("ar/{spotId}/{latitude}/{longitude}?classId={classId}&teamId={teamId}") {
+        fun createRoute(spotId: Long, latitude: Double, longitude: Double, classId: Long = 1L, teamId: Long = 0L) =
+            "ar/$spotId/$latitude/$longitude?classId=$classId&teamId=$teamId"
     }
 
     data object TeacherHome : Screen("teacherHome")
@@ -65,8 +68,9 @@ sealed class Screen(val route: String) {
     data object ClassMemberManagement : Screen("classMemberManagement/{classId}") {
         fun createRoute(classId: String) = "classMemberManagement/$classId"
     }
-    data object Mission : Screen("mission/{spotId}") {
-        fun createRoute(spotId: Long) = "mission/$spotId"
+    data object Mission : Screen("mission/{spotId}?classId={classId}&teamId={teamId}") {
+        fun createRoute(spotId: Long, classId: Long = 1L, teamId: Long = 0L) = 
+            "mission/$spotId?classId=$classId&teamId=$teamId"
     }
 
     data object CardGame : Screen("cardGame/{teamId}/{leaderId}") {
@@ -120,8 +124,26 @@ fun AppNavigation(
         composable(Screen.StudentHome.route) {
             StudentHomeScreen(navController = navController)
         }
-        composable(Screen.Game.route) {
-            GameScreen(navController = navController)
+        composable(
+            route = Screen.Game.route,
+            arguments = listOf(
+                navArgument("classId") { 
+                    type = NavType.LongType
+                    defaultValue = 1L
+                },
+                navArgument("teamId") { 
+                    type = NavType.LongType
+                    defaultValue = 0L
+                }
+            )
+        ) { backStackEntry ->
+            val classId = backStackEntry.arguments?.getLong("classId") ?: 1L
+            val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
+            GameScreen(
+                navController = navController,
+                classId = classId,
+                teamId = teamId
+            )
         }
         composable(Screen.Profile.route) {
             ProfileScreen(navController = navController)
@@ -196,11 +218,25 @@ fun AppNavigation(
         }
         composable(
             route = Screen.Mission.route,
-            arguments = listOf(navArgument("spotId") { type = NavType.LongType })
+            arguments = listOf(
+                navArgument("spotId") { type = NavType.LongType },
+                navArgument("classId") { 
+                    type = NavType.LongType
+                    defaultValue = 1L
+                },
+                navArgument("teamId") { 
+                    type = NavType.LongType
+                    defaultValue = 0L
+                }
+            )
         ) { backStackEntry ->
             val spotId = backStackEntry.arguments?.getLong("spotId") ?: 0L
+            val classId = backStackEntry.arguments?.getLong("classId") ?: 1L
+            val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
             MissionDetailScreen(
                 spotId = spotId,
+                classId = classId,
+                teamId = teamId,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
@@ -209,20 +245,32 @@ fun AppNavigation(
             arguments = listOf(
                 navArgument("spotId") { type = NavType.LongType },
                 navArgument("latitude") { type = NavType.FloatType },
-                navArgument("longitude") { type = NavType.FloatType }
+                navArgument("longitude") { type = NavType.FloatType },
+                navArgument("classId") { 
+                    type = NavType.LongType
+                    defaultValue = 1L
+                },
+                navArgument("teamId") { 
+                    type = NavType.LongType
+                    defaultValue = 0L
+                }
             )
         ) { backStackEntry ->
             val spotId = backStackEntry.arguments?.getLong("spotId") ?: 0L
             val latitude = backStackEntry.arguments?.getFloat("latitude")?.toDouble() ?: 0.0
             val longitude = backStackEntry.arguments?.getFloat("longitude")?.toDouble() ?: 0.0
+            val classId = backStackEntry.arguments?.getLong("classId") ?: 1L
+            val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
             
             ARScreen(
                 spotId = spotId,
                 latitude = latitude,
                 longitude = longitude,
+                classId = classId,
+                teamId = teamId,
                 onNavigateBack = { navController.popBackStack() },
                 onNavigateToMission = { missionSpotId ->
-                    navController.navigate(Screen.Mission.createRoute(missionSpotId))
+                    navController.navigate(Screen.Mission.createRoute(missionSpotId, classId, teamId))
                 }
             )
         }
