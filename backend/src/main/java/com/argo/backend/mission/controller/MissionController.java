@@ -1,8 +1,11 @@
 package com.argo.backend.mission.controller;
 
 import com.argo.backend.global.enums.ResponseMessage;
+import com.argo.backend.mission.dto.SubmitMission.MissionSubmitDto;
+import com.argo.backend.mission.dto.SubmitMission.MissionSubmitResponse;
 import com.argo.backend.mission.dto.missionCreate.MissionCreateDto;
 import com.argo.backend.mission.dto.missionCreate.MissionCreateResponse;
+import com.argo.backend.mission.dto.missionSubmit.MissionSubmitRequest;
 import com.argo.backend.mission.service.MissionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -27,17 +30,25 @@ public class MissionController {
         );
     }
 
+    // 미션 제출 (퀴즈)
+    @PostMapping("/{missionId}/submit/quiz")
+    public ResponseEntity<?> submitQuiz(@PathVariable Long missionId,
+                                        @RequestBody MissionSubmitRequest request) {
+
+        System.out.println("Controller : " + request.isSuccess());
+        MissionSubmitDto dto = missionService.submitQuiz(missionId, request.isSuccess());
+
+        return ResponseEntity.ok(new MissionSubmitResponse(dto.successful(),
+                                    ResponseMessage.SUCCESS_SUBMIT_MISSION.getMessage(),
+                                    dto.cardId(), dto.tier())
+        );
+    }
+
 //
 //    @GetMapping("/overview/team/{teamId}/")
 //    public ResponseEntity<?>
 //
 
-//    // 미션 제출 (퀴즈)
-//    @PostMapping("/{missionId}/submit/quiz")
-//    public ResponseEntity<?> submitQuiz() {
-//
-//        return ResponseEntity.ok();
-//    }
 //    // 미션 제출 (셀카)
 //    @PostMapping("/{missionId}/submit/selfie")
 //    public ResponseEntity<?> submitSelfie() {

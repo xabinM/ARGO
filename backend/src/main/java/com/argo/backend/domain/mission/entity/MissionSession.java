@@ -46,5 +46,21 @@ public class MissionSession extends CreatedAtEntity {
         this.team = team;
         this.problem = problem;
     }
+
+    public boolean isStatusStarted() {
+        return this.status == MissionSessionStatus.STARTED;
+    }
+
+    public void alterSuccessfulTrue() {
+        this.isSuccessful = true;
+    }
+
+    public void alterSuccessfulFalse() {
+        this.isSuccessful = false;
+    }
+
+    public void alterMissionStatus() {
+        this.status = MissionSessionStatus.COMPLETED;
+    }
 }
 
