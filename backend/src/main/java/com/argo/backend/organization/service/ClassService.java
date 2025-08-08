@@ -1,5 +1,8 @@
 package com.argo.backend.organization.service;
 
+import com.argo.backend.domain.spot.entity.Spot;
+import com.argo.backend.domain.spot.repository.SpotRepository;
+import com.argo.backend.organization.dto.spot.SpotsResponse;
 import com.argo.backend.domain.classroom.entity.ClassApplication;
 import com.argo.backend.domain.classroom.entity.ClassRoom;
 import com.argo.backend.domain.classroom.enums.ClassStatus;
@@ -77,6 +80,9 @@ public class ClassService {
     private final TeamRepository teamRepository;
     private final ClassStudentRepository classStudentRepository;
     private final UserTeamRepository userTeamRepository;
+    private final SpotRepository spotRepository;
+
+
 
 
     private static final String INVITE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -84,9 +90,31 @@ public class ClassService {
 
 
     @Transactional
-    public List<LocationsResponse> getLocations() {
+    public List<LocationsResponse> getLocations(Long teacherId) {
+        // 선생님 권한 검증
+        teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new UserNotFoundException());
+                
         return locationRepository.findAll().stream()
                 .map(LocationsResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<SpotsResponse> getSpots(Long classId, Long teacherId){
+        // 권한 검증
+        ClassRoom classRoom = validateClassAccess(teacherId, classId);
+                
+        Location location = classRoom.getLocation();
+        if (location == null) {
+            throw new LocationNotFoundException();
+        }
+        
+        Long locationId = location.getLocationId();
+        List<Spot> spots = spotRepository.findByLocationLocationId(locationId);
+        
+        return spots.stream()
+                .map(SpotsResponse::from)
                 .collect(Collectors.toList());
     }
 

@@ -2,7 +2,9 @@ package com.argo.backend.organization.dto.location;
 
 import com.argo.backend.domain.common.Coordinates;
 import com.argo.backend.domain.location.entity.Location;
+import lombok.Getter;
 
+@Getter
 public class LocationsResponse {
 
     private Long locationId;
