@@ -62,11 +62,11 @@ sealed class Screen(val route: String) {
     }
 
     data object TeamCreate : Screen("teamCreate/{classId}") {
-        fun createRoute(classId: String) = "teamCreate/$classId"
+        fun createRoute(classId: Long) = "teamCreate/$classId"
     }
 
     data object TeamManagement : Screen("teamManagement/{classId}") {
-        fun createRoute(classId: String) = "teamManagement/$classId"
+        fun createRoute(classId: Long) = "teamManagement/$classId"
     }
 
     data object ClassMemberManagement : Screen("classMemberManagement/{classId}") {
@@ -196,9 +196,9 @@ fun AppNavigation(
         }
         composable(
             route = Screen.TeamCreate.route,
-            arguments = listOf(navArgument("classId") { type = NavType.StringType })
+            arguments = listOf(navArgument("classId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val classId = backStackEntry.arguments?.getString("classId") ?: ""
+            val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
             TeamCreateScreen(
                 navController = navController,
                 classId = classId
@@ -206,9 +206,9 @@ fun AppNavigation(
         }
         composable(
             route = Screen.TeamManagement.route,
-            arguments = listOf(navArgument("classId") { type = NavType.StringType })
+            arguments = listOf(navArgument("classId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val classId = backStackEntry.arguments?.getString("classId") ?: ""
+            val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
             TeamManagementScreen(
                 navController = navController,
                 classId = classId
@@ -216,7 +216,7 @@ fun AppNavigation(
         }
         composable(
             route = Screen.ClassMemberManagement.route,
-            arguments = listOf(navArgument("classId") { type = NavType.StringType })
+            arguments = listOf(navArgument("classId") { type = NavType.LongType })
         ) { backStackEntry ->
             val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
             ClassMemberManagementScreen(

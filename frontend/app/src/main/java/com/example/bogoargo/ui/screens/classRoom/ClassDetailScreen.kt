@@ -34,7 +34,6 @@ fun ClassDetailScreen(
     
     LaunchedEffect(classId) {
         viewModel.loadClassDetail(classId)
-        Log.d("classId 출력 테스트", classId.toString())
     }
 
     Scaffold(

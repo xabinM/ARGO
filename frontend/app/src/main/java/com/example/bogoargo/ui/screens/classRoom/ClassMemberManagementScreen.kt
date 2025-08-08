@@ -40,7 +40,7 @@ fun ClassMemberManagementScreen(
     Scaffold(
         topBar = {
             NatureComponents.NatureTopAppBar(
-                title = "강의실 관리",
+                title = "구성원 관리",
                 emoji = "👥",
                 onNavigationClick = { navController.popBackStack() }
             )
