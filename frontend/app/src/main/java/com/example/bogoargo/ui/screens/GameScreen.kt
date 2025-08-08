@@ -35,6 +35,7 @@ import com.google.maps.android.compose.*
 fun GameScreen(
     navController: NavHostController,
     classId: Long = 1, // 기본 클래스 ID
+    teamId: Long = 0, // 팀 ID 추가
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -233,8 +234,8 @@ fun GameScreen(
                             val debugLat = currentLat + 0.00005 // 약 5m 북쪽
                             val debugLon = currentLon + 0.00005 // 약 5m 동쪽
                             
-                            // 디버그용 하드코딩된 미션 ID와 위치로 AR 화면 이동
-                            navController.navigate("ar/999/$debugLat/$debugLon")
+                            // 디버그용 하드코딩된 미션 ID와 위치로 AR 화면 이동 (classId, teamId 포함)
+                            navController.navigate("ar/999/$debugLat/$debugLon?classId=$classId&teamId=$teamId")
                         },
                         text = "🔧 Debug AR",
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
@@ -266,8 +267,8 @@ fun GameScreen(
                         uiState.nearbyMissionSpots.forEach { spot ->
                             NatureComponents.NatureButton(
                                 onClick = { 
-                                    // AR 화면으로 이동 (위치 정보 포함)
-                                    navController.navigate("ar/${spot.spotId}/${spot.latitude}/${spot.longitude}")
+                                    // AR 화면으로 이동 (위치 정보와 classId, teamId 포함)
+                                    navController.navigate("ar/${spot.spotId}/${spot.latitude}/${spot.longitude}?classId=$classId&teamId=$teamId")
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()

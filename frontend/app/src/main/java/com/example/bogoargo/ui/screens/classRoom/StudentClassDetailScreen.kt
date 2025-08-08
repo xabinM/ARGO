@@ -350,7 +350,11 @@ fun StudentClassDetailScreen(
                                                 )
                                                 Spacer(modifier = Modifier.height(8.dp))
                                                 Button(
-                                                    onClick = { navController.navigate("game") },
+                                                    onClick = { 
+                                                        // classId와 teamId를 파라미터로 전달
+                                                        val teamId = uiState.myTeam?.teamId ?: 0L
+                                                        navController.navigate("game?classId=$classId&teamId=$teamId") 
+                                                    },
                                                     colors = ButtonDefaults.buttonColors(
                                                         containerColor = NatureColors.leafGreen
                                                     ),
@@ -388,9 +392,10 @@ fun StudentClassDetailScreen(
                                                 Spacer(modifier = Modifier.height(8.dp))
                                                 Button(
                                                     onClick = { 
-                                                        // 더미 데이터: 내 팀의 teamId와 leaderId 사용
+                                                        // classId와 teamId를 파라미터로 전달
                                                         val teamId = uiState.myTeam!!.teamId
-                                                        navController.navigate("cardGame/$teamId/2") 
+                                                        val leaderId = uiState.myTeam!!.memberIds.firstOrNull() ?: 1L // 첫 번째 멤버를 리더로 가정
+                                                        navController.navigate("cardGame/$teamId/$leaderId?classId=$classId") 
                                                     },
                                                     colors = ButtonDefaults.buttonColors(
                                                         containerColor = NatureColors.earthBrown.copy(alpha = 0.8f)

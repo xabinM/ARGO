@@ -46,6 +46,8 @@ fun ARScreen(
     spotId: Long,
     latitude: Double,
     longitude: Double,
+    classId: Long = 1L, // 반 ID 추가
+    teamId: Long = 0L, // 팀 ID 추가
     onNavigateBack: () -> Unit,
     onNavigateToMission: (Long) -> Unit,
     modifier: Modifier = Modifier

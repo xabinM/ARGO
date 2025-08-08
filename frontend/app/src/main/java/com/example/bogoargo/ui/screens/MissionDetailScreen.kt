@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun MissionDetailScreen(
     spotId: Long,
+    classId: Long = 1L, // 반 ID 추가
+    teamId: Long = 0L, // 팀 ID 추가
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
