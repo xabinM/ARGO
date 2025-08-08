@@ -14,6 +14,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Style
 import androidx.compose.material3.*
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +49,11 @@ fun CardGameScreen(
     // Dialog 상태 관리
     var showDetailDialog by remember { mutableStateOf(false) }
     var selectedBattle by remember { mutableStateOf<BattleHistory?>(null) }
+    
+    // 신청 취소 및 대전 거절 Dialog 상태
+    var showCancelDialog by remember { mutableStateOf(false) }
+    var showRejectDialog by remember { mutableStateOf(false) }
+    var selectedMatchId by remember { mutableStateOf<Long?>(null) }
     
     // 디버깅용 로그
     LaunchedEffect(currentUserId, leaderId) {
@@ -297,10 +303,12 @@ fun CardGameScreen(
                     BattleHistoryItem(
                         battle = battle,
                         onCancelRequest = { matchId ->
-                            // TODO: 대전 신청 취소 로직
+                            selectedMatchId = matchId
+                            showCancelDialog = true
                         },
                         onRejectBattle = { matchId ->
-                            // TODO: 대전 거절 로직  
+                            selectedMatchId = matchId
+                            showRejectDialog = true
                         },
                         onAcceptBattle = { matchId ->
                             navController.navigate(Screen.CardSelection.createRoute(teamId, matchId))
@@ -345,6 +353,44 @@ fun CardGameScreen(
                 onDismiss = {
                     showDetailDialog = false
                     selectedBattle = null
+                }
+            )
+        }
+        
+        // 신청 취소 확인 Dialog
+        if (showCancelDialog) {
+            ConfirmCancelDialog(
+                onConfirm = {
+                    // TODO: 실제 취소 로직 구현
+                    selectedMatchId?.let { matchId ->
+                        // viewModel.cancelBattleRequest(matchId)
+                        println("대전 신청 취소: matchId = $matchId")
+                    }
+                    showCancelDialog = false
+                    selectedMatchId = null
+                },
+                onDismiss = {
+                    showCancelDialog = false
+                    selectedMatchId = null
+                }
+            )
+        }
+        
+        // 대전 거절 확인 Dialog
+        if (showRejectDialog) {
+            ConfirmRejectDialog(
+                onConfirm = {
+                    // TODO: 실제 거절 로직 구현
+                    selectedMatchId?.let { matchId ->
+                        // viewModel.rejectBattle(matchId)
+                        println("대전 거절: matchId = $matchId")
+                    }
+                    showRejectDialog = false
+                    selectedMatchId = null
+                },
+                onDismiss = {
+                    showRejectDialog = false
+                    selectedMatchId = null
                 }
             )
         }
@@ -484,6 +530,106 @@ fun ActionButtonsRow(
             Text(if (isTeamLeader) "대전 신청" else "팀장 전용")
         }
     }
+}
+
+@Composable
+fun ConfirmCancelDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Text(
+                text = "⚠️",
+                fontSize = 32.sp
+            )
+        },
+        title = {
+            Text(
+                text = "대전 신청 취소",
+                style = NatureTypography.titleMedium,
+                color = NatureColors.earthBrown
+            )
+        },
+        text = {
+            Text(
+                text = "정말 대전 신청을 취소하시겠습니까?\n취소하면 다시 신청해야 합니다.",
+                style = NatureTypography.bodyMedium,
+                color = Color.Gray
+            )
+        },
+        confirmButton = {
+            NatureComponents.NatureButton(
+                onClick = onConfirm,
+                backgroundColor = Color(0xFFF44336),
+                contentColor = Color.White
+            ) {
+                Text("신청 취소")
+            }
+        },
+        dismissButton = {
+            NatureComponents.NatureButton(
+                onClick = onDismiss,
+                backgroundColor = Color.Gray,
+                contentColor = Color.White
+            ) {
+                Text("돌아가기")
+            }
+        },
+        containerColor = NatureColors.whiteTransparent,
+        shape = NatureShapes.medium
+    )
+}
+
+@Composable
+fun ConfirmRejectDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = {
+            Text(
+                text = "🚫",
+                fontSize = 32.sp
+            )
+        },
+        title = {
+            Text(
+                text = "대전 거절",
+                style = NatureTypography.titleMedium,
+                color = NatureColors.earthBrown
+            )
+        },
+        text = {
+            Text(
+                text = "정말 대전을 거절하시겠습니까?\n거절하면 상대방에게 알림이 갑니다.",
+                style = NatureTypography.bodyMedium,
+                color = Color.Gray
+            )
+        },
+        confirmButton = {
+            NatureComponents.NatureButton(
+                onClick = onConfirm,
+                backgroundColor = Color(0xFFF44336),
+                contentColor = Color.White
+            ) {
+                Text("대전 거절")
+            }
+        },
+        dismissButton = {
+            NatureComponents.NatureButton(
+                onClick = onDismiss,
+                backgroundColor = Color.Gray,
+                contentColor = Color.White
+            ) {
+                Text("돌아가기")
+            }
+        },
+        containerColor = NatureColors.whiteTransparent,
+        shape = NatureShapes.medium
+    )
 }
 
 @Composable
