@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">BogoArgo</string>
+    <string name="google_maps_key">AIzaSyBpinXiRNt2WeCDId48IveMxvDsG9GdntI</string>
+    <string name="arcore_api_key">AIzaSyBpinXiRNt2WeCDId48IveMxvDsG9GdntI</string>
+</resources>

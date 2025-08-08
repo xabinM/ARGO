@@ -1,60 +1,29 @@
-# fastlane/Fastfile
-
 default_platform(:android)
 
 platform :android do
-  # Fastlane이 실행될 때의 작업 디렉토리를
-  # Git 레포지토리의 루트에서 'frontend' 폴더로 변경합니다.
-  before_all do
-    # 현재 Fastfile의 위치(frontend/fastlane)에서 한 단계 위로 (frontend/) 이동
-    Dir.chdir("../")
-  end
-
-  # --- 빌드 레인: 서명된 APK 생성 ---
   desc "Build a signed APK for local testing or manual distribution."
   lane :build_apk do
-    UI.message("🚀 Building signed APK for release...")
+    UI.message("Building signed APK for release...")
 
-    # Gradle 명령어를 실행하여 릴리스 APK를 빌드합니다.
-    # 'project_dir: ""'은 현재 작업 디렉토리(frontend/)가 곧 안드로이드 프로젝트의 루트임을 나타냅니다.
     gradle(
-      task: "assembleRelease", # 릴리스 APK를 빌드하는 Gradle 태스크
-      project_dir: "",         # 현재 디렉토리 (frontend/)가 메인 앱 모듈
+      task: "assembleRelease",
+      project_dir: ".",
       properties: {
-        # GitLab CI/CD 변수에서 주입된 키스토어 파일과 비밀번호를 사용합니다.
-        # 'release-keystore.jks'는 .gitlab-ci.yml에서 생성될 임시 파일 이름입니다.
         "android.injected.signing.store.file" => "release-keystore.jks",
-        "android.injected.signing.store.password" => ENV["ANDROID_KEYSTORE_PASSWORD"],
-        "android.injected.signing.key.alias" => ENV["ANDROID_KEY_ALIAS"],
-        "android.injected.signing.key.password" => ENV["ANDROID_KEY_PASSWORD"],
+        "android.injected.signing.store.password" => ENV['ANDROID_KEYSTORE_PASSWORD'],
+        "android.injected.signing.key.alias" => ENV['ANDROID_KEY_ALIAS'],
+        "android.injected.signing.key.password" => ENV['ANDROID_KEY_PASSWORD']
       }
     )
 
-    UI.success("✅ Signed APK build complete! Look for it in frontend/build/outputs/apk/release/")
+    UI.success("Signed APK build complete! Look for it in frontend/build/outputs/apk/release/")
   end
 
-  # --- 추가 레인 (선택 사항): 서명된 AAB 생성 ---
-  # desc "Build a signed Android App Bundle (AAB)."
-  # lane :build_aab do
-  #   UI.message("📦 Building signed AAB for release...")
-  #   gradle(
-  #     task: "bundleRelease", # 릴리스 AAB를 빌드하는 Gradle 태스크
-  #     project_dir: "",       # 현재 디렉토리 (frontend/)
-  #     properties: {
-  #       "android.injected.signing.store.file" => "release-keystore.jks",
-  #       "android.injected.signing.store.password" => ENV["ANDROID_KEYSTORE_PASSWORD"],
-  #       "android.injected.signing.key.alias" => ENV["ANDROID_KEY_ALIAS"],
-  #       "android.injected.signing.key.password" => ENV["ANDROID_KEY_PASSWORD"],
-  #     }
-  #   )
-  #   UI.success("✅ Signed AAB build complete! Look for it in frontend/build/outputs/bundle/release/")
-  # end
-
   after_all do |lane|
-    UI.message("🎉 Fastlane process for Android build finished.")
+    UI.message("Fastlane process for Android build finished.")
   end
 
   error do |lane, exception|
-    UI.user_error!("🚨 Fastlane encountered an error: #{exception.message}")
+    UI.user_error!("Fastlane encountered an error: #{exception.message}")
   end
 end
