@@ -33,6 +33,7 @@ public class TeacherTeamController {
         return ResponseEntity.ok(new CommonApiResponse<>(true, "팀 생성 성공", response));
     }
 
+    // 클리어
     @PostMapping("/{classId}/teams/{teamId}/assign")
     public ResponseEntity<CommonApiResponse<TeamAssignResponse>> assignStudentsToTeam(
             @PathVariable Long classId,
@@ -44,6 +45,7 @@ public class TeacherTeamController {
         return ResponseEntity.ok(new CommonApiResponse<>(true, "학생 팀 배정 성공", response));
     }
 
+    // 클리어
     @PostMapping("/{classId}/teams/assign")
     public ResponseEntity<CommonApiResponse<TeamAutoAssignResponse>> autoAssignStudentsToTeams(
             @PathVariable Long classId,

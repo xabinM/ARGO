@@ -11,37 +11,42 @@ import org.springframework.data.domain.Pageable;
 
 public interface ClassStudentRepository extends JpaRepository<User, Long> {
     
-    // 반의 승인된 학생들 중 특정 ID 목록으로 조회
-    @Query("SELECT u FROM User u " +
-           "LEFT JOIN FETCH u.team " +
-           "JOIN u.applications ca " +
+    // 반의 승인된 학생들 중 특정 ID 목록으로 조회 (DTO Projection으로 N+1 방지)
+    @Query("SELECT u, ca.updatedAt, " +
+           "(SELECT t FROM Team t JOIN UserTeam ut ON ut.team = t " +
+           " WHERE ut.user = u AND ut.isActive = true AND t.classRoom.classId = :classId) as team " +
+           "FROM User u JOIN u.applications ca " +
            "WHERE u.userId IN :studentIds " +
            "AND ca.classRoom.classId = :classId " +
            "AND ca.status = 'APPROVED' " +
            "AND u.role = 'ROLE_STUDENT'")
-    List<User> findApprovedStudentsByIdsAndClassId(
+    List<Object[]> findApprovedStudentsByIdsAndClassIdWithTeam(
         @Param("studentIds") List<Long> studentIds, 
         @Param("classId") Long classId
     );
     
-    // 팀의 현재 멤버 수 조회
-    @Query("SELECT COUNT(u) FROM User u WHERE u.team.teamId = :teamId")
+    // 팀의 현재 활성 멤버 수 조회 (UserTeam 기반)
+    @Query("SELECT COUNT(ut) FROM UserTeam ut WHERE ut.team.teamId = :teamId AND ut.isActive = true")
     long countByTeamId(@Param("teamId") Long teamId);
     
-    // 반의 팀 미배정 학생들 조회
+    // 반의 팀 미배정 학생들 조회 (UserTeam 기반)
     @Query("SELECT u FROM User u " +
-           "LEFT JOIN FETCH u.team " +
            "JOIN u.applications ca " +
            "WHERE ca.classRoom.classId = :classId " +
            "AND ca.status = 'APPROVED' " +
            "AND u.role = 'ROLE_STUDENT' " +
-           "AND u.team IS NULL")
+           "AND NOT EXISTS (" +
+           "    SELECT 1 FROM UserTeam ut " +
+           "    WHERE ut.user = u " +
+           "    AND ut.team.classRoom.classId = :classId " +
+           "    AND ut.isActive = true" +
+           ")")
     List<User> findUnassignedStudentsByClassId(@Param("classId") Long classId);
     
-    // 반의 승인된 학생들과 팀 정보, 가입일 조회 (반 상세정보용)
-    @Query("SELECT u, ca.updatedAt FROM User u " +
-           "LEFT JOIN FETCH u.team " +
+    // 반의 승인된 학생들과 팀 정보, 가입일 조회 (UserTeam 기반)
+    @Query("SELECT u, ca.updatedAt, ut.team, ut.joinedAt FROM User u " +
            "JOIN u.applications ca " +
+           "LEFT JOIN UserTeam ut ON u = ut.user AND ut.isActive = true AND ut.team.classRoom.classId = :classId " +
            "WHERE ca.classRoom.classId = :classId " +
            "AND ca.status = 'APPROVED' " +
            "AND u.role = 'ROLE_STUDENT' " +
@@ -55,35 +60,38 @@ public interface ClassStudentRepository extends JpaRepository<User, Long> {
            "AND ca.status = 'APPROVED'")
     boolean isStudentInClass(@Param("studentId") Long studentId, @Param("classId") Long classId);
     
-    // 반의 모든 승인된 학생들 조회 (페이징)
-    @Query("SELECT u, ca.updatedAt FROM User u " +
-           "LEFT JOIN FETCH u.team " +
+    // 반의 모든 승인된 학생들 조회 (페이징, UserTeam 기반)
+    @Query("SELECT u, ca.updatedAt, ut.team, ut.joinedAt FROM User u " +
            "JOIN u.applications ca " +
+           "LEFT JOIN UserTeam ut ON u = ut.user AND ut.isActive = true AND ut.team.classRoom.classId = :classId " +
            "WHERE ca.classRoom.classId = :classId " +
            "AND ca.status = 'APPROVED' " +
            "AND u.role = 'ROLE_STUDENT' " +
            "ORDER BY ca.updatedAt ASC")
     Page<Object[]> findApprovedStudentsWithTeamAndJoinDateByClassIdPaged(@Param("classId") Long classId, Pageable pageable);
     
-    // 반의 팀 배정된 학생들 조회 (페이징)
-    @Query("SELECT u, ca.updatedAt FROM User u " +
-           "LEFT JOIN FETCH u.team " +
+    // 반의 팀 배정된 학생들 조회 (페이징, UserTeam 기반)
+    @Query("SELECT u, ca.updatedAt, ut.team, ut.joinedAt FROM User u " +
            "JOIN u.applications ca " +
+           "JOIN UserTeam ut ON u = ut.user AND ut.isActive = true AND ut.team.classRoom.classId = :classId " +
            "WHERE ca.classRoom.classId = :classId " +
            "AND ca.status = 'APPROVED' " +
            "AND u.role = 'ROLE_STUDENT' " +
-           "AND u.team IS NOT NULL " +
            "ORDER BY ca.updatedAt ASC")
     Page<Object[]> findAssignedStudentsWithTeamAndJoinDateByClassIdPaged(@Param("classId") Long classId, Pageable pageable);
     
-    // 반의 팀 미배정 학생들 조회 (페이징)
-    @Query("SELECT u, ca.updatedAt FROM User u " +
-           "LEFT JOIN FETCH u.team " +
+    // 반의 팀 미배정 학생들 조회 (페이징, UserTeam 기반)
+    @Query("SELECT u, ca.updatedAt, null, null FROM User u " +
            "JOIN u.applications ca " +
            "WHERE ca.classRoom.classId = :classId " +
            "AND ca.status = 'APPROVED' " +
            "AND u.role = 'ROLE_STUDENT' " +
-           "AND u.team IS NULL " +
+           "AND NOT EXISTS (" +
+           "    SELECT 1 FROM UserTeam ut " +
+           "    WHERE ut.user = u " +
+           "    AND ut.team.classRoom.classId = :classId " +
+           "    AND ut.isActive = true" +
+           ") " +
            "ORDER BY ca.updatedAt ASC")
     Page<Object[]> findUnassignedStudentsWithTeamAndJoinDateByClassIdPaged(@Param("classId") Long classId, Pageable pageable);
     

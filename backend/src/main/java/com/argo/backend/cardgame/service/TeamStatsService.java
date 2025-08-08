@@ -42,9 +42,12 @@ public class TeamStatsService {
         Team team = teamRepository.findById(teamId)
                 .orElseThrow(TeamNotFoundException::new);
         
-        User user = userRepository.findById(userId).get();
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
         
-        if (user.getTeam() == null || !user.getTeam().getTeamId().equals(teamId)) {
+        // UserTeam 기반으로 팀 접근 권한 검증
+        Team userTeam = user.getActiveTeamByClass(team.getClassRoom().getClassId());
+        if (userTeam == null || !userTeam.getTeamId().equals(teamId)) {
             throw new UnauthorizedClassAccessException();
         }
         
