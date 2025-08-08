@@ -40,3 +40,44 @@ data class BattleCardDetailsDto(
     val tier: String, // CardTier enum string
     val battleStance: String // BattleStrategy enum string
 )
+
+// 팀 카드 컬렉션 응답 DTO (백엔드 TeamCardCollectionResponse와 일치)
+data class CardGameTeamCardCollectionResponseDto(
+    val success: Boolean,
+    val message: String,
+    val data: TeamCardCollectionDataDto?
+)
+
+data class TeamCardCollectionDataDto(
+    val teamId: Long,
+    val teamCards: List<TeamCardItemDto>,
+    val totalCount: Int,
+    val tierStats: Map<String, Int>
+)
+
+// 팀 카드 항목 DTO (백엔드 TeamCardDto와 일치)
+data class TeamCardItemDto(
+    val teamCardId: Long,
+    val cardId: Long,
+    val tier: String, // CardTier enum string
+    val obtainedAt: String, // LocalDateTime string
+    val isLost: Boolean,
+    val isLocked: Boolean
+)
+
+// 대전 관련 응답 DTOs
+data class BattleResponse(
+    val message: String
+)
+
+// 대전 상대 팀 정보 DTO (백엔드 BattleOpponentDto와 일치)
+data class BattleOpponentDto(
+    val teamId: Long,
+    val teamName: String,
+    val leaderName: String,
+    val totalGames: Int,
+    val wins: Int,
+    val losses: Int,
+    val draws: Int,
+    val totalPoints: Int
+)

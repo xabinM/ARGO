@@ -18,6 +18,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.border
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
 import com.example.bogoargo.domain.model.GameCard
 import com.example.bogoargo.domain.model.CardTier
 
@@ -41,6 +46,20 @@ fun GameCardComponent(
     onClick: (() -> Unit)? = null,
     alpha: Float = 1f
 ) {
+    // ColorFilter 생성 - 카드 상태에 따라 적용
+    val colorFilter = when {
+        card.isLost -> ColorFilter.colorMatrix(
+            ColorMatrix().apply { 
+                setToSaturation(0f) // 완전 흑백
+            }
+        )
+        card.isLocked -> ColorFilter.colorMatrix(
+            ColorMatrix().apply { 
+                setToSaturation(0.5f) // 채도 50% 감소
+            }
+        )
+        else -> null
+    }
     
     BoxWithConstraints(
         modifier = modifier
@@ -57,7 +76,16 @@ fun GameCardComponent(
         val cardHeight = this@BoxWithConstraints.maxHeight
         
         Box(
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier
+                .fillMaxSize()
+                .then(
+                    // 테두리 효과
+                    when {
+                        card.isLocked -> Modifier.border(3.dp, Color(0xFFFF9800), RoundedCornerShape(8.dp))
+                        card.isLost -> Modifier.border(2.dp, Color.Gray, RoundedCornerShape(8.dp))
+                        else -> Modifier
+                    }
+                )
         ) {
             // 캐릭터 이미지 (뒤) - 레어도별 위치와 크기 조정
             val isLegendary = card.rarity == CardTier.LEGENDARY
@@ -74,7 +102,8 @@ fun GameCardComponent(
                         transformOrigin = TransformOrigin.Center
                     },
                 contentScale = ContentScale.Fit,
-                alpha = alpha
+                colorFilter = colorFilter,
+                alpha = alpha // 전체 alpha는 유지 (카드 전체 투명도용)
             )
             
             // 테두리 이미지 (앞)
@@ -87,8 +116,10 @@ fun GameCardComponent(
                         transformOrigin = TransformOrigin.Center
                     },
                 contentScale = ContentScale.FillBounds,
-                alpha = 1f
+                colorFilter = colorFilter,
+                alpha = alpha // 전체 alpha는 유지 (카드 전체 투명도용)
             )
+            
                 
             // 콘텐츠 레이어 - DETAILED 모드에서만 표시
             if (viewMode == ViewMode.DETAILED) {
@@ -193,6 +224,40 @@ fun GameCardComponent(
                             color = Color(0xFF2196F3),
                             modifier = Modifier.width(cardWidth * 0.3f),
                             textSize = (cardWidth.value * 0.06f).sp
+                        )
+                    }
+                }
+            }
+            
+            // 카드 상태 라벨 (항상 표시)
+            card.statusLabel?.let { statusLabel ->
+                Box(
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .padding(top = cardHeight * 0.05f)
+                ) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = when {
+                                card.isLost -> Color.Gray.copy(alpha = 0.9f)
+                                card.isLocked -> Color(0xFFFF9800).copy(alpha = 0.9f)
+                                else -> Color.Transparent
+                            }
+                        ),
+                        shape = RoundedCornerShape((cardWidth.value * 0.03f).dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                    ) {
+                        Text(
+                            text = statusLabel,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = (cardWidth.value * 0.05f).sp,
+                                color = Color.White
+                            ),
+                            modifier = Modifier.padding(
+                                horizontal = (cardWidth.value * 0.02f).dp,
+                                vertical = (cardHeight.value * 0.005f).dp
+                            )
                         )
                     }
                 }

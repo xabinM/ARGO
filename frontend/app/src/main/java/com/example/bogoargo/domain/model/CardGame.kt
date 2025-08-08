@@ -16,16 +16,48 @@ data class GameCard(
     val defense: Int,
     val rarity: CardTier,
     val description: String,
-    val teamCardId: Long? = null // API 응답에서 받은 teamCardId (옵셔널)
+    val teamCardId: Long? = null, // API 응답에서 받은 teamCardId (옵셔널)
+    val isLost: Boolean = false,   // 제거된 카드 여부
+    val isLocked: Boolean = false  // 대전에 사용중인 카드 여부
 ) {
+    // 활성 상태 (사용 가능한 카드) 계산 속성
+    val isActive: Boolean
+        get() = !isLost && !isLocked
+        
+    // 상태별 투명도 계산
+    val displayAlpha: Float
+        get() = when {
+            isLost -> 0.3f      // 제거된 카드는 매우 흐림
+            isLocked -> 0.7f    // 사용중은 약간 흐림  
+            else -> 1.0f        // 정상
+        }
+    
+    // 상태 표시 라벨
+    val statusLabel: String?
+        get() = when {
+            isLost -> "❌ 제거됨"
+            isLocked -> "🔒 사용중"
+            else -> null
+        }
     companion object {
         // cardId와 rarity만으로 GameCard 생성 (기존 방식)
         fun create(cardId: Long, rarity: CardTier): GameCard {
-            return create(cardId, rarity, null)
+            return create(cardId, rarity, null, false, false)
         }
         
         // cardId, rarity, teamCardId로 GameCard 생성 (API 응답용)
         fun create(cardId: Long, rarity: CardTier, teamCardId: Long?): GameCard {
+            return create(cardId, rarity, teamCardId, false, false)
+        }
+        
+        // 모든 매개변수를 포함한 완전한 GameCard 생성 (API 응답용)
+        fun create(
+            cardId: Long, 
+            rarity: CardTier, 
+            teamCardId: Long?, 
+            isLost: Boolean, 
+            isLocked: Boolean
+        ): GameCard {
             // 임시로 cardId에 따른 기본 정보 설정 (추후 매퍼로 대체)
             val cardInfo = getCardInfo(cardId)
             val rarityMultiplier = when (rarity) {
@@ -42,7 +74,9 @@ data class GameCard(
                 defense = (cardInfo.baseDefense * rarityMultiplier).toInt(),
                 rarity = rarity,
                 description = cardInfo.description,
-                teamCardId = teamCardId
+                teamCardId = teamCardId,
+                isLost = isLost,
+                isLocked = isLocked
             )
         }
         
@@ -179,41 +213,6 @@ enum class ResultView {
         }
     }
 }
-
-data class TeamCardCollection(
-    val teamId: Long,
-    val cards: List<GameCard>
-) {
-    companion object {
-        // API 응답에서 TeamCardCollection 생성
-        fun fromApiResponse(
-            teamId: Long,
-            teamCards: List<TeamCardResponse>
-        ): TeamCardCollection {
-            val gameCards = teamCards.map { teamCard ->
-                val rarity = when (teamCard.tier) {
-                    "LEGEND" -> CardTier.LEGENDARY
-                    "EPIC" -> CardTier.EPIC
-                    "RARE" -> CardTier.RARE
-                    "COMMON" -> CardTier.COMMON
-                    else -> CardTier.COMMON
-                }
-                GameCard.create(teamCard.cardId, rarity, teamCard.teamCardId)
-            }
-            return TeamCardCollection(teamId, gameCards)
-        }
-    }
-}
-
-// API 응답 데이터 클래스
-data class TeamCardResponse(
-    val teamCardId: Long,
-    val cardId: Long,
-    val tier: String,
-    val obtainedAt: String,
-    val isLost: Boolean,
-    val isLocked: Boolean
-)
 
 data class BattleHistory(
     val matchId: Long,
@@ -353,4 +352,37 @@ data class BattleCardResponse(
     fun toBattleCard(): BattleCard {
         return BattleCard.fromApiResponse(teamCardId, cardId, tier, battleStance)
     }
+}
+
+// 대전 신청 결과 (API 응답)
+data class BattleResult(
+    val success: Boolean,
+    val message: String,
+    val matchId: Long? = null
+)
+
+// 대전 가능한 상대팀 정보
+data class BattleOpponent(
+    val teamId: Long,
+    val teamName: String,
+    val leaderName: String,
+    val totalGames: Int,
+    val wins: Int,
+    val losses: Int,
+    val draws: Int,
+    val totalPoints: Int
+) {
+    // 계산된 속성들
+    val winRate: Double
+        get() = if (totalGames > 0) wins.toDouble() / totalGames else 0.0
+    
+    val averageScore: Int
+        get() = if (totalGames > 0) totalPoints / totalGames else 0
+        
+    val isAvailable: Boolean
+        get() = true // 백엔드에서 대전 가능한 팀만 반환하므로 항상 true
+        
+    // UI 표시용 멤버 수 (임시로 총 게임 수 기반 계산, 실제로는 백엔드에서 제공해야 함)
+    val memberCount: Int
+        get() = minOf(4, maxOf(1, totalGames / 5 + 2)) // 2-4명 사이 값
 }

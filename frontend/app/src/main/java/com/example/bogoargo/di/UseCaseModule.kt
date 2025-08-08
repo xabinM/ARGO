@@ -35,6 +35,13 @@ import com.example.bogoargo.domain.use_case.settings.UpdateSettingsUseCase
 import com.example.bogoargo.domain.use_case.ar.GetAR3DObjectsUseCase
 import com.example.bogoargo.domain.use_case.location.getLocationsUseCase
 import com.example.bogoargo.domain.use_case.cardgame.GetBattleHistoryUseCase
+import com.example.bogoargo.domain.use_case.cardgame.GetTeamCardCollectionUseCase
+import com.example.bogoargo.domain.use_case.cardgame.CreateBattleUseCase
+import com.example.bogoargo.domain.use_case.cardgame.RespondToBattleUseCase
+import com.example.bogoargo.domain.use_case.cardgame.GetBattleOpponentsUseCase
+import com.example.bogoargo.domain.use_case.cardgame.CancelBattleUseCase
+import com.example.bogoargo.domain.use_case.cardgame.ViewBattleResultUseCase
+import com.example.bogoargo.domain.use_case.cardgame.GetTeamStatsUseCase
 import com.example.bogoargo.data.repository.MissionRepositoryImpl
 import dagger.Module
 import dagger.Provides
@@ -209,5 +216,47 @@ object UseCaseModule {
     @Singleton
     fun provideGetBattleHistoryUseCase(cardGameRepository: ICardGameRepository): GetBattleHistoryUseCase {
         return GetBattleHistoryUseCase(cardGameRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetTeamCardCollectionUseCase(cardGameRepository: ICardGameRepository): GetTeamCardCollectionUseCase {
+        return GetTeamCardCollectionUseCase(cardGameRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCreateBattleUseCase(cardGameRepository: ICardGameRepository): CreateBattleUseCase {
+        return CreateBattleUseCase(cardGameRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRespondToBattleUseCase(cardGameRepository: ICardGameRepository): RespondToBattleUseCase {
+        return RespondToBattleUseCase(cardGameRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetBattleOpponentsUseCase(cardGameRepository: ICardGameRepository): GetBattleOpponentsUseCase {
+        return GetBattleOpponentsUseCase(cardGameRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideCancelBattleUseCase(cardGameRepository: ICardGameRepository): CancelBattleUseCase {
+        return CancelBattleUseCase(cardGameRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideViewBattleResultUseCase(cardGameRepository: ICardGameRepository): ViewBattleResultUseCase {
+        return ViewBattleResultUseCase(cardGameRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetTeamStatsUseCase(cardGameRepository: ICardGameRepository): GetTeamStatsUseCase {
+        return GetTeamStatsUseCase(cardGameRepository)
     }
 }
