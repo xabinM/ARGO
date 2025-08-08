@@ -1,14 +1,14 @@
 package com.argo.backend.organization.service;
 
-import com.argo.backend.domain.classroom.ClassApplication;
-import com.argo.backend.domain.classroom.ClassRoom;
-import com.argo.backend.domain.user.ApplicationStatus;
+import com.argo.backend.domain.classroom.entity.ClassApplication;
+import com.argo.backend.domain.classroom.entity.ClassRoom;
+import com.argo.backend.domain.classroom.enums.ApplicationStatus;
 import com.argo.backend.organization.dto.applicationlist.*;
 import com.argo.backend.organization.dto.applicationprocess.*;
 import com.argo.backend.organization.exception.types.*;
 import com.argo.backend.organization.exception.types.ClassNotFoundException;
-import com.argo.backend.organization.repository.ClassApplicationRepository;
-import com.argo.backend.organization.repository.ClassRoomRepository;
+import com.argo.backend.domain.classroom.repository.ClassApplicationRepository;
+import com.argo.backend.domain.classroom.repository.ClassRoomRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

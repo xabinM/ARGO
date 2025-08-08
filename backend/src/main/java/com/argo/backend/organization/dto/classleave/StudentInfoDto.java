@@ -1,6 +1,6 @@
 package com.argo.backend.organization.dto.classleave;
 
-import com.argo.backend.domain.user.User;
+import com.argo.backend.domain.user.entity.User;
 import lombok.Getter;
 
 import java.time.LocalDateTime;

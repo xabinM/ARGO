@@ -1,13 +1,13 @@
 package com.argo.backend.organization.service;
 
-import com.argo.backend.domain.classroom.ClassApplication;
-import com.argo.backend.domain.classroom.ClassRoom;
-import com.argo.backend.domain.classroom.ClassStatus;
-import com.argo.backend.domain.location.Location;
-import com.argo.backend.domain.user.ApplicationStatus;
-import com.argo.backend.domain.user.Role;
-import com.argo.backend.domain.user.Teacher;
-import com.argo.backend.domain.user.User;
+import com.argo.backend.domain.classroom.entity.ClassApplication;
+import com.argo.backend.domain.classroom.entity.ClassRoom;
+import com.argo.backend.domain.classroom.enums.ClassStatus;
+import com.argo.backend.domain.location.entity.Location;
+import com.argo.backend.domain.classroom.enums.ApplicationStatus;
+import com.argo.backend.domain.user.enums.Role;
+import com.argo.backend.domain.user.entity.Teacher;
+import com.argo.backend.domain.user.entity.User;
 import com.argo.backend.organization.dto.classapply.ClassApplyResponse;
 import com.argo.backend.organization.dto.classleave.ClassLeaveResponse;
 import com.argo.backend.organization.dto.classleave.LeftClassDto;
@@ -27,19 +27,34 @@ import com.argo.backend.organization.dto.classlist.ClassListResponse;
 import com.argo.backend.organization.dto.classlist.ClassInfoDto;
 import com.argo.backend.organization.dto.classlist.PaginationDto;
 import com.argo.backend.organization.dto.classdetail.*;
+import com.argo.backend.organization.dto.location.LocationsResponse;
 import com.argo.backend.organization.dto.studentlist.*;
-import com.argo.backend.domain.team.Team;
-import com.argo.backend.organization.exception.types.*;
+import com.argo.backend.domain.team.entity.Team;
+import com.argo.backend.domain.user.entity.UserTeam;
 import com.argo.backend.organization.exception.types.ClassNotFoundException;
+import com.argo.backend.organization.exception.types.UnauthorizedClassAccessException;
+import com.argo.backend.organization.exception.types.InvalidClassIdException;
+import com.argo.backend.organization.exception.types.InsufficientPermissionException;
+import com.argo.backend.organization.exception.types.LocationNotFoundException;
+import com.argo.backend.organization.exception.types.InvalidInviteCodeException;
+import com.argo.backend.organization.exception.types.ClassNotAvailableException;
+import com.argo.backend.organization.exception.types.DuplicateApplicationException;
+import com.argo.backend.organization.exception.types.StudentOnlyException;
+import com.argo.backend.organization.exception.types.UserNotFoundException;
+import com.argo.backend.organization.exception.types.NotParticipatingClassException;
+import com.argo.backend.organization.exception.types.ActivityInProgressException;
+import com.argo.backend.organization.exception.types.CannotDeleteActiveClassException;
+import com.argo.backend.organization.exception.types.InvalidStatusParameterException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import com.argo.backend.auth.repository.UserRepository;
-import com.argo.backend.organization.repository.ClassApplicationRepository;
-import com.argo.backend.organization.repository.ClassRoomRepository;
-import com.argo.backend.organization.repository.LocationRepository;
-import com.argo.backend.organization.repository.TeacherRepository;
-import com.argo.backend.organization.repository.TeamRepository;
-import com.argo.backend.organization.repository.ClassStudentRepository;
+import com.argo.backend.domain.user.repository.UserRepository;
+import com.argo.backend.domain.classroom.repository.ClassApplicationRepository;
+import com.argo.backend.domain.classroom.repository.ClassRoomRepository;
+import com.argo.backend.domain.location.repository.LocationRepository;
+import com.argo.backend.domain.user.repository.TeacherRepository;
+import com.argo.backend.domain.team.repository.TeamRepository;
+import com.argo.backend.domain.classroom.repository.ClassStudentRepository;
+import com.argo.backend.domain.user.repository.UserTeamRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -61,10 +76,20 @@ public class ClassService {
     private final ClassApplicationRepository classApplicationRepository;
     private final TeamRepository teamRepository;
     private final ClassStudentRepository classStudentRepository;
+    private final UserTeamRepository userTeamRepository;
 
 
     private static final String INVITE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int INVITE_CODE_LENGTH = 6;
+
+
+    @Transactional
+    public List<LocationsResponse> getLocations() {
+        return locationRepository.findAll().stream()
+                .map(LocationsResponse::from)
+                .collect(Collectors.toList());
+    }
+
 
     @Transactional
     public ClassCreateResponse createClass(Long teacherId, ClassCreateRequest request){
@@ -255,25 +280,29 @@ public class ClassService {
     private int getTeamCount(Long classId) {
         ClassRoom classRoom = classRoomRepository.findById(classId).orElse(null);
         if (classRoom == null) return 0;
-        return teamRepository.findByClassRoomOrderByCreatedAtAsc(classRoom).size();
+        return (int) teamRepository.countByClassRoom(classRoom); // COUNT 쿼리로 최적화
     }
     
-    // 선생님의 반 상세정보 조회
+    // 통합된 반 상세정보 조회 (선생/학생 공통)
     @Transactional
-    public ClassDetailResponse getTeacherClassDetail(Long teacherId, Long classId, String include) {
+    public ClassDetailResponse getClassDetail(Long userId, Long classId, String include) {
         validateClassId(classId);
         
         ClassRoom classRoom = classRoomRepository.findById(classId)
                 .orElseThrow(ClassNotFoundException::new);
         
-        // 선생님 권한 검증
-        if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
+        // 권한 검증 (선생 또는 참여 학생)
+        boolean isTeacher = classRoom.getTeacher().getUserId().equals(userId);
+        boolean isStudent = classStudentRepository.isStudentInClass(userId, classId);
+        
+        if (!isTeacher && !isStudent) {
             throw new UnauthorizedClassAccessException();
         }
         
+        // Teacher 버전 기준으로 통일 (모든 정보 제공)
         ClassInfoDetailDto classInfo = ClassInfoDetailDto.fromTeacher(classRoom);
         
-        // include 파라미터에 따라 선택적으로 정보 포함
+        // include 파라미터에 따라 선택적으로 정보 포함 (기본: 모든 정보)
         List<StudentDto> students = null;
         List<TeamDetailDto> teams = null;
         
@@ -290,26 +319,7 @@ public class ClassService {
                 teams != null ? teams.size() : getTeamCount(classId)
         );
         
-        return ClassDetailResponse.forTeacher(classInfo, students, teams, statistics);
-    }
-    
-    // 학생의 반 상세정보 조회
-    @Transactional
-    public ClassDetailResponse getStudentClassDetail(Long studentId, Long classId) {
-        validateClassId(classId);
-        
-        ClassRoom classRoom = classRoomRepository.findById(classId)
-                .orElseThrow(ClassNotFoundException::new);
-        
-        // 학생 권한 검증 (해당 반에 참여하고 있는지)
-        if (!classStudentRepository.isStudentInClass(studentId, classId)) {
-            throw new UnauthorizedClassAccessException();
-        }
-        
-        ClassInfoDetailDto classInfo = ClassInfoDetailDto.fromStudent(classRoom);
-        TeamDetailDto myTeam = getStudentTeam(studentId, classId);
-        
-        return ClassDetailResponse.forStudent(classInfo, myTeam);
+        return ClassDetailResponse.from(classInfo, students, teams, statistics);
     }
 
 
@@ -319,15 +329,17 @@ public class ClassService {
         }
     }
 
-    // 선생 전용
+
     private List<StudentDto> getStudentsForClass(Long classId) {
         List<Object[]> results = classStudentRepository.findApprovedStudentsWithTeamAndJoinDateByClassId(classId);
         return results.stream()
                 .map(result -> {
                     User student = (User) result[0];
                     java.time.LocalDateTime joinedAt = (java.time.LocalDateTime) result[1];
-                    String teamName = student.getTeam() != null ? student.getTeam().getTeamName() : null;
-                    return StudentDto.from(student, teamName, joinedAt);
+                    Team team = (Team) result[2]; // UserTeam 기반으로 수정된 쿼리에서 team 정보 가져옴
+                    Long teamId = team != null ? team.getTeamId() : null;
+                    String teamName = team != null ? team.getTeamName() : null;
+                    return StudentDto.from(student, teamId, teamName, joinedAt);
                 })
                 .toList();
     }
@@ -337,31 +349,13 @@ public class ClassService {
         List<Team> teams = teamRepository.findTeamsByClassId(classId);
         return teams.stream()
                 .map(team -> {
-                    List<User> members = userRepository.findByTeamId(team.getTeamId());
+                    List<User> members = team.getActiveMembers(); // Team 헬퍼 메서드 사용
                     List<TeamMemberDto> memberDtos = members.stream()
                             .map(TeamMemberDto::from)
                             .toList();
                     return TeamDetailDto.from(team, memberDtos);
                 })
                 .toList();
-    }
-    
-    // 학생(자기자신) 팀 조회
-    private TeamDetailDto getStudentTeam(Long studentId, Long classId) {
-        User student = userRepository.findById(studentId)
-                .orElseThrow(UserNotFoundException::new);
-        
-        if (student.getTeam() == null) {
-            return null; // 팀에 배정되지 않은 경우
-        }
-        
-        Team team = student.getTeam();
-        List<User> members = userRepository.findByTeamId(team.getTeamId());
-        List<TeamMemberDto> memberDtos = members.stream()
-                .map(TeamMemberDto::from)
-                .toList();
-        
-        return TeamDetailDto.from(team, memberDtos);
     }
     
     // 반 참여 학생 목록 조회
@@ -397,8 +391,9 @@ public class ClassService {
     private StudentDetailDto mapToStudentDetailDto(Object[] result) {
         User student = (User) result[0];
         java.time.LocalDateTime joinedAt = (java.time.LocalDateTime) result[1];
-        com.argo.backend.organization.dto.studentlist.TeamInfoDto teamInfo = student.getTeam() != null ? 
-            com.argo.backend.organization.dto.studentlist.TeamInfoDto.from(student.getTeam(), null) : null;
+        Team team = (Team) result[2]; // UserTeam 기반으로 수정된 쿼리에서 team 정보 가져옴
+        com.argo.backend.organization.dto.studentlist.TeamInfoDto teamInfo = team != null ? 
+            com.argo.backend.organization.dto.studentlist.TeamInfoDto.from(team, null) : null;
         return StudentDetailDto.from(student, joinedAt, teamInfo);
     }
 
@@ -456,14 +451,15 @@ public class ClassService {
         java.time.LocalDateTime joinedAt = application.getUpdatedAt();
         java.time.LocalDateTime leftAt = java.time.LocalDateTime.now();
         
-        com.argo.backend.domain.team.Team currentTeam = student.getTeam();
+        Team currentTeam = student.getActiveTeamByClass(classId); // 헬퍼 메서드 사용
         TeamInfoDto teamInfo = currentTeam != null 
             ? TeamInfoDto.fromTeam(currentTeam, leftAt)
             : TeamInfoDto.noTeam();
         
+        // UserTeam 기반으로 팀 탈퇴 처리
         if (currentTeam != null) {
-            student.setTeam(null);
-            userRepository.save(student);
+            userTeamRepository.findByUserIdAndTeamId(studentId, currentTeam.getTeamId())
+                .ifPresent(UserTeam::deactivate);
         }
         
         classApplicationRepository.delete(application);
@@ -529,8 +525,15 @@ public class ClassService {
                     team -> (int) classStudentRepository.countByTeamId(team.getTeamId())
                 ));
         
-        approvedStudents.forEach(student -> student.setTeam(null));
-        userRepository.saveAll(approvedStudents);
+        // UserTeam 기반으로 모든 학생의 팀 배정 해제
+        List<Long> studentIds = approvedStudents.stream()
+                .map(User::getUserId)
+                .toList();
+        
+        for (Long studentId : studentIds) {
+            userTeamRepository.findActiveByUserIdAndClassId(studentId, classId)
+                    .ifPresent(UserTeam::deactivate);
+        }
         
         teamRepository.deleteAll(teams);
         classApplicationRepository.deleteAll(classRoom.getApplications());

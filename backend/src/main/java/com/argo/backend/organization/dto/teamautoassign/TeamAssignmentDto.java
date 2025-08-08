@@ -1,6 +1,6 @@
 package com.argo.backend.organization.dto.teamautoassign;
 
-import com.argo.backend.domain.team.Team;
+import com.argo.backend.domain.team.entity.Team;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

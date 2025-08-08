@@ -28,6 +28,36 @@ data class ClassInfo(
 data class ClassListResponse(
     val success: Boolean,
     val message: String,
+    val data: ClassListData?
+)
+
+// 반 리스트 데이터 DTO
+data class ClassListData(
+    val classes: List<ClassInfoDto>,
+    val pagination: PaginationDto
+)
+
+// 반 정보 간략 DTO (리스트용)
+data class ClassInfoDto(
+    val classId: Long,
+    val className: String,
+    val description: String,
+    val location: String,
+    val activityDate: String,
+    val studentCount: Int,
+    val maxStudents: Int,
+    val teamCount: Int,
+    val status: String,
+    val inviteCode: String? = null,  // 학생에게는 null
+    val createdAt: String
+)
+
+// 페이지네이션 정보 DTO
+data class PaginationDto(
+    val currentPage: Int,
+    val totalPages: Int,
+    val totalElements: Long,
+    val size: Int,
     val data: ClassListDataDto?
 )
 

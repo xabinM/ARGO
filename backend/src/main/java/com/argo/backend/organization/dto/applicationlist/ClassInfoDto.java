@@ -1,6 +1,6 @@
 package com.argo.backend.organization.dto.applicationlist;
 
-import com.argo.backend.domain.classroom.ClassRoom;
+import com.argo.backend.domain.classroom.entity.ClassRoom;
 
 public record ClassInfoDto(
     Long classId,

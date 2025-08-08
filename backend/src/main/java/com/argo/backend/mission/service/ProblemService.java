@@ -1,25 +1,28 @@
 package com.argo.backend.mission.service;
 
-import com.argo.backend.domain.ploblem.Problem;
-import com.argo.backend.domain.ploblem.ProblemType;
-import com.argo.backend.domain.ploblem.QuizProblem;
-import com.argo.backend.domain.spot.Spot;
+import com.argo.backend.domain.ploblem.entity.Problem;
+import com.argo.backend.domain.ploblem.enums.ProblemType;
+import com.argo.backend.domain.ploblem.entity.QuizProblem;
+import com.argo.backend.domain.spot.entity.Spot;
 import com.argo.backend.mission.api.PythonApiClient;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterRequest;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestFromCli;
-import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateResponse;
-import com.argo.backend.mission.dto.problemsRequest.ProblemResponseDto;
-import com.argo.backend.mission.dto.problemsRequest.QuizProblemResponseDto;
-import com.argo.backend.mission.dto.problemsRequest.SelfieProblemResponseDto;
+import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateDto;
+import com.argo.backend.mission.dto.common.ProblemResponseDto;
+import com.argo.backend.mission.dto.common.QuizProblemResponseDto;
+import com.argo.backend.mission.dto.common.SelfieProblemResponseDto;
+import com.argo.backend.mission.dto.selfieDetermine.SelfieRequestDto;
+import com.argo.backend.mission.dto.selfieDetermine.SelfieResultDto;
 import com.argo.backend.mission.exception.SpotNotFoundException;
-import com.argo.backend.mission.repository.ProblemRepository;
-import com.argo.backend.mission.repository.QuizProblemRepository;
-import com.argo.backend.mission.repository.SelfieProblemRepository;
-import com.argo.backend.mission.repository.SpotRepository;
+import com.argo.backend.domain.ploblem.repository.ProblemRepository;
+import com.argo.backend.domain.ploblem.repository.QuizProblemRepository;
+import com.argo.backend.domain.ploblem.repository.SelfieProblemRepository;
+import com.argo.backend.domain.spot.repository.SpotRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -50,7 +53,7 @@ public class ProblemService {
         problemRepository.save(quiz);
     }
 
-    public ProblemGenerateResponse generateProblem(ProblemGenerateRequestFromCli request) {
+    public ProblemGenerateDto generateProblem(ProblemGenerateRequestFromCli request) {
         Spot spot = spotRepository.findById(request.getSpotId())
                 .orElseThrow(SpotNotFoundException::new);
 
@@ -75,5 +78,10 @@ public class ProblemService {
                     .map(SelfieProblemResponseDto::from)
                     .collect(Collectors.toList());
         };
+    }
+
+    public SelfieResultDto determineSelfie(SelfieRequestDto request) throws IOException {
+
+        return pythonApiClient.requestDeterMineSelfie(request);
     }
 }

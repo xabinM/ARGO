@@ -7,5 +7,6 @@ import lombok.Getter;
 @AllArgsConstructor
 public class ProblemRegisterResponse {
 
+    private boolean success;
     private String message;
 }

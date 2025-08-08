@@ -8,14 +8,14 @@ data class Class(
     val description: String,
     val location: String,
     val activityDate: LocalDate,
-   // val currentStudents: Int,
+    val currentStudents: Int,
     val maxStudents: Int,
     val studentCount: Int,
     val teamCount: Int,
     val status: ClassStatus,
     val inviteCode: String,
     val createdAt: LocalDate,
-    val isFull: Boolean
+    val isFull: Boolean?
 ) {
     enum class ClassStatus {
         ACTIVE,

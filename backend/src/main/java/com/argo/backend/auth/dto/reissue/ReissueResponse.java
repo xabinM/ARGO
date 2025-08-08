@@ -7,5 +7,7 @@ import lombok.Getter;
 @Getter
 @AllArgsConstructor
 public class ReissueResponse {
+
+    private boolean success;
     private Tokens tokens;
 }

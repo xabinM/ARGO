@@ -71,6 +71,7 @@ class UserRepositoryImpl @Inject constructor(
 
                     // 유저 저장
                     val loggedInUser = User(
+                        userId = loginResponse.userId,
                         name = loginResponse.name,
                         role = UserRole.valueOf(loginResponse.role),
                         team = null

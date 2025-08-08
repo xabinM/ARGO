@@ -25,7 +25,7 @@ public class PaginationDto {
     public static PaginationDto from(Page<?> page) {
         return new PaginationDto(
                 page.getTotalElements(),
-                page.getNumber() + 1, // 0-based를 1-based로 변환
+                page.getNumber() + 1,
                 page.getTotalPages(),
                 page.getSize(),
                 page.hasNext(),

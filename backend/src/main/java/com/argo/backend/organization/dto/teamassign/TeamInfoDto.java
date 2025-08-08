@@ -1,6 +1,6 @@
 package com.argo.backend.organization.dto.teamassign;
 
-import com.argo.backend.domain.team.Team;
+import com.argo.backend.domain.team.entity.Team;
 
 public record TeamInfoDto(
         Long teamId,

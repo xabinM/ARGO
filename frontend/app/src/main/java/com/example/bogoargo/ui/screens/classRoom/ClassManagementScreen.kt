@@ -139,7 +139,7 @@ fun ClassManagementScreen(
                                     isTeacher = isTeacher,
                                     onDeleteClick = if (isTeacher) { { viewModel.deleteClass(classInfo.classId) } } else null
                                 ) {
-                                    navController.navigate(Screen.ClassDetail.createRoute(classInfo.classId.toString()))
+                                    navController.navigate(Screen.ClassDetail.createRoute(classInfo.classId))
                                 }
                             }
                             // 빈 공간 추가 (FAB와의 겹침 방지)

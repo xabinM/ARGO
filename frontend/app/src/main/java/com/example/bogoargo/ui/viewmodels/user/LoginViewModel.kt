@@ -9,6 +9,7 @@ import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.domain.use_case.auth.LoginUseCase
 import com.example.bogoargo.domain.use_case.auth.SaveTokensUseCase
 import com.example.bogoargo.navigation.Screen
+import com.example.bogoargo.domain.use_case.auth.SaveUserInfoUseCase
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -32,12 +33,13 @@ data class LoginUiState(
 class LoginViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
     private val saveTokensUseCase: SaveTokensUseCase,
-    private val userPreferences: UserPreferences
+    private val userPreferences: UserPreferences,
+    private val saveUserInfoUseCase: SaveUserInfoUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState
-    
+
     private val _navigationEvent = MutableSharedFlow<Screen>()
     val navigationEvent: SharedFlow<Screen> = _navigationEvent.asSharedFlow()
 
@@ -55,12 +57,15 @@ class LoginViewModel @Inject constructor(
             
             when (val result = loginUseCase(_uiState.value.username, _uiState.value.password)) {
                 is DataResult.Success -> {
+                    // 사용자 정보 저장
+                    saveUserInfoUseCase(result.data)
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isLoggedIn = true,
                         user = result.data
                     )
-                    
+
                     // 로그인 성공 시 SelectHome으로 이동
                     _navigationEvent.emit(Screen.SelectHome)
                 }
@@ -101,14 +106,14 @@ class LoginViewModel @Inject constructor(
                 // 더미 사용자 데이터 생성
                 val dummyUser = if (isTeacher) {
                     User(
-                        //userId = 1L,
+                        userId = 1L,
                         name = "김선생",
                         role = UserRole.ROLE_TEACHER,
                         team = null
                     )
                 } else {
                     User(
-                        //userId = 2L,
+                        userId = 2L,
                         name = "이학생",
                         role = UserRole.ROLE_STUDENT,
                         team = null
@@ -124,12 +129,15 @@ class LoginViewModel @Inject constructor(
                 // 더미 유저 저장
                 userPreferences.saveUser(dummyUser)
                 
+                // 더미 사용자 정보 저장
+                saveUserInfoUseCase(dummyUser)
+
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isLoggedIn = true,
                     user = dummyUser
                 )
-                
+
                 // 더미 로그인 성공 시 SelectHome으로 이동
                 _navigationEvent.tryEmit(Screen.SelectHome)
             } catch (e: Exception) {

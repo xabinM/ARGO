@@ -7,6 +7,9 @@ import com.example.bogoargo.domain.model.Class
 import com.example.bogoargo.domain.model.DataException
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.repository.IClassRepository
+import com.example.bogoargo.data.dto.response.ApplicationResponseDto
+import com.example.bogoargo.data.dto.response.MessageResponseDto
+import com.example.bogoargo.data.dto.response.UserDataDto
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
@@ -64,7 +67,7 @@ class ClassRepositoryImpl @Inject constructor(
             val response = classApiService.getTeacherClassList(1, 100, "active")
             if (response.isSuccessful) {
                 val classListResponse = response.body()
-                if (classListResponse?.success == true && classListResponse.data?.classes != null) {
+                if (classListResponse?.success == true && classListResponse.data != null) {
                     val classes = classListResponse.data.classes.map { it.toDomainModel() }
                     DataResult.Success(classes)
                 } else {
