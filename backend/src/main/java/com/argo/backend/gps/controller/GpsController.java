@@ -23,20 +23,18 @@ public class GpsController {
 
     @PostMapping()
     public ResponseEntity<?> updateLocation(@AuthenticationPrincipal Long userId,
-                                               @RequestBody UserCoordinatesRequest coordinates) {
-        gpsService.saveUserLocation(userId, coordinates);
+                                            @RequestBody UserCoordinatesRequest coordinates) {
+        gpsService.saveUserCoordinates(userId, coordinates);
         return ResponseEntity.ok(
                 new UpdateCoordinatesResponse(true,
-                ResponseMessage.SUCCESS_USER_COORDINATES_POST.getMessage())
+                        ResponseMessage.SUCCESS_USER_COORDINATES_POST.getMessage())
         );
     }
 
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/class/{classId}/students")
-    public ResponseEntity<?> getCoordinatesByClass(
-            @PathVariable Long classId
-    ) {
-        List<UserCoordinatesDto> coordinates = gpsService.getLocationsByClass(classId);
+    public ResponseEntity<?> getCoordinatesByClass(@PathVariable Long classId) {
+        List<UserCoordinatesDto> coordinates = gpsService.getUserCoordinatesByClass(classId);
         return ResponseEntity.ok(new RequestUsersCoordinatesResponse(
                 true,
                 coordinates,
