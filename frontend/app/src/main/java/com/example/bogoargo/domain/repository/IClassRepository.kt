@@ -2,6 +2,7 @@ package com.example.bogoargo.domain.repository
 
 import com.example.bogoargo.domain.model.Class
 import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.domain.model.StudentClassDetail
 
 interface IClassRepository {
     suspend fun createClass(
@@ -21,4 +22,7 @@ interface IClassRepository {
     // Teacher specific methods
     suspend fun getTeacherClassList(page: Int = 1, size: Int = 10, status: String? = "active"): DataResult<List<Class>>
     suspend fun getStudentClassList(page: Int = 1, size: Int = 10, status: String? = "active"): DataResult<List<Class>>
+    
+    // Student class detail
+    suspend fun getStudentClassDetail(classId: Long, include: String? = null): DataResult<StudentClassDetail>
 }

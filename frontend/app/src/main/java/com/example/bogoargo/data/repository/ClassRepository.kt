@@ -5,9 +5,11 @@ import com.example.bogoargo.data.dto.ClassCreateRequest
 import com.example.bogoargo.data.response.ClassLeaveResponse
 import com.example.bogoargo.data.response.applyClassResponse
 import com.example.bogoargo.data.mapper.toDomainModel
+import com.example.bogoargo.data.mapper.toDomainModel as toClassDetailDomainModel
 import com.example.bogoargo.domain.model.Class
 import com.example.bogoargo.domain.model.DataException
 import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.domain.model.StudentClassDetail
 import com.example.bogoargo.domain.repository.IClassRepository
 import com.example.bogoargo.data.dto.response.ApplicationResponseDto
 import com.example.bogoargo.data.dto.response.MessageResponseDto
@@ -68,7 +70,7 @@ class ClassRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val classListResponse = response.body()
                 if (classListResponse?.success == true && classListResponse.data != null) {
-                    val classes = classListResponse.data.map { it.toDomainModel() }
+                    val classes = classListResponse.data.classes.map { it.toDomainModel() }
                     DataResult.Success(classes)
                 } else {
                     DataResult.Error(DataException.ServerError)
@@ -251,7 +253,7 @@ class ClassRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val classListResponse = response.body()
                 if (classListResponse?.success == true && classListResponse.data != null) {
-                    val classes = classListResponse.data.map { it.toDomainModel() }
+                    val classes = classListResponse.data.classes.map { it.toDomainModel() }
                     DataResult.Success(classes)
                 } else {
                     DataResult.Error(DataException.ServerError)
@@ -281,10 +283,40 @@ class ClassRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val classListResponse = response.body()
                 if (classListResponse?.success == true && classListResponse.data != null) {
-                    val classes = classListResponse.data.map { it.toDomainModel() }
+                    val classes = classListResponse.data.classes.map { it.toDomainModel() }
                     DataResult.Success(classes)
                 } else {
                     DataResult.Error(DataException.ServerError)
+                }
+            } else {
+                DataResult.Error(DataException.ServerError)
+            }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun getStudentClassDetail(classId: Long, include: String?): DataResult<StudentClassDetail> {
+        return try {
+            val response = classApiService.getStudentClassDetail(classId, include)
+            if (response.isSuccessful) {
+                val classDetailResponse = response.body()
+                val domainModel = classDetailResponse?.toClassDetailDomainModel()
+                if (domainModel != null) {
+                    DataResult.Success(domainModel)
+                } else {
+                    DataResult.Error(DataException.NotFoundError)
                 }
             } else {
                 DataResult.Error(DataException.ServerError)

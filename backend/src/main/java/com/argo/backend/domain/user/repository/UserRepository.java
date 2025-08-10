@@ -13,6 +13,5 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     User findByUsername(String username);
     
-    @Query("SELECT u FROM User u WHERE u.team.teamId = :teamId")
-    List<User> findByTeamId(@Param("teamId") Long teamId);
+    // 특정 팀에 속한 유저들 조회는 UserTeamRepository나 Team 헬퍼 메서드 사용
 }

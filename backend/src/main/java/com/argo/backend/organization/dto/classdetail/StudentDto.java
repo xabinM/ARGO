@@ -27,7 +27,17 @@ public class StudentDto {
         return new StudentDto(
                 student.getUserId(),
                 student.getName(),
-                student.getTeam() != null ? student.getTeam().getTeamId() : null,
+                null, // teamId는 별도 처리
+                teamName,
+                joinedAt
+        );
+    }
+    
+    public static StudentDto from(User student, Long teamId, String teamName, LocalDateTime joinedAt) {
+        return new StudentDto(
+                student.getUserId(),
+                student.getName(),
+                teamId,
                 teamName,
                 joinedAt
         );

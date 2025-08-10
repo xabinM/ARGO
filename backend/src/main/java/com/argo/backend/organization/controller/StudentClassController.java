@@ -25,6 +25,7 @@ public class StudentClassController {
 
     private final ClassService classService;
 
+    // 클리어
     @GetMapping
     public ResponseEntity<CommonApiResponse<ClassListResponse.ClassListData>> getClassList(
             @RequestParam(value = "page", defaultValue = "1") int page,
@@ -39,15 +40,18 @@ public class StudentClassController {
         return ResponseEntity.ok(new CommonApiResponse<>(true, "반 목록 조회 성공", response.getData()));
     }
 
+    // 통합된 반 상세정보 조회 (선생/학생 공통)
     @GetMapping("/{classId}")
     public ResponseEntity<CommonApiResponse<ClassDetailResponse>> getClassDetail(
             @PathVariable Long classId,
-            @AuthenticationPrincipal Long studentId
+            @RequestParam(value = "include", required = false) String include,
+            @AuthenticationPrincipal Long userId
     ) {
-        ClassDetailResponse response = classService.getStudentClassDetail(studentId, classId);
+        ClassDetailResponse response = classService.getClassDetail(userId, classId, include);
         return ResponseEntity.ok(new CommonApiResponse<>(true, "반 상세정보 조회 성공", response));
     }
 
+    // 클리어
     @PostMapping("/apply")
     public ResponseEntity<CommonApiResponse<ClassApplyResponse>> applyClass(
             @RequestParam String inviteCode,
