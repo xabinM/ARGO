@@ -6,6 +6,7 @@ import com.argo.backend.domain.ploblem.entity.SelfieProblem;
 import com.argo.backend.mission.exception.problem.ProblemTypeNotExist;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.hibernate.Hibernate;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,6 +25,8 @@ public abstract class ProblemDetail {
     }
 
     public static ProblemDetail from(Problem problem) {
+        problem = (Problem) Hibernate.unproxy(problem);
+
         if (problem instanceof QuizProblem) {
             return QuizProblemDetail.from((QuizProblem) problem);
         } else if (problem instanceof SelfieProblem) {

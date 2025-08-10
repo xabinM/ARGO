@@ -32,6 +32,7 @@ public enum ResponseMessage {
     SPOT_NOT_FOUND("해당 스팟이 존재하지 않습니다."),
     PROBLEM_NOT_FOUND("문제가 존재하지 않습니다."),
     CARD_NOT_EXIST("카드가 존재하지 않습니다."),
+    ALREADY_COMPLETED_MISSION("해당 스팟에서 이미 미션 진행을 하였습니다."),
 
     // problem
     SUCCESS_REGISTER_PROBLEM("문제가 성공적으로 등록되었습니다."),
