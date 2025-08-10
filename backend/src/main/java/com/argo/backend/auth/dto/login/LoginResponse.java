@@ -10,6 +10,7 @@ import lombok.Getter;
 public class LoginResponse {
 
     private boolean success;
+    private Long userId;
     private String name;
     private Role role;
     private Tokens tokens;
