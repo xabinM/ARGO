@@ -31,8 +31,8 @@ public class TeamCard extends CreatedAtEntity {
     private Card card;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private CardTier tier;
+    @Column(nullable = false, length = 20)
+    private CardTier tier = CardTier.EPIC;
 
     @Column(name = "is_lost", columnDefinition = "boolean default false")
     private Boolean isLost = false;

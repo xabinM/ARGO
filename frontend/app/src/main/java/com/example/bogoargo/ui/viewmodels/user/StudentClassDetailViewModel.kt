@@ -2,10 +2,8 @@ package com.example.bogoargo.ui.viewmodels.user
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bogoargo.domain.model.Class
-import com.example.bogoargo.domain.model.Team
-import com.example.bogoargo.domain.model.DataResult
-import com.example.bogoargo.domain.use_case.classroom.GetClassDetailUseCase
+import com.example.bogoargo.domain.model.*
+import com.example.bogoargo.domain.use_case.classroom.GetStudentClassDetailUseCase
 import com.example.bogoargo.data.preferences.PreferencesManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -17,23 +15,14 @@ import javax.inject.Inject
 
 data class StudentClassDetailUiState(
     val isLoading: Boolean = false,
-    val classDetail: Class? = null,
-    val myTeam: StudentTeamInfo? = null,
-    val allTeams: List<StudentTeamInfo> = emptyList(),
+    val classDetail: StudentClassDetail? = null,
+    val myTeam: TeamDetail? = null,
     val errorMessage: String? = null
-)
-
-data class StudentTeamInfo(
-    val teamId: Long,
-    val teamName: String,
-    val memberIds: List<Long>, // 팀원 userId 리스트
-    val memberCount: Int,
-    val isMyTeam: Boolean = false
 )
 
 @HiltViewModel
 class StudentClassDetailViewModel @Inject constructor(
-    private val getClassDetailUseCase: GetClassDetailUseCase,
+    private val getStudentClassDetailUseCase: GetStudentClassDetailUseCase,
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(StudentClassDetailUiState())
@@ -43,16 +32,19 @@ class StudentClassDetailViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
             
-            when (val result = getClassDetailUseCase(classId)) {
+            when (val result = getStudentClassDetailUseCase(classId)) {
                 is DataResult.Success -> {
+                    val currentUserId = preferencesManager.getUserId() ?: 1L
+                    val myTeam = result.data.teams.find { team ->
+                        team.members.any { it.studentId == currentUserId }
+                    }
+                    
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         classDetail = result.data,
+                        myTeam = myTeam,
                         errorMessage = null
                     )
-                    
-                    // 더미 팀 데이터 로드
-                    loadDummyTeamData(classId)
                 }
                 is DataResult.Error -> {
                     _uiState.value = _uiState.value.copy(
@@ -67,60 +59,275 @@ class StudentClassDetailViewModel @Inject constructor(
         }
     }
     
-    private fun loadDummyTeamData(classId: Long) {
-        // 현재 로그인한 사용자의 ID 가져오기
-        val currentUserId = preferencesManager.getUserId() ?: 1L // 기본값 1L (더미 데이터용)
+    private fun createDummyStudentClassDetail(classId: Long): StudentClassDetail {
+        val currentUserId = preferencesManager.getUserId() ?: 1L
         
-        // 실제로는 백엔드에서 가져와야 하지만, 더미 데이터로 대체
-        // 각 팀에 멤버 ID 리스트 추가
-        val dummyTeams = when (classId) {
-            1L -> listOf(
-                StudentTeamInfo(1L, "역사탐험대", listOf(1L, 2L, 3L), 3),
-                StudentTeamInfo(2L, "문화유산지킴이", listOf(4L, 5L, 6L), 3),
-                StudentTeamInfo(3L, "궁궐수호대", listOf(7L, 8L, 9L), 3),
-                StudentTeamInfo(4L, "전통문화사랑단", listOf(10L, 11L, 12L), 3),
-                StudentTeamInfo(5L, "한국사마스터", listOf(13L, 14L, 15L), 3)
-            )
-            2L -> listOf(
-                StudentTeamInfo(6L, "바다탐험대", listOf(1L, 16L, 17L, 18L), 4),
-                StudentTeamInfo(7L, "해양생물연구팀", listOf(19L, 20L, 21L), 3),
-                StudentTeamInfo(8L, "환경보호단", listOf(22L, 23L, 24L, 25L), 4),
-                StudentTeamInfo(9L, "푸른바다지킴이", listOf(26L, 27L, 28L), 3),
-                StudentTeamInfo(10L, "해운대탐험대", listOf(29L, 30L, 31L), 3),
-                StudentTeamInfo(11L, "물고기친구들", listOf(32L, 33L, 34L), 3)
-            )
-            3L -> listOf(
-                StudentTeamInfo(12L, "불국사탐험대", listOf(1L, 35L, 36L, 37L), 4),
-                StudentTeamInfo(13L, "석굴암수호대", listOf(38L, 39L, 40L, 41L, 42L), 5),
-                StudentTeamInfo(14L, "신라역사단", listOf(43L, 44L, 45L, 46L), 4),
-                StudentTeamInfo(15L, "경주문화지킴이", listOf(47L, 48L, 49L, 50L, 51L), 5)
-            )
-            4L -> listOf(
-                StudentTeamInfo(16L, "과학실험단", listOf(1L, 52L, 53L, 54L), 4),
-                StudentTeamInfo(17L, "미래과학자", listOf(55L, 56L, 57L, 58L), 4),
-                StudentTeamInfo(18L, "로봇친구들", listOf(59L, 60L, 61L, 62L), 4)
-            )
-            5L -> listOf(
-                StudentTeamInfo(19L, "숲속탐험대", listOf(1L, 63L, 64L, 65L, 66L), 5),
-                StudentTeamInfo(20L, "자연사랑단", listOf(67L, 68L, 69L, 70L, 71L), 5),
-                StudentTeamInfo(21L, "생태계지킴이", listOf(72L, 73L, 74L, 75L, 76L), 5),
-                StudentTeamInfo(22L, "동식물친구들", listOf(77L, 78L, 79L, 80L, 81L), 5),
-                StudentTeamInfo(23L, "지리산탐험대", listOf(82L, 83L, 84L, 85L, 86L), 5)
-            )
-            else -> emptyList()
+        val (classInfo, students, teams) = when (classId) {
+            1L -> createClass1DummyData()
+            2L -> createClass2DummyData()
+            3L -> createClass3DummyData()
+            4L -> createClass4DummyData()
+            5L -> createClass5DummyData()
+            else -> createDefaultDummyData(classId)
         }
         
-        // 현재 사용자가 속한 팀 찾기
-        val teamsWithMyFlag = dummyTeams.map { team ->
-            team.copy(isMyTeam = team.memberIds.contains(currentUserId))
-        }
-        
-        val myTeam = teamsWithMyFlag.find { it.isMyTeam }
-        
-        _uiState.value = _uiState.value.copy(
-            myTeam = myTeam,
-            allTeams = teamsWithMyFlag
+        return StudentClassDetail(
+            classInfo = classInfo,
+            students = students,
+            teams = teams,
+            statistics = ClassStatistics(
+                totalStudents = students.size,
+                totalTeams = teams.size
+            )
         )
+    }
+    
+    private fun createClass1DummyData(): Triple<ClassDetailInfo, List<StudentInfo>, List<TeamDetail>> {
+        val classInfo = ClassDetailInfo(
+            classId = 1L,
+            className = "6학년 1반 역사탐험",
+            description = "우리나라의 문화유산을 직접 체험하며 역사를 배워요",
+            location = "서울 경복궁",
+            activityDate = LocalDate.now().plusDays(7),
+            maxStudents = 30,
+            status = "active",
+            inviteCode = null,
+            teacherId = null,
+            teacherName = "김선생님",
+            createdAt = null
+        )
+        
+        val students = listOf(
+            StudentInfo(1L, "김민수", 1L, "역사탐험대", LocalDate.now().minusDays(14)),
+            StudentInfo(2L, "박지영", 1L, "역사탐험대", LocalDate.now().minusDays(13)),
+            StudentInfo(3L, "이서준", 1L, "역사탐험대", LocalDate.now().minusDays(12)),
+            StudentInfo(4L, "최하늘", 2L, "문화유산지킴이", LocalDate.now().minusDays(11)),
+            StudentInfo(5L, "정예린", 2L, "문화유산지킴이", LocalDate.now().minusDays(10)),
+            StudentInfo(6L, "강도현", 2L, "문화유산지킴이", LocalDate.now().minusDays(9))
+        )
+        
+        val teams = listOf(
+            TeamDetail(
+                teamId = 1L,
+                teamName = "역사탐험대",
+                memberCount = 3,
+                totalScore = 150,
+                members = listOf(
+                    TeamMemberInfo(1L, "김민수"),
+                    TeamMemberInfo(2L, "박지영"),
+                    TeamMemberInfo(3L, "이서준")
+                )
+            ),
+            TeamDetail(
+                teamId = 2L,
+                teamName = "문화유산지킴이",
+                memberCount = 3,
+                totalScore = 120,
+                members = listOf(
+                    TeamMemberInfo(4L, "최하늘"),
+                    TeamMemberInfo(5L, "정예린"),
+                    TeamMemberInfo(6L, "강도현")
+                )
+            )
+        )
+        
+        return Triple(classInfo, students, teams)
+    }
+    
+    private fun createClass2DummyData(): Triple<ClassDetailInfo, List<StudentInfo>, List<TeamDetail>> {
+        val classInfo = ClassDetailInfo(
+            classId = 2L,
+            className = "5학년 특별활동반",
+            description = "해양 생태계를 탐구하고 환경 보호의 중요성을 배워요",
+            location = "부산 해운대",
+            activityDate = LocalDate.now().plusDays(14),
+            maxStudents = 25,
+            status = "active",
+            inviteCode = null,
+            teacherId = null,
+            teacherName = "이선생님",
+            createdAt = null
+        )
+        
+        val students = listOf(
+            StudentInfo(1L, "김민수", 6L, "바다탐험대", LocalDate.now().minusDays(7)),
+            StudentInfo(16L, "송유진", 6L, "바다탐험대", LocalDate.now().minusDays(6)),
+            StudentInfo(17L, "장민호", 6L, "바다탐험대", LocalDate.now().minusDays(5)),
+            StudentInfo(19L, "윤서연", 7L, "해양생물연구팀", LocalDate.now().minusDays(4))
+        )
+        
+        val teams = listOf(
+            TeamDetail(
+                teamId = 6L,
+                teamName = "바다탐험대",
+                memberCount = 3,
+                totalScore = 200,
+                members = listOf(
+                    TeamMemberInfo(1L, "김민수"),
+                    TeamMemberInfo(16L, "송유진"),
+                    TeamMemberInfo(17L, "장민호")
+                )
+            ),
+            TeamDetail(
+                teamId = 7L,
+                teamName = "해양생물연구팀",
+                memberCount = 1,
+                totalScore = 80,
+                members = listOf(
+                    TeamMemberInfo(19L, "윤서연")
+                )
+            )
+        )
+        
+        return Triple(classInfo, students, teams)
+    }
+    
+    private fun createClass3DummyData(): Triple<ClassDetailInfo, List<StudentInfo>, List<TeamDetail>> {
+        val classInfo = ClassDetailInfo(
+            classId = 3L,
+            className = "문화유산 탐방반",
+            description = "신라의 천년 역사를 간직한 불국사와 석굴암 탐방",
+            location = "경주 불국사",
+            activityDate = LocalDate.now().plusDays(21),
+            maxStudents = 20,
+            status = "active",
+            inviteCode = null,
+            teacherId = null,
+            teacherName = "박선생님",
+            createdAt = null
+        )
+        
+        val students = listOf(
+            StudentInfo(1L, "김민수", 12L, "불국사탐험대", LocalDate.now().minusDays(10)),
+            StudentInfo(35L, "한지우", 12L, "불국사탐험대", LocalDate.now().minusDays(9)),
+            StudentInfo(36L, "오태민", 12L, "불국사탐험대", LocalDate.now().minusDays(8))
+        )
+        
+        val teams = listOf(
+            TeamDetail(
+                teamId = 12L,
+                teamName = "불국사탐험대",
+                memberCount = 3,
+                totalScore = 180,
+                members = listOf(
+                    TeamMemberInfo(1L, "김민수"),
+                    TeamMemberInfo(35L, "한지우"),
+                    TeamMemberInfo(36L, "오태민")
+                )
+            )
+        )
+        
+        return Triple(classInfo, students, teams)
+    }
+    
+    private fun createClass4DummyData(): Triple<ClassDetailInfo, List<StudentInfo>, List<TeamDetail>> {
+        val classInfo = ClassDetailInfo(
+            classId = 4L,
+            className = "과학탐구반",
+            description = "최신 과학 기술을 체험하고 미래 과학자의 꿈을 키워요",
+            location = "대전 국립과학관",
+            activityDate = LocalDate.now().plusDays(5),
+            maxStudents = 30,
+            status = "active",
+            inviteCode = null,
+            teacherId = null,
+            teacherName = "최선생님",
+            createdAt = null
+        )
+        
+        val students = listOf(
+            StudentInfo(1L, "김민수", 16L, "과학실험단", LocalDate.now().minusDays(20)),
+            StudentInfo(52L, "신동현", 16L, "과학실험단", LocalDate.now().minusDays(19)),
+            StudentInfo(53L, "배수민", 16L, "과학실험단", LocalDate.now().minusDays(18))
+        )
+        
+        val teams = listOf(
+            TeamDetail(
+                teamId = 16L,
+                teamName = "과학실험단",
+                memberCount = 3,
+                totalScore = 220,
+                members = listOf(
+                    TeamMemberInfo(1L, "김민수"),
+                    TeamMemberInfo(52L, "신동현"),
+                    TeamMemberInfo(53L, "배수민")
+                )
+            )
+        )
+        
+        return Triple(classInfo, students, teams)
+    }
+    
+    private fun createClass5DummyData(): Triple<ClassDetailInfo, List<StudentInfo>, List<TeamDetail>> {
+        val classInfo = ClassDetailInfo(
+            classId = 5L,
+            className = "자연생태 체험반",
+            description = "숲 속 생태계를 관찰하고 자연의 소중함을 배워요",
+            location = "지리산 국립공원",
+            activityDate = LocalDate.now().plusDays(30),
+            maxStudents = 25,
+            status = "active",
+            inviteCode = null,
+            teacherId = null,
+            teacherName = "정선생님",
+            createdAt = null
+        )
+        
+        val students = listOf(
+            StudentInfo(1L, "김민수", 19L, "숲속탐험대", LocalDate.now().minusDays(3)),
+            StudentInfo(63L, "임채원", 19L, "숲속탐험대", LocalDate.now().minusDays(2)),
+            StudentInfo(64L, "조현우", 19L, "숲속탐험대", LocalDate.now().minusDays(1))
+        )
+        
+        val teams = listOf(
+            TeamDetail(
+                teamId = 19L,
+                teamName = "숲속탐험대",
+                memberCount = 3,
+                totalScore = 95,
+                members = listOf(
+                    TeamMemberInfo(1L, "김민수"),
+                    TeamMemberInfo(63L, "임채원"),
+                    TeamMemberInfo(64L, "조현우")
+                )
+            )
+        )
+        
+        return Triple(classInfo, students, teams)
+    }
+    
+    private fun createDefaultDummyData(classId: Long): Triple<ClassDetailInfo, List<StudentInfo>, List<TeamDetail>> {
+        val classInfo = ClassDetailInfo(
+            classId = classId,
+            className = "테스트 반",
+            description = "개발용 테스트 반입니다",
+            location = "테스트 장소",
+            activityDate = LocalDate.now().plusDays(1),
+            maxStudents = 20,
+            status = "active",
+            inviteCode = null,
+            teacherId = null,
+            teacherName = "테스트선생님",
+            createdAt = null
+        )
+        
+        val students = listOf(
+            StudentInfo(1L, "김민수", 1L, "테스트팀", LocalDate.now().minusDays(1))
+        )
+        
+        val teams = listOf(
+            TeamDetail(
+                teamId = 1L,
+                teamName = "테스트팀",
+                memberCount = 1,
+                totalScore = 50,
+                members = listOf(
+                    TeamMemberInfo(1L, "김민수")
+                )
+            )
+        )
+        
+        return Triple(classInfo, students, teams)
     }
     
     fun loadDummyData(classId: Long) {
@@ -130,102 +337,21 @@ class StudentClassDetailViewModel @Inject constructor(
             // 짧은 딜레이로 로딩 시뮬레이션
             kotlinx.coroutines.delay(500)
             
-            // 더미 반 데이터 생성
-            val dummyClass = when (classId) {
-                1L -> Class(
-                    classId = 1L,
-                    className = "6학년 1반 역사탐험",
-                    description = "우리나라의 문화유산을 직접 체험하며 역사를 배워요",
-                    location = "서울 경복궁",
-                    activityDate = LocalDate.now().plusDays(7),
-                    currentStudents = 15,
-                    maxStudents = 30,
-                    studentCount = 15,
-                    teamCount = 5,
-                    status = Class.ClassStatus.ACTIVE,
-                    inviteCode = "HIST2024",
-                    createdAt = LocalDate.now().minusDays(14)
-                )
-                2L -> Class(
-                    classId = 2L,
-                    className = "5학년 특별활동반",
-                    description = "해양 생태계를 탐구하고 환경 보호의 중요성을 배워요",
-                    location = "부산 해운대",
-                    activityDate = LocalDate.now().plusDays(14),
-                    currentStudents = 20,
-                    maxStudents = 25,
-                    studentCount = 20,
-                    teamCount = 6,
-                    status = Class.ClassStatus.ACTIVE,
-                    inviteCode = "OCEAN2024",
-                    createdAt = LocalDate.now().minusDays(7)
-                )
-                3L -> Class(
-                    classId = 3L,
-                    className = "문화유산 탐방반",
-                    description = "신라의 천년 역사를 간직한 불국사와 석굴암 탐방",
-                    location = "경주 불국사",
-                    activityDate = LocalDate.now().plusDays(21),
-                    currentStudents = 18,
-                    maxStudents = 20,
-                    studentCount = 18,
-                    teamCount = 4,
-                    status = Class.ClassStatus.ACTIVE,
-                    inviteCode = "TEMPLE2024",
-                    createdAt = LocalDate.now().minusDays(10)
-                )
-                4L -> Class(
-                    classId = 4L,
-                    className = "과학탐구반",
-                    description = "최신 과학 기술을 체험하고 미래 과학자의 꿈을 키워요",
-                    location = "대전 국립과학관",
-                    activityDate = LocalDate.now().plusDays(5),
-                    currentStudents = 12,
-                    maxStudents = 30,
-                    studentCount = 12,
-                    teamCount = 3,
-                    status = Class.ClassStatus.ACTIVE,
-                    inviteCode = "SCI2024",
-                    createdAt = LocalDate.now().minusDays(20)
-                )
-                5L -> Class(
-                    classId = 5L,
-                    className = "자연생태 체험반",
-                    description = "숲 속 생태계를 관찰하고 자연의 소중함을 배워요",
-                    location = "지리산 국립공원",
-                    activityDate = LocalDate.now().plusDays(30),
-                    currentStudents = 25,
-                    maxStudents = 25,
-                    studentCount = 25,
-                    teamCount = 5,
-                    status = Class.ClassStatus.ACTIVE,
-                    inviteCode = "NATURE2024",
-                    createdAt = LocalDate.now().minusDays(3)
-                )
-                else -> Class(
-                    classId = classId,
-                    className = "테스트 반",
-                    description = "개발용 테스트 반입니다",
-                    location = "테스트 장소",
-                    activityDate = LocalDate.now().plusDays(1),
-                    currentStudents = 10,
-                    maxStudents = 20,
-                    studentCount = 10,
-                    teamCount = 2,
-                    status = Class.ClassStatus.ACTIVE,
-                    inviteCode = "TEST2024",
-                    createdAt = LocalDate.now().minusDays(1)
-                )
+            // 더미 반 상세 데이터 생성
+            val dummyClassDetail = createDummyStudentClassDetail(classId)
+            
+            // 현재 사용자가 속한 팀 찾기
+            val currentUserId = preferencesManager.getUserId() ?: 1L
+            val myTeam = dummyClassDetail.teams.find { team ->
+                team.members.any { it.studentId == currentUserId }
             }
             
             _uiState.value = _uiState.value.copy(
                 isLoading = false,
-                classDetail = dummyClass,
+                classDetail = dummyClassDetail,
+                myTeam = myTeam,
                 errorMessage = null
             )
-            
-            // 팀 데이터도 로드
-            loadDummyTeamData(classId)
         }
     }
 }

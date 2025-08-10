@@ -126,7 +126,8 @@ fun StudentClassDetailScreen(
                         }
                     }
                     uiState.classDetail != null -> {
-                        val classDetail = uiState.classDetail!!
+                        val classDetail = uiState.classDetail!!.classInfo
+                        val statistics = uiState.classDetail!!.statistics
                         
                         // 반 기본 정보
                         item {
@@ -136,10 +137,17 @@ fun StudentClassDetailScreen(
                                 Column(
                                     modifier = Modifier.padding(24.dp)
                                 ) {
-                                    // 반 이름
+                                    // 반 이름 & 선생님
                                     Text(
                                         text = classDetail.className,
                                         style = NatureTypography.titleLarge.copy(fontSize = 22.sp),
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                    Text(
+                                        text = "담당: ${classDetail.teacherName} 선생님",
+                                        style = NatureTypography.bodyMedium.copy(
+                                            color = NatureColors.earthBrown.copy(alpha = 0.8f)
+                                        ),
                                         modifier = Modifier.padding(bottom = 12.dp)
                                     )
                                     
@@ -177,7 +185,7 @@ fun StudentClassDetailScreen(
                                         Text(text = "👥", fontSize = 16.sp)
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
-                                            text = "${classDetail.currentStudents}명의 친구들과 함께해요",
+                                            text = "${statistics.totalStudents}명의 친구들이 ${statistics.totalTeams}개 팀으로 나누어져 있어요",
                                             style = NatureTypography.bodyMedium
                                         )
                                     }
@@ -268,7 +276,7 @@ fun StudentClassDetailScreen(
                         }
                         
                         // 모든 팀 정보
-                        if (uiState.allTeams.isNotEmpty()) {
+                        if (uiState.classDetail!!.teams.isNotEmpty()) {
                             item {
                                 NatureComponents.NatureCard {
                                     Column(
@@ -283,23 +291,51 @@ fun StudentClassDetailScreen(
                                         )
                                         
                                         Column(
-                                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                                            verticalArrangement = Arrangement.spacedBy(12.dp)
                                         ) {
-                                            uiState.allTeams.forEach { team ->
-                                                Row(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                            uiState.classDetail!!.teams.forEach { team ->
+                                                NatureComponents.NatureCard(
+                                                    containerColor = if (team.teamId == uiState.myTeam?.teamId) {
+                                                        NatureColors.leafGreen.copy(alpha = 0.1f)
+                                                    } else {
+                                                        NatureColors.earthBrown.copy(alpha = 0.05f)
+                                                    }
                                                 ) {
-                                                    Text(
-                                                        text = team.teamName,
-                                                        style = NatureTypography.bodyMedium
-                                                    )
-                                                    Text(
-                                                        text = "${team.memberCount}명",
-                                                        style = NatureTypography.bodySmall.copy(
-                                                            color = NatureColors.earthBrown.copy(alpha = 0.7f)
-                                                        )
-                                                    )
+                                                    Column(
+                                                        modifier = Modifier.padding(12.dp)
+                                                    ) {
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Text(
+                                                                text = team.teamName + if (team.teamId == uiState.myTeam?.teamId) " (내 팀)" else "",
+                                                                style = NatureTypography.bodyMedium.copy(
+                                                                    color = if (team.teamId == uiState.myTeam?.teamId) {
+                                                                        NatureColors.forestGreen
+                                                                    } else {
+                                                                        NatureColors.earthBrown
+                                                                    }
+                                                                )
+                                                            )
+                                                            Text(
+                                                                text = "${team.totalScore}점",
+                                                                style = NatureTypography.bodySmall.copy(
+                                                                    color = NatureColors.forestGreen
+                                                                )
+                                                            )
+                                                        }
+                                                        if (team.members.isNotEmpty()) {
+                                                            Text(
+                                                                text = team.members.joinToString(", ") { it.studentName },
+                                                                style = NatureTypography.bodySmall.copy(
+                                                                    color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                                                                ),
+                                                                modifier = Modifier.padding(top = 4.dp)
+                                                            )
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }
@@ -394,7 +430,7 @@ fun StudentClassDetailScreen(
                                                     onClick = { 
                                                         // classId와 teamId를 파라미터로 전달
                                                         val teamId = uiState.myTeam!!.teamId
-                                                        val leaderId = uiState.myTeam!!.memberIds.firstOrNull() ?: 1L // 첫 번째 멤버를 리더로 가정
+                                                        val leaderId = uiState.myTeam!!.members.firstOrNull()?.studentId ?: 1L // 첫 번째 멤버를 리더로 가정
                                                         navController.navigate("cardGame/$teamId/$leaderId?classId=$classId") 
                                                     },
                                                     colors = ButtonDefaults.buttonColors(
