@@ -1,13 +1,17 @@
 package com.example.bogoargo.ui.viewmodels.user
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.WorkManager
 import com.example.bogoargo.domain.repository.IAuthRepository
 import com.example.bogoargo.domain.repository.IUserRepository
+import com.example.bogoargo.worker.LocationWorker
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 data class LogoutUiState(
@@ -18,6 +22,7 @@ data class LogoutUiState(
 
 @HiltViewModel
 class LogoutViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val userRepository: IUserRepository,
     private val authRepository: IAuthRepository
 ) : ViewModel() {
@@ -31,6 +36,9 @@ class LogoutViewModel @Inject constructor(
             
             try {
                 clearUserSession()
+                
+                // WorkManager 위치 추적 중단
+                stopLocationTracking()
                 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
@@ -51,5 +59,11 @@ class LogoutViewModel @Inject constructor(
 
     fun clearState() {
         _uiState.value = LogoutUiState()
+    }
+    
+    private fun stopLocationTracking() {
+        // WorkManager에서 위치 추적 작업 취소
+        WorkManager.getInstance(context)
+            .cancelUniqueWork(LocationWorker.WORK_NAME)
     }
 }
