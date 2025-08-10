@@ -6,10 +6,8 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public class MissionCreateResponse {
+public class MissionCreateDto {
 
-    private boolean success;
-    private String message;
     private Long missionId;
-    private ProblemDetail problem;
+    private ProblemDetail problemDetail;
 }

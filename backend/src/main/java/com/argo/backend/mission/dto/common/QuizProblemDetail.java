@@ -6,15 +6,15 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter
-public class QuizProblemResponseDto extends ProblemResponseDto {
+public class QuizProblemDetail extends ProblemDetail {
 
     private final String question;
     private final List<String> choices;
     private final Integer correctIndex;
     private final String explanation;
 
-    public static QuizProblemResponseDto from(QuizProblem quizProblem) {
-        return new QuizProblemResponseDto(
+    public static QuizProblemDetail from(QuizProblem quizProblem) {
+        return new QuizProblemDetail(
                 quizProblem.getId(),
                 "QUIZ",
                 quizProblem.getQuestion(),
@@ -24,8 +24,8 @@ public class QuizProblemResponseDto extends ProblemResponseDto {
         );
     }
 
-    private QuizProblemResponseDto(Long id, String dtype, String question, List<String> choices,
-                                   Integer correctIndex, String explanation) {
+    private QuizProblemDetail(Long id, String dtype, String question, List<String> choices,
+                              Integer correctIndex, String explanation) {
         super(id, dtype);
         this.question = question;
         this.choices = choices;

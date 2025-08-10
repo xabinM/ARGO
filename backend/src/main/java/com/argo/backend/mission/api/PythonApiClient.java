@@ -64,7 +64,7 @@ public class PythonApiClient {
 
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("image", new MultipartInputStreamFileResource(request.getMultipartFile().getInputStream(),
-                                                                request.getMultipartFile().getOriginalFilename()));
+                request.getMultipartFile().getOriginalFilename()));
         body.add("pose", request.getPose());
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
