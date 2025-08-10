@@ -6,11 +6,9 @@
 - RapidQuizGenerator: 통합 퀴즈 생성기
 """
 
-from .rapid_complete_generator import RapidQuizGenerator
+from .generators import RapidQuizGenerator
 
-__all__ = [
-    "RapidQuizGenerator"
-]
+__all__ = ["RapidQuizGenerator"]
 
 # 버전 정보
 __version__ = "1.0.0-rapid"
