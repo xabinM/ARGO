@@ -17,6 +17,14 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     @Query("SELECT t FROM Team t JOIN FETCH t.classRoom WHERE t.classRoom = :classRoom ORDER BY t.createdAt ASC")
     List<Team> findByClassRoomOrderByCreatedAtAsc(@Param("classRoom") ClassRoom classRoom);
     
+    // N+1 문제 해결: getBattleOpponents용 - 팀과 리더를 한 번에 조회 (FETCH JOIN)
+    @Query("SELECT t FROM Team t " +
+           "LEFT JOIN FETCH t.leader " +
+           "LEFT JOIN FETCH t.classRoom " +
+           "WHERE t.classRoom = :classRoom " +
+           "ORDER BY t.createdAt ASC")
+    List<Team> findByClassRoomWithLeaderOrderByCreatedAtAsc(@Param("classRoom") ClassRoom classRoom);
+    
     // 클래스의 팀 개수 조회 (성능 최적화)
     @Query("SELECT COUNT(t) FROM Team t WHERE t.classRoom = :classRoom")
     long countByClassRoom(@Param("classRoom") ClassRoom classRoom);
@@ -46,4 +54,14 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
            "GROUP BY t.teamId, t.teamName, t.maxMembers " +
            "ORDER BY t.createdAt ASC")
     List<Object[]> findTeamStatusByClassId(@Param("classId") Long classId);
+    
+    // N+1 문제 해결: 팀과 리더, 활성 멤버들을 한 번에 조회 (FETCH JOIN)
+    @Query("SELECT DISTINCT t FROM Team t " +
+           "LEFT JOIN FETCH t.leader " +
+           "LEFT JOIN FETCH t.userTeams ut " +
+           "LEFT JOIN FETCH ut.user " +
+           "WHERE t.classRoom.classId = :classId " +
+           "AND (ut.isActive = true OR ut IS NULL) " +
+           "ORDER BY t.createdAt ASC")
+    List<Team> findTeamsByClassIdWithActiveMembersAndLeader(@Param("classId") Long classId);
 }

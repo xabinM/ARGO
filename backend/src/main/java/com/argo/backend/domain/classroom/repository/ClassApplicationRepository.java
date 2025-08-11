@@ -49,4 +49,10 @@ public interface ClassApplicationRepository extends JpaRepository<ClassApplicati
     ClassApplication findApprovedApplicationByStudentAndClass(@Param("studentId") Long studentId, @Param("classId") Long classId);
 
     List<ClassApplication> findAllByUser_UserIdAndStatus(Long userId, ApplicationStatus status);
+    
+    // N+1 문제 해결: GPS 서비스용 - ClassApplication과 ClassRoom을 한 번에 조회 (FETCH JOIN)
+    @Query("SELECT ca FROM ClassApplication ca " +
+           "JOIN FETCH ca.classRoom " +
+           "WHERE ca.user.userId = :userId AND ca.status = :status")
+    List<ClassApplication> findAllByUserIdAndStatusWithClassRoom(@Param("userId") Long userId, @Param("status") ApplicationStatus status);
 }

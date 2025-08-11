@@ -13,13 +13,16 @@ public class TeamDetailDto {
     private int memberCount;
     private int totalScore;
     private List<TeamMemberDto> members;
+    private Long teamLeaderId;
+
     
-    public TeamDetailDto(Long teamId, String teamName, int memberCount, int totalScore, List<TeamMemberDto> members) {
+    public TeamDetailDto(Long teamId, String teamName, int memberCount, int totalScore, List<TeamMemberDto> members, Long teamLeaderId) {
         this.teamId = teamId;
         this.teamName = teamName;
         this.memberCount = memberCount;
         this.totalScore = totalScore;
         this.members = members;
+        this.teamLeaderId = teamLeaderId;
     }
     
     public static TeamDetailDto from(Team team, List<TeamMemberDto> members) {
@@ -27,8 +30,9 @@ public class TeamDetailDto {
                 team.getTeamId(),
                 team.getTeamName(),
                 members.size(),
-                0, // TODO: 점수 계산 로직 필요
-                members
+                0,
+                members,
+                team.getLeader().getUserId()
         );
     }
 }

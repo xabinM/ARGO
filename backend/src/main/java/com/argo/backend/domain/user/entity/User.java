@@ -88,6 +88,7 @@ public class User extends BaseTimeEntity {
     }
     
     // 특정 클래스에서 팀에 배정되어 있는지 확인 헬퍼 메서드
+    // N+1 문제 발생
     public boolean isInTeamForClass(Long classId) {
         return userTeams.stream()
                 .anyMatch(ut -> ut.getIsActive() && 

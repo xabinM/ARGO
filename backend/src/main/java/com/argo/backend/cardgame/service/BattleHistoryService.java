@@ -33,10 +33,10 @@ public class BattleHistoryService {
     public BattleHistoryResponse getBattleHistory(Long teamId, Long userId, Pageable pageable) {
         Team team = teamAccessValidator.validateTeamAccess(teamId, userId);
         
-        Page<CardGameMatch> matchPage = cardGameMatchRepository.findByTeamIdOrderByCreatedAtDesc(teamId, pageable);
+        Page<CardGameMatch> matchPage = cardGameMatchRepository.findByTeamIdOrderByCreatedAtDescWithTeams(teamId, pageable);
         
         Page<BattleHistoryDto> battleHistoryPage = matchPage.map(match -> 
-            BattleHistoryDto.from(match, teamId)
+            BattleHistoryDto.from(match, teamId) // 이제 FETCH JOIN으로 Team들이 이미 로딩됨 (쿼리 없음)
         );
         
         return BattleHistoryResponse.from(battleHistoryPage);
