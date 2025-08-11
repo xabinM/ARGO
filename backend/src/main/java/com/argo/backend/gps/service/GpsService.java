@@ -52,9 +52,7 @@ public class GpsService {
                     return new UserCoordinatesDto(
                             userId,
                             new BigDecimal(coordinates.get("lat")),
-                            new BigDecimal(coordinates.get("lng")),
-                            Long.parseLong(coordinates.get("timestamp"))
-                    );
+                            new BigDecimal(coordinates.get("lng"))                    );
                 })
                 .toList();
     }

@@ -12,5 +12,4 @@ public class UserCoordinatesDto {
     private Long userId;
     private BigDecimal latitude;
     private BigDecimal longitude;
-    private Long timestamp;
 }
