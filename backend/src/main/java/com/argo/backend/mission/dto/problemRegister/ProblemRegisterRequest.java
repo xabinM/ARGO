@@ -11,6 +11,10 @@ import java.util.List;
 @Getter
 @AllArgsConstructor
 public class ProblemRegisterRequest {
+
+    @NotBlank
+    private Integer grade;
+
     @NotBlank
     private String question;
 

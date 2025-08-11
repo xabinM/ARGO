@@ -121,3 +121,63 @@ data class ClassLeaveDataDto(
     val teamInfo: TeamDataDto,
     val studentInfo: UserDataDto,
 )
+
+// 학생용 반 상세 정보 응답 DTO (백엔드 ClassDetailResponse와 일치)
+data class StudentClassDetailResponse(
+    val success: Boolean,
+    val message: String,
+    val data: StudentClassDetailData?
+)
+
+// 학생용 반 상세 데이터 DTO
+data class StudentClassDetailData(
+    val classInfo: ClassInfoDetailDto,
+    val students: List<StudentDto>,
+    val teams: List<TeamDetailDto>,
+    val statistics: StatisticsDto
+)
+
+// 반 상세 정보 DTO (학생용 - 백엔드 ClassInfoDetailDto와 일치)
+data class ClassInfoDetailDto(
+    val classId: Long,
+    val className: String,
+    val description: String,
+    val location: String,
+    val activityDate: String,
+    val maxStudents: Int,
+    val status: String,
+    val inviteCode: String?, // 학생에게는 null
+    val teacherId: Long?, // 학생에게는 null
+    val teacherName: String,
+    val createdAt: String? // 학생에게는 null
+)
+
+// 학생 정보 DTO (백엔드 StudentDto와 일치)
+data class StudentDto(
+    val studentId: Long,
+    val studentName: String,
+    val teamId: Long?,
+    val teamName: String?,
+    val joinedAt: String
+)
+
+// 팀 상세 정보 DTO (백엔드 TeamDetailDto와 일치)
+data class TeamDetailDto(
+    val teamId: Long,
+    val teamName: String,
+    val memberCount: Int,
+    val totalScore: Int,
+    val members: List<TeamMemberDto>
+)
+
+// 팀원 정보 DTO (백엔드 TeamMemberDto와 일치)
+data class TeamMemberDto(
+    val studentId: Long,
+    val studentName: String
+)
+
+// 통계 정보 DTO (백엔드 StatisticsDto와 일치)
+data class StatisticsDto(
+    val totalStudents: Int,
+    val totalTeams: Int
+)

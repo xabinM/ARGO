@@ -9,7 +9,6 @@ import com.argo.backend.organization.service.ClassService;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
-import org.springframework.data.web.PageableDefault;
 import jakarta.validation.constraints.Pattern;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,7 +24,6 @@ public class StudentClassController {
 
     private final ClassService classService;
 
-    // 클리어
     @GetMapping
     public ResponseEntity<CommonApiResponse<ClassListResponse.ClassListData>> getClassList(
             @RequestParam(value = "page", defaultValue = "1") int page,

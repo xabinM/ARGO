@@ -85,7 +85,7 @@ public class AuthService {
         String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId(), user.getUsername(), roles);
         String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUserId(), user.getUsername(), roles);
 
-        return new LoginDto(new Tokens(accessToken, refreshToken), user.getName(), user.getRole());
+        return new LoginDto(new Tokens(accessToken, refreshToken), user.getUserId(), user.getName(), user.getRole());
     }
 
     private List<String> getRole(Authentication authentication) {

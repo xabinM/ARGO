@@ -98,4 +98,13 @@ public interface UserTeamRepository extends JpaRepository<UserTeam, Long> {
            "AND u.role = 'ROLE_STUDENT' " +
            "ORDER BY t.teamName, u.name")
     List<Object[]> findAssignedStudentDataByClassId(@Param("classId") Long classId);
+    
+    // N+1 문제 해결: 여러 학생 ID 중에서 특정 클래스에 배정된 학생들의 ID만 조회 (배치 처리)
+    @Query("SELECT ut.user.userId " +
+           "FROM UserTeam ut " +
+           "WHERE ut.user.userId IN :studentIds " +
+           "AND ut.team.classRoom.classId = :classId " +
+           "AND ut.isActive = true")
+    List<Long> findAssignedStudentIdsByStudentIdsAndClassId(@Param("studentIds") List<Long> studentIds, 
+                                                           @Param("classId") Long classId);
 }

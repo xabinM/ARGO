@@ -333,8 +333,12 @@ fun AppNavigation(
             val targetTeamId = backStackEntry.arguments?.getLong("targetTeamId") ?: 0L
             CardSelectionScreen(
                 navController = navController,
-                teamId = teamId,
-                targetTeamId = targetTeamId
+                params = com.example.bogoargo.ui.screens.cardgame.CardSelectionParams(
+                    teamId = teamId,
+                    targetTeamId = targetTeamId,
+                    matchId = null,
+                    isResponse = false
+                )
             )
         }
         composable(

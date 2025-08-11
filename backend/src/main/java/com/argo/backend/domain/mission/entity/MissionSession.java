@@ -32,7 +32,7 @@ public class MissionSession extends CreatedAtEntity {
     private MissionSessionStatus status = MissionSessionStatus.STARTED;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "problem_id")
+    @JoinColumn(name = "problem_id")    // 미션세션이 같은 문제를 공유할 수 있어야함.
     private Problem problem;
 
     private Boolean isSuccessful;
@@ -45,6 +45,22 @@ public class MissionSession extends CreatedAtEntity {
         this.spot = spot;
         this.team = team;
         this.problem = problem;
+    }
+
+    public boolean isStatusStarted() {
+        return this.status == MissionSessionStatus.STARTED;
+    }
+
+    public void alterSuccessfulTrue() {
+        this.isSuccessful = true;
+    }
+
+    public void alterSuccessfulFalse() {
+        this.isSuccessful = false;
+    }
+
+    public void alterMissionStatus() {
+        this.status = MissionSessionStatus.COMPLETED;
     }
 }
 

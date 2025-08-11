@@ -24,12 +24,18 @@ public enum ResponseMessage {
 
     // mission
     SUCCESS_CREATE_MISSION("미션 생성에 성공하였습니다."),
+    SUCCESS_SUBMIT_MISSION("미션 제출에 성공하였습니다."),
 
+    NOT_FOUND_MISSION_SESSION("해당 미션세션이 존재하지 않습니다."),
+    INVALID_MISSION_SESSION("유효하지 않은 세션입니다."),
     TEAM_NOT_FOUND("해당 팀이 존재하지 않습니다."),
     SPOT_NOT_FOUND("해당 스팟이 존재하지 않습니다."),
     PROBLEM_NOT_FOUND("문제가 존재하지 않습니다."),
+    CARD_NOT_EXIST("카드가 존재하지 않습니다."),
+    ALREADY_COMPLETED_MISSION("해당 스팟에서 이미 미션 진행을 하였습니다."),
 
     // problem
+    SUCCESS_GENERATE_PROBLEM("문제가 성공적으로 생성되었습니다."),
     SUCCESS_REGISTER_PROBLEM("문제가 성공적으로 등록되었습니다."),
 
     PROBLEM_TYPE_NOT_EXIST("문제 타입이 존재하지 않습니다."),

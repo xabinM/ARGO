@@ -5,6 +5,7 @@ import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.data.dto.response.ApplicationResponseDto
 import com.example.bogoargo.data.dto.response.MessageResponseDto
 import com.example.bogoargo.data.response.ClassMemberResponse
+import com.example.bogoargo.domain.model.StudentClassDetail
 
 interface IClassRepository {
     suspend fun createClass(
@@ -25,7 +26,10 @@ interface IClassRepository {
     // Teacher specific methods
     suspend fun getTeacherClassList(page: Int = 1, size: Int = 10, status: String? = "active"): DataResult<List<Class>>
     suspend fun getStudentClassList(page: Int = 1, size: Int = 10, status: String? = "active"): DataResult<List<Class>>
-    
+
+    // Student class detail
+    suspend fun getStudentClassDetail(classId: Long, include: String? = null): DataResult<StudentClassDetail>
+
     // Application related methods
     suspend fun getApplicationList(classId: Long): DataResult<ApplicationResponseDto>
     suspend fun approveApplication(classId: Long, applicationId: Long): DataResult<MessageResponseDto>

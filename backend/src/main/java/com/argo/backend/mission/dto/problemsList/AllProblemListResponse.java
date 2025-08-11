@@ -1,6 +1,6 @@
 package com.argo.backend.mission.dto.problemsList;
 
-import com.argo.backend.mission.dto.common.ProblemResponseDto;
+import com.argo.backend.mission.dto.common.ProblemDetail;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -11,5 +11,5 @@ import java.util.List;
 public class AllProblemListResponse {
 
     private boolean success;
-    private List<ProblemResponseDto> problems;
+    private List<ProblemDetail> problems;
 }

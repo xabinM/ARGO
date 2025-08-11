@@ -30,11 +30,11 @@ public class PythonApiClient {
         this.restTemplate = restTemplate;
     }
 
-    public ProblemGenerateDto requestProblem(String spotName, int problemCnt) {
+    public ProblemGenerateDto requestProblem(String spotName, Integer grade, int problemCnt) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        ProblemGenerateRequestToAI request = new ProblemGenerateRequestToAI(spotName, problemCnt);
+        ProblemGenerateRequestToAI request = new ProblemGenerateRequestToAI(spotName, grade, problemCnt);
 
         HttpEntity<ProblemGenerateRequestToAI> entity = new HttpEntity<>(request, headers);
 
@@ -64,7 +64,7 @@ public class PythonApiClient {
 
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
         body.add("image", new MultipartInputStreamFileResource(request.getMultipartFile().getInputStream(),
-                                                                request.getMultipartFile().getOriginalFilename()));
+                request.getMultipartFile().getOriginalFilename()));
         body.add("pose", request.getPose());
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);

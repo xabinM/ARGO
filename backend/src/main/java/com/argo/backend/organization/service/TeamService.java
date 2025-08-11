@@ -33,7 +33,9 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -136,11 +138,10 @@ public class TeamService {
             throw new StudentNotFoundException();
         }
         
-        // 팀 배정 상태 검증 (UserTeam 기반)
-        for (User student : students) {
-            if (student.isInTeamForClass(classId)) {
-                throw new StudentAlreadyAssignedException();
-            }
+        // 팀 배정 상태 검증 (UserTeam 기반, N+1 문제 해결: 배치 조회)
+        List<Long> assignedStudentIds = userTeamRepository.findAssignedStudentIdsByStudentIdsAndClassId(studentIds, classId);
+        if (!assignedStudentIds.isEmpty()) {
+            throw new StudentAlreadyAssignedException();
         }
         
         return students;
@@ -156,14 +157,13 @@ public class TeamService {
     }
     
     private List<AssignedStudentDto> assignStudentsToTeam(Team team, List<User> students, LocalDateTime assignedAt, Long classId) {
+        // N+1 문제 해결: 이미 findAndValidateStudents()에서 중복 검증 완료했으므로 직접 배정
         return students.stream()
                 .map(student -> {
-                    // UserTeam 생성으로 팀 배정
-                    if (!student.isInTeamForClass(classId)) {
-                        UserTeam userTeam = UserTeam.create(student, team);
-                        userTeamRepository.save(userTeam);
-                        student.getUserTeams().add(userTeam);
-                    }
+                    // UserTeam 생성으로 팀 배정 (중복 체크 생략 - 이미 검증됨)
+                    UserTeam userTeam = UserTeam.create(student, team);
+                    userTeamRepository.save(userTeam);
+                    student.getUserTeams().add(userTeam);
                     return AssignedStudentDto.from(student, assignedAt);
                 })
                 .toList();
@@ -173,7 +173,7 @@ public class TeamService {
     public TeamAutoAssignResponse autoAssignStudentsToTeams(Long classId, Long teacherId) {
         ClassRoom classRoom = validateClassAccess(classId, teacherId);
         
-        List<Team> teams = teamRepository.findAllTeamsWithDetailsByClassRoom(classRoom);
+        List<Team> teams = teamRepository.findTeamsByClassIdWithActiveMembersAndLeader(classRoom.getClassId());
         if (teams.isEmpty()) throw new TeamNotFoundException();
         
         List<User> unassignedStudents = classStudentRepository.findUnassignedStudentsByClassId(classId);
@@ -183,10 +183,23 @@ public class TeamService {
         
         Collections.shuffle(unassignedStudents);
         
-        // 직접 배정 로직
+        // 직접 배정 로직 - N+1 문제 해결: 배치 쿼리 사용
+        // 1. 팀 ID들만 뽑아내기
+        List<Long> teamIds = teams.stream().map(Team::getTeamId).toList();
+        
+        // 2. 한 번에 모든 팀 멤버 수 조회
+        List<Object[]> counts = classStudentRepository.findTeamMemberCounts(teamIds);
+        
+        // 3. 팀ID -> 멤버수 맵으로 변환
+        Map<Long, Integer> countMap = new HashMap<>();
+        for (Object[] count : counts) {
+            countMap.put((Long) count[0], ((Number) count[1]).intValue());
+        }
+        
+        // 4. 배열에 넣기
         int[] teamCounts = new int[teams.size()];
         for (int i = 0; i < teams.size(); i++) {
-            teamCounts[i] = (int) classStudentRepository.countByTeamId(teams.get(i).getTeamId());
+            teamCounts[i] = countMap.getOrDefault(teams.get(i).getTeamId(), 0);
         }
         
         int totalAssigned = 0;
@@ -221,7 +234,7 @@ public class TeamService {
     private List<TeamAssignmentDto> createTeamAssignments(List<Team> teams) {
         return teams.stream()
                 .map(team -> {
-                    List<User> members = team.getActiveMembers(); // Team 헬퍼 메서드 사용
+                    List<User> members = team.getActiveMembers(); // 이미 FETCH JOIN으로 로딩됨 (쿼리 없음)
                     return members.isEmpty() ? null : TeamAssignmentDto.of(team,
                             members.stream().map(AssignedStudentInfoDto::from).toList(),
                             TeamStatusDto.of(team, members.size()));

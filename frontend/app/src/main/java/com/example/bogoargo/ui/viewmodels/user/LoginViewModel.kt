@@ -1,7 +1,13 @@
 package com.example.bogoargo.ui.viewmodels.user
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.work.Constraints
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.NetworkType
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.bogoargo.data.preferences.UserPreferences
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.User
@@ -10,14 +16,16 @@ import com.example.bogoargo.domain.use_case.auth.LoginUseCase
 import com.example.bogoargo.domain.use_case.auth.SaveTokensUseCase
 import com.example.bogoargo.navigation.Screen
 import com.example.bogoargo.domain.use_case.auth.SaveUserInfoUseCase
-import kotlinx.coroutines.delay
+import com.example.bogoargo.worker.LocationWorker
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 data class LoginUiState(
@@ -31,6 +39,7 @@ data class LoginUiState(
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val loginUseCase: LoginUseCase,
     private val saveTokensUseCase: SaveTokensUseCase,
     private val userPreferences: UserPreferences,
@@ -59,6 +68,9 @@ class LoginViewModel @Inject constructor(
                 is DataResult.Success -> {
                     // 사용자 정보 저장
                     saveUserInfoUseCase(result.data)
+
+                    // WorkManager로 주기적 위치 추적 시작
+                    startLocationTracking()
 
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -94,58 +106,26 @@ class LoginViewModel @Inject constructor(
         return loginUseCase.getLoggedInUser()
     }
 
-    // 더미 로그인 함수
-    fun dummyLogin(isTeacher: Boolean) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            
-            // 로딩 시뮬레이션
-            delay(1000)
-            
-            try {
-                // 더미 사용자 데이터 생성
-                val dummyUser = if (isTeacher) {
-                    User(
-                        userId = 1L,
-                        name = "김선생",
-                        role = UserRole.ROLE_TEACHER,
-                        team = null
-                    )
-                } else {
-                    User(
-                        userId = 2L,
-                        name = "이학생",
-                        role = UserRole.ROLE_STUDENT,
-                        team = null
-                    )
-                }
-                
-                // 더미 토큰 저장
-                saveTokensUseCase(
-                    accessToken = "dummy_access_token_${if (isTeacher) "teacher" else "student"}",
-                    refreshToken = "dummy_refresh_token_${if (isTeacher) "teacher" else "student"}"
-                )
 
-                // 더미 유저 저장
-                userPreferences.saveUser(dummyUser)
-                
-                // 더미 사용자 정보 저장
-                saveUserInfoUseCase(dummyUser)
+    private fun startLocationTracking() {
+        // 제약 조건 설정: 네트워크 연결 시에만 실행
+        val constraints = Constraints.Builder()
+            .setRequiredNetworkType(NetworkType.CONNECTED)
+            .build()
 
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    isLoggedIn = true,
-                    user = dummyUser
-                )
+        // 15분마다 실행되는 주기적 작업 요청 생성 (Android 최소 간격)
+        val locationWorkRequest = PeriodicWorkRequestBuilder<LocationWorker>(
+            15, TimeUnit.MINUTES
+        )
+            .setConstraints(constraints)
+            .build()
 
-                // 더미 로그인 성공 시 SelectHome으로 이동
-                _navigationEvent.tryEmit(Screen.SelectHome)
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = "더미 로그인 중 오류가 발생했습니다: ${e.message}"
-                )
-            }
-        }
+        // WorkManager에 작업 등록 (중복 방지)
+        WorkManager.getInstance(context)
+            .enqueueUniquePeriodicWork(
+                LocationWorker.WORK_NAME,
+                ExistingPeriodicWorkPolicy.REPLACE,
+                locationWorkRequest
+            )
     }
 }

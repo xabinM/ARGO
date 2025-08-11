@@ -4,12 +4,13 @@ import com.argo.backend.domain.ploblem.enums.PhotoPose;
 import com.argo.backend.domain.ploblem.enums.ProblemType;
 import com.argo.backend.global.enums.ResponseMessage;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateResponse;
+import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateTransDto;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterRequest;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestFromCli;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateDto;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterResponse;
 import com.argo.backend.mission.dto.problemsList.ProblemListPerTypeResponse;
-import com.argo.backend.mission.dto.common.ProblemResponseDto;
+import com.argo.backend.mission.dto.common.ProblemDetail;
 import com.argo.backend.mission.dto.problemsList.AllProblemListResponse;
 import com.argo.backend.mission.dto.selfieDetermine.SelfieRequestDto;
 import com.argo.backend.mission.dto.selfieDetermine.SelfieResultDto;
@@ -46,15 +47,19 @@ public class ProblemController {
 
     @PostMapping("/generate")
     public ResponseEntity<?> generateProblem(@RequestBody ProblemGenerateRequestFromCli request) {
-       ProblemGenerateDto problems = problemService.generateProblem(request);
+        ProblemGenerateTransDto dto = problemService.generateProblem(request);
 
-        return ResponseEntity.ok(new ProblemGenerateResponse(true, problems));
+        return ResponseEntity.ok(new ProblemGenerateResponse(
+                true, ResponseMessage.SUCCESS_GENERATE_PROBLEM.getMessage(), dto.getGrade(),
+                dto.getSpotName(), dto.getProblems()
+                )
+        );
     }
 
     @GetMapping("/spot/{spotId}")
     public ResponseEntity<?> getProblemsBySpotId(@PathVariable Long spotId) {
 
-        List<ProblemResponseDto> problems = problemService.getProblemsBySpotId(spotId);
+        List<ProblemDetail> problems = problemService.getProblemsBySpotId(spotId);
 
         return ResponseEntity.ok(new AllProblemListResponse(true, problems));
     }
@@ -64,7 +69,7 @@ public class ProblemController {
             @PathVariable Long spotId,
             @RequestParam ProblemType type) {
 
-        List<ProblemResponseDto> problems = problemService.findProblemsBySpotIdAndType(spotId, type);
+        List<ProblemDetail> problems = problemService.findProblemsBySpotIdAndType(spotId, type);
         return ResponseEntity.ok(new ProblemListPerTypeResponse(true, problems));
     }
 

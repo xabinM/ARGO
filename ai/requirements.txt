@@ -1,0 +1,36 @@
+# ARGO AI Server 통합 패키지 (의존성 충돌 해결)
+# 퀴즈 생성 + 포즈 분석 통합
+
+# === 핵심 웹 프레임워크 ===
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart>=0.0.6
+
+# === AI/ML 핵심 라이브러리 ===
+torch>=2.1.0
+ultralytics>=8.0.200  # YOLOv8
+opencv-python>=4.8.1.78
+mediapipe>=0.10.7
+numpy>=1.24.0
+
+# === 퀴즈 생성 (RAG - 선택적) ===
+sentence-transformers>=2.2.2
+faiss-cpu>=1.7.4
+transformers>=4.35.0
+
+# === API 클라이언트 (버전 수정) ===
+openai>=1.12.0
+requests>=2.32.2  # datasets 호환을 위해 버전 상향
+aiohttp>=3.9.0
+
+# === 데이터 처리 ===
+pandas>=2.1.0
+
+# === 설정 관리 ===
+python-dotenv>=1.0.0
+pydantic-settings>=2.0.0
+pydantic>=2.7.4  # langchain 호환을 위해 최소 버전 상향
+
+# === 개발/테스트용 ===
+pytest>=7.4.0
+httpx>=0.25.0

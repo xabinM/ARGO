@@ -4,7 +4,11 @@ import com.argo.backend.cardgame.dto.stats.TeamStatsDto;
 import com.argo.backend.domain.team.entity.Team;
 import com.argo.backend.domain.team.repository.TeamRepository;
 import com.argo.backend.domain.user.entity.User;
+import com.argo.backend.domain.user.entity.UserTeam;
 import com.argo.backend.domain.user.repository.UserRepository;
+import com.argo.backend.domain.user.repository.UserTeamRepository;
+
+import java.util.Optional;
 import com.argo.backend.organization.exception.types.TeamNotFoundException;
 import com.argo.backend.organization.exception.types.UnauthorizedClassAccessException;
 import com.argo.backend.organization.exception.types.UserNotFoundException;
@@ -19,6 +23,7 @@ public class TeamStatsService {
     
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
+    private final UserTeamRepository userTeamRepository;
     
     public TeamStatsDto getTeamStats(Long teamId, Long userId) {
         validateUser(userId);
@@ -45,8 +50,10 @@ public class TeamStatsService {
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
         
-        // UserTeam 기반으로 팀 접근 권한 검증
-        Team userTeam = user.getActiveTeamByClass(team.getClassRoom().getClassId());
+        // N+1 문제 해결: Repository 메서드로 대체 (FETCH JOIN 사용)
+        Optional<UserTeam> userTeamOpt = userTeamRepository.findActiveByUserIdAndClassId(userId, team.getClassRoom().getClassId());
+        Team userTeam = userTeamOpt.map(UserTeam::getTeam).orElse(null);
+        
         if (userTeam == null || !userTeam.getTeamId().equals(teamId)) {
             throw new UnauthorizedClassAccessException();
         }
