@@ -1,15 +1,15 @@
 package com.example.bogoargo.data.api
 
-import com.example.bogoargo.data.dto.response.SpotDataDto
-import retrofit2.http.Body
-import retrofit2.http.POST
-import retrofit2.http.Query
+import com.example.bogoargo.data.dto.response.SpotListResponse
+import retrofit2.http.GET
+import retrofit2.http.Path
+
 
 interface SpotApiService {
 
     // 스팟 목록 조회
-    @POST("api/teacher/classes/{classId}/spots")
+    @GET("api/teacher/classes/{classId}/spots")
     suspend fun getSpotList(
-        @Query("classId") classId: Long
-    ): List<SpotDataDto >
+        @Path("classId") classId: Long
+    ): SpotListResponse
 }

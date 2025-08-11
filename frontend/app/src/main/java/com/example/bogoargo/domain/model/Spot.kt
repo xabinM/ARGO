@@ -1,8 +1,10 @@
 package com.example.bogoargo.domain.model
 
+import com.example.bogoargo.data.dto.response.Coordinates
+
 data class Spot(
     val spotId: Long,
     val spotName: String,
-    val latitude: Double,
-    val longitude: Double
+    val description: String,
+    val coordinates: Coordinates
 )

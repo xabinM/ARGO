@@ -33,6 +33,7 @@ import com.example.bogoargo.ui.screens.cardgame.BattleRequestScreen
 import com.example.bogoargo.ui.screens.cardgame.CardSelectionScreen
 import com.example.bogoargo.ui.screens.cardgame.BattleResultScreen
 import com.example.bogoargo.ui.screens.problem.ClassSelectionForProblemScreen
+import com.example.bogoargo.ui.screens.problem.ProblemGenerateScreen
 
 sealed class Screen(val route: String) {
     data object Splash : Screen("splash")
@@ -408,8 +409,10 @@ fun AppNavigation(
             )
         ) { backStackEntry ->
             val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
-            // TODO: ProblemGenerateScreen을 만들어야 함
-            Text("Problem Generate Screen for class $classId")
+            ProblemGenerateScreen(
+                classId = classId,
+                navController = navController
+            )
         }
     }
 }

@@ -1,5 +1,6 @@
 package com.example.bogoargo.data.repository
 
+import android.util.Log
 import com.example.bogoargo.data.api.SpotApiService
 import com.example.bogoargo.data.mapper.toDomain
 import com.example.bogoargo.domain.model.DataException
@@ -19,7 +20,7 @@ class SpotRepository @Inject constructor(
     override suspend fun getSpotList(classId: Long): DataResult<List<Spot>> {
         return try {
             val response = spotApiService.getSpotList(classId)
-            DataResult.Success(response.toDomain())
+            DataResult.Success(response.data.toDomain())
         } catch (e: IOException) {
             DataResult.Error(DataException.NetworkError)
         } catch (e: HttpException) {
@@ -32,6 +33,7 @@ class SpotRepository @Inject constructor(
                 }
             )
         } catch (e: Exception) {
+            Log.d("에러", e.message.toString())
             DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
         }
     }

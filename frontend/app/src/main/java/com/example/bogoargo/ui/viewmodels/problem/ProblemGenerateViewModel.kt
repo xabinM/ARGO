@@ -2,127 +2,202 @@ package com.example.bogoargo.ui.viewmodels.problem
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bogoargo.data.dto.response.ProblemResponseDto
-import com.example.bogoargo.domain.model.Class
+import com.example.bogoargo.data.dto.request.ProblemGenerateRequest
+import com.example.bogoargo.data.dto.request.ProblemRegisterRequest
+import com.example.bogoargo.data.dto.response.ProblemDataQuizDto
 import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.domain.model.Spot
 import com.example.bogoargo.domain.use_case.classroom.GetClassDetailUseCase
 import com.example.bogoargo.domain.use_case.problem.GenerateProblemUseCase
+import com.example.bogoargo.domain.use_case.problem.RegisterProblemUseCase
+import com.example.bogoargo.domain.use_case.spot.GetSpotListUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import kotlin.collections.getOrNull
 
 data class ProblemGenerateUiState(
     val isLoading: Boolean = false,
-    val classDetail: Class? = null,
-    val problemCount: Int = 1,
-    val spotId: Long = 1L, // 기본값 설정 (실제로는 사용자가 선택하거나 고정값 사용)
-    val generatedProblems: ProblemResponseDto? = null,
     val errorMessage: String? = null,
-    val isGenerating: Boolean = false
+    val spots: List<Spot> = emptyList(),
+    val selectedSpot: Spot? = null,
+    val problemCount: Int = 1,
+    val generatedProblems: List<ProblemDataQuizDto> = emptyList(),
+    val currentProblemIndex: Int = 0,
+    val registeredProblemsCount: Int = 0,
+    val isGeneratingProblems: Boolean = false,
+    val isRegisteringProblem: Boolean = false,
+    val showProblemCards: Boolean = false,
+    val grade: Int = 1
 )
 
 @HiltViewModel
 class ProblemGenerateViewModel @Inject constructor(
+    private val getSpotListUseCase: GetSpotListUseCase,
     private val getClassDetailUseCase: GetClassDetailUseCase,
-    private val generateProblemUseCase: GenerateProblemUseCase
+    private val generateProblemUseCase: GenerateProblemUseCase,
+    private val registerProblemUseCase: RegisterProblemUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(ProblemGenerateUiState())
-    val uiState: StateFlow<ProblemGenerateUiState> = _uiState
+    val uiState: StateFlow<ProblemGenerateUiState> = _uiState.asStateFlow()
 
-    fun loadClassDetail(classId: Long) {
+    fun loadInitialData(classId: Long) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
-                isLoading = true,
-                errorMessage = null
-            )
-            
-            when (val result = getClassDetailUseCase(classId)) {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+
+            when (val classResult = getClassDetailUseCase(classId)) {
                 is DataResult.Success -> {
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        classDetail = result.data
-                    )
+                    _uiState.value = _uiState.value.copy(grade = classResult.data.grade!!)
+
+                    when (val spotResult = getSpotListUseCase(classId)) {
+                        is DataResult.Success -> {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                spots = spotResult.data
+                            )
+                        }
+                        is DataResult.Error -> {
+                            _uiState.value = _uiState.value.copy(
+                                isLoading = false,
+                                errorMessage = spotResult.exception.message ?: "스팟 목록을 불러올 수 없습니다."
+                            )
+                        }
+                        else -> Unit
+                    }
                 }
                 is DataResult.Error -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        errorMessage = result.exception.message
+                        errorMessage = classResult.exception.message ?: "클래스 정보를 불러올 수 없습니다."
                     )
                 }
-                is DataResult.Loading -> {
-                    // Handle loading state if needed
-                }
+                else -> Unit
             }
         }
     }
 
-    fun updateProblemCount(count: Int) {
-        if (count >= 1) {
-            _uiState.value = _uiState.value.copy(problemCount = count)
-        }
+    fun selectSpot(spot: Spot) {
+        _uiState.value = _uiState.value.copy(selectedSpot = spot)
     }
 
-    fun updateSpotId(spotId: Long) {
-        _uiState.value = _uiState.value.copy(spotId = spotId)
+    fun updateProblemCount(count: Int) {
+        val validCount = count.coerceIn(1, 5)
+        _uiState.value = _uiState.value.copy(problemCount = validCount)
     }
 
     fun generateProblems() {
         val currentState = _uiState.value
-        val classDetail = currentState.classDetail
-        
-        if (classDetail == null) {
-            _uiState.value = currentState.copy(
-                errorMessage = "반 정보를 먼저 불러와야 합니다."
-            )
-            return
-        }
+        val selectedSpot = currentState.selectedSpot ?: return
 
         viewModelScope.launch {
-            _uiState.value = currentState.copy(
-                isGenerating = true,
-                errorMessage = null
+            _uiState.value = _uiState.value.copy(isGeneratingProblems = true, errorMessage = null)
+
+            val request = ProblemGenerateRequest(
+                spotId = selectedSpot.spotId,
+                grade = currentState.grade,
+                problemCnt = currentState.problemCount
             )
 
-            val grade = classDetail.grade
-
             when (val result = generateProblemUseCase(
-                spotId = currentState.spotId,
-                grade = grade!!,
-                problemCount = currentState.problemCount
+                request.spotId, request.grade, request.problemCnt
             )) {
                 is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
-                        isGenerating = false,
-                        generatedProblems = result.data
+                        isGeneratingProblems = false,
+                        generatedProblems = result.data.problems,
+                        showProblemCards = true,
+                        currentProblemIndex = 0,
+                        registeredProblemsCount = 0
                     )
                 }
                 is DataResult.Error -> {
                     _uiState.value = _uiState.value.copy(
-                        isGenerating = false,
-                        errorMessage = result.exception.message
+                        isGeneratingProblems = false,
+                        errorMessage = result.exception.message ?: "문제 생성에 실패했습니다."
                     )
                 }
-                is DataResult.Loading -> {
-                    // Handle loading state if needed
-                }
+                else -> Unit
             }
         }
     }
 
-    fun clearGeneratedProblems() {
-        _uiState.value = _uiState.value.copy(
-            generatedProblems = null
-        )
+    fun registerCurrentProblem() {
+        val currentState = _uiState.value
+        val currentProblem = currentState.generatedProblems.getOrNull(currentState.currentProblemIndex) ?: return
+        val selectedSpot = currentState.selectedSpot ?: return
+
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isRegisteringProblem = true)
+
+            val request = ProblemRegisterRequest(
+                question = currentProblem.question,
+                choices = currentProblem.choices,
+                correctIndex = currentProblem.correctIndex,
+                explanation = currentProblem.explanation,
+                spotId = selectedSpot.spotId,
+                grade = currentState.grade.toLong()
+            )
+
+            when (val result = registerProblemUseCase(
+                request.spotId,
+                request.question,
+                request.choices,
+                request.correctIndex,
+                request.explanation,
+                request.grade
+            )) {
+                is DataResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isRegisteringProblem = false,
+                        registeredProblemsCount = currentState.registeredProblemsCount + 1
+                    )
+                    goToNextProblem()
+                }
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isRegisteringProblem = false,
+                        errorMessage = result.exception.message ?: "문제 등록에 실패했습니다."
+                    )
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    fun skipCurrentProblem() {
+        goToNextProblem()
+    }
+
+    private fun goToNextProblem() {
+        val currentState = _uiState.value
+        val nextIndex = currentState.currentProblemIndex + 1
+
+        if (nextIndex >= currentState.generatedProblems.size) {
+            _uiState.value = _uiState.value.copy(
+                showProblemCards = false,
+                currentProblemIndex = 0
+            )
+        } else {
+            _uiState.value = _uiState.value.copy(currentProblemIndex = nextIndex)
+        }
     }
 
     fun clearError() {
         _uiState.value = _uiState.value.copy(errorMessage = null)
     }
 
-    fun resetState() {
-        _uiState.value = ProblemGenerateUiState()
+    fun resetGeneration() {
+        _uiState.value = _uiState.value.copy(
+            generatedProblems = emptyList(),
+            currentProblemIndex = 0,
+            registeredProblemsCount = 0,
+            showProblemCards = false,
+            selectedSpot = null,
+            problemCount = 1
+        )
     }
 }
