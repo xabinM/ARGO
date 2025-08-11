@@ -10,10 +10,10 @@ public class ClassDetailResponse {
     private ClassInfoDetailDto classInfo;
     private List<StudentDto> students;
     private List<TeamDetailDto> teams;
-    private StatisticsDto statistics;
+    private ClassStatisticsDto statistics;
     
     public ClassDetailResponse(ClassInfoDetailDto classInfo, List<StudentDto> students,
-                              List<TeamDetailDto> teams, StatisticsDto statistics) {
+                              List<TeamDetailDto> teams, ClassStatisticsDto statistics) {
         this.classInfo = classInfo;
         this.students = students;
         this.teams = teams;
@@ -22,7 +22,7 @@ public class ClassDetailResponse {
     
     // 공통
     public static ClassDetailResponse from(ClassInfoDetailDto classInfo, List<StudentDto> students,
-                                           List<TeamDetailDto> teams, StatisticsDto statistics) {
+                                           List<TeamDetailDto> teams, ClassStatisticsDto statistics) {
         return new ClassDetailResponse(classInfo, students, teams, statistics);
     }
 }

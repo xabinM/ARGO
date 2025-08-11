@@ -23,7 +23,7 @@ import com.argo.backend.organization.dto.classdelete.DeletedDataDto;
 import com.argo.backend.organization.dto.classdelete.DeletedStudentsDto;
 import com.argo.backend.organization.dto.classdelete.DeletedTeamsDto;
 import com.argo.backend.organization.dto.classdelete.DeletedApplicationsDto;
-import com.argo.backend.organization.dto.classdetail.StatisticsDto;
+import com.argo.backend.organization.dto.classdetail.ClassStatisticsDto;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateRequest;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateResponse;
 import com.argo.backend.organization.dto.classlist.ClassListResponse;
@@ -279,7 +279,7 @@ public class ClassService {
             teams = getTeamsForClass(classId);
         }
         
-        StatisticsDto statistics = new StatisticsDto(
+        ClassStatisticsDto statistics = new ClassStatisticsDto(
                 students != null ? students.size() : getApprovedStudentCount(classId),
                 teams != null ? teams.size() : getTeamCount(classId)
         );

@@ -34,7 +34,7 @@ public class ClassApplicationService {
         
         Page<ClassApplication> applicationsPage = getApplicationsByStatus(classId, status, pageable);
         
-        StatisticsDto statistics = createStatistics(classId);
+        ApplicationStatisticsDto statistics = createStatistics(classId);
         
         ClassInfoDto classInfo = ClassInfoDto.from(classRoom, statistics.approvedCount());
         PaginationDto pagination = PaginationDto.from(applicationsPage);
@@ -81,11 +81,11 @@ public class ClassApplicationService {
         return classApplicationRepository.findByClassRoomClassIdAndStatus(classId, applicationStatus, pageable);
     }
 
-    private StatisticsDto createStatistics(Long classId) {
+    private ApplicationStatisticsDto createStatistics(Long classId) {
         Object[] result = classApplicationRepository.findStatisticsByClassId(classId);
 
         if (result == null || result.length == 0) {
-            return StatisticsDto.of(0L, 0L, 0L, 0L);
+            return ApplicationStatisticsDto.of(0L, 0L, 0L, 0L);
         }
 
         Object[] statistics = (Object[]) result[0];
@@ -95,7 +95,7 @@ public class ClassApplicationService {
         Long approvedCount = ((Number) statistics[2]).longValue();
         Long rejectedCount = ((Number) statistics[3]).longValue();
 
-        return StatisticsDto.of(totalApplications, pendingCount, approvedCount, rejectedCount);
+        return ApplicationStatisticsDto.of(totalApplications, pendingCount, approvedCount, rejectedCount);
     }
 
 
@@ -156,7 +156,7 @@ public class ClassApplicationService {
     }
     
     private void validateClassCapacityForApproval(ClassRoom classRoom, int approvalCount) {
-        StatisticsDto statistics = createStatistics(classRoom.getClassId());
+        ApplicationStatisticsDto statistics = createStatistics(classRoom.getClassId());
         long currentApproved = statistics.approvedCount();
         long maxStudents = classRoom.getMaxStudents();
         
