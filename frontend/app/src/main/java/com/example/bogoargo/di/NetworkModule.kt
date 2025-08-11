@@ -136,4 +136,10 @@ object NetworkModule {
     fun provideCardGameApiService(retrofit: Retrofit): CardGameApiService {
         return retrofit.create(CardGameApiService::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideMissionApiService(retrofit: Retrofit): MissionApiService {
+        return retrofit.create(MissionApiService::class.java)
+    }
 }

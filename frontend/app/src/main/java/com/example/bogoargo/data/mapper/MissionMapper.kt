@@ -1,8 +1,8 @@
 package com.example.bogoargo.data.mapper
 
+import com.example.bogoargo.data.dto.mission.*
 import com.example.bogoargo.data.dto.response.*
-import com.example.bogoargo.domain.model.Mission
-import com.example.bogoargo.domain.model.MissionType
+import com.example.bogoargo.domain.model.*
 import java.time.LocalDateTime
 
 // MissionDataDto를 Mission Model로 변환하는 확장 함수
@@ -59,3 +59,55 @@ fun ARObjectDto.getScaleZ(): Double = this.scale.z
 fun HintDto.getLevel(): Int = this.level
 fun HintDto.getText(): String = this.text
 fun HintDto.getAvailableAfter(): LocalDateTime = this.availableAfter
+
+// 새로운 미션 관련 매퍼 함수들
+object MissionProblemMapper {
+
+    fun mapToMissionCreateResult(dto: MissionCreateResponseDto): MissionCreateResult {
+        return MissionCreateResult(
+            missionId = dto.missionId,
+            problemDetail = mapToProblemDetail(dto.problemDetail)
+        )
+    }
+
+    private fun mapToProblemDetail(dto: ProblemDetailDto): ProblemDetail {
+        return when (dto) {
+            is QuizProblemDto -> QuizProblem(
+                id = dto.id,
+                dtype = dto.dtype,
+                question = dto.question,
+                choices = dto.choices,
+                correctIndex = dto.correctIndex,
+                explanation = dto.explanation
+            )
+            is SelfieProblemDto -> SelfieProblem(
+                id = dto.id,
+                dtype = dto.dtype,
+                guideline = dto.guideline,
+                pose = dto.pose,
+                poseHint = dto.poseHint
+            )
+            else -> throw IllegalArgumentException("Unknown problem type: ${dto.dtype}")
+        }
+    }
+
+    fun mapToMissionSubmitResult(dto: MissionSubmitResponseDto): MissionSubmitResult {
+        return MissionSubmitResult(
+            successful = dto.successful,
+            cardId = dto.cardId,
+            tier = dto.tier
+        )
+    }
+
+    fun mapToMissionSubmitRequest(isSuccess: Boolean): MissionSubmitRequestDto {
+        return MissionSubmitRequestDto(isSuccess = isSuccess)
+    }
+
+    // TODO: 셀피 미션 관련 매퍼는 백엔드 API 완성 후 구현
+    fun mapToSelfieMissionSubmitRequest(imageBase64: String, pose: String): SelfieMissionSubmitRequestDto {
+        return SelfieMissionSubmitRequestDto(
+            imageBase64 = imageBase64,
+            pose = pose
+        )
+    }
+}

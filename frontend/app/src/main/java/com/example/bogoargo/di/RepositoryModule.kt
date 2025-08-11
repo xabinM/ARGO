@@ -58,9 +58,10 @@ object RepositoryProvidesModule {
     @Singleton
     fun provideMissionRepository(
         authApiService: AuthApiService,
+        missionApiService: MissionApiService,
         @ApplicationContext context: Context
     ): MissionRepositoryImpl {
-        return MissionRepositoryImpl(authApiService, context)
+        return MissionRepositoryImpl(authApiService, missionApiService, context)
     }
     
     @Provides
