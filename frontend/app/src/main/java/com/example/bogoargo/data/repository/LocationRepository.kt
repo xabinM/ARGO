@@ -8,6 +8,7 @@ import com.example.bogoargo.data.dto.response.StudentsLocationResponse
 import com.example.bogoargo.data.mapper.toDomainModel
 import com.example.bogoargo.domain.model.Location
 import com.example.bogoargo.domain.repository.ILocationRepository
+import java.math.BigDecimal
 import javax.inject.Inject
 
 class LocationRepositoryImpl @Inject constructor(
@@ -25,8 +26,8 @@ class LocationRepositoryImpl @Inject constructor(
     ): Result<Unit> {
         return try {
             val request = UserCoordinatesRequest(
-                latitude = latitude,
-                longitude = longitude
+                latitude = BigDecimal.valueOf(latitude),
+                longitude = BigDecimal.valueOf(longitude)
             )
             
             val response = locationApiService.updateUserCoordinates(request)
