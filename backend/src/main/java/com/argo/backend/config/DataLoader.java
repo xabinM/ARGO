@@ -7,6 +7,8 @@ import com.argo.backend.domain.cardgame.repository.CardRepository;
 import com.argo.backend.domain.cardgame.repository.TeamCardRepository;
 import com.argo.backend.domain.spot.entity.Spot;
 import com.argo.backend.domain.spot.repository.SpotRepository;
+import com.argo.backend.domain.ploblem.entity.QuizProblem;
+import com.argo.backend.domain.ploblem.repository.QuizProblemRepository;
 import com.argo.backend.domain.user.entity.Teacher;
 import com.argo.backend.domain.user.entity.User;
 import com.argo.backend.domain.user.entity.UserTeam;
@@ -51,6 +53,7 @@ public class DataLoader implements ApplicationRunner {
     private final SpotRepository spotRepository;
     private final CardRepository cardRepository;
     private final TeamCardRepository teamCardRepository;
+    private final QuizProblemRepository quizProblemRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Override
@@ -84,14 +87,14 @@ public class DataLoader implements ApplicationRunner {
         // 7. 학생들을 팀에 배정 (각 팀 6명씩)
         assignStudentsToTeams(students, teams);
 
-        // 8. 4개 스팟 생성
-        List<Spot> spots = createSpots(ssafyLocation);
+        // 8. SSAFY 스팟 1개 생성
+        Spot ssafySpot = createSSAFYSpot(ssafyLocation);
 
-        // 9. 6개 카드 생성 (2개는 스팟 관련, 4개는 일반)
-        List<Card> cards = createCards(ssafyLocation, spots);
-        
-        // 10. 각 팀에 카드 4장씩 배정
-        assignCardsToTeams(cards, teams);
+        // 9. 5개 카드 생성 (1개는 스팟 관련, 4개는 일반)
+        List<Card> cards = createCards(ssafyLocation, ssafySpot);
+
+        // 10. SSAFY 스팟에 QuizProblem 생성
+        QuizProblem problem = createQuizProblem(ssafySpot);
 
         log.info("=== 초기 테스트 데이터 생성 완료! ===");
         log.info("선생님: teacher1 / password1");
@@ -100,71 +103,44 @@ public class DataLoader implements ApplicationRunner {
         log.info("팀: 10개 팀, 각 6명씩 배정");
     }
 
-    private List<Spot> createSpots(Location location) {
-        List<Spot> spots = new ArrayList<>();
+    private Spot createSSAFYSpot(Location location) {
+        // SSAFY 스팟 1개 생성
+        Coordinates coordinates = Coordinates.create(
+            new BigDecimal("37.5012743"), 
+            new BigDecimal("127.0396220")
+        );
+        Spot ssafySpot = Spot.create("SSAFY 스팟", "SSAFY 교육장 메인 스팟", coordinates, location);
+        Spot saved = spotRepository.save(ssafySpot);
         
-        // 4개 스팟 생성 (SSAFY 위치 주변)
-        String[] spotNames = {"강의실 앞", "강의실 중앙", "복도", "강의실 뒤"};
-        String[] descriptions = {
-            "강의실 앞",
-            "강의실 중",
-            "강의실 뒤",
-            "복도"
-        };
-        
-        // SSAFY 위치 기준으로 약간씩 다른 좌표 생성
-        BigDecimal baseLat = new BigDecimal("37.5012743");
-        BigDecimal baseLng = new BigDecimal("127.0396220");
-        BigDecimal[] latOffsets = {
-            new BigDecimal("0.0001"), new BigDecimal("-0.0001"), 
-            new BigDecimal("0.0002"), new BigDecimal("-0.0002")
-        };
-        BigDecimal[] lngOffsets = {
-            new BigDecimal("0.0001"), new BigDecimal("-0.0001"), 
-            new BigDecimal("0.0002"), new BigDecimal("-0.0002")
-        };
-        
-        for (int i = 0; i < 4; i++) {
-            Coordinates coordinates = Coordinates.create(
-                baseLat.add(latOffsets[i]), 
-                baseLng.add(lngOffsets[i])
-            );
-            Spot spot = Spot.create(spotNames[i], descriptions[i], coordinates, location);
-            Spot saved = spotRepository.save(spot);
-            spots.add(saved);
-        }
-        
-        log.info("스팟 4개 생성 완료");
-        return spots;
+        log.info("SSAFY 스팟 1개 생성 완료");
+        return saved;
     }
 
-    private List<Card> createCards(Location location, List<Spot> spots) {
+    private List<Card> createCards(Location location, Spot ssafySpot) {
         List<Card> cards = new ArrayList<>();
         
-        // 스팟 관련 카드 2개 생성 (첫 번째, 두 번째 스팟)
-        for (int i = 0; i < 2; i++) {
-            Card card = Card.from(
-                location,
-                spots.get(i), // 첫 번째, 두 번째 스팟
-                spots.get(i).getName() + " 카드",
-                spots.get(i).getDescription() + "에서 사용할 수 있는 특별한 카드입니다",
-                70 + (i * 10), // baseAttack: 70, 80
-                60 + (i * 10), // baseDefense: 60, 70
-                true // isSpotCard
-            );
-            Card saved = cardRepository.save(card);
-            cards.add(saved);
-        }
+        // 스팟 관련 카드 1개 생성
+        Card spotCard = Card.from(
+            location,
+            ssafySpot,
+            "SSAFY 특급카드",
+            "SSAFY 스팟에서 얻을 수 있는 특별한 카드입니다",
+            90, // baseAttack
+            80, // baseDefense
+            true // isSpotCard
+        );
+        Card savedSpotCard = cardRepository.save(spotCard);
+        cards.add(savedSpotCard);
         
         // 일반 카드 4개 생성
-        String[] cardNames = {"하늘빛천사 컨설턴트님", "번개질주 실습코치님", "태양의수호자 실습코친님", "어둠의추격자 프로님"};
+        String[] cardNames = {"하늘빛천사 컨설턴트님", "번개질주 실습코치님", "태양의수호자 실습코치님", "어둠의추격자 프로님"};
         String[] cardDescriptions = {
             "컨설턴트님",
             "실습 코치님",
             "실습 코치님",
             "프로님"
         };
-        int[] attacks = {100, 75, 85, 30};
+        int[] attacks = {100, 75, 85, 95};
         int[] defenses = {100, 50, 35, 90};
         
         for (int i = 0; i < 4; i++) {
@@ -181,31 +157,33 @@ public class DataLoader implements ApplicationRunner {
             cards.add(saved);
         }
         
-        log.info("카드 6개 생성 완료 (스팟 관련 2개, 일반 카드 4개)");
+        log.info("카드 5개 생성 완료 (스팟 관련 1개, 일반 카드 4개)");
         return cards;
     }
 
-    private void assignCardsToTeams(List<Card> cards, List<Team> teams) {
-        CardTier[] tiers = {CardTier.COMMON, CardTier.EPIC, CardTier.RARE, CardTier.LEGENDARY};
+    private QuizProblem createQuizProblem(Spot ssafySpot) {
+        // SSAFY 관련 객관식 문제 생성
+        List<String> choices = List.of(
+            "1. 삼성 청년 SW 아카데미",
+            "2. 삼성 청년 소프트웨어 아카데미",
+            "3. 삼성 소프트웨어 아카데미",
+            "4. 삼성 청년 개발자 아카데미"
+        );
         
-        // 각 팀에 카드 4장씩 배정
-        for (int teamIndex = 0; teamIndex < teams.size(); teamIndex++) {
-            Team team = teams.get(teamIndex);
-            
-            // 카드를 순환하면서 각 팀에 4장씩 배정
-            for (int cardCount = 0; cardCount < 4; cardCount++) {
-                int cardIndex = (teamIndex * 4 + cardCount) % cards.size();
-                Card card = cards.get(cardIndex);
-                
-                // 티어를 순환하면서 배정 (다양성 확보)
-                CardTier tier = tiers[(teamIndex * 4 + cardCount) % tiers.length];
-                TeamCard teamCard = TeamCard.from(team, card, tier);
-                teamCardRepository.save(teamCard);
-            }
-        }
+        QuizProblem problem = QuizProblem.from(
+            ssafySpot,
+            3, // grade
+            "SSAFY는 무엇의 줄임말인가요?",
+            choices,
+            1, // correctIndex (두 번째 선택지가 정답)
+            "SSAFY는 Samsung Software Academy For Youth의 줄임말로, 삼성 청년 소프트웨어 아카데미입니다."
+        );
         
-        log.info("각 팀에 카드 4장씩 배정 완료");
+        QuizProblem saved = quizProblemRepository.save(problem);
+        log.info("SSAFY 스팟에 QuizProblem 생성 완료");
+        return saved;
     }
+
 
     private Location createLocation() {
         // Location.create() 팩토리 메서드 사용
