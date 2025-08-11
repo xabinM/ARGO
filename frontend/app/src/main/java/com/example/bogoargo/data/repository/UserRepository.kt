@@ -9,8 +9,7 @@ import com.example.bogoargo.data.dto.response.UserUpdateResponse
 import com.example.bogoargo.data.dto.response.UserWithdrawResponse
 import com.example.bogoargo.data.dto.response.MessageResponseDto
 import com.example.bogoargo.data.mapper.toDomainModel
-import com.example.bogoargo.data.preferences.UserPreferences
-import com.example.bogoargo.data.storage.TokenStorage
+import com.example.bogoargo.data.storage.SecureStorage
 import com.example.bogoargo.domain.model.DataException
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.User
@@ -22,8 +21,7 @@ import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
     private val userApiService: UserApiService,
-    private val tokenStorage: TokenStorage,
-    private val userPreferences: UserPreferences
+    private val secureStorage: SecureStorage
 ) : IUserRepository {
     
     override suspend fun signUp(userSignUpRequest: UserSignUpRequest): DataResult<MessageResponseDto> {
@@ -67,7 +65,7 @@ class UserRepositoryImpl @Inject constructor(
                     accessToken != null && refreshToken != null) {
                     
                     // 토큰 저장
-                    tokenStorage.saveTokens(accessToken, refreshToken)
+                    secureStorage.saveTokens(accessToken, refreshToken)
 
                     // 유저 저장
                     val loggedInUser = User(
@@ -76,7 +74,7 @@ class UserRepositoryImpl @Inject constructor(
                         role = UserRole.valueOf(loginResponse.role),
                         team = null
                     )
-                    userPreferences.saveUser(loggedInUser)
+                    secureStorage.saveUser(loggedInUser)
                     
                     DataResult.Success(loggedInUser)
                 } else {
@@ -178,6 +176,6 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getLoggedInUser(): User? {
-        return userPreferences.getUser()
+        return secureStorage.getUser()
     }
 }

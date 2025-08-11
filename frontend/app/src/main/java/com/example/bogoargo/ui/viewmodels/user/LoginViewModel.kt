@@ -8,14 +8,13 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
-import com.example.bogoargo.data.preferences.UserPreferences
+import com.example.bogoargo.data.storage.SecureStorage
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.User
 import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.domain.use_case.auth.LoginUseCase
 import com.example.bogoargo.domain.use_case.auth.SaveTokensUseCase
 import com.example.bogoargo.navigation.Screen
-import com.example.bogoargo.domain.use_case.auth.SaveUserInfoUseCase
 import com.example.bogoargo.worker.LocationWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -42,8 +41,7 @@ class LoginViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val loginUseCase: LoginUseCase,
     private val saveTokensUseCase: SaveTokensUseCase,
-    private val userPreferences: UserPreferences,
-    private val saveUserInfoUseCase: SaveUserInfoUseCase
+    private val secureStorage: SecureStorage
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -66,8 +64,7 @@ class LoginViewModel @Inject constructor(
             
             when (val result = loginUseCase(_uiState.value.username, _uiState.value.password)) {
                 is DataResult.Success -> {
-                    // 사용자 정보 저장
-                    saveUserInfoUseCase(result.data)
+                    // 사용자 정보는 이미 UserRepository에서 저장됨 (중복 저장 제거)
 
                     // WorkManager로 주기적 위치 추적 시작
                     startLocationTracking()
@@ -103,7 +100,8 @@ class LoginViewModel @Inject constructor(
     }
 
     suspend fun getLoggedInUser(): User? {
-        return loginUseCase.getLoggedInUser()
+        // SecureStorage에서 사용자 정보 복원
+        return secureStorage.getUser()
     }
 
 

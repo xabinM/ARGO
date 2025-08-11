@@ -43,8 +43,7 @@ fun CardGameScreen(
     leaderId: Long,
     viewModel: CardGameViewModel = hiltViewModel()
 ) {
-    val currentUserId by viewModel.currentUserId.collectAsState()
-    val isTeamLeader = currentUserId != null && currentUserId == leaderId
+    val isTeamLeader = viewModel.isTeamLeader(leaderId)
     val uiState by viewModel.uiState.collectAsState()
     
     // Dialog 상태 관리
@@ -66,8 +65,8 @@ fun CardGameScreen(
     var isRejectSuccess by remember { mutableStateOf(false) }
     
     // 디버깅용 로그
-    LaunchedEffect(currentUserId, leaderId) {
-        println("CardGame Debug - currentUserId: $currentUserId, leaderId: $leaderId, isTeamLeader: $isTeamLeader")
+    LaunchedEffect(leaderId) {
+        println("CardGame Debug - leaderId: $leaderId, isTeamLeader: $isTeamLeader")
     }
 
     val teamStats = uiState.teamStats
