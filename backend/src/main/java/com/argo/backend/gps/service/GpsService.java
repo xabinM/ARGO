@@ -19,17 +19,22 @@ public class GpsService {
     private final GpsRedis gpsRedis;
     private final ClassApplicationRepository classApplicationRepository;
 
-    public void saveUserLocation(Long userId, UserCoordinatesRequest userCoordinatesRequest) {
+    public void saveUserCoordinates(Long userId, UserCoordinatesRequest request) {
 
         // 1. Redis에 위치 정보 저장
-        gpsRedis.saveUserLocation(userId, userCoordinatesRequest);
+        gpsRedis.saveUserCoordinates(userId, request);
 
-        // 2. 유저가 속한 모든 classId 조회
-        List<Long> classIds = classApplicationRepository
-                .findAllByUser_UserIdAndStatus(userId, ApplicationStatus.PENDING)
-                .stream()
-                .map(app -> app.getClassRoom().getClassId())
-                .toList();
+        // 2. 유저가 속한 모든 classId를 redis에서 조회, 만약 없다면 그 때, DB에서 조회 후 redis에 저장
+        // todo 반 신청 status 값 현재 테스트 용으로 PENDING 이지만 APPROVED 수정 해야함
+        List<Long> classIds = gpsRedis.getUserClassIds(userId);
+        if (classIds == null) {
+            classIds = classApplicationRepository
+                    .findAllByUser_UserIdAndStatus(userId, ApplicationStatus.PENDING)
+                    .stream()
+                    .map(app -> app.getClassRoom().getClassId())
+                    .toList();
+            gpsRedis.setUserClassIds(userId, classIds);
+        }
 
         // 3. 각 classId에 유저 ID 추가
         for (Long classId : classIds) {
@@ -37,10 +42,10 @@ public class GpsService {
         }
     }
 
-    public List<UserCoordinatesDto> getLocationsByClass(Long classId) {
-        Map<Long, Map<String, String>> userLocations = gpsRedis.getUserLocationsByClassId(classId);
+    public List<UserCoordinatesDto> getUserCoordinatesByClass(Long classId) {
+        Map<Long, Map<String, String>> userCoordinates = gpsRedis.getUserCoordinatesByClassId(classId);
 
-        return userLocations.entrySet().stream()
+        return userCoordinates.entrySet().stream()
                 .map(entry -> {
                     Long userId = entry.getKey();
                     Map<String, String> coordinates = entry.getValue();
