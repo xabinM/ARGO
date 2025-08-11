@@ -1,7 +1,9 @@
 package com.example.bogoargo.ui.screens.user
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -56,15 +58,17 @@ fun LoginScreen(
         Column(
             modifier = modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            verticalArrangement = Arrangement.Top
         ) {
+            Spacer(modifier = Modifier.height(40.dp))
             // 헤더 카드
             NatureComponents.NatureCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(bottom = 32.dp)
+                    .padding(bottom = 24.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
@@ -188,63 +192,6 @@ fun LoginScreen(
                 }
             }
             
-            // 더미 로그인 섹션 (개발용)
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            NatureComponents.NatureCard(
-                modifier = Modifier.fillMaxWidth(),
-                containerColor = NatureColors.earthBrown.copy(alpha = 0.1f)
-            ) {
-                Column(
-                    modifier = Modifier.padding(20.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "🔧 개발 전용",
-                        style = NatureTypography.titleSmall.copy(
-                            color = NatureColors.earthBrown
-                        )
-                    )
-                    
-                    Text(
-                        text = "서버 없이 테스트하기",
-                        style = NatureTypography.bodySmall.copy(
-                            color = NatureColors.earthBrown.copy(alpha = 0.7f)
-                        )
-                    )
-                    
-                    if (uiState.isLoading) {
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator(
-                                color = NatureColors.earthBrown,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    } else {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            NatureComponents.NatureButton(
-                                onClick = { viewModel.dummyLogin(isTeacher = true) },
-                                text = "👩‍🏫 선생님",
-                                modifier = Modifier.weight(1f),
-                                backgroundColor = NatureColors.sunnyYellow.copy(alpha = 0.8f)
-                            )
-                            NatureComponents.NatureButton(
-                                onClick = { viewModel.dummyLogin(isTeacher = false) },
-                                text = "👶 학생",
-                                modifier = Modifier.weight(1f),
-                                backgroundColor = NatureColors.leafGreen.copy(alpha = 0.8f)
-                            )
-                        }
-                    }
-                }
-            }
-            
             // 에러 메시지
             uiState.errorMessage?.let { errorMessage ->
                 Spacer(modifier = Modifier.height(16.dp))
@@ -279,7 +226,7 @@ fun LoginScreen(
             }
             
             // 회원가입 링크
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -304,6 +251,9 @@ fun LoginScreen(
                     )
                 }
             }
+            
+            // 하단 여백
+            Spacer(modifier = Modifier.height(40.dp))
         }
     }
 }
