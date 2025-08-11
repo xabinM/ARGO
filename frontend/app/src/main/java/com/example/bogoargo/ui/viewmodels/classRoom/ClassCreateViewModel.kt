@@ -2,6 +2,7 @@ package com.example.bogoargo.ui.viewmodels.classRoom
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.bogoargo.data.dto.response.Coordinates
 import com.example.bogoargo.domain.model.Class
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.Location
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.math.BigDecimal
 import javax.inject.Inject
 
 data class ClassCreateUiState(
@@ -38,7 +40,17 @@ class ClassCreateViewModel @Inject constructor(
     private fun loadLocations() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoadingLocations = true)
-            
+
+//            val dummyLocations = listOf(
+//                Location(locationId = 1, name = "강남 캠퍼스", Coordinates(latitude = BigDecimal("10.03"), longitude = BigDecimal("20.00"))),
+//            )
+//
+//            _uiState.value = _uiState.value.copy(
+//                locations = dummyLocations,
+//                isLoadingLocations = false
+//            )
+
+
             try {
                 val locations = getLocationsUseCase()
                 _uiState.value = _uiState.value.copy(
@@ -51,6 +63,7 @@ class ClassCreateViewModel @Inject constructor(
                     errorMessage = "위치 정보를 불러올 수 없습니다: ${e.message}"
                 )
             }
+
         }
     }
 
@@ -59,12 +72,13 @@ class ClassCreateViewModel @Inject constructor(
         description: String,
         location: String,
         activityDate: String,
-        maxStudents: Int
+        maxStudents: Int,
+        grade: Int
     ) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
-            when (val result = createClassUseCase(className, description, location, activityDate, maxStudents)) {
+            when (val result = createClassUseCase(className, description, location, activityDate, maxStudents, grade)) {
                 is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,

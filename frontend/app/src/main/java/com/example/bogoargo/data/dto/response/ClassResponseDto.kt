@@ -8,17 +8,20 @@ import com.example.bogoargo.data.dto.response.UserDataDto
 data class ClassDataDto(
     val classId: Long,
     val className: String,
-    val description: String,
-    val location: String,
-    val activityDate: String,
-    val studentCount:Int,
-    val maxStudents: Int,
-    val teamCount: Int,
-    val status: String,
+    val description: String?,
+    val location: String?,
+    val activityDate: String?,
+    val maxStudents: Int?,
+    val grade: Int?,
+    val status: String?,
     val inviteCode: String,
     val createdAt: String,
-    val students: List<UserDataDto>,
-    val teams: List<TeamDataDto>
+    val students: List<UserDataDto>?,
+    val teams: List<TeamDataDto>?
+)
+
+data class ClassInfo(
+    val classInfo: ClassDataDto
 )
 
 // 반 리스트 조회 응답 DTO
@@ -54,14 +57,27 @@ data class PaginationDto(
     val currentPage: Int,
     val totalPages: Int,
     val totalElements: Long,
-    val size: Int
+    val size: Int,
+    val data: ClassListDataDto?
+)
+
+// 반 리스트 데이터 DTO
+data class ClassListDataDto(
+    val classes: List<ClassDataDto>
+)
+
+// 반 생성 후 정보 응답 DTO
+data class ClassCreateResponse(
+    val success: Boolean,
+    val message: String,
+    val data: ClassDataDto?
 )
 
 // 반 상세 정보 응답 DTO
 data class ClassDetailResponse(
     val success: Boolean,
     val message: String,
-    val data: ClassDataDto?
+    val data: ClassInfo?
 )
 
 // 참여 신청 학생 목록 응답 DTO

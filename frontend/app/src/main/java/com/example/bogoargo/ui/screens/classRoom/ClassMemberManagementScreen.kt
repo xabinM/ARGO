@@ -25,14 +25,14 @@ import com.example.bogoargo.ui.viewmodels.classRoom.ClassMemberManagementViewMod
 @Composable
 fun ClassMemberManagementScreen(
     navController: NavController,
-    classId: String = "",
+    classId: Long,
     viewModel: ClassMemberManagementViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var selectedTab by remember { mutableStateOf(0) }
     
     LaunchedEffect(classId) {
-        val classIdLong = classId.toLongOrNull() ?: 0L
+        val classIdLong = classId
         viewModel.loadClassMembers(classIdLong)
         viewModel.loadPendingApplications(classIdLong)
     }
@@ -40,7 +40,7 @@ fun ClassMemberManagementScreen(
     Scaffold(
         topBar = {
             NatureComponents.NatureTopAppBar(
-                title = "강의실 관리",
+                title = "구성원 관리",
                 emoji = "👥",
                 onNavigationClick = { navController.popBackStack() }
             )
@@ -276,7 +276,7 @@ fun PreviewClassMemberManagementScreen() {
     MaterialTheme {
         ClassMemberManagementScreen(
             navController = rememberNavController(),
-            classId = "class_1"
+            classId = 0L
         )
     }
 }

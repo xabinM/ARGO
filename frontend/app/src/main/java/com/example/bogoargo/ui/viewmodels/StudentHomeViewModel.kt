@@ -108,7 +108,8 @@ class StudentHomeViewModel @Inject constructor(
                     teamCount = 5,
                     status = Class.ClassStatus.ACTIVE,
                     inviteCode = "HIST2024",
-                    createdAt = LocalDate.now().minusDays(14)
+                    createdAt = LocalDate.now().minusDays(14),
+                    isFull = false
                 ),
                 Class(
                     classId = 2L,
@@ -122,7 +123,8 @@ class StudentHomeViewModel @Inject constructor(
                     teamCount = 6,
                     status = Class.ClassStatus.ACTIVE,
                     inviteCode = "OCEAN2024",
-                    createdAt = LocalDate.now().minusDays(7)
+                    createdAt = LocalDate.now().minusDays(7),
+                    isFull = false
                 ),
                 Class(
                     classId = 3L,
@@ -136,7 +138,8 @@ class StudentHomeViewModel @Inject constructor(
                     teamCount = 4,
                     status = Class.ClassStatus.ACTIVE,
                     inviteCode = "TEMPLE2024",
-                    createdAt = LocalDate.now().minusDays(10)
+                    createdAt = LocalDate.now().minusDays(10),
+                    isFull = false
                 ),
                 Class(
                     classId = 4L,
@@ -150,7 +153,8 @@ class StudentHomeViewModel @Inject constructor(
                     teamCount = 3,
                     status = Class.ClassStatus.ACTIVE,
                     inviteCode = "SCI2024",
-                    createdAt = LocalDate.now().minusDays(20)
+                    createdAt = LocalDate.now().minusDays(20),
+                    isFull = false
                 ),
                 Class(
                     classId = 5L,
@@ -164,7 +168,8 @@ class StudentHomeViewModel @Inject constructor(
                     teamCount = 5,
                     status = Class.ClassStatus.ACTIVE,
                     inviteCode = "NATURE2024",
-                    createdAt = LocalDate.now().minusDays(3)
+                    createdAt = LocalDate.now().minusDays(3),
+                    isFull = true
                 )
             )
             

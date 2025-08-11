@@ -38,7 +38,7 @@ class StudentClassDetailViewModel @Inject constructor(
                     val myTeam = result.data.teams.find { team ->
                         team.members.any { it.studentId == currentUserId }
                     }
-                    
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         classDetail = result.data,
@@ -96,7 +96,7 @@ class StudentClassDetailViewModel @Inject constructor(
             teacherName = "김선생님",
             createdAt = null
         )
-        
+
         val students = listOf(
             StudentInfo(1L, "김민수", 1L, "역사탐험대", LocalDate.now().minusDays(14)),
             StudentInfo(2L, "박지영", 1L, "역사탐험대", LocalDate.now().minusDays(13)),
@@ -105,7 +105,7 @@ class StudentClassDetailViewModel @Inject constructor(
             StudentInfo(5L, "정예린", 2L, "문화유산지킴이", LocalDate.now().minusDays(10)),
             StudentInfo(6L, "강도현", 2L, "문화유산지킴이", LocalDate.now().minusDays(9))
         )
-        
+
         val teams = listOf(
             TeamDetail(
                 teamId = 1L,
@@ -130,10 +130,10 @@ class StudentClassDetailViewModel @Inject constructor(
                 )
             )
         )
-        
+
         return Triple(classInfo, students, teams)
     }
-    
+
     private fun createClass2DummyData(): Triple<ClassDetailInfo, List<StudentInfo>, List<TeamDetail>> {
         val classInfo = ClassDetailInfo(
             classId = 2L,
@@ -148,14 +148,14 @@ class StudentClassDetailViewModel @Inject constructor(
             teacherName = "이선생님",
             createdAt = null
         )
-        
+
         val students = listOf(
             StudentInfo(1L, "김민수", 6L, "바다탐험대", LocalDate.now().minusDays(7)),
             StudentInfo(16L, "송유진", 6L, "바다탐험대", LocalDate.now().minusDays(6)),
             StudentInfo(17L, "장민호", 6L, "바다탐험대", LocalDate.now().minusDays(5)),
             StudentInfo(19L, "윤서연", 7L, "해양생물연구팀", LocalDate.now().minusDays(4))
         )
-        
+
         val teams = listOf(
             TeamDetail(
                 teamId = 6L,
@@ -178,10 +178,10 @@ class StudentClassDetailViewModel @Inject constructor(
                 )
             )
         )
-        
+
         return Triple(classInfo, students, teams)
     }
-    
+
     private fun createClass3DummyData(): Triple<ClassDetailInfo, List<StudentInfo>, List<TeamDetail>> {
         val classInfo = ClassDetailInfo(
             classId = 3L,
@@ -196,13 +196,13 @@ class StudentClassDetailViewModel @Inject constructor(
             teacherName = "박선생님",
             createdAt = null
         )
-        
+
         val students = listOf(
             StudentInfo(1L, "김민수", 12L, "불국사탐험대", LocalDate.now().minusDays(10)),
             StudentInfo(35L, "한지우", 12L, "불국사탐험대", LocalDate.now().minusDays(9)),
             StudentInfo(36L, "오태민", 12L, "불국사탐험대", LocalDate.now().minusDays(8))
         )
-        
+
         val teams = listOf(
             TeamDetail(
                 teamId = 12L,
@@ -216,10 +216,10 @@ class StudentClassDetailViewModel @Inject constructor(
                 )
             )
         )
-        
+
         return Triple(classInfo, students, teams)
     }
-    
+
     private fun createClass4DummyData(): Triple<ClassDetailInfo, List<StudentInfo>, List<TeamDetail>> {
         val classInfo = ClassDetailInfo(
             classId = 4L,
@@ -234,13 +234,13 @@ class StudentClassDetailViewModel @Inject constructor(
             teacherName = "최선생님",
             createdAt = null
         )
-        
+
         val students = listOf(
             StudentInfo(1L, "김민수", 16L, "과학실험단", LocalDate.now().minusDays(20)),
             StudentInfo(52L, "신동현", 16L, "과학실험단", LocalDate.now().minusDays(19)),
             StudentInfo(53L, "배수민", 16L, "과학실험단", LocalDate.now().minusDays(18))
         )
-        
+
         val teams = listOf(
             TeamDetail(
                 teamId = 16L,
@@ -254,10 +254,10 @@ class StudentClassDetailViewModel @Inject constructor(
                 )
             )
         )
-        
+
         return Triple(classInfo, students, teams)
     }
-    
+
     private fun createClass5DummyData(): Triple<ClassDetailInfo, List<StudentInfo>, List<TeamDetail>> {
         val classInfo = ClassDetailInfo(
             classId = 5L,
@@ -272,13 +272,13 @@ class StudentClassDetailViewModel @Inject constructor(
             teacherName = "정선생님",
             createdAt = null
         )
-        
+
         val students = listOf(
             StudentInfo(1L, "김민수", 19L, "숲속탐험대", LocalDate.now().minusDays(3)),
             StudentInfo(63L, "임채원", 19L, "숲속탐험대", LocalDate.now().minusDays(2)),
             StudentInfo(64L, "조현우", 19L, "숲속탐험대", LocalDate.now().minusDays(1))
         )
-        
+
         val teams = listOf(
             TeamDetail(
                 teamId = 19L,
@@ -292,10 +292,10 @@ class StudentClassDetailViewModel @Inject constructor(
                 )
             )
         )
-        
+
         return Triple(classInfo, students, teams)
     }
-    
+
     private fun createDefaultDummyData(classId: Long): Triple<ClassDetailInfo, List<StudentInfo>, List<TeamDetail>> {
         val classInfo = ClassDetailInfo(
             classId = classId,
@@ -310,11 +310,11 @@ class StudentClassDetailViewModel @Inject constructor(
             teacherName = "테스트선생님",
             createdAt = null
         )
-        
+
         val students = listOf(
             StudentInfo(1L, "김민수", 1L, "테스트팀", LocalDate.now().minusDays(1))
         )
-        
+
         val teams = listOf(
             TeamDetail(
                 teamId = 1L,
@@ -326,20 +326,20 @@ class StudentClassDetailViewModel @Inject constructor(
                 )
             )
         )
-        
+
         return Triple(classInfo, students, teams)
     }
-    
+
     fun loadDummyData(classId: Long) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true)
-            
+
             // 짧은 딜레이로 로딩 시뮬레이션
             kotlinx.coroutines.delay(500)
-            
+
             // 더미 반 상세 데이터 생성
             val dummyClassDetail = createDummyStudentClassDetail(classId)
-            
+
             // 현재 사용자가 속한 팀 찾기
             val currentUserId = preferencesManager.getUserId() ?: 1L
             val myTeam = dummyClassDetail.teams.find { team ->

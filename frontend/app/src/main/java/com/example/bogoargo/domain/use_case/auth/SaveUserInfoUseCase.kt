@@ -8,7 +8,7 @@ class SaveUserInfoUseCase @Inject constructor(
     private val preferencesManager: PreferencesManager
 ) {
     operator fun invoke(user: User) {
-        preferencesManager.saveUserId(user.userId)
+        preferencesManager.saveUserId(user.userId ?: 0L) //TODO: null처리 해지
         preferencesManager.saveUserName(user.name)
         preferencesManager.saveUserRole(user.role.name)
     }

@@ -1,4 +1,4 @@
-package com.example.bogoargo.data.dto
+package com.example.bogoargo.data.dto.request
 
 import com.example.bogoargo.data.dto.request.ApplicationRequestDto
 
@@ -8,7 +8,8 @@ data class ClassCreateRequest(
     val description: String,
     val location: String,
     val activityDate: String,
-    val maxStudents: Int
+    val maxStudents: Int,
+    val grade: Int
 )
 
 // 신청 학생 승인 요청 DTO

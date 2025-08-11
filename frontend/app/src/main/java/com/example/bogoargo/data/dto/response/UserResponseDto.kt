@@ -2,6 +2,7 @@ package com.example.bogoargo.data.dto.response
 
 import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.data.response.ClassDataDto
+import com.example.bogoargo.data.storage.TokenStorage
 
 // 유저 정보 응답 DTO
 data class UserDataDto(
@@ -15,7 +16,10 @@ data class UserDataDto(
 data class UserLoginResponse(
     val success: Boolean,
     val message: String,
-    val data: UserDataDto?
+    val userId: Long = 1L, //TODO: null처리 해지
+    val name: String?,
+    val role: String,
+    val tokens: TokenResponseDto?
 )
 
 // 회원 정보 수정 응답 DTO

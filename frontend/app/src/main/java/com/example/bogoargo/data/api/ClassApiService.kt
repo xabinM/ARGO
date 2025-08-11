@@ -1,8 +1,9 @@
 package com.example.bogoargo.data.api
 
-import com.example.bogoargo.data.dto.ClassCreateRequest
+import com.example.bogoargo.data.dto.request.ClassCreateRequest
 import com.example.bogoargo.data.dto.response.ApplicationResponseDto
 import com.example.bogoargo.data.dto.response.MessageResponseDto
+import com.example.bogoargo.data.response.ClassCreateResponse
 import com.example.bogoargo.data.response.ClassDataDto
 import com.example.bogoargo.data.response.ClassDetailResponse
 import com.example.bogoargo.data.response.ClassLeaveResponse
@@ -37,9 +38,15 @@ interface ClassApiService {
     ): Response<ClassListResponse>
 
 
-    // 반 상세 정보 조회 (기존)
-    @GET("api/classes/{classId}")
+    // 반 상세 정보 조회 (교사 기능)
+    @GET("api/teacher/classes/{classId}")
     suspend fun getClassDetail(
+        @Path("classId") classId: Long
+    ): Response<ClassDetailResponse>
+
+    // 반 상세 정보 조회 (학생)
+    @GET("api/student/classes/{classId}")
+    suspend fun getStudentClassDetail(
         @Path("classId") classId: Long
     ): Response<ClassDataDto>
 
@@ -51,10 +58,10 @@ interface ClassApiService {
     ): Response<StudentClassDetailResponse>
 
     // 반 생성 (교사 기능)
-    @POST("api/teacher/classes/create")
+    @POST("api/teacher/classes")
     suspend fun createClass(
         @Body  classCreateRequest: ClassCreateRequest
-    ) : Response<ClassDetailResponse>
+    ) : Response<ClassCreateResponse>
 
     // 참여 신청한 학생 목록 조회
     @GET("api/teacher/classes/{classId}/applications")

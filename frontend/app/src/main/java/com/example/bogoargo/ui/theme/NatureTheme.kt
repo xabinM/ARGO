@@ -719,15 +719,15 @@ object NatureColorUtils {
     /**
      * 사용자별로 다른 색상 반환 (해시 기반)
      */
-    fun getUserColor(nickname: String, userId: Long): Color {
-        val colors = listOf(
-            NatureColors.forestGreen,
-            NatureColors.sunnyYellow,
-            NatureColors.leafGreen,
-            NatureColors.softOrange
-        )
-        return colors[(nickname.length + userId.toString().length) % colors.size]
-    }
+//    fun getUserColor(nickname: String, userId: Long): Color {
+//        val colors = listOf(
+//            NatureColors.forestGreen,
+//            NatureColors.sunnyYellow,
+//            NatureColors.leafGreen,
+//            NatureColors.softOrange
+//        )
+//        return colors[(nickname.length + userId.toString().length) % colors.size]
+//    }
 
     /**
      * 역할별 색상 반환
