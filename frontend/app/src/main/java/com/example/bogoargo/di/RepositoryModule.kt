@@ -49,6 +49,14 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindCardGameRepository(impl: CardGameRepositoryImpl): ICardGameRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindProblemRepository(impl: ProblemRepositoryImpl): IProblemRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSpotRepository(impl: SpotRepository): ISpotRepository
 }
 
 @Module

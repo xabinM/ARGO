@@ -22,5 +22,6 @@ interface LocationApiService {
         @Path("classId") classId: Long
     ): Response<StudentsLocationResponse>
 
+    @GET("api/teacher/classes/locations")
     suspend fun getLocations(): LocationResponseDto
 }

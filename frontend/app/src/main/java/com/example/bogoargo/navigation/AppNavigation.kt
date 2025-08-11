@@ -32,6 +32,8 @@ import com.example.bogoargo.ui.screens.cardgame.CardCollectionScreen
 import com.example.bogoargo.ui.screens.cardgame.BattleRequestScreen
 import com.example.bogoargo.ui.screens.cardgame.CardSelectionScreen
 import com.example.bogoargo.ui.screens.cardgame.BattleResultScreen
+import com.example.bogoargo.ui.screens.problem.ClassSelectionForProblemScreen
+import com.example.bogoargo.ui.screens.problem.ProblemGenerateScreen
 
 sealed class Screen(val route: String) {
     data object Splash : Screen("splash")
@@ -105,6 +107,12 @@ sealed class Screen(val route: String) {
             myTeamName: String,
             opponentTeamName: String
         ) = "battleResult/$myCardId/$myCardRarity/$myCardStance/$opponentCardId/$opponentCardRarity/$opponentCardStance/$isWin/$myTeamName/$opponentTeamName"
+    }
+
+    // Problem generation screens
+    data object ClassSelectionForProblemScreen : Screen("classSelectionForProblemScreen")
+    data object ProblemGenerate : Screen("problemGenerate/{classId}") {
+        fun createRoute(classId: Long) = "problemGenerate/$classId"
     }
 }
 
@@ -387,6 +395,23 @@ fun AppNavigation(
                 isWin = isWin,
                 myTeamName = myTeamName,
                 opponentTeamName = opponentTeamName
+            )
+        }
+        
+        // Problem generation screens
+        composable(Screen.ClassSelectionForProblemScreen.route) {
+            ClassSelectionForProblemScreen(navController = navController)
+        }
+        composable(
+            route = Screen.ProblemGenerate.route,
+            arguments = listOf(
+                navArgument("classId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
+            val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
+            ProblemGenerateScreen(
+                classId = classId,
+                navController = navController
             )
         }
     }

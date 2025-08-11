@@ -2,9 +2,9 @@ package com.example.bogoargo.data.dto.response
 
 data class SpotDataDto (
     val spotId: Int,
-    val spotName: String,
-    val latitude: Double,
-    val longitude: Double
+    val name: String,
+    val description: String,
+    val coordinates: Coordinates
 )
 
 // 미션 위치 목록 응답 Dto

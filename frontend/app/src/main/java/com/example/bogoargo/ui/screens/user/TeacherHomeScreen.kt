@@ -173,7 +173,7 @@ fun TeacherHomeScreen(
                     ) {
                         Button(
                             onClick = {
-                                navController.navigate("") //TODO: 미션 생성 버튼
+                                navController.navigate("classSelectionForProblemScreen")
                             },
                             modifier = Modifier.fillMaxSize(),
                             colors = ButtonDefaults.buttonColors(
