@@ -8,5 +8,6 @@ import lombok.Getter;
 public class ProblemGenerateRequestFromCli {
 
     private Long spotId;
+    private Integer grade;
     private int problemCnt;
 }

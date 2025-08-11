@@ -8,5 +8,6 @@ import lombok.Getter;
 public class ProblemGenerateRequestToAI {
 
     private String spotName;
+    private Integer grade;
     private int problemCnt;
 }

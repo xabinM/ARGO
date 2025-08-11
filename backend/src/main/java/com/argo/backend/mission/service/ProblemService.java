@@ -45,6 +45,7 @@ public class ProblemService {
 
         QuizProblem quiz = QuizProblem.from(
                 spot,
+                request.getGrade(),
                 request.getQuestion(),
                 request.getChoices(),
                 request.getCorrectIndex(),
@@ -57,7 +58,7 @@ public class ProblemService {
         Spot spot = spotRepository.findById(request.getSpotId())
                 .orElseThrow(SpotNotFoundException::new);
 
-        return pythonApiClient.requestProblem(spot.getName(), request.getProblemCnt());
+        return pythonApiClient.requestProblem(spot.getName(), request.getGrade(), request.getProblemCnt());
     }
 
     public List<ProblemDetail> getProblemsBySpotId(Long spotId) {
