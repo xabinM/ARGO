@@ -20,10 +20,11 @@ public class ClassInfoDto {
     private String status;
     private String inviteCode;
     private LocalDateTime createdAt;
+    private Integer grade;
     
     public ClassInfoDto(Long classId, String className, String description, String location, 
                        LocalDate activityDate, int studentCount, int maxStudents, int teamCount, 
-                       String status, String inviteCode, LocalDateTime createdAt) {
+                       String status, String inviteCode, LocalDateTime createdAt, Integer grade) {
         this.classId = classId;
         this.className = className;
         this.description = description;
@@ -35,6 +36,7 @@ public class ClassInfoDto {
         this.status = status;
         this.inviteCode = inviteCode;
         this.createdAt = createdAt;
+        this.grade = grade;
     }
     
     public static ClassInfoDto from(ClassRoom classRoom, int studentCount, int teamCount) {
@@ -49,7 +51,8 @@ public class ClassInfoDto {
                 teamCount,
                 classRoom.getStatus().name().toLowerCase(),
                 classRoom.getInviteCode(),
-                classRoom.getCreatedAt()
+                classRoom.getCreatedAt(),
+                classRoom.getGrade()
         );
     }
     
@@ -65,7 +68,8 @@ public class ClassInfoDto {
                 teamCount,
                 classRoom.getStatus().name().toLowerCase(),
                 null, // 학생에게는 초대코드 숨김
-                classRoom.getCreatedAt()
+                classRoom.getCreatedAt(),
+                classRoom.getGrade()
         );
     }
 }
