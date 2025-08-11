@@ -1,31 +1,24 @@
 package com.argo.backend.global.exception;
 
+import com.argo.backend.auth.exception.AuthorizationException;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponse> handleValidationExceptions(MethodArgumentNotValidException ex) {
-        String firstErrorMessage = ex.getBindingResult()
-                .getFieldErrors()
-                .get(0)
-                .getDefaultMessage();
-
-        BusinessException e = new ValidationException(firstErrorMessage);
-        return buildErrorResponse(e);
-    }
-
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
-        return buildErrorResponse(e);
+        ErrorResponse error = new ErrorResponse(e.getCode(), e.getMessage());
+
+        return new ResponseEntity<>(error, e.getHttpStatus());
     }
 
-    private ResponseEntity<ErrorResponse> buildErrorResponse(BusinessException e) {
+    @ExceptionHandler(AuthorizationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthorizationException(AuthorizationException e) {
         ErrorResponse error = new ErrorResponse(e.getCode(), e.getMessage());
+
         return new ResponseEntity<>(error, e.getHttpStatus());
     }
 }

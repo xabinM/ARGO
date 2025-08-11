@@ -83,6 +83,9 @@ public class ClassService {
     private final UserTeamRepository userTeamRepository;
     private final SpotRepository spotRepository;
 
+
+
+
     private static final String INVITE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int INVITE_CODE_LENGTH = 6;
 

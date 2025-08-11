@@ -22,4 +22,6 @@ public class SignupRequest {
 
     @AssertTrue(message = "약관 동의는 필수입니다.")
     private boolean agreeTerms;
+
+
 }

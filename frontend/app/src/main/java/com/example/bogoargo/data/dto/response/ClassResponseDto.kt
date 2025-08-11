@@ -167,7 +167,6 @@ data class TeamDetailDto(
     val teamName: String,
     val memberCount: Int,
     val totalScore: Int,
-    val teamLeaderId: Long,
     val members: List<TeamMemberDto>
 )
 

@@ -85,6 +85,45 @@ fun StudentClassDetailScreen(
                             }
                         }
                         
+                        // 디버그 버튼
+                        item {
+                            NatureComponents.NatureCard(
+                                containerColor = NatureColors.sunnyYellow.copy(alpha = 0.15f)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(20.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "🔧 개발용 테스트",
+                                        style = NatureTypography.titleMedium.copy(
+                                            color = NatureColors.earthBrown
+                                        )
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "API 연결이 준비되지 않아 더미 데이터를 사용합니다",
+                                        style = NatureTypography.bodySmall.copy(
+                                            color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                                        ),
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Spacer(modifier = Modifier.height(12.dp))
+                                    Button(
+                                        onClick = { viewModel.loadDummyData(classId) },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = NatureColors.sunnyYellow
+                                        ),
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(
+                                            text = "더미 데이터 로드",
+                                            color = NatureColors.earthBrown
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                     uiState.classDetail != null -> {
                         val classDetail = uiState.classDetail!!.classInfo
@@ -391,7 +430,7 @@ fun StudentClassDetailScreen(
                                                     onClick = { 
                                                         // classId와 teamId를 파라미터로 전달
                                                         val teamId = uiState.myTeam!!.teamId
-                                                        val leaderId = uiState.myTeam!!.leaderId
+                                                        val leaderId = uiState.myTeam!!.members.firstOrNull()?.studentId ?: 1L // 첫 번째 멤버를 리더로 가정
                                                         navController.navigate("cardGame/$teamId/$leaderId?classId=$classId") 
                                                     },
                                                     colors = ButtonDefaults.buttonColors(
