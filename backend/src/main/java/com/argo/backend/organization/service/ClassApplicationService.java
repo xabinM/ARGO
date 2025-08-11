@@ -9,6 +9,7 @@ import com.argo.backend.organization.exception.types.*;
 import com.argo.backend.organization.exception.types.ClassNotFoundException;
 import com.argo.backend.domain.classroom.repository.ClassApplicationRepository;
 import com.argo.backend.domain.classroom.repository.ClassRoomRepository;
+import com.argo.backend.redis.logic.GpsRedis;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -24,6 +25,7 @@ public class ClassApplicationService {
 
     private final ClassApplicationRepository classApplicationRepository;
     private final ClassRoomRepository classRoomRepository;
+    private final GpsRedis gpsRedis;
 
     // 신청 리스트 받기
     @Transactional
@@ -125,6 +127,16 @@ public class ClassApplicationService {
                 .map(application -> {
                     application.setStatus(ApplicationStatus.APPROVED);
                     application.setProcessedAt(processedAt);
+
+                    // ✅ Redis 갱신: 전체 목록 조회 후 덮어쓰기
+                    Long userId = application.getUser().getUserId();
+                    List<Long> classIds = classApplicationRepository
+                            .findAllByUser_UserIdAndStatus(userId, ApplicationStatus.APPROVED)
+                            .stream()
+                            .map(app -> app.getClassRoom().getClassId())
+                            .toList();
+                    gpsRedis.setUserClassIds(userId, classIds);
+
                     return ApplicationProcessResultDto.from(application);
                 })
                 .toList();

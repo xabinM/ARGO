@@ -2,17 +2,9 @@ package com.example.bogoargo.ui.screens.cardgame
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,6 +16,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.bogoargo.domain.model.*
 import com.example.bogoargo.ui.theme.NatureColors
@@ -34,75 +28,52 @@ import com.example.bogoargo.ui.theme.NatureElevation
 import com.example.bogoargo.ui.components.GameCardComponent
 import com.example.bogoargo.ui.components.StatChip
 import com.example.bogoargo.ui.components.CardDetailDialog
+import com.example.bogoargo.ui.components.CardGridComponent
+import com.example.bogoargo.ui.components.CardDisplayMode
+import com.example.bogoargo.ui.components.CardFiltersSection
+import com.example.bogoargo.ui.components.BattleResultDialog
+import com.example.bogoargo.ui.viewmodels.cardgame.CardSelectionViewModel
+
+data class CardSelectionParams(
+    val teamId: Long,
+    val targetTeamId: Long,
+    val matchId: Long? = null, // 대전 응답 시에만 필요
+    val isResponse: Boolean = false // true = 응답, false = 신규 신청
+)
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun CardSelectionScreen(
     navController: NavController,
-    teamId: Long,
-    targetTeamId: Long
+    params: CardSelectionParams,
+    viewModel: CardSelectionViewModel = hiltViewModel()
 ) {
-    val availableCards = remember {
-        listOf(
-            GameCard(
-                cardId = 1,
-                name = "불사조 🔥",
-                attack = 85,
-                defense = 70,
-                rarity = CardTier.LEGENDARY,
-                description = "불타는 날개로 적을 소멸시키는 전설의 새"
-            ),
-            GameCard(
-                cardId = 2,
-                name = "그림자 늑대 🐺",
-                attack = 75,
-                defense = 60,
-                rarity = CardTier.EPIC,
-                description = "어둠 속에서 빠르게 움직이는 늑대"
-            ),
-            GameCard(
-                cardId = 3,
-                name = "치유의 요정 🧚",
-                attack = 40,
-                defense = 90,
-                rarity = CardTier.RARE,
-                description = "아군을 치유하는 신비한 요정"
-            ),
-            GameCard(
-                cardId = 4,
-                name = "바위 골렘 🗿",
-                attack = 60,
-                defense = 95,
-                rarity = CardTier.EPIC,
-                description = "단단한 바위로 만들어진 수호자"
-            ),
-            GameCard(
-                cardId = 5,
-                name = "번개 마법사 ⚡",
-                attack = 80,
-                defense = 50,
-                rarity = CardTier.RARE,
-                description = "번개를 조종하는 강력한 마법사"
-            ),
-            GameCard(
-                cardId = 6,
-                name = "숲의 수호자 🌳",
-                attack = 65,
-                defense = 75,
-                rarity = CardTier.COMMON,
-                description = "자연을 보호하는 고대의 수호자"
-            )
-        )
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    
+    // 화면 진입 시 팀 카드 컬렉션 로드
+    LaunchedEffect(params.teamId) {
+        viewModel.loadTeamCardCollection(params.teamId)
     }
+    
+    val availableCards = uiState.teamCardCollection?.cards ?: emptyList()
 
     var selectedCard by remember { mutableStateOf<Long?>(null) }
     var selectedStance by remember { mutableStateOf<BattleStance?>(null) }
     var showCardDetail by remember { mutableStateOf(false) }
     var selectedCardForDetail by remember { mutableStateOf<GameCard?>(null) }
     var showConfirmDialog by remember { mutableStateOf(false) }
+    var showResultDialog by remember { mutableStateOf(false) }
+    val rarityFilter = remember { mutableStateOf<CardTier?>(null) }
+    
+    // 대전 결과 처리
+    LaunchedEffect(uiState.battleResult, uiState.battleErrorMessage) {
+        if (uiState.battleResult != null || uiState.battleErrorMessage != null) {
+            showResultDialog = true
+        }
+    }
 
     val targetTeamName = remember {
-        when (targetTeamId) {
+        when (params.targetTeamId) {
             2L -> "불사조 팀 🔥"
             3L -> "그리핀 팀 🦅"
             4L -> "유니콘 팀 🦄"
@@ -111,11 +82,20 @@ fun CardSelectionScreen(
         }
     }
 
+    // 필터링된 카드 리스트 (레어도 필터 + 활성 카드만)
+    val filteredCards = availableCards.filter { card ->
+        val rarityMatch = rarityFilter.value?.let { it == card.rarity } ?: true
+        rarityMatch // 모든 카드 표시 (활성/비활성 구분은 UI에서)
+    }
+    
+    // 선택 가능한 카드만 필터링 (활성 카드만)
+    val selectableCards = filteredCards.filter { it.isActive }
+
     Scaffold(
         topBar = {
             NatureComponents.NatureTopAppBar(
-                title = "카드 선택 ${if (selectedCard != null) "(1/1)" else "(0/1)"}",
-                emoji = "🎴",
+                title = "${if (params.isResponse) "대전 수락" else "대전 신청"} ${if (selectedCard != null) "(1/1)" else "(0/1)"}",
+                emoji = if (params.isResponse) "🤝" else "⚔️",
                 onNavigationClick = { navController.popBackStack() }
             )
         },
@@ -152,18 +132,35 @@ fun CardSelectionScreen(
                         
                         NatureComponents.NatureButton(
                             onClick = { showConfirmDialog = true },
-                            enabled = selectedCard != null && selectedStance != null,
+                            enabled = selectedCard != null && selectedStance != null && !uiState.isBattleLoading,
                             modifier = Modifier.fillMaxWidth(),
                             backgroundColor = NatureColors.leafGreen
                         ) {
-                            Text(
-                                text = when {
-                                    selectedCard == null -> "카드를 선택해주세요"
-                                    selectedStance == null -> "스탠스를 선택해주세요"
-                                    else -> "대전 신청 보내기 ⚔️"
-                                },
-                                style = NatureTypography.labelLarge
-                            )
+                            if (uiState.isBattleLoading) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(16.dp),
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        text = "처리중...",
+                                        style = NatureTypography.labelLarge
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = when {
+                                        selectedCard == null -> "카드를 선택해주세요"
+                                        selectedStance == null -> "스탠스를 선택해주세요"
+                                        params.isResponse -> "대전 수락하기 🤝"
+                                        else -> "대전 신청 보내기 ⚔️"
+                                    },
+                                    style = NatureTypography.labelLarge
+                                )
+                            }
                         }
                     }
                 }
@@ -175,83 +172,57 @@ fun CardSelectionScreen(
                     .padding(paddingValues)
                     .background(NatureColors.lightBeige)
             ) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = NatureColors.whiteTransparent),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                // 로딩 상태 처리
+                if (uiState.isLoading) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "🃏 대전용 카드를 선택하세요",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = NatureColors.forestGreen
-                            )
-                        )
-                        Text(
-                            text = "대전에서 사용할 카드 1장을 선택해주세요. 선택한 카드의 능력치가 승부에 영향을 줍니다.",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                color = Color.Gray.copy(alpha = 0.7f)
-                            )
-                        )
+                        CircularProgressIndicator(color = NatureColors.forestGreen)
                     }
+                    return@Column
                 }
+                
+                // 오류 상태 또는 데이터 없음
+                if (uiState.errorMessage != null || availableCards.isEmpty()) {
+                    ErrorStateCard(
+                        errorMessage = uiState.errorMessage,
+                        onRetry = { viewModel.loadTeamCardCollection(params.teamId) },
+                        onUseDummy = { viewModel.loadDummyTeamCardCollection(params.teamId) }
+                    )
+                    return@Column
+                }
+                
+                // 설명 카드
+                BattleInstructionCard(selectableCount = selectableCards.size, isResponse = params.isResponse)
+                
+                // 필터링 섹션 (레어도만)
+                CardFiltersSection(
+                    cards = availableCards,
+                    selectedRarity = rarityFilter.value,
+                    showStatusFilter = false,
+                    onRaritySelected = { rarityFilter.value = it }
+                )
 
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(2),
+                // 공통 카드 그리드 컴포넌트 사용
+                CardGridComponent(
+                    cards = filteredCards,
+                    selectedCardId = selectedCard,
+                    displayMode = CardDisplayMode.SINGLE_SELECT,
+                    onCardClick = { card ->
+                        // 활성 카드만 선택 가능
+                        if (card.isActive) {
+                            selectedCard = if (selectedCard == card.cardId) null else card.cardId
+                        }
+                    },
+                    onCardLongClick = {
+                        selectedCardForDetail = it
+                        showCardDetail = true
+                    },
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    items(availableCards) { card ->
-                        Box(
-                            modifier = Modifier
-                                .combinedClickable(
-                                    onClick = {
-                                        selectedCard = if (selectedCard == card.cardId) {
-                                            null // 이미 선택된 카드 클릭 시 선택 해제
-                                        } else {
-                                            card.cardId // 새 카드 선택
-                                        }
-                                    },
-                                    onLongClick = {
-                                        selectedCardForDetail = card
-                                        showCardDetail = true
-                                    }
-                                )
-                        ) {
-                            GameCardComponent(card = card)
-                            
-                            // 선택 체크마크
-                            if (selectedCard == card.cardId) {
-                                Card(
-                                    modifier = Modifier
-                                        .align(Alignment.TopEnd)
-                                        .padding(8.dp),
-                                    colors = CardDefaults.cardColors(containerColor = NatureColors.leafGreen),
-                                    shape = RoundedCornerShape(50)
-                                ) {
-                                    Icon(
-                                        Icons.Default.Check,
-                                        contentDescription = "선택됨",
-                                        tint = Color.White,
-                                        modifier = Modifier
-                                            .padding(4.dp)
-                                            .size(16.dp)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
+                        .padding(horizontal = 16.dp)
+                )
             }
         }
 
@@ -263,9 +234,28 @@ fun CardSelectionScreen(
                 onDismiss = { showConfirmDialog = false },
                 onConfirm = {
                     showConfirmDialog = false
-                    navController.popBackStack()
-                    navController.popBackStack()
-                    navController.popBackStack()
+                    
+                    // 선택된 카드의 teamCardId 찾기
+                    val selectedGameCard = availableCards.find { it.cardId == selectedCard }
+                    selectedGameCard?.teamCardId?.let { teamCardId ->
+                        if (params.isResponse && params.matchId != null) {
+                            // 대전 응답
+                            viewModel.respondToBattle(
+                                matchId = params.matchId,
+                                action = "accept",
+                                selectedCardTeamCardId = teamCardId,
+                                battleStance = selectedStance!!
+                            )
+                        } else {
+                            // 새 대전 신청
+                            viewModel.createBattle(
+                                challengerTeamId = params.teamId,
+                                challengedTeamId = params.targetTeamId,
+                                selectedCardTeamCardId = teamCardId,
+                                battleStance = selectedStance!!
+                            )
+                        }
+                    }
                 }
             )
         }
@@ -277,6 +267,45 @@ fun CardSelectionScreen(
             onDismiss = {
                 showCardDetail = false
                 selectedCardForDetail = null
+            }
+        )
+        
+        // 대전 결과 Dialog
+        BattleResultDialog(
+            isVisible = showResultDialog,
+            isSuccess = uiState.battleResult != null,
+            message = uiState.battleResult?.message ?: uiState.battleErrorMessage ?: "",
+            isResponse = params.isResponse,
+            onDismiss = { 
+                showResultDialog = false
+                viewModel.clearBattleResult()
+                viewModel.clearBattleErrorMessage()
+            },
+            onRetry = if (uiState.battleErrorMessage != null) {
+                {
+                    // 재시도 로직
+                    val selectedGameCard = availableCards.find { it.cardId == selectedCard }
+                    selectedGameCard?.teamCardId?.let { teamCardId ->
+                        if (params.isResponse && params.matchId != null) {
+                            viewModel.respondToBattle(
+                                matchId = params.matchId,
+                                action = "accept", 
+                                selectedCardTeamCardId = teamCardId,
+                                battleStance = selectedStance!!
+                            )
+                        } else {
+                            viewModel.createBattle(
+                                challengerTeamId = params.teamId,
+                                challengedTeamId = params.targetTeamId,
+                                selectedCardTeamCardId = teamCardId,
+                                battleStance = selectedStance!!
+                            )
+                        }
+                    }
+                }
+            } else null,
+            onNavigateBack = {
+                navController.popBackStack()
             }
         )
     }
@@ -383,150 +412,6 @@ fun StanceSelectionSection(
     }
 }
 
-@Composable
-fun SelectableCardItem(
-    card: GameCard,
-    isSelected: Boolean,
-    onSelectionChanged: (Boolean) -> Unit,
-    isSelectable: Boolean
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(220.dp)
-            .then(
-                if (isSelected) {
-                    Modifier.border(
-                        width = 3.dp,
-                        color = NatureColors.leafGreen,
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                } else {
-                    Modifier
-                }
-            )
-            .clickable(enabled = isSelectable) {
-                onSelectionChanged(!isSelected)
-            },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                Color(android.graphics.Color.parseColor(card.rarity.color)).copy(alpha = 0.2f)
-            } else if (isSelectable) {
-                Color(android.graphics.Color.parseColor(card.rarity.color)).copy(alpha = 0.1f)
-            } else {
-                Color.Gray.copy(alpha = 0.3f)
-            }
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 8.dp else 4.dp
-        )
-    ) {
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(12.dp),
-                verticalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top
-                    ) {
-                        Text(
-                            text = card.name,
-                            style = MaterialTheme.typography.titleSmall.copy(
-                                fontWeight = FontWeight.Bold,
-                                color = if (isSelectable) 
-                                    NatureColors.earthBrown
-                                else 
-                                    NatureColors.earthBrown.copy(alpha = 0.5f)
-                            ),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f)
-                        )
-                        
-                        Card(
-                            shape = RoundedCornerShape(4.dp)
-                        ) {
-                            Text(
-                                text = card.rarity.displayName,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                style = MaterialTheme.typography.labelSmall.copy(
-                                    color = Color.White,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 10.sp
-                                )
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = card.description,
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = if (isSelectable)
-                                Color.Gray.copy(alpha = 0.7f)
-                            else
-                                Color.Gray.copy(alpha = 0.4f)
-                        ),
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    StatChip(
-                        label = "공격",
-                        value = card.attack,
-                        color = Color(0xFFF44336).copy(alpha = if (isSelectable) 1f else 0.5f)
-                    )
-                    StatChip(
-                        label = "방어",
-                        value = card.defense,
-                        color = Color(0xFF2196F3).copy(alpha = if (isSelectable) 1f else 0.5f)
-                    )
-                }
-            }
-
-            if (isSelected) {
-                Card(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(8.dp),
-                    colors = CardDefaults.cardColors(containerColor = NatureColors.leafGreen),
-                    shape = RoundedCornerShape(50)
-                ) {
-                    Icon(
-                        Icons.Default.Check,
-                        contentDescription = "선택됨",
-                        tint = Color.White,
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .size(16.dp)
-                    )
-                }
-            }
-
-            if (!isSelectable && !isSelected) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.3f))
-                )
-            }
-        }
-    }
-}
 
 @Composable
 fun BattleConfirmDialog(
@@ -692,6 +577,96 @@ fun BattleConfirmDialog(
                     )
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun ErrorStateCard(
+    errorMessage: String?,
+    onRetry: () -> Unit,
+    onUseDummy: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = NatureColors.whiteTransparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "❌ 데이터를 불러올 수 없습니다",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = Color(0xFFF44336)
+                )
+            )
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage,
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = Color.Gray
+                    ),
+                    textAlign = TextAlign.Center
+                )
+            }
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                NatureComponents.NatureOutlinedButton(
+                    onClick = onRetry,
+                    text = "재시도",
+                    modifier = Modifier.weight(1f)
+                )
+                NatureComponents.NatureButton(
+                    onClick = onUseDummy,
+                    text = "테스트 데이터",
+                    modifier = Modifier.weight(1f),
+                    backgroundColor = NatureColors.leafGreen
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BattleInstructionCard(selectableCount: Int, isResponse: Boolean) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = NatureColors.whiteTransparent),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = if (isResponse) "🤝 대전 수락용 카드를 선택하세요" else "⚔️ 대전 신청용 카드를 선택하세요",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold,
+                    color = NatureColors.forestGreen
+                )
+            )
+            Text(
+                text = if (isResponse) 
+                    "대전을 수락하기 위해 사용할 카드 1장을 선택해주세요. (선택 가능: ${selectableCount}장)"
+                else 
+                    "대전 신청에서 사용할 카드 1장을 선택해주세요. (선택 가능: ${selectableCount}장)",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color.Gray.copy(alpha = 0.7f)
+                )
+            )
         }
     }
 }

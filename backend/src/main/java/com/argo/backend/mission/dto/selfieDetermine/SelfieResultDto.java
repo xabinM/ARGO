@@ -8,6 +8,5 @@ import lombok.Getter;
 public class SelfieResultDto {
 
     private boolean success;
-    private boolean result;
-    private String image;
+    private String result;
 }

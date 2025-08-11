@@ -45,6 +45,10 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindLocationRepository(impl: LocationRepositoryImpl): ILocationRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCardGameRepository(impl: CardGameRepositoryImpl): ICardGameRepository
 }
 
 @Module

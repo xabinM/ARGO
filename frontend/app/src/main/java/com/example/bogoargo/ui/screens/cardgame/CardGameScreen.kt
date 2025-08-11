@@ -45,6 +45,7 @@ fun CardGameScreen(
 ) {
     val currentUserId by viewModel.currentUserId.collectAsState()
     val isTeamLeader = currentUserId != null && currentUserId == leaderId
+    val uiState by viewModel.uiState.collectAsState()
     
     // Dialog 상태 관리
     var showDetailDialog by remember { mutableStateOf(false) }
@@ -55,206 +56,78 @@ fun CardGameScreen(
     var showRejectDialog by remember { mutableStateOf(false) }
     var selectedMatchId by remember { mutableStateOf<Long?>(null) }
     
+    // 결과 Dialog 상태
+    var showCancelResultDialog by remember { mutableStateOf(false) }
+    var cancelResultMessage by remember { mutableStateOf("") }
+    var isCancelSuccess by remember { mutableStateOf(false) }
+    
+    var showRejectResultDialog by remember { mutableStateOf(false) }
+    var rejectResultMessage by remember { mutableStateOf("") }
+    var isRejectSuccess by remember { mutableStateOf(false) }
+    
     // 디버깅용 로그
     LaunchedEffect(currentUserId, leaderId) {
         println("CardGame Debug - currentUserId: $currentUserId, leaderId: $leaderId, isTeamLeader: $isTeamLeader")
     }
 
-    val teamStats = remember {
-        TeamCardStats(
-            teamId = teamId,
-            teamName = "드래곤 슬레이어",
-            wins = 12,
-            losses = 3,
-            totalScore = 2450,
-            rank = 2
-        )
-    }
+    val teamStats = uiState.teamStats
 
-    
-    val battleHistory = remember {
-        listOf(
-            // 1. 내가 신청한 PENDING 대전 - 신청 취소 버튼 표시 (내 카드만 있음)
-            BattleHistory(
-                matchId = 1,
-                challengerTeamId = teamId, // 내 팀
-                challengedTeamId = 2L,
-                challengerTeamName = "드래곤 팀", // 내 팀
-                challengedTeamName = "불사조 팀",
-                status = BattleStatus.PENDING,
-                resultView = ResultView.BothNotSee,
-                winnerTeamId = null,
-                loserTeamId = null,
-                myCard = BattleCard(
-                    gameCard = GameCard.create(1L, CardTier.RARE, 101L), // teamCardId 포함
-                    battleStance = BattleStance.ATTACK
-                ), // 내가 선택한 카드와 스탠스
-                opponentCard = null, // 상대는 아직 카드 선택 안함
-                createdAt = "2024-08-06",
-                endedAt = null,
-                myTeamId = teamId
-            ),
-            
-            // 2. 상대가 신청한 PENDING 대전 - 대전 거절 버튼 표시 (상대 카드만 있음)
-            BattleHistory(
-                matchId = 2,
-                challengerTeamId = 3L,
-                challengedTeamId = teamId, // 내 팀
-                challengerTeamName = "그리핀 팀",
-                challengedTeamName = "드래곤 팀", // 내 팀
-                status = BattleStatus.PENDING,
-                resultView = ResultView.BothNotSee,
-                winnerTeamId = null,
-                loserTeamId = null,
-                myCard = null, // 내가 아직 카드 선택 안함
-                opponentCard = BattleCard(
-                    gameCard = GameCard.create(5L, CardTier.EPIC),
-                    battleStance = BattleStance.DEFENSE
-                ), // 상대가 선택한 카드와 스탠스
-                createdAt = "2024-08-05",
-                endedAt = null,
-                myTeamId = teamId,
-            ),
-            
-            // 3. 완료된 대전 - 공격 vs 방어 승리 (100점)
-            BattleHistory(
-                matchId = 3,
-                challengerTeamId = teamId, // 내 팀
-                challengedTeamId = 4L,
-                challengerTeamName = "드래곤 팀", // 내 팀  
-                challengedTeamName = "유니콘 팀",
-                status = BattleStatus.COMPLETED,
-                resultView = ResultView.BothNotSee, // 아직 확인하지 않음
-                winnerTeamId = teamId, // 내 팀이 승리
-                loserTeamId = 4L,
-                myCard = BattleCard(
-                    gameCard = GameCard.create(7L, CardTier.LEGENDARY),
-                    battleStance = BattleStance.ATTACK
-                ), // 공격으로 승리
-                opponentCard = BattleCard(
-                    gameCard = GameCard.create(3L, CardTier.COMMON),
-                    battleStance = BattleStance.DEFENSE
-                ), // 방어로 패배
-                createdAt = "2024-08-04",
-                endedAt = "2024-08-04",
-                myTeamId = teamId,
-            ),
-            
-            // 4. 방어 vs 방어 특수 케이스 (50점)
-            BattleHistory(
-                matchId = 4,
-                challengerTeamId = 5L,
-                challengedTeamId = teamId, // 내 팀
-                challengerTeamName = "이글 팀",
-                challengedTeamName = "드래곤 팀", // 내 팀
-                status = BattleStatus.COMPLETED,
-                resultView = ResultView.SeeChallenger, // challenger만 확인함
-                winnerTeamId = null, // 방 vs 방은 무승부 처리
-                loserTeamId = null,
-                myCard = BattleCard(
-                    gameCard = GameCard.create(2L, CardTier.RARE),
-                    battleStance = BattleStance.DEFENSE
-                ), // 방어 선택
-                opponentCard = BattleCard(
-                    gameCard = GameCard.create(8L, CardTier.EPIC),
-                    battleStance = BattleStance.DEFENSE
-                ), // 상대도 방어 선택
-                createdAt = "2024-08-03",
-                endedAt = "2024-08-03",
-                myTeamId = teamId,
-            ),
-            
-            // 5. 공격 vs 공격 무승부 (카드 제거 + 100점)
-            BattleHistory(
-                matchId = 5,
-                challengerTeamId = teamId, // 내 팀
-                challengedTeamId = 6L,
-                challengerTeamName = "드래곤 팀", // 내 팀
-                challengedTeamName = "라이온 팀",
-                status = BattleStatus.COMPLETED,
-                resultView = ResultView.SeeChallenger, // 내가 확인함
-                winnerTeamId = null, // 무승부
-                loserTeamId = null,
-                myCard = BattleCard(
-                    gameCard = GameCard.create(4L, CardTier.RARE),
-                    battleStance = BattleStance.ATTACK
-                ), // 공격으로 무승부
-                opponentCard = BattleCard(
-                    gameCard = GameCard.create(6L, CardTier.COMMON),
-                    battleStance = BattleStance.ATTACK
-                ), // 상대도 공격으로 무승부
-                createdAt = "2024-08-02",
-                endedAt = "2024-08-02",
-                myTeamId = teamId,
-            ),
-            
-            // 6. 취소된 대전
-            BattleHistory(
-                matchId = 6,
-                challengerTeamId = teamId, // 내 팀
-                challengedTeamId = 7L,
-                challengerTeamName = "드래곤 팀", // 내 팀
-                challengedTeamName = "피닉스 팀",
-                status = BattleStatus.CANCELLED,
-                resultView = ResultView.BothNotSee,
-                winnerTeamId = null,
-                loserTeamId = null,
-                myCard = null,
-                opponentCard = null,
-                createdAt = "2024-08-01",
-                endedAt = "2024-08-01",
-                myTeamId = teamId,
-            ),
-            
-            // 7. 공격으로 패배 (카드 제거, 0점)
-            BattleHistory(
-                matchId = 7,
-                challengerTeamId = 8L,
-                challengedTeamId = teamId, // 내 팀
-                challengerTeamName = "타이거 팀",
-                challengedTeamName = "드래곤 팀", // 내 팀
-                status = BattleStatus.COMPLETED,
-                resultView = ResultView.BothSee, // 둘 다 확인함
-                winnerTeamId = 8L, // 상대팀이 승리
-                loserTeamId = teamId, // 내 팀이 패배
-                myCard = BattleCard(
-                    gameCard = GameCard.create(3L, CardTier.COMMON),
-                    battleStance = BattleStance.ATTACK
-                ), // 공격으로 패배 (카드 제거)
-                opponentCard = BattleCard(
-                    gameCard = GameCard.create(7L, CardTier.LEGENDARY),
-                    battleStance = BattleStance.DEFENSE
-                ), // 방어로 승리
-                createdAt = "2024-08-01",
-                endedAt = "2024-08-01",
-                myTeamId = teamId,
-            ),
-            
-            // 8. 방어로 승리 (50점)
-            BattleHistory(
-                matchId = 8,
-                challengerTeamId = teamId, // 내 팀
-                challengedTeamId = 9L,
-                challengerTeamName = "드래곤 팀", // 내 팀
-                challengedTeamName = "울프 팀",
-                status = BattleStatus.COMPLETED,
-                resultView = ResultView.BothNotSee, // 아직 확인하지 않음
-                winnerTeamId = teamId, // 내 팀이 승리
-                loserTeamId = 9L,
-                myCard = BattleCard(
-                    gameCard = GameCard.create(5L, CardTier.EPIC),
-                    battleStance = BattleStance.DEFENSE
-                ), // 방어로 승리
-                opponentCard = BattleCard(
-                    gameCard = GameCard.create(2L, CardTier.RARE),
-                    battleStance = BattleStance.ATTACK
-                ), // 공격으로 패배
-                createdAt = "2024-07-31",
-                endedAt = "2024-07-31",
-                myTeamId = teamId
-            )
-        )
+    // 화면 진입 시 자동 API 호출
+    LaunchedEffect(teamId) {
+        viewModel.loadBattleHistory(teamId)
+        viewModel.loadTeamStats(teamId)
     }
+    
+// 에러 메시지 처리
+    LaunchedEffect(uiState.errorMessage) {
+        uiState.errorMessage?.let { message ->
+            println("CardGame Error: $message")
+            // TODO: 실제 앱에서는 Snackbar나 Toast로 에러 표시
+        }
+    }
+    
+    // 취소 결과 처리
+    LaunchedEffect(uiState.cancelResult, uiState.cancelError) {
+        uiState.cancelResult?.let { message ->
+            cancelResultMessage = message
+            isCancelSuccess = true
+            showCancelResultDialog = true
+            viewModel.clearCancelStatus()
+        }
+        uiState.cancelError?.let { error ->
+            cancelResultMessage = error
+            isCancelSuccess = false
+            showCancelResultDialog = true
+            viewModel.clearCancelStatus()
+        }
+    }
+    
+    // 결과 확인 처리
+    LaunchedEffect(uiState.viewResultError) {
+        uiState.viewResultError?.let { error ->
+            println("View Result Error: $error")
+            // TODO: 에러 메시지를 Snackbar나 Toast로 표시
+            viewModel.clearViewResultStatus()
+        }
+    }
+    
+    // 거절 결과 처리
+    LaunchedEffect(uiState.rejectResult, uiState.rejectError) {
+        uiState.rejectResult?.let { message ->
+            rejectResultMessage = message
+            isRejectSuccess = true
+            showRejectResultDialog = true
+            viewModel.clearRejectStatus()
+        }
+        uiState.rejectError?.let { error ->
+            rejectResultMessage = error
+            isRejectSuccess = false
+            showRejectResultDialog = true
+            viewModel.clearRejectStatus()
+        }
+    }
+    
+    val battleHistory = uiState.battleHistories
 
     Scaffold(
         topBar = {
@@ -275,7 +148,19 @@ fun CardGameScreen(
             ) {
 
                 item {
-                    TeamStatsCard(teamStats = teamStats)
+                    if (teamStats != null) {
+                        TeamStatsCard(teamStats = teamStats)
+                    } else if (uiState.isStatsLoading) {
+                        // 로딩 중 표시
+                        TeamStatsLoadingCard()
+                    } else if (uiState.statsError != null) {
+                        // 에러 시 표시
+                        TeamStatsErrorCard(
+                            errorMessage = uiState.statsError ?: "알 수 없는 오류가 발생했습니다",
+                            onRetry = { viewModel.loadTeamStats(teamId) },
+                            onUseDummy = { viewModel.loadDummyTeamStats(teamId) }
+                        )
+                    }
                 }
 
                 item {
@@ -290,6 +175,25 @@ fun CardGameScreen(
                     )
                 }
 
+                // API 실패 또는 빈 데이터일 때만 버튼 표시
+                if (uiState.errorMessage != null || (!uiState.isLoading && battleHistory.isEmpty())) {
+                    item {
+                        TestDataButtonsRow(
+                            teamId = teamId,
+                            isLoading = uiState.isLoading,
+                            hasError = uiState.errorMessage != null,
+                            onLoadRealData = {
+                                viewModel.clearErrorMessage()
+                                viewModel.loadBattleHistory(teamId)
+                            },
+                            onLoadDummyData = {
+                                viewModel.clearErrorMessage()
+                                viewModel.loadDummyBattleHistory(teamId)
+                            }
+                        )
+                    }
+                }
+
                 item {
                     Text(
                         text = "🏆 대전 기록",
@@ -299,9 +203,27 @@ fun CardGameScreen(
                     )
                 }
 
+                // 로딩 상태 표시
+                if (uiState.isLoading) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                color = NatureColors.leafGreen
+                            )
+                        }
+                    }
+                }
+
+
                 items(battleHistory) { battle ->
                     BattleHistoryItem(
                         battle = battle,
+                        isViewResultLoading = uiState.isViewResultLoading,
                         onCancelRequest = { matchId ->
                             selectedMatchId = matchId
                             showCancelDialog = true
@@ -314,26 +236,29 @@ fun CardGameScreen(
                             navController.navigate(Screen.CardSelection.createRoute(teamId, matchId))
                         },
                         onViewResult = { matchId ->
-                            // 선택된 배틀 찾기
-                            val battle = battleHistory.find { it.matchId == matchId }
-                            battle?.let {
-                                // 승패 결정 (실제로는 서버에서 받아야 함)
-                                val isWin = it.winnerTeamId == teamId
-                                // myCard와 opponentCard가 둘 다 있어야 진행
-                                if (it.myCard != null && it.opponentCard != null) {
-                                    navController.navigate(
-                                        Screen.BattleResult.createRoute(
-                                            myCardId = it.myCard.gameCard.cardId,
-                                            myCardRarity = it.myCard.gameCard.rarity.name,
-                                            myCardStance = it.myCard.battleStance.name,
-                                            opponentCardId = it.opponentCard.gameCard.cardId,
-                                            opponentCardRarity = it.opponentCard.gameCard.rarity.name,
-                                            opponentCardStance = it.opponentCard.battleStance.name,
-                                            isWin = isWin,
-                                            myTeamName = if (it.isMyChallenge) it.challengerTeamName else it.challengedTeamName,
-                                            opponentTeamName = it.opponentTeamName
+                            // viewBattleResult API를 호출하고 성공시에만 네비게이션
+                            viewModel.viewBattleResult(matchId) { successMatchId ->
+                                // 선택된 배틀 찾기
+                                val battle = battleHistory.find { it.matchId == successMatchId }
+                                battle?.let {
+                                    // 승패 결정 (실제로는 서버에서 받아야 함)
+                                    val isWin = it.winnerTeamId == teamId
+                                    // myCard와 opponentCard가 둘 다 있어야 진행
+                                    if (it.myCard != null && it.opponentCard != null) {
+                                        navController.navigate(
+                                            Screen.BattleResult.createRoute(
+                                                myCardId = it.myCard.gameCard.cardId,
+                                                myCardRarity = it.myCard.gameCard.rarity.name,
+                                                myCardStance = it.myCard.battleStance.name,
+                                                opponentCardId = it.opponentCard.gameCard.cardId,
+                                                opponentCardRarity = it.opponentCard.gameCard.rarity.name,
+                                                opponentCardStance = it.opponentCard.battleStance.name,
+                                                isWin = isWin,
+                                                myTeamName = if (it.isMyChallenge) it.challengerTeamName else it.challengedTeamName,
+                                                opponentTeamName = it.opponentTeamName
+                                            )
                                         )
-                                    )
+                                    }
                                 }
                             }
                         },
@@ -361,10 +286,8 @@ fun CardGameScreen(
         if (showCancelDialog) {
             ConfirmCancelDialog(
                 onConfirm = {
-                    // TODO: 실제 취소 로직 구현
                     selectedMatchId?.let { matchId ->
-                        // viewModel.cancelBattleRequest(matchId)
-                        println("대전 신청 취소: matchId = $matchId")
+                        viewModel.cancelBattle(matchId, teamId)
                     }
                     showCancelDialog = false
                     selectedMatchId = null
@@ -380,10 +303,8 @@ fun CardGameScreen(
         if (showRejectDialog) {
             ConfirmRejectDialog(
                 onConfirm = {
-                    // TODO: 실제 거절 로직 구현
                     selectedMatchId?.let { matchId ->
-                        // viewModel.rejectBattle(matchId)
-                        println("대전 거절: matchId = $matchId")
+                        viewModel.rejectBattle(matchId, teamId)
                     }
                     showRejectDialog = false
                     selectedMatchId = null
@@ -391,6 +312,32 @@ fun CardGameScreen(
                 onDismiss = {
                     showRejectDialog = false
                     selectedMatchId = null
+                }
+            )
+        }
+        
+        // 취소 결과 Dialog
+        if (showCancelResultDialog) {
+            ResultDialog(
+                isSuccess = isCancelSuccess,
+                title = "취소",
+                message = cancelResultMessage,
+                onDismiss = {
+                    showCancelResultDialog = false
+                    cancelResultMessage = ""
+                }
+            )
+        }
+        
+        // 거절 결과 Dialog
+        if (showRejectResultDialog) {
+            ResultDialog(
+                isSuccess = isRejectSuccess,
+                title = "거절",
+                message = rejectResultMessage,
+                onDismiss = {
+                    showRejectResultDialog = false
+                    rejectResultMessage = ""
                 }
             )
         }
@@ -635,6 +582,7 @@ fun ConfirmRejectDialog(
 @Composable
 fun BattleHistoryItem(
     battle: BattleHistory,
+    isViewResultLoading: Boolean,
     onCancelRequest: (Long) -> Unit,
     onRejectBattle: (Long) -> Unit,
     onAcceptBattle: (Long) -> Unit,
@@ -781,18 +729,33 @@ fun BattleHistoryItem(
                 // 3. COMPLETED 상태 - 결과 보기 가능한 경우
                 battle.canViewResult -> {
                     NatureComponents.NatureButton(
-                        onClick = { onViewResult(battle.matchId) },
+                        onClick = { 
+                            if (!isViewResultLoading) {
+                                onViewResult(battle.matchId)
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth(),
-                        backgroundColor = NatureColors.sunnyYellow,
-                        contentColor = NatureColors.earthBrown
+                        backgroundColor = if (isViewResultLoading) Color.Gray else NatureColors.sunnyYellow,
+                        contentColor = if (isViewResultLoading) Color.White else NatureColors.earthBrown,
+                        enabled = !isViewResultLoading
                     ) {
-                        Icon(
-                            Icons.Default.PlayArrow,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("결과 보기")
+                        if (isViewResultLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                color = Color.White,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("확인 중...")
+                        } else {
+                            Icon(
+                                Icons.Default.PlayArrow,
+                                contentDescription = null,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("결과 보기")
+                        }
                     }
                 }
                 
@@ -869,3 +832,220 @@ fun BattleHistoryItem(
         }
     }
 }
+
+@Composable
+fun TestDataButtonsRow(
+    teamId: Long,
+    isLoading: Boolean,
+    hasError: Boolean,
+    onLoadRealData: () -> Unit,
+    onLoadDummyData: () -> Unit
+) {
+    val cardColor = if (hasError) {
+        NatureColors.sunnyYellow.copy(alpha = 0.2f) // 에러 시 더 강조된 색상
+    } else {
+        NatureColors.sunnyYellow.copy(alpha = 0.1f)
+    }
+    
+    val titleText = if (hasError) {
+        "⚠️ API 오류 발생"
+    } else {
+        "📭 데이터 없음"
+    }
+    
+    val descriptionText = if (hasError) {
+        "API 요청에 실패했습니다. 재시도하거나 테스트용 더미 데이터를 사용해보세요."
+    } else {
+        "대전 기록이 없습니다. 실제 데이터를 다시 불러오거나 테스트용 더미 데이터를 사용해보세요."
+    }
+    
+    NatureComponents.NatureCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = NatureShapes.medium,
+        containerColor = cardColor,
+        elevation = NatureElevation.small
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = titleText,
+                style = NatureTypography.titleMedium,
+                color = NatureColors.earthBrown
+            )
+            
+            Text(
+                text = descriptionText,
+                style = NatureTypography.bodyMedium,
+                color = Color.Gray.copy(alpha = 0.8f)
+            )
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // 재요청 버튼
+                NatureComponents.NatureButton(
+                    onClick = onLoadRealData,
+                    enabled = !isLoading,
+                    modifier = Modifier.weight(1f),
+                    backgroundColor = NatureColors.leafGreen,
+                    contentColor = Color.White
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(
+                        text = if (isLoading) "로딩중..." else if (hasError) "재요청" else "다시 불러오기",
+                        style = NatureTypography.labelLarge
+                    )
+                }
+                
+                // 테스트용 더미 데이터 버튼
+                NatureComponents.NatureButton(
+                    onClick = onLoadDummyData,
+                    enabled = !isLoading,
+                    modifier = Modifier.weight(1f),
+                    backgroundColor = NatureColors.sunnyYellow,
+                    contentColor = NatureColors.earthBrown
+                ) {
+                    Text(
+                        text = "테스트용 더미 데이터",
+                        style = NatureTypography.labelLarge
+                    )
+                }
+            }
+            
+            Text(
+                text = "팀 ID: $teamId",
+                style = NatureTypography.labelSmall,
+                color = Color.Gray.copy(alpha = 0.6f)
+            )
+        }
+    }
+}
+
+@Composable
+fun ResultDialog(
+    isSuccess: Boolean,
+    title: String,
+    message: String,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    text = if (isSuccess) "✅" else "❌",
+                    style = MaterialTheme.typography.headlineSmall
+                )
+                Text(
+                    text = if (isSuccess) "$title 완료" else "$title 실패",
+                    style = NatureTypography.titleLarge,
+                    color = if (isSuccess) Color(0xFF4CAF50) else Color(0xFFF44336)
+                )
+            }
+        },
+        text = {
+            Text(
+                text = message,
+                style = NatureTypography.bodyLarge,
+                color = NatureColors.earthBrown
+            )
+        },
+        confirmButton = {
+            NatureComponents.NatureButton(
+                onClick = onDismiss,
+                backgroundColor = if (isSuccess) Color(0xFF4CAF50) else Color(0xFFF44336),
+                contentColor = Color.White
+            ) {
+                Text("확인")
+            }
+        },
+        containerColor = NatureColors.whiteTransparent,
+        shape = NatureShapes.medium
+    )
+}
+
+@Composable
+fun TeamStatsLoadingCard() {
+    NatureComponents.NatureCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = NatureShapes.large,
+        containerColor = NatureColors.whiteTransparent,
+        elevation = NatureElevation.medium
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = NatureColors.forestGreen)
+        }
+    }
+}
+
+@Composable
+fun TeamStatsErrorCard(
+    errorMessage: String,
+    onRetry: () -> Unit,
+    onUseDummy: () -> Unit
+) {
+    NatureComponents.NatureCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = NatureShapes.large,
+        containerColor = NatureColors.whiteTransparent,
+        elevation = NatureElevation.medium
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "⚠️",
+                style = MaterialTheme.typography.headlineMedium
+            )
+            
+            Text(
+                text = "팀 통계를 불러올 수 없습니다",
+                style = NatureTypography.titleMedium,
+                color = Color(0xFFF44336)
+            )
+            
+            Text(
+                text = errorMessage,
+                style = NatureTypography.bodySmall,
+                color = Color.Gray
+            )
+            
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                NatureComponents.NatureOutlinedButton(
+                    onClick = onRetry,
+                    text = "재시도"
+                )
+                NatureComponents.NatureButton(
+                    onClick = onUseDummy,
+                    text = "테스트 데이터",
+                    backgroundColor = NatureColors.leafGreen
+                )
+            }
+        }
+    }
+}
+

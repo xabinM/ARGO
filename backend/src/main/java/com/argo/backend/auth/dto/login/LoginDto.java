@@ -9,6 +9,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public class LoginDto {
     private Tokens tokens;
+    private Long userId;
     private String name;
     private Role role;
 }
