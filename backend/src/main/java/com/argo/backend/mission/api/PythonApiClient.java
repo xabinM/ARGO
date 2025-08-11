@@ -35,16 +35,16 @@ public class PythonApiClient {
     }
 
     /**
-     * 퀴즈 생성 요청 (기존 메서드 시그니처 유지)
+     * 퀴즈 생성 요청
      */
-    public ProblemGenerateDto requestProblem(String spotName, int problemCnt) {
-        log.info("🤖 퀴즈 생성 요청: spotName={}, problemCnt={}", spotName, problemCnt);
+    public ProblemGenerateDto requestProblem(String spotName, int grade, int problemCnt) {
+        log.info(" 퀴즈 생성 요청: spotName={}, problemCnt={}", spotName, problemCnt);
         
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        // 우리 FastAPI 요청 형식
-        ProblemGenerateRequestToAI request = new ProblemGenerateRequestToAI(spotName, problemCnt);
+        // FastAPI 요청 형식
+        ProblemGenerateRequestToAI request = new ProblemGenerateRequestToAI(spotName, grade, problemCnt); // grade 추가
         HttpEntity<ProblemGenerateRequestToAI> entity = new HttpEntity<>(request, headers);
 
         try {
@@ -65,11 +65,11 @@ public class PythonApiClient {
                 throw new ProblemCountMismatchException();
             }
 
-            log.info("✅ 퀴즈 생성 성공: {}개 문제", body.getProblems().size());
+            log.info("퀴즈 생성 성공: {}개 문제", body.getProblems().size());
             return body;
             
         } catch (Exception e) {
-            log.error("❌ Python API 호출 실패: {}", e.getMessage());
+            log.error("Python API 호출 실패: {}", e.getMessage());
             throw new PythonApiException("Python API 호출 실패: " + e.getMessage(), e);
         }
     }
@@ -78,7 +78,7 @@ public class PythonApiClient {
      * 셀피 포즈 분석 요청 (기존 메서드 시그니처 유지)
      */
     public SelfieResultDto requestDeterMineSelfie(SelfieRequestDto request) throws IOException {
-        log.info("📸 포즈 분석 요청: pose={}", request.getPose());
+        log.info("포즈 분석 요청: pose={}", request.getPose());
         
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
@@ -98,11 +98,11 @@ public class PythonApiClient {
                     SelfieResultDto.class
             );
 
-            log.info("✅ 포즈 분석 완료");
+            log.info(" 포즈 분석 완료");
             return response.getBody();
             
         } catch (Exception e) {
-            log.error("❌ 포즈 분석 실패: {}", e.getMessage());
+            log.error(" 포즈 분석 실패: {}", e.getMessage());
             throw new PythonApiException("포즈 분석 실패: " + e.getMessage(), e);
         }
     }
