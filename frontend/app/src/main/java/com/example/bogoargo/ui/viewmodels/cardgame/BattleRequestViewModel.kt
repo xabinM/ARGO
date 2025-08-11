@@ -2,7 +2,7 @@ package com.example.bogoargo.ui.viewmodels.cardgame
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bogoargo.data.storage.SecureStorage
+import com.example.bogoargo.data.preferences.PreferencesManager
 import com.example.bogoargo.domain.use_case.cardgame.GetBattleOpponentsUseCase
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.BattleOpponent
@@ -21,12 +21,13 @@ data class BattleRequestUiState(
 
 @HiltViewModel
 class BattleRequestViewModel @Inject constructor(
-    private val secureStorage: SecureStorage,
+    private val preferencesManager: PreferencesManager,
     private val getBattleOpponentsUseCase: GetBattleOpponentsUseCase
 ) : ViewModel() {
     
-    // 사용자 정보는 필요시 secureStorage에서 직접 가져오기
-    private fun getCurrentUser() = secureStorage.getUser()
+    val currentUserId: StateFlow<Long?> = preferencesManager.currentUserId
+    val currentUserName: StateFlow<String?> = preferencesManager.currentUserName
+    val currentUserRole: StateFlow<String?> = preferencesManager.currentUserRole
     
     private val _uiState = MutableStateFlow(BattleRequestUiState())
     val uiState: StateFlow<BattleRequestUiState> = _uiState.asStateFlow()

@@ -52,16 +52,4 @@ public class Card extends CreatedAtEntity {
         this.baseDefense = baseDefense;
         this.isSpotCard = isSpotCard;
     }
-
-    public static Card from(Location location, Spot spot, String name, String description, Integer baseAttack, Integer baseDefense, Boolean isSpotCard) {
-        return new Card(location,
-                spot,
-                name,
-                description,
-                baseAttack,
-                baseDefense,
-                isSpotCard
-        );
-    }
-
 }

@@ -2,6 +2,7 @@ package com.example.bogoargo.data.dto.response
 
 import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.data.response.ClassDataDto
+import com.example.bogoargo.data.storage.TokenStorage
 
 // 유저 정보 응답 DTO
 data class UserDataDto(
