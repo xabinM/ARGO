@@ -2,7 +2,17 @@ package com.example.bogoargo.data.dto.response
 
 // 성공, 실패 메시지
 data class ProblemMessageResponse(
+    val success: Boolean,
     val message: String
+)
+
+// 문제 생성 요청 후 반환 DTO (교사 기능)
+data class ProblemResponseDto (
+    val success : Boolean,
+    val message : String,
+    val grade : Long,
+    val spotName : String,
+    val problems: List<ProblemDataQuizDto>
 )
 
 // 공통 인터페이스

@@ -9,6 +9,8 @@ import com.example.bogoargo.domain.repository.ISettingsRepository
 import com.example.bogoargo.domain.repository.ITeamRepository
 import com.example.bogoargo.domain.repository.IUserRepository
 import com.example.bogoargo.domain.repository.ICardGameRepository
+import com.example.bogoargo.domain.repository.IProblemRepository
+import com.example.bogoargo.domain.repository.ISpotRepository
 import com.example.bogoargo.domain.use_case.auth.LoginUseCase
 import com.example.bogoargo.domain.use_case.auth.LogoutUseCase
 import com.example.bogoargo.domain.use_case.auth.RefreshTokenUseCase
@@ -42,6 +44,9 @@ import com.example.bogoargo.domain.use_case.cardgame.GetBattleOpponentsUseCase
 import com.example.bogoargo.domain.use_case.cardgame.CancelBattleUseCase
 import com.example.bogoargo.domain.use_case.cardgame.ViewBattleResultUseCase
 import com.example.bogoargo.domain.use_case.cardgame.GetTeamStatsUseCase
+import com.example.bogoargo.domain.use_case.problem.GenerateProblemUseCase
+import com.example.bogoargo.domain.use_case.problem.RegisterProblemUseCase
+import com.example.bogoargo.domain.use_case.spot.GetSpotListUseCase
 import com.example.bogoargo.data.repository.MissionRepositoryImpl
 import dagger.Module
 import dagger.Provides
@@ -258,5 +263,25 @@ object UseCaseModule {
     @Singleton
     fun provideGetTeamStatsUseCase(cardGameRepository: ICardGameRepository): GetTeamStatsUseCase {
         return GetTeamStatsUseCase(cardGameRepository)
+    }
+
+    // Problem Use Cases
+    @Provides
+    @Singleton
+    fun provideGenerateProblemUseCase(problemRepository: IProblemRepository): GenerateProblemUseCase {
+        return GenerateProblemUseCase(problemRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRegisterProblemUseCase(problemRepository: IProblemRepository): RegisterProblemUseCase {
+        return RegisterProblemUseCase(problemRepository)
+    }
+
+    // Spot Use Cases
+    @Provides
+    @Singleton
+    fun provideGetSpotListUseCase(spotRepository: ISpotRepository): GetSpotListUseCase {
+        return GetSpotListUseCase(spotRepository)
     }
 }
