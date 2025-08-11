@@ -56,8 +56,7 @@ class LocationWorker @AssistedInject constructor(
                 // 서버로 위치 전송
                 val result = locationRepository.sendLocationToServer(
                     latitude = location.latitude,
-                    longitude = location.longitude,
-                    accuracy = location.accuracy
+                    longitude = location.longitude
                 )
 
                 if (result.isSuccess) {

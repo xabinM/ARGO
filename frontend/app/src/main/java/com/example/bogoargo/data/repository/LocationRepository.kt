@@ -21,14 +21,12 @@ class LocationRepositoryImpl @Inject constructor(
 
     override suspend fun sendLocationToServer(
         latitude: Double,
-        longitude: Double,
-        accuracy: Float?
+        longitude: Double
     ): Result<Unit> {
         return try {
             val request = UserCoordinatesRequest(
                 latitude = latitude,
-                longitude = longitude,
-                accuracy = accuracy
+                longitude = longitude
             )
             
             val response = locationApiService.updateUserCoordinates(request)

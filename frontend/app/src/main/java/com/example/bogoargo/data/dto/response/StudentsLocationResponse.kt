@@ -12,6 +12,5 @@ data class StudentLocationInfo(
     val userName: String,
     val latitude: Double,
     val longitude: Double,
-    val accuracy: Float?,
     val lastUpdated: Long
 )

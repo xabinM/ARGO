@@ -8,8 +8,7 @@ interface ILocationRepository {
     suspend fun getLocations(): List<Location>
     suspend fun sendLocationToServer(
         latitude: Double,
-        longitude: Double,
-        accuracy: Float? = null
+        longitude: Double
     ): Result<Unit>
     suspend fun getStudentLocationsByClass(
         classId: Long
