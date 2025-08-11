@@ -27,7 +27,6 @@ public class ClassApplicationService {
     private final ClassRoomRepository classRoomRepository;
     private final GpsRedis gpsRedis;
 
-    // 신청 리스트 받기
     @Transactional
     public ApplicationListResponse getApplicationList(Long classId, String status, Pageable pageable, Long teacherId) {
 
@@ -47,7 +46,6 @@ public class ClassApplicationService {
     }
 
 
-    // 신청 처리하기
     @Transactional
     public ApplicationProcessResponse processApplications(Long classId, ApplicationProcessRequest request, Long teacherId) {
         ClassRoom classRoom = validateClassAccess(classId, teacherId);
