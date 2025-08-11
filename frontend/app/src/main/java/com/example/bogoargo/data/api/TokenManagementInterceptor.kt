@@ -1,18 +1,27 @@
 package com.example.bogoargo.data.api
 
 import com.example.bogoargo.domain.model.RefreshTokenRequest
-import com.example.bogoargo.data.storage.TokenStorage
+import com.example.bogoargo.data.storage.SecureStorage
+import com.example.bogoargo.data.event.TokenExpiredEvent
 import okhttp3.Interceptor
 import okhttp3.Response
 import retrofit2.Call
+import android.util.Log
+import com.google.gson.Gson
+import com.google.gson.JsonObject
 
 class TokenManagementInterceptor(
-    private val tokenStorage: TokenStorage,
-    private val authApiService: AuthApiService
+    private val secureStorage: SecureStorage,
+    private val authApiService: AuthApiService,
+    private val tokenExpiredEvent: TokenExpiredEvent
 ) : Interceptor {
     
     private val maxRetryCount = 1
-    private val tokenExpiredMessages = setOf("TOKEN_EXPIRED", "EXPIRED_TOKEN", "TOKEN_INVALID")
+    private val tokenExpiredErrorCodes = setOf("4006") // 서버에서 정의한 토큰 만료 에러 코드
+    
+    companion object {
+        private const val TAG = "TokenManagementInterceptor"
+    }
     
     override fun intercept(chain: Interceptor.Chain): Response {
         return handleRequest(chain, 0)
@@ -22,7 +31,7 @@ class TokenManagementInterceptor(
         val originalRequest = chain.request()
         
         // 토큰 헤더 추가
-        val token = tokenStorage.getAccessToken()
+        val token = secureStorage.getAccessToken()
         val requestWithToken = if (token != null) {
             originalRequest.newBuilder()
                 .removeHeader("Authorization")
@@ -54,15 +63,33 @@ class TokenManagementInterceptor(
             return false
         }
         
-        // 응답 본문에서 TOKEN_EXPIRED 메시지 확인
+        // 응답 본문을 JSON으로 파싱하여 에러 코드 확인
         val responseBody = response.peekBody(1024).string()
-        return tokenExpiredMessages.any { message ->
-            responseBody.contains(message, ignoreCase = true)
+        Log.d(TAG, "Response code: ${response.code}, body: $responseBody")
+        
+        return try {
+            val jsonObject = Gson().fromJson(responseBody, JsonObject::class.java)
+            val errorCode = jsonObject.get("code")?.asString
+            val isTokenExpired = tokenExpiredErrorCodes.contains(errorCode)
+            
+            Log.d(TAG, "Parsed error code: $errorCode")
+            Log.d(TAG, "Is token expired: $isTokenExpired")
+            
+            isTokenExpired
+        } catch (e: Exception) {
+            Log.d(TAG, "Failed to parse JSON response: ${e.message}")
+            // JSON 파싱 실패 시 기존 방식으로 폴백
+            val hasTokenExpiredInMessage = responseBody.contains("만료된 토큰", ignoreCase = true) ||
+                    responseBody.contains("TOKEN_EXPIRED", ignoreCase = true) ||
+                    responseBody.contains("EXPIRED_TOKEN", ignoreCase = true)
+            
+            Log.d(TAG, "Fallback to message-based detection: $hasTokenExpiredInMessage")
+            hasTokenExpiredInMessage
         }
     }
     
     private fun refreshTokenIfPossible(): Boolean {
-        val refreshToken = tokenStorage.getRefreshToken() ?: return false
+        val refreshToken = secureStorage.getRefreshToken() ?: return false
         
         return try {
             val refreshCall = authApiService.refreshToken(
@@ -73,7 +100,7 @@ class TokenManagementInterceptor(
             if (refreshResponse.isSuccessful) {
                 val tokenInfo = refreshResponse.body()
                 if (tokenInfo != null) {
-                    tokenStorage.saveTokens(
+                    secureStorage.saveTokens(
                         tokenInfo.accessToken,
                         tokenInfo.refreshToken
                     )
@@ -93,6 +120,9 @@ class TokenManagementInterceptor(
     }
     
     private fun handleTokenFailure() {
-        tokenStorage.clearTokens()
+        Log.d(TAG, "Token failure detected - clearing tokens and notifying event")
+        secureStorage.clearTokens()
+        tokenExpiredEvent.notifyTokenExpired()
+        Log.d(TAG, "Token expired event sent")
     }
 }
