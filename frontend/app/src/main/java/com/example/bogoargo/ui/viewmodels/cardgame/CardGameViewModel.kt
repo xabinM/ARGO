@@ -2,7 +2,7 @@ package com.example.bogoargo.ui.viewmodels.cardgame
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.bogoargo.data.preferences.PreferencesManager
+import com.example.bogoargo.data.storage.SecureStorage
 import com.example.bogoargo.domain.use_case.cardgame.GetBattleHistoryUseCase
 import com.example.bogoargo.domain.use_case.cardgame.CancelBattleUseCase
 import com.example.bogoargo.domain.use_case.cardgame.ViewBattleResultUseCase
@@ -49,7 +49,7 @@ data class CardGameUiState(
 
 @HiltViewModel
 class CardGameViewModel @Inject constructor(
-    private val preferencesManager: PreferencesManager,
+    private val secureStorage: SecureStorage,
     private val getBattleHistoryUseCase: GetBattleHistoryUseCase,
     private val cancelBattleUseCase: CancelBattleUseCase,
     private val viewBattleResultUseCase: ViewBattleResultUseCase,
@@ -57,16 +57,15 @@ class CardGameViewModel @Inject constructor(
     private val getTeamStatsUseCase: GetTeamStatsUseCase
 ) : ViewModel() {
     
-    val currentUserId: StateFlow<Long?> = preferencesManager.currentUserId
-    val currentUserName: StateFlow<String?> = preferencesManager.currentUserName
-    val currentUserRole: StateFlow<String?> = preferencesManager.currentUserRole
+    // 사용자 정보는 필요시 secureStorage에서 직접 가져오기
+    private fun getCurrentUser() = secureStorage.getUser()
     
     private val _uiState = MutableStateFlow(CardGameUiState())
     val uiState: StateFlow<CardGameUiState> = _uiState.asStateFlow()
     
     fun isTeamLeader(leaderId: Long): Boolean {
-        val currentId = currentUserId.value
-        return currentId != null && currentId == leaderId
+        val currentUser = getCurrentUser()
+        return currentUser != null && currentUser.userId == leaderId
     }
     
     // 실제 API를 통한 대전 기록 조회

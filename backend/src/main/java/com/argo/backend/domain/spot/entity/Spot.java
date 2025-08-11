@@ -42,4 +42,14 @@ public class Spot {
 
     @OneToMany(mappedBy = "spot", fetch = FetchType.LAZY)
     private List<Problem> problems = new ArrayList<>();
+
+    // DataLoader용 정적 팩토리 메서드
+    public static Spot create(String name, String description, Coordinates coordinates, Location location) {
+        Spot spot = new Spot();
+        spot.name = name;
+        spot.description = description;
+        spot.coordinates = coordinates;
+        spot.location = location;
+        return spot;
+    }
 }

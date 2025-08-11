@@ -1,7 +1,8 @@
 package com.example.bogoargo.di
 
 import com.example.bogoargo.data.api.*
-import com.example.bogoargo.data.storage.TokenStorage
+import com.example.bogoargo.data.storage.SecureStorage
+import com.example.bogoargo.data.event.TokenExpiredEvent
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -62,10 +63,11 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideTokenManagementInterceptor(
-        tokenStorage: TokenStorage, 
-        @Named("basic") authApiService: AuthApiService
+        secureStorage: SecureStorage, 
+        @Named("basic") authApiService: AuthApiService,
+        tokenExpiredEvent: TokenExpiredEvent
     ): TokenManagementInterceptor {
-        return TokenManagementInterceptor(tokenStorage, authApiService)
+        return TokenManagementInterceptor(secureStorage, authApiService, tokenExpiredEvent)
     }
     
     // 통합 OkHttpClient (TokenManagementInterceptor 포함)
