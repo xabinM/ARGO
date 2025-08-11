@@ -12,7 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 public class ProblemRegisterRequest {
 
-    @NotBlank
+    @NotNull
     private Integer grade;
 
     @NotBlank
@@ -24,5 +24,6 @@ public class ProblemRegisterRequest {
     @NotNull
     private Integer correctIndex;
 
+    @NotBlank
     private String explanation;
 }

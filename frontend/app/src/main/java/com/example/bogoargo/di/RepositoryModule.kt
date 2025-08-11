@@ -3,7 +3,6 @@ package com.example.bogoargo.di
 import android.content.Context
 import com.example.bogoargo.data.api.*
 import com.example.bogoargo.data.repository.*
-import com.example.bogoargo.data.storage.TokenStorage
 import com.example.bogoargo.domain.repository.*
 import javax.inject.Named
 import dagger.Binds

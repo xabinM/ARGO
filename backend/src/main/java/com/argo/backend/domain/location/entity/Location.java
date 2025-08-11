@@ -27,4 +27,11 @@ public class Location {
     @OneToMany(mappedBy = "location", fetch = FetchType.LAZY)
     private List<Spot> spots = new ArrayList<>();
 
+    // DataLoader용 정적 팩토리 메서드
+    public static Location create(String name, Coordinates coordinates) {
+        Location location = new Location();
+        location.name = name;
+        location.coordinates = coordinates;
+        return location;
+    }
 }
