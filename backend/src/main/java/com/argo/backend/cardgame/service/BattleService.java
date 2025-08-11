@@ -17,7 +17,9 @@ import com.argo.backend.domain.cardgame.repository.TeamCardRepository;
 import com.argo.backend.domain.team.entity.Team;
 import com.argo.backend.domain.team.repository.TeamRepository;
 import com.argo.backend.domain.user.entity.User;
+import com.argo.backend.domain.user.entity.UserTeam;
 import com.argo.backend.domain.user.repository.UserRepository;
+import com.argo.backend.domain.user.repository.UserTeamRepository;
 import com.argo.backend.organization.exception.types.TeamNotFoundException;
 import com.argo.backend.organization.exception.types.UnauthorizedClassAccessException;
 import com.argo.backend.organization.exception.types.UserNotFoundException;
@@ -26,6 +28,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -35,6 +38,7 @@ public class BattleService {
     
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
+    private final UserTeamRepository userTeamRepository;
     private final TeamCardRepository teamCardRepository;
     private final CardGameMatchRepository cardGameMatchRepository;
     
@@ -42,12 +46,13 @@ public class BattleService {
         User user = validateAndGetUser(userId);
         Team currentTeam = validateTeamAccess(teamId, userId);
         
-        List<Team> allTeams = teamRepository.findByClassRoomOrderByCreatedAtAsc(currentTeam.getClassRoom());
+        // N+1 문제 해결: 팀과 리더를 한 번에 조회 (FETCH JOIN)
+        List<Team> allTeams = teamRepository.findByClassRoomWithLeaderOrderByCreatedAtAsc(currentTeam.getClassRoom());
         
         return allTeams.stream()
                 .filter(team -> !team.getTeamId().equals(teamId))
                 .map(team -> {
-                    String leaderName = getTeamLeaderName(team);
+                    String leaderName = getTeamLeaderName(team); // 이미 FETCH JOIN으로 로딩됨 (추가 쿼리 없음)
                     return BattleOpponentDto.from(team, leaderName);
                 })
                 .collect(Collectors.toList());
@@ -120,8 +125,10 @@ public class BattleService {
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
         
-        // UserTeam 기반으로 팀 접근 권한 검증
-        Team userTeam = user.getActiveTeamByClass(challengedTeam.getClassRoom().getClassId());
+        // N+1 문제 해결: Repository 메서드로 대체 (FETCH JOIN 사용)
+        Optional<UserTeam> userTeamOpt = userTeamRepository.findActiveByUserIdAndClassId(userId, challengedTeam.getClassRoom().getClassId());
+        Team userTeam = userTeamOpt.map(UserTeam::getTeam).orElse(null);
+        
         if (userTeam == null || !userTeam.getTeamId().equals(challengedTeam.getTeamId())) {
             throw new UnauthorizedClassAccessException();
         }
@@ -194,9 +201,10 @@ public class BattleService {
             throw new CardValidationException("완료된 대전만 결과를 확인할 수 있습니다");
         }
         
-        // 사용자가 해당 대전의 참여자인지 확인 (UserTeam 기반) - user는 위에서 이미 조회됨
+        // N+1 문제 해결: Repository 메서드로 대체 (FETCH JOIN 사용)
         Long classId = match.getChallengerTeam().getClassRoom().getClassId();
-        Team userTeam = user.getActiveTeamByClass(classId);
+        Optional<UserTeam> userTeamOpt = userTeamRepository.findActiveByUserIdAndClassId(userId, classId);
+        Team userTeam = userTeamOpt.map(UserTeam::getTeam).orElse(null);
         
         if (userTeam == null || 
             (!userTeam.getTeamId().equals(match.getChallengerTeam().getTeamId()) && 
@@ -216,8 +224,10 @@ public class BattleService {
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
         
-        // UserTeam 기반으로 팀 접근 권한 검증
-        Team userTeam = user.getActiveTeamByClass(challengerTeam.getClassRoom().getClassId());
+        // N+1 문제 해결: Repository 메서드로 대체 (FETCH JOIN 사용)
+        Optional<UserTeam> userTeamOpt = userTeamRepository.findActiveByUserIdAndClassId(userId, challengerTeam.getClassRoom().getClassId());
+        Team userTeam = userTeamOpt.map(UserTeam::getTeam).orElse(null);
+        
         if (userTeam == null || !userTeam.getTeamId().equals(challengerTeam.getTeamId())) {
             throw new UnauthorizedClassAccessException();
         }
@@ -259,8 +269,10 @@ public class BattleService {
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
         
-        // UserTeam 기반으로 팀 접근 권한 검증
-        Team userTeam = user.getActiveTeamByClass(team.getClassRoom().getClassId());
+        // N+1 문제 해결: Repository 메서드로 대체 (FETCH JOIN 사용)
+        Optional<UserTeam> userTeamOpt = userTeamRepository.findActiveByUserIdAndClassId(userId, team.getClassRoom().getClassId());
+        Team userTeam = userTeamOpt.map(UserTeam::getTeam).orElse(null);
+        
         if (userTeam == null || !userTeam.getTeamId().equals(teamId)) {
             throw new UnauthorizedClassAccessException();
         }

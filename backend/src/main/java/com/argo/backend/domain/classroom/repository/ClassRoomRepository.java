@@ -82,4 +82,23 @@ public interface ClassRoomRepository extends JpaRepository<ClassRoom, Long> {
     Page<Object[]> findStudentClassesWithCountsByStatus(@Param("studentId") Long studentId, 
                                                        @Param("status") ClassStatus status, 
                                                        Pageable pageable);
+
+    @Query("SELECT c FROM ClassRoom c " +
+            "JOIN FETCH c.location " +
+            "JOIN FETCH c.teacher " +
+            "WHERE c.inviteCode = :inviteCode")
+    Optional<ClassRoom> findByInviteCodeWithLocationAndTeacher(@Param("inviteCode") String inviteCode);
+    
+    // N+1 문제 해결: getClassDetail용 - ClassRoom과 관련 엔티티들을 한 번에 조회 (FETCH JOIN)
+    @Query("SELECT c FROM ClassRoom c " +
+           "LEFT JOIN FETCH c.location " +
+           "LEFT JOIN FETCH c.teacher " +
+           "WHERE c.classId = :classId")
+    Optional<ClassRoom> findByIdWithLocationAndTeacher(@Param("classId") Long classId);
+    
+    // N+1 문제 해결: validateClassAccess용 - ClassRoom과 Teacher를 한 번에 조회 (FETCH JOIN)
+    @Query("SELECT c FROM ClassRoom c " +
+           "LEFT JOIN FETCH c.teacher " +
+           "WHERE c.classId = :classId")
+    Optional<ClassRoom> findByIdWithTeacher(@Param("classId") Long classId);
 }
