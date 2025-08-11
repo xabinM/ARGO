@@ -95,4 +95,11 @@ public interface ClassStudentRepository extends JpaRepository<User, Long> {
            "ORDER BY ca.updatedAt ASC")
     Page<Object[]> findUnassignedStudentsWithTeamAndJoinDateByClassIdPaged(@Param("classId") Long classId, Pageable pageable);
     
+    // N+1 문제 해결: 여러 팀의 멤버 수를 한 번에 조회하는 배치 쿼리
+    @Query("SELECT ut.team.teamId, COUNT(ut) FROM UserTeam ut " +
+           "WHERE ut.team.teamId IN :teamIds " +
+           "AND ut.isActive = true " +
+           "GROUP BY ut.team.teamId")
+    List<Object[]> findTeamMemberCounts(@Param("teamIds") List<Long> teamIds);
+    
 }

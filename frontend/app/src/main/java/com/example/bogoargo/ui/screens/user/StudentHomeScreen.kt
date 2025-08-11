@@ -6,9 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -67,47 +65,103 @@ fun StudentHomeScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
-                    
-                    // 개발용 더미 데이터 로드 버튼
+
+
+                    // 반 신청 기능 (항상 표시)
                     item {
-                        NatureComponents.NatureCard(
-                            containerColor = NatureColors.sunnyYellow.copy(alpha = 0.2f)
-                        ) {
+                        var inviteCode by remember { mutableStateOf("") }
+                        
+                        NatureComponents.NatureCard {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(20.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                    .padding(24.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 Text(
-                                    text = "🔧 개발용 테스트",
+                                    text = "🎓 새 반 참여하기",
                                     style = NatureTypography.titleMedium,
                                     color = NatureColors.earthBrown
                                 )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "API 준비 중이니 더미 데이터로 테스트해보세요",
-                                    style = NatureTypography.bodySmall,
-                                    color = NatureColors.earthBrown.copy(alpha = 0.7f),
-                                    textAlign = TextAlign.Center
+                                
+                                OutlinedTextField(
+                                    value = inviteCode,
+                                    onValueChange = { inviteCode = it },
+                                    label = { 
+                                        Text(
+                                            "초대 코드", 
+                                            style = NatureTypography.bodyMedium
+                                        ) 
+                                    },
+                                    placeholder = {
+                                        Text(
+                                            "선생님께서 주신 코드를 입력하세요",
+                                            style = NatureTypography.bodySmall
+                                        )
+                                    },
+                                    singleLine = true,
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = !uiState.isLoading,
+                                    shape = NatureShapes.medium,
+                                    colors = OutlinedTextFieldDefaults.colors(
+                                        focusedBorderColor = NatureColors.forestGreen,
+                                        focusedLabelColor = NatureColors.forestGreen,
+                                        unfocusedBorderColor = NatureColors.earthBrown.copy(alpha = 0.5f)
+                                    )
                                 )
-                                Spacer(modifier = Modifier.height(12.dp))
-                                Button(
-                                    onClick = { viewModel.loadDummyClasses() },
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = NatureColors.sunnyYellow
-                                    ),
-                                    modifier = Modifier.fillMaxWidth()
+                                
+                                NatureComponents.NatureButton(
+                                    onClick = {
+                                        if (inviteCode.isNotBlank()) {
+                                            viewModel.applyToClass(inviteCode.trim())
+                                        }
+                                    },
+                                    text = "🌱 반 참여하기",
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(56.dp),
+                                    enabled = inviteCode.isNotBlank() && !uiState.isLoading,
+                                    backgroundColor = NatureColors.forestGreen
+                                )
+                            }
+                        }
+                    }
+
+                    // 반 목록이 비어있을 때 안내 메시지
+                    if (uiState.classes.isEmpty()) {
+                        item {
+                            NatureComponents.NatureCard(
+                                containerColor = NatureColors.leafGreen.copy(alpha = 0.1f)
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(24.dp),
+                                    horizontalAlignment = Alignment.CenterHorizontally
                                 ) {
                                     Text(
-                                        text = "더미 반 데이터 로드",
-                                        color = NatureColors.earthBrown
+                                        text = "🌱",
+                                        style = NatureTypography.titleLarge
+                                    )
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                    Text(
+                                        text = "아직 참여한 반이 없어요",
+                                        style = NatureTypography.titleLarge,
+                                        color = NatureColors.earthBrown,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Text(
+                                        text = "위의 반 참여하기로\n새로운 반에 참여해보세요!",
+                                        style = NatureTypography.bodyMedium,
+                                        color = NatureColors.earthBrown.copy(alpha = 0.8f),
+                                        textAlign = TextAlign.Center
                                     )
                                 }
                             }
                         }
                     }
-                    
+
                     // 참여한 반 목록
                     if (uiState.classes.isNotEmpty()) {
                         item {
@@ -118,7 +172,7 @@ fun StudentHomeScreen(
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
                         }
-                        
+
                         items(uiState.classes) { classItem ->
                             NatureComponents.NatureCard(
                                 modifier = Modifier
@@ -189,63 +243,8 @@ fun StudentHomeScreen(
                             }
                         }
                     }
-                    
-                    // 네비게이션 메뉴
-                    item {
-                        NatureComponents.NatureCard(
-                            containerColor = NatureColors.earthBrown.copy(alpha = 0.1f)
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(20.dp)
-                            ) {
-                                Text(
-                                    text = "⚙️ 메뉴",
-                                    style = NatureTypography.titleMedium,
-                                    color = NatureColors.earthBrown,
-                                    modifier = Modifier.padding(bottom = 12.dp)
-                                )
-                                
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Button(
-                                        onClick = { navController.navigate(Screen.Profile.route) },
-                                        modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = NatureColors.leafGreen.copy(alpha = 0.3f),
-                                            contentColor = NatureColors.earthBrown
-                                        )
-                                    ) {
-                                        Text("👤 프로필", style = NatureTypography.labelMedium)
-                                    }
-                                    
-                                    Button(
-                                        onClick = { navController.navigate(Screen.Settings.route) },
-                                        modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = NatureColors.leafGreen.copy(alpha = 0.3f),
-                                            contentColor = NatureColors.earthBrown
-                                        )
-                                    ) {
-                                        Text("⚙️ 설정", style = NatureTypography.labelMedium)
-                                    }
-                                    
-                                    Button(
-                                        onClick = { viewModel.refreshData() },
-                                        modifier = Modifier.weight(1f),
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = NatureColors.leafGreen.copy(alpha = 0.3f),
-                                            contentColor = NatureColors.earthBrown
-                                        )
-                                    ) {
-                                        Text("🔄 새로고침", style = NatureTypography.labelMedium)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
+
+
                     // 에러 메시지 표시
                     uiState.errorMessage?.let { error ->
                         item {
@@ -272,22 +271,33 @@ fun StudentHomeScreen(
                         }
                     }
                     
-                    // 기타 테스트 아이템들 (개발용)
-                    itemsIndexed(uiState.items) { index, item ->
+                    // 디버그용 토큰 만료 테스트 버튼
+                    item {
                         NatureComponents.NatureCard(
-                            modifier = Modifier.clickable { viewModel.selectItem(index) },
-                            containerColor = if (uiState.selectedItemIndex == index)
-                                NatureColors.sunnyYellow.copy(alpha = 0.3f)
-                            else NatureColors.leafGreen.copy(alpha = 0.05f)
+                            containerColor = NatureColors.earthBrown.copy(alpha = 0.1f)
                         ) {
-                            Text(
-                                text = item,
-                                modifier = Modifier.padding(16.dp),
-                                style = NatureTypography.bodyMedium,
-                                color = NatureColors.earthBrown
-                            )
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    text = "🔧 개발자 도구",
+                                    style = NatureTypography.titleSmall,
+                                    color = NatureColors.earthBrown
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                NatureComponents.NatureButton(
+                                    onClick = { viewModel.triggerTokenExpiredForTesting() },
+                                    text = "토큰 만료 테스트",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    backgroundColor = NatureColors.earthBrown.copy(alpha = 0.7f)
+                                )
+                            }
                         }
                     }
+
                 }
             }
         }

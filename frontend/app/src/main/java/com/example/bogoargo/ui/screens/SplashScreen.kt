@@ -5,14 +5,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import com.example.bogoargo.domain.repository.IAuthRepository
 import kotlinx.coroutines.delay
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.bogoargo.data.preferences.UserPreferences
 import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.ui.viewmodels.SplashViewModel
 import com.example.bogoargo.ui.viewmodels.user.LoginViewModel
@@ -24,45 +20,36 @@ fun SplashScreen(
 ) {
     val splashViewModel: SplashViewModel = hiltViewModel()
     val loginViewModel: LoginViewModel = hiltViewModel()
-    val authRepository = splashViewModel.authRepository
 
     LaunchedEffect(Unit) {
         delay(1000)
         
-        val tokenInfo = authRepository.getTokenInfo()
-        val user = loginViewModel.getLoggedInUser()
-
-        if (tokenInfo != null) {
-            // 토큰이 있으면 서버에 검증 요청
-            try {
-                val response = splashViewModel.validateToken()
-                if (response.isSuccessful && user != null) {
-
-                    // 토큰이 유효하고 유저 데이터 있으면 각 홈으로 이동
-                    if(user.role == UserRole.ROLE_TEACHER) {
-                        navController.navigate("teacherHome") {
-                            popUpTo("splash"){ inclusive = true }
-                        }
-                    } else {
-                        navController.navigate("studentHome") {
-                            popUpTo("splash"){ inclusive = true }
-                        }
+        // 로컬 세션 유효성 확인
+        if (splashViewModel.hasValidSession()) {
+            val user = loginViewModel.getLoggedInUser()
+            
+            if (user != null) {
+                // 로컬 세션이 유효하면 바로 홈으로 이동
+                // 토큰 만료 등의 문제는 실제 API 호출 시점에 TokenManagementInterceptor가 처리
+                if (user.role == UserRole.ROLE_TEACHER) {
+                    navController.navigate("teacherHome") {
+                        popUpTo("splash") { inclusive = true }
                     }
-
                 } else {
-                    // 토큰이 무효하면 토큰 삭제 후 로그인으로 이동
-                    authRepository.clearTokens()
-                    navController.navigate("login") {
+                    navController.navigate("studentHome") {
                         popUpTo("splash") { inclusive = true }
                     }
                 }
-            } catch (e: Exception) {
-                // 네트워크 에러 등의 경우 로그인으로 이동
+            } else {
+                // 사용자 정보 없으면 데이터 삭제 후 로그인으로 이동
+                splashViewModel.clearUserData()
                 navController.navigate("login") {
                     popUpTo("splash") { inclusive = true }
                 }
             }
         } else {
+            // 세션이 유효하지 않으면 데이터 삭제 후 로그인으로 이동
+            splashViewModel.clearUserData()
             navController.navigate("login") {
                 popUpTo("splash") { inclusive = true }
             }

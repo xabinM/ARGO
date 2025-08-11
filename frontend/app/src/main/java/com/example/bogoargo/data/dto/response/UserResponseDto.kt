@@ -15,7 +15,10 @@ data class UserDataDto(
 data class UserLoginResponse(
     val success: Boolean,
     val message: String,
-    val data: UserDataDto?
+    val userId: Long = 1L, //TODO: null처리 해지
+    val name: String?,
+    val role: String,
+    val tokens: TokenResponseDto?
 )
 
 // 회원 정보 수정 응답 DTO

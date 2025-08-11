@@ -8,5 +8,8 @@ import lombok.Getter;
 public class ProblemGenerateResponse {
 
     private boolean success;
+    private String message;
+    private Integer grade;
+    private String spotName;
     private ProblemGenerateDto problems;
 }

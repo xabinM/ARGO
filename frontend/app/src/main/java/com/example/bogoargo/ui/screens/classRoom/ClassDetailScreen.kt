@@ -1,5 +1,6 @@
 package com.example.bogoargo.ui.screens.classRoom
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.*
@@ -14,6 +15,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.bogoargo.navigation.Screen
 import com.example.bogoargo.ui.viewmodels.classRoom.ClassDetailViewModel
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
@@ -25,23 +27,22 @@ import com.example.bogoargo.ui.theme.NatureElevation
 @Composable
 fun ClassDetailScreen(
     navController: NavController,
-    classId: String,
+    classId: Long,
     viewModel: ClassDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
     LaunchedEffect(classId) {
-        viewModel.loadClassDetail(classId.toLongOrNull() ?: 0L)
+        viewModel.loadClassDetail(classId)
     }
 
     Scaffold(
         topBar = {
             NatureComponents.NatureTopAppBar(
                 title = "우리반 정보",
-                emoji = "🏫"
-            ) { 
-                navController.popBackStack() 
-            }
+                emoji = "🏫",
+                onNavigationClick = { navController.popBackStack() }
+            )
         }
     ) { paddingValues ->
         NatureComponents.NatureBackground {
@@ -308,7 +309,7 @@ fun ClassDetailScreenPreview() {
     MaterialTheme {
         ClassDetailScreen(
             navController = rememberNavController(),
-            classId = "preview_class"
+            classId = 0L
         )
     }
 }

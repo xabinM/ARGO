@@ -15,6 +15,9 @@ import java.util.List;
 @PrimaryKeyJoinColumn(name = "id")
 public class QuizProblem extends Problem {
 
+    @Column(nullable = false)
+    private Integer grade;
+
     @Lob
     @Column(nullable = false)
     private String question;
@@ -31,18 +34,19 @@ public class QuizProblem extends Problem {
     @Lob
     private String explanation;
 
-    public static QuizProblem from(Spot spot, String question,
+    public static QuizProblem from(Spot spot, Integer grade, String question,
                                    List<String> choices,
                                    Integer correctIndex,
                                    String explanation) {
-        return new QuizProblem(spot, question, choices, correctIndex, explanation);
+        return new QuizProblem(spot, grade, question, choices, correctIndex, explanation);
     }
 
-    private QuizProblem(Spot spot, String question,
+    private QuizProblem(Spot spot, Integer grade, String question,
                         List<String> choices,
                         Integer correctIndex,
                         String explanation) {
         super(spot);
+        this.grade = grade;
         this.question = question;
         this.choices = choices;
         this.correctIndex = correctIndex;

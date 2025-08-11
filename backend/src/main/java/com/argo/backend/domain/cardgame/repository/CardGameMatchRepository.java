@@ -14,6 +14,13 @@ public interface CardGameMatchRepository extends JpaRepository<CardGameMatch, Lo
     @Query("SELECT m FROM CardGameMatch m WHERE m.challengerTeam.teamId = :teamId OR m.challengedTeam.teamId = :teamId ORDER BY m.createdAt DESC")
     List<CardGameMatch> findByTeamIdOrderByCreatedAtDesc(@Param("teamId") Long teamId);
     
-    @Query("SELECT m FROM CardGameMatch m WHERE m.challengerTeam.teamId = :teamId OR m.challengedTeam.teamId = :teamId ORDER BY m.createdAt DESC")
-    Page<CardGameMatch> findByTeamIdOrderByCreatedAtDesc(@Param("teamId") Long teamId, Pageable pageable);
+    // N+1 문제 해결: 배틀 기록과 관련 팀들을 한 번에 조회 (FETCH JOIN)
+    @Query("SELECT DISTINCT m FROM CardGameMatch m " +
+           "LEFT JOIN FETCH m.challengerTeam " +
+           "LEFT JOIN FETCH m.challengedTeam " +
+           "LEFT JOIN FETCH m.winnerTeam " +
+           "LEFT JOIN FETCH m.loserTeam " +
+           "WHERE (m.challengerTeam.teamId = :teamId OR m.challengedTeam.teamId = :teamId) " +
+           "ORDER BY m.createdAt DESC")
+    Page<CardGameMatch> findByTeamIdOrderByCreatedAtDescWithTeams(@Param("teamId") Long teamId, Pageable pageable);
 }

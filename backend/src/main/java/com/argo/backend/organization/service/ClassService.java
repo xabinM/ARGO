@@ -1,5 +1,8 @@
 package com.argo.backend.organization.service;
 
+import com.argo.backend.domain.spot.entity.Spot;
+import com.argo.backend.domain.spot.repository.SpotRepository;
+import com.argo.backend.organization.dto.spot.SpotsResponse;
 import com.argo.backend.domain.classroom.entity.ClassApplication;
 import com.argo.backend.domain.classroom.entity.ClassRoom;
 import com.argo.backend.domain.classroom.enums.ClassStatus;
@@ -63,6 +66,7 @@ import java.security.SecureRandom;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -77,16 +81,38 @@ public class ClassService {
     private final TeamRepository teamRepository;
     private final ClassStudentRepository classStudentRepository;
     private final UserTeamRepository userTeamRepository;
-
+    private final SpotRepository spotRepository;
 
     private static final String INVITE_CHARACTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int INVITE_CODE_LENGTH = 6;
 
 
     @Transactional
-    public List<LocationsResponse> getLocations() {
+    public List<LocationsResponse> getLocations(Long teacherId) {
+        // 선생님 권한 검증
+        teacherRepository.findById(teacherId)
+                .orElseThrow(() -> new UserNotFoundException());
+                
         return locationRepository.findAll().stream()
                 .map(LocationsResponse::from)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public List<SpotsResponse> getSpots(Long classId, Long teacherId){
+        // 권한 검증
+        ClassRoom classRoom = validateClassAccess(teacherId, classId);
+                
+        Location location = classRoom.getLocation();
+        if (location == null) {
+            throw new LocationNotFoundException();
+        }
+        
+        Long locationId = location.getLocationId();
+        List<Spot> spots = spotRepository.findByLocationLocationId(locationId);
+        
+        return spots.stream()
+                .map(SpotsResponse::from)
                 .collect(Collectors.toList());
     }
 
@@ -141,7 +167,9 @@ public class ClassService {
 
         validateUserRole(user);
 
-        ClassRoom classRoom = classRoomRepository.findByInviteCode(inviteCode)
+//        ClassRoom classRoom = classRoomRepository.findByInviteCode(inviteCode)
+//                .orElseThrow(InvalidInviteCodeException::new);
+        ClassRoom classRoom = classRoomRepository.findByInviteCodeWithLocationAndTeacher(inviteCode)
                 .orElseThrow(InvalidInviteCodeException::new);
 
         if (!isAvailableForApplication(classRoom)) {
@@ -203,6 +231,7 @@ public class ClassService {
     }
     
 
+    /// 페이지네이션 공부해야한다
     @Transactional
     public ClassListResponse getTeacherClassList(Long teacherId, String status, Pageable pageable) {
         Teacher teacher = teacherRepository.findById(teacherId)
@@ -230,7 +259,8 @@ public class ClassService {
         
         return ClassListResponse.success(classInfoList, pagination);
     }
-    
+
+    /// 페이지네이션 공부해야한다
     // 학생의 반 목록 조회
     @Transactional
     public ClassListResponse getStudentClassList(Long studentId, String status, Pageable pageable) {
@@ -288,7 +318,7 @@ public class ClassService {
     public ClassDetailResponse getClassDetail(Long userId, Long classId, String include) {
         validateClassId(classId);
         
-        ClassRoom classRoom = classRoomRepository.findById(classId)
+        ClassRoom classRoom = classRoomRepository.findByIdWithLocationAndTeacher(classId)
                 .orElseThrow(ClassNotFoundException::new);
         
         // 권한 검증 (선생 또는 참여 학생)
@@ -346,14 +376,14 @@ public class ClassService {
 
     // 선생 전용
     private List<TeamDetailDto> getTeamsForClass(Long classId) {
-        List<Team> teams = teamRepository.findTeamsByClassId(classId);
+        List<Team> teams = teamRepository.findTeamsByClassIdWithActiveMembersAndLeader(classId);
         return teams.stream()
                 .map(team -> {
-                    List<User> members = team.getActiveMembers(); // Team 헬퍼 메서드 사용
+                    List<User> members = team.getActiveMembers(); // 이미 FETCH JOIN으로 로딩됨 (쿼리 없음)
                     List<TeamMemberDto> memberDtos = members.stream()
                             .map(TeamMemberDto::from)
                             .toList();
-                    return TeamDetailDto.from(team, memberDtos);
+                    return TeamDetailDto.from(team, memberDtos); // leader도 이미 로딩됨 (쿼리 없음)
                 })
                 .toList();
     }
@@ -377,10 +407,11 @@ public class ClassService {
         
         return StudentListResponse.of(classInfo, students, teamSummary, pagination);
     }
-    
+
+    // N+1 문제 해결: Teacher를 FETCH JOIN으로 한 번에 로딩하여 추가 쿼리 방지
     private ClassRoom validateClassAccess(Long teacherId, Long classId) {
         validateClassId(classId);
-        ClassRoom classRoom = classRoomRepository.findById(classId)
+        ClassRoom classRoom = classRoomRepository.findByIdWithTeacher(classId)
                 .orElseThrow(ClassNotFoundException::new);
         if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
             throw new UnauthorizedClassAccessException();
@@ -421,8 +452,21 @@ public class ClassService {
     private TeamSummaryDto buildTeamSummary(Long classId, int totalStudents) {
         List<Team> teams = teamRepository.findTeamsByClassId(classId);
         
+        // N+1 문제 해결: 모든 팀의 멤버 수를 한 번에 조회
+        List<Long> teamIds = teams.stream()
+                .map(Team::getTeamId)
+                .toList();
+        
+        // 배치 쿼리로 모든 팀의 멤버 수 조회
+        List<Object[]> memberCounts = classStudentRepository.findTeamMemberCounts(teamIds);
+        Map<Long, Integer> teamMemberCountMap = memberCounts.stream()
+                .collect(Collectors.toMap(
+                    result -> (Long) result[0],
+                    result -> ((Number) result[1]).intValue()
+                ));
+        
         List<TeamStatusDto> teamStatuses = teams.stream()
-                .map(team -> TeamStatusDto.from(team, (int) classStudentRepository.countByTeamId(team.getTeamId())))
+                .map(team -> TeamStatusDto.from(team, teamMemberCountMap.getOrDefault(team.getTeamId(), 0)))
                 .toList();
         
         int totalAssigned = teamStatuses.stream()
@@ -451,7 +495,9 @@ public class ClassService {
         java.time.LocalDateTime joinedAt = application.getUpdatedAt();
         java.time.LocalDateTime leftAt = java.time.LocalDateTime.now();
         
-        Team currentTeam = student.getActiveTeamByClass(classId); // 헬퍼 메서드 사용
+        // N+1 문제 해결: Repository 메서드로 대체 (FETCH JOIN 사용)
+        Optional<UserTeam> userTeamOpt = userTeamRepository.findActiveByUserIdAndClassId(studentId, classId);
+        Team currentTeam = userTeamOpt.map(UserTeam::getTeam).orElse(null);
         TeamInfoDto teamInfo = currentTeam != null 
             ? TeamInfoDto.fromTeam(currentTeam, leftAt)
             : TeamInfoDto.noTeam();
@@ -519,10 +565,16 @@ public class ClassService {
                 .map(result -> (User) result[0])
                 .toList();
         List<Team> teams = teamRepository.findTeamsByClassId(classId);
-        Map<Long, Integer> memberCounts = teams.stream()
+        
+        // N+1 문제 해결: 배치 쿼리로 모든 팀의 멤버 수 한 번에 조회
+        List<Long> teamIds = teams.stream()
+                .map(Team::getTeamId)
+                .toList();
+        List<Object[]> memberCountResults = classStudentRepository.findTeamMemberCounts(teamIds);
+        Map<Long, Integer> memberCounts = memberCountResults.stream()
                 .collect(Collectors.toMap(
-                    Team::getTeamId,
-                    team -> (int) classStudentRepository.countByTeamId(team.getTeamId())
+                    result -> (Long) result[0],
+                    result -> ((Number) result[1]).intValue()
                 ));
         
         // UserTeam 기반으로 모든 학생의 팀 배정 해제

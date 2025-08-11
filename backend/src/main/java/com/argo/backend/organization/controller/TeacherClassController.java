@@ -10,6 +10,7 @@ import com.argo.backend.organization.dto.applicationprocess.ApplicationProcessRe
 import com.argo.backend.organization.dto.classlist.ClassListResponse;
 import com.argo.backend.organization.dto.classdetail.ClassDetailResponse;
 import com.argo.backend.organization.dto.location.LocationsResponse;
+import com.argo.backend.organization.dto.spot.SpotsResponse;
 import com.argo.backend.organization.dto.studentlist.StudentListResponse;
 import com.argo.backend.organization.service.ClassService;
 import com.argo.backend.organization.service.ClassApplicationService;
@@ -38,8 +39,19 @@ public class TeacherClassController {
 
     // 클리어
     @GetMapping("/locations")
-    public ResponseEntity<CommonApiResponse<List<LocationsResponse>>> getLocations() {
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "지역 목록 조회 성공", classService.getLocations()));
+    public ResponseEntity<CommonApiResponse<List<LocationsResponse>>> getLocations(
+            @AuthenticationPrincipal Long teacherId
+    ) {
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "지역 목록 조회 성공", classService.getLocations(teacherId)));
+    }
+
+    @GetMapping("{classId}/spots")
+    public ResponseEntity<CommonApiResponse<List<SpotsResponse>>> getSpots(
+            @PathVariable Long classId,
+            @AuthenticationPrincipal Long teacherId
+    ) {
+        List<SpotsResponse> spots = classService.getSpots(classId, teacherId);
+        return ResponseEntity.ok(new CommonApiResponse<>(true, "장소 목록 조회 성공", spots));
     }
 
     // 클리어

@@ -19,7 +19,7 @@ import com.example.bogoargo.ui.theme.NatureTypography
 @Composable
 fun TeamCreateScreen(
     navController: NavController,
-    classId: String = "",
+    classId: Long,
     viewModel: TeamCreateViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -95,13 +95,13 @@ fun TeamCreateScreen(
                 } else {
                     NatureComponents.NatureButton(
                         onClick = {
-                            val classIdLong = classId.toLongOrNull() ?: 0L
+                            val classIdLong = classId
                             viewModel.createTeam(classIdLong)
                         },
                         text = "🏆 팀 생성하기",
                         modifier = Modifier.fillMaxWidth(),
                         backgroundColor = NatureColors.forestGreen,
-                        enabled = classId.isNotEmpty()
+                        enabled = true
                     )
                 }
             }
@@ -109,10 +109,10 @@ fun TeamCreateScreen(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun TeamCreateScreenPreview() {
-    MaterialTheme {
-        TeamCreateScreen(navController = rememberNavController())
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun TeamCreateScreenPreview() {
+//    MaterialTheme {
+//        TeamCreateScreen(navController = rememberNavController())
+//    }
+//}

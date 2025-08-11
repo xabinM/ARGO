@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.bogoargo.domain.model.TokenInfo
 import com.example.bogoargo.domain.repository.IAuthRepository
 import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.data.event.TokenExpiredEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,7 +15,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val authRepository: IAuthRepository
+    private val authRepository: IAuthRepository,
+    private val tokenExpiredEvent: TokenExpiredEvent
 ) : ViewModel() {
 
     sealed class UiState {

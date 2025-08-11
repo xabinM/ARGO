@@ -4,6 +4,7 @@ import com.argo.backend.domain.ploblem.enums.PhotoPose;
 import com.argo.backend.domain.ploblem.enums.ProblemType;
 import com.argo.backend.global.enums.ResponseMessage;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateResponse;
+import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateTransDto;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterRequest;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestFromCli;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateDto;
@@ -46,9 +47,13 @@ public class ProblemController {
 
     @PostMapping("/generate")
     public ResponseEntity<?> generateProblem(@RequestBody ProblemGenerateRequestFromCli request) {
-        ProblemGenerateDto problems = problemService.generateProblem(request);
+        ProblemGenerateTransDto dto = problemService.generateProblem(request);
 
-        return ResponseEntity.ok(new ProblemGenerateResponse(true, problems));
+        return ResponseEntity.ok(new ProblemGenerateResponse(
+                true, ResponseMessage.SUCCESS_GENERATE_PROBLEM.getMessage(), dto.getGrade(),
+                dto.getSpotName(), dto.getProblems()
+                )
+        );
     }
 
     @GetMapping("/spot/{spotId}")

@@ -9,11 +9,11 @@ import com.example.bogoargo.data.dto.response.UserUpdateResponse
 import com.example.bogoargo.data.dto.response.UserWithdrawResponse
 import com.example.bogoargo.data.dto.response.MessageResponseDto
 import com.example.bogoargo.data.mapper.toDomainModel
-import com.example.bogoargo.data.preferences.UserPreferences
-import com.example.bogoargo.data.storage.TokenStorage
+import com.example.bogoargo.data.storage.SecureStorage
 import com.example.bogoargo.domain.model.DataException
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.User
+import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.domain.repository.IUserRepository
 import retrofit2.HttpException
 import java.io.IOException
@@ -21,8 +21,7 @@ import javax.inject.Inject
 
 class UserRepositoryImpl @Inject constructor(
     private val userApiService: UserApiService,
-    private val tokenStorage: TokenStorage,
-    private val userPreferences: UserPreferences
+    private val secureStorage: SecureStorage
 ) : IUserRepository {
     
     override suspend fun signUp(userSignUpRequest: UserSignUpRequest): DataResult<MessageResponseDto> {
@@ -59,19 +58,25 @@ class UserRepositoryImpl @Inject constructor(
             val response = userApiService.login(request)
             if (response.isSuccessful) {
                 val loginResponse = response.body()
-                val accessToken = response.headers()["Authorization"]?.replace("Bearer ", "")
-                val refreshToken = response.headers()["Refresh-Token"] // 일반적인 헤더명
-                
-                if (loginResponse?.success == true && loginResponse.data != null && 
+                val accessToken = response.body()?.tokens?.accessToken
+                val refreshToken = response.body()?.tokens?.refreshToken
+                //TODO: success 변경
+                if (loginResponse?.message.equals("로그인에 성공했습니다.") && loginResponse?.name != null &&
                     accessToken != null && refreshToken != null) {
                     
                     // 토큰 저장
-                    tokenStorage.saveTokens(accessToken, refreshToken)
+                    secureStorage.saveTokens(accessToken, refreshToken)
 
                     // 유저 저장
-                    userPreferences.saveUser(loginResponse.data.toDomainModel())
+                    val loggedInUser = User(
+                        userId = loginResponse.userId,
+                        name = loginResponse.name,
+                        role = UserRole.valueOf(loginResponse.role),
+                        team = null
+                    )
+                    secureStorage.saveUser(loggedInUser)
                     
-                    DataResult.Success(loginResponse.data.toDomainModel())
+                    DataResult.Success(loggedInUser)
                 } else {
                     DataResult.Error(DataException.AuthenticationError)
                 }
@@ -171,6 +176,6 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getLoggedInUser(): User? {
-        return userPreferences.getUser()
+        return secureStorage.getUser()
     }
 }

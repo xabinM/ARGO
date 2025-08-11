@@ -1,7 +1,9 @@
 package com.example.bogoargo.ui.screens.user
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -42,6 +44,8 @@ fun SignUpScreen(
     
     LaunchedEffect(uiState.isSuccess) {
         if (uiState.isSuccess) {
+            // 성공 메시지를 잠시 보여준 후 로그인 화면으로 이동
+            kotlinx.coroutines.delay(1500)
             navController.popBackStack()
         }
     }
@@ -60,6 +64,7 @@ fun SignUpScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
@@ -349,6 +354,9 @@ fun SignUpScreen(
                         )
                     }
                 }
+                
+                // 하단 여백
+                Spacer(modifier = Modifier.height(40.dp))
             }
         }
     }

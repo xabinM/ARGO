@@ -10,28 +10,29 @@ fun ClassDataDto.toDomainModel(): Class {
     return Class(
         classId = this.classId,
         className = this.className,
-        description = this.description,
-        location = this.location,
+        description = this.description ?: "",
+        location = this.location ?: "",
         activityDate = try {
-            LocalDate.parse(this.activityDate.substringBefore("T")) // "YYYY-MM-DDTHH:MM:SS" -> "YYYY-MM-DD"
+            this.activityDate?.substringBefore("T")?.let { LocalDate.parse(it) } ?: LocalDate.MIN
         } catch (e: DateTimeParseException) {
             LocalDate.MIN
         },
-        currentStudents = this.studentCount,
-        maxStudents = this.maxStudents,
-        studentCount = this.students.size,
-        teamCount = this.teamCount,
-        status = when (this.status) {
+        currentStudents = this.students?.size ?: 0,
+        maxStudents = this.maxStudents ?: 0,
+        studentCount = this.students?.size ?: 0,
+        teamCount = this.teams?.size ?:0,
+        status = when (this.status?.uppercase()) {
             "ACTIVE" -> Class.ClassStatus.ACTIVE
             "ENDED" -> Class.ClassStatus.ENDED
             else -> Class.ClassStatus.ACTIVE
         },
         inviteCode = this.inviteCode,
         createdAt = try {
-            LocalDate.parse(this.createdAt.substringBefore("T"))
+            this.createdAt.substringBefore("T")?.let { LocalDate.parse(it) } ?: LocalDate.MIN
         } catch (e: DateTimeParseException) {
             LocalDate.MIN
-        }
+        },
+        isFull = (this.students?.size ?: 0) >= (this.maxStudents ?: 0) // maxStudents도 nullable
     )
 }
 
@@ -61,7 +62,8 @@ fun ClassInfoDto.toDomainModel(): Class {
             LocalDate.parse(this.createdAt.substringBefore("T"))
         } catch (e: DateTimeParseException) {
             LocalDate.MIN
-        }
+        },
+        isFull = this.studentCount >= this.maxStudents
     )
 }
 

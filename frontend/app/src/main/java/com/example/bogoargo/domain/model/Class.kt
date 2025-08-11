@@ -15,7 +15,7 @@ data class Class(
     val status: ClassStatus,
     val inviteCode: String,
     val createdAt: LocalDate,
-    val isFull: Boolean = currentStudents >= maxStudents
+    val isFull: Boolean?
 ) {
     enum class ClassStatus {
         ACTIVE,

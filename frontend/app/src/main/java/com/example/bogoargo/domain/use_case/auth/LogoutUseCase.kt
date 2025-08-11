@@ -1,12 +1,13 @@
 package com.example.bogoargo.domain.use_case.auth
 
-import com.example.bogoargo.domain.repository.IAuthRepository
+import com.example.bogoargo.data.storage.SecureStorage
 import javax.inject.Inject
 
 class LogoutUseCase @Inject constructor(
-    private val authRepository: IAuthRepository
+    private val secureStorage: SecureStorage
 ) {
     operator fun invoke() {
-        authRepository.clearTokens()
+        // 토큰과 사용자 정보 모두 삭제
+        secureStorage.clearAll()
     }
 }

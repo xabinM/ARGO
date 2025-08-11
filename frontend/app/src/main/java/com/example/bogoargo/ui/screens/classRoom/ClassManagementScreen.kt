@@ -17,7 +17,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.domain.model.Class
+import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.ui.viewmodels.classRoom.ClassManagementViewModel
+import com.example.bogoargo.navigation.Screen
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
@@ -30,13 +32,17 @@ fun ClassManagementScreen(
     viewModel: ClassManagementViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var isTeacher by remember { mutableStateOf(true) }
+    var currentUser by remember { mutableStateOf(null as com.example.bogoargo.domain.model.User?) }
+    
+    // 로그인한 사용자 정보 로드
+    val loginViewModel = hiltViewModel<com.example.bogoargo.ui.viewmodels.user.LoginViewModel>()
     
     LaunchedEffect(Unit) {
+        currentUser = loginViewModel.getLoggedInUser()
+        val isTeacher = currentUser?.role == UserRole.ROLE_TEACHER
+        
         if (isTeacher) {
             viewModel.loadTeacherClasses()
-        } else {
-            viewModel.loadStudentClasses()
         }
     }
 
@@ -49,18 +55,21 @@ fun ClassManagementScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    navController.navigate("classCreate")
-                },
-                containerColor = NatureColors.leafGreen,
-                shape = NatureShapes.large
-            ) {
-                Icon(
-                    Icons.Default.Add,
-                    contentDescription = "반 추가",
-                    tint = Color.White
-                )
+            // 선생님일 때만 반 추가 버튼 표시
+            if (currentUser?.role == UserRole.ROLE_TEACHER) {
+                FloatingActionButton(
+                    onClick = {
+                        navController.navigate("classCreate")
+                    },
+                    containerColor = NatureColors.leafGreen,
+                    shape = NatureShapes.large
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "반 추가",
+                        tint = Color.White
+                    )
+                }
             }
         }
     ) { paddingValues ->
@@ -109,6 +118,7 @@ fun ClassManagementScreen(
                 if (uiState.isLoading) {
                     NatureComponents.NatureLoadingIndicator()
                 } else {
+                    val isTeacher = currentUser?.role == UserRole.ROLE_TEACHER
                     val classes = if (isTeacher) uiState.teacherClasses else uiState.studentClasses
                     
                     if (classes.isEmpty()) {
@@ -127,10 +137,11 @@ fun ClassManagementScreen(
                                 ClassInfoCard(
                                     classInfo = classInfo,
                                     isTeacher = isTeacher,
-                                    onDeleteClick = if (isTeacher) { { viewModel.deleteClass(classInfo.classId) } } else null
-                                ) {
-                                    navController.navigate("classDetail/${classInfo.classId}")
-                                }
+                                    navController = navController
+                                    //onDeleteClick = if (isTeacher) { { viewModel.deleteClass(classInfo.classId) } } else null
+                                ) //{
+                                    //navController.navigate(Screen.ClassDetail.createRoute(classInfo.classId))
+                                //}
                             }
                             // 빈 공간 추가 (FAB와의 겹침 방지)
                             item {
@@ -149,12 +160,13 @@ fun ClassInfoCard(
     classInfo: Class, 
     isTeacher: Boolean,
     onDeleteClick: (() -> Unit)? = null,
-    onClick: () -> Unit
+    //onClick: () -> Unit,
+    navController: NavController
 ) {
     NatureComponents.NatureCard(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick),
+            .clickable { navController.navigate(Screen.ClassDetail.createRoute(classInfo.classId)) },
         shape = NatureShapes.card
     ) {
         Column(
