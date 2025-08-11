@@ -1,7 +1,9 @@
 package com.example.bogoargo.ui.screens.user
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
@@ -59,6 +61,7 @@ fun SignUpScreen(
             Column(
                 modifier = Modifier
                     .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
                     .padding(paddingValues)
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -349,6 +352,9 @@ fun SignUpScreen(
                         )
                     }
                 }
+                
+                // 하단 여백
+                Spacer(modifier = Modifier.height(40.dp))
             }
         }
     }

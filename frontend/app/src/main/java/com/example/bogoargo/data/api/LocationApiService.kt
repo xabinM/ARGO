@@ -15,7 +15,7 @@ interface LocationApiService {
     @GET("api/teacher/classes/locations")
     suspend fun getLocations(): List<LocationResponseDto>
     
-    @POST("api/gps/coordinates")
+    @POST("api/gps")
     suspend fun updateUserCoordinates(
         @Body request: UserCoordinatesRequest
     ): Response<UpdateCoordinatesResponse>
