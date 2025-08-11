@@ -1,9 +1,7 @@
 package com.example.bogoargo.data.repository
 
 import com.example.bogoargo.data.api.ClassApiService
-import com.example.bogoargo.data.dto.ClassCreateRequest
-import com.example.bogoargo.data.response.ClassLeaveResponse
-import com.example.bogoargo.data.response.applyClassResponse
+import com.example.bogoargo.data.dto.request.ClassCreateRequest
 import com.example.bogoargo.data.mapper.toDomainModel
 import com.example.bogoargo.data.mapper.toDomainModel as toClassDetailDomainModel
 import com.example.bogoargo.domain.model.Class
@@ -14,6 +12,7 @@ import com.example.bogoargo.domain.repository.IClassRepository
 import com.example.bogoargo.data.dto.response.ApplicationResponseDto
 import com.example.bogoargo.data.dto.response.MessageResponseDto
 import com.example.bogoargo.data.dto.response.UserDataDto
+import com.example.bogoargo.data.response.ClassMemberResponse
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
@@ -27,7 +26,8 @@ class ClassRepositoryImpl @Inject constructor(
         description: String,
         location: String,
         activityDate: String,
-        maxStudents: Int
+        maxStudents: Int,
+        grade: Int
     ): DataResult<Class> {
         return try {
             val request = ClassCreateRequest(
@@ -35,7 +35,8 @@ class ClassRepositoryImpl @Inject constructor(
                 description = description,
                 location = location,
                 activityDate = activityDate,
-                maxStudents = maxStudents
+                maxStudents = maxStudents,
+                grade = grade
             )
             val response = classApiService.createClass(request)
             if (response.isSuccessful) {
@@ -100,7 +101,7 @@ class ClassRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val classData = response.body()
                 if (classData != null) {
-                    DataResult.Success(classData.toDomainModel())
+                    DataResult.Success(classData.data?.classInfo!!.toDomainModel())
                 } else {
                     DataResult.Error(DataException.NotFoundError)
                 }
@@ -131,7 +132,8 @@ class ClassRepositoryImpl @Inject constructor(
                 description = "",
                 location = "",
                 activityDate = "",
-                maxStudents = 0
+                maxStudents = 0,
+                grade = 1
             )
             val response = classApiService.createClass(request)
             if (response.isSuccessful) {
@@ -282,9 +284,96 @@ class ClassRepositoryImpl @Inject constructor(
             val response = classApiService.getStudentClassList(page, size, status)
             if (response.isSuccessful) {
                 val classListResponse = response.body()
-                if (classListResponse?.success == true && classListResponse.data != null) {
+                if (classListResponse?.success == true && classListResponse.data?.classes != null) {
                     val classes = classListResponse.data.classes.map { it.toDomainModel() }
                     DataResult.Success(classes)
+                } else {
+                    DataResult.Error(DataException.ServerError)
+                }
+            } else {
+                DataResult.Error(DataException.ServerError)
+            }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun getApplicationList(classId: Long): DataResult<ApplicationResponseDto> {
+        return try {
+            val response = classApiService.getApplicationList(classId)
+            if (response.isSuccessful) {
+                val applicationResponse = response.body()
+                if (applicationResponse != null) {
+                    DataResult.Success(applicationResponse)
+                } else {
+                    DataResult.Error(DataException.ServerError)
+                }
+            } else {
+                DataResult.Error(DataException.ServerError)
+            }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun approveApplication(classId: Long, applicationId: Long): DataResult<MessageResponseDto> {
+        return try {
+            val response = classApiService.approveApplication(classId, applicationId)
+            if (response.isSuccessful) {
+                val messageResponse = response.body()
+                if (messageResponse != null) {
+                    DataResult.Success(messageResponse)
+                } else {
+                    DataResult.Error(DataException.ServerError)
+                }
+            } else {
+                DataResult.Error(DataException.ServerError)
+            }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun getClassMemberList(classId: Long, status: String, page: Int, size: Int): DataResult<ClassMemberResponse> {
+        return try {
+            val response = classApiService.getClassMemberList(classId, status, page, size)
+            if (response.isSuccessful) {
+                val classMemberResponse = response.body()
+                if (classMemberResponse != null) {
+                    DataResult.Success(classMemberResponse)
                 } else {
                     DataResult.Error(DataException.ServerError)
                 }

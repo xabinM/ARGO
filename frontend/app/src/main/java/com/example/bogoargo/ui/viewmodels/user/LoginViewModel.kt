@@ -14,12 +14,16 @@ import com.example.bogoargo.domain.model.User
 import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.domain.use_case.auth.LoginUseCase
 import com.example.bogoargo.domain.use_case.auth.SaveTokensUseCase
+import com.example.bogoargo.navigation.Screen
 import com.example.bogoargo.domain.use_case.auth.SaveUserInfoUseCase
 import com.example.bogoargo.worker.LocationWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -45,6 +49,9 @@ class LoginViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState
 
+    private val _navigationEvent = MutableSharedFlow<Screen>()
+    val navigationEvent: SharedFlow<Screen> = _navigationEvent.asSharedFlow()
+
     fun updateUsername(username: String) {
         _uiState.value = _uiState.value.copy(username = username)
     }
@@ -61,15 +68,18 @@ class LoginViewModel @Inject constructor(
                 is DataResult.Success -> {
                     // 사용자 정보 저장
                     saveUserInfoUseCase(result.data)
-                    
+
                     // WorkManager로 주기적 위치 추적 시작
                     startLocationTracking()
-                    
+
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         isLoggedIn = true,
                         user = result.data
                     )
+
+                    // 로그인 성공 시 SelectHome으로 이동
+                    _navigationEvent.emit(Screen.SelectHome)
                 }
                 is DataResult.Error -> {
                     _uiState.value = _uiState.value.copy(
@@ -96,20 +106,20 @@ class LoginViewModel @Inject constructor(
         return loginUseCase.getLoggedInUser()
     }
 
-    
+
     private fun startLocationTracking() {
         // 제약 조건 설정: 네트워크 연결 시에만 실행
         val constraints = Constraints.Builder()
             .setRequiredNetworkType(NetworkType.CONNECTED)
             .build()
-        
+
         // 15분마다 실행되는 주기적 작업 요청 생성 (Android 최소 간격)
         val locationWorkRequest = PeriodicWorkRequestBuilder<LocationWorker>(
             15, TimeUnit.MINUTES
         )
             .setConstraints(constraints)
             .build()
-        
+
         // WorkManager에 작업 등록 (중복 방지)
         WorkManager.getInstance(context)
             .enqueueUniquePeriodicWork(

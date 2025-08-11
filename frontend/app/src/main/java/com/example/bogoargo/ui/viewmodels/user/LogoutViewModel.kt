@@ -3,6 +3,7 @@ package com.example.bogoargo.ui.viewmodels.user
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.bogoargo.domain.use_case.auth.LogoutUseCase
 import androidx.work.WorkManager
 import com.example.bogoargo.domain.repository.IAuthRepository
 import com.example.bogoargo.domain.repository.IUserRepository
@@ -24,7 +25,8 @@ data class LogoutUiState(
 class LogoutViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val userRepository: IUserRepository,
-    private val authRepository: IAuthRepository
+    private val authRepository: IAuthRepository,
+    private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LogoutUiState())
@@ -39,7 +41,7 @@ class LogoutViewModel @Inject constructor(
                 
                 // WorkManager 위치 추적 중단
                 stopLocationTracking()
-                
+
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
                     isLoggedOut = true
@@ -54,13 +56,13 @@ class LogoutViewModel @Inject constructor(
     }
 
     private suspend fun clearUserSession() {
-        
+        logoutUseCase.invoke()
     }
 
     fun clearState() {
         _uiState.value = LogoutUiState()
     }
-    
+
     private fun stopLocationTracking() {
         // WorkManager에서 위치 추적 작업 취소
         WorkManager.getInstance(context)

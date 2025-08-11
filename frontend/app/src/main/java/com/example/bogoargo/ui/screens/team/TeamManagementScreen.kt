@@ -23,7 +23,7 @@ import com.example.bogoargo.ui.theme.NatureTypography
 @Composable
 fun TeamManagementScreen(
     navController: NavController,
-    classId: String = "",
+    classId: Long,
     viewModel: TeamManagementViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -170,13 +170,13 @@ fun TeamManagementScreen(
                         } else {
                             NatureComponents.NatureButton(
                                 onClick = { 
-                                    val classIdLong = classId.toLongOrNull() ?: 0L
+                                    val classIdLong = classId
                                     viewModel.assignTeamRandom(classIdLong)
                                 },
                                 text = "🎲 팀 랜덤 배정",
                                 modifier = Modifier.fillMaxWidth(),
                                 backgroundColor = NatureColors.sunnyYellow,
-                                enabled = classId.isNotEmpty()
+                                enabled = true
                             )
                         }
                     }
@@ -219,13 +219,13 @@ fun TeamManagementScreen(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun TeamManagementScreenPreview() {
-    MaterialTheme {
-        TeamManagementScreen(
-            navController = rememberNavController(),
-            classId = "1"
-        )
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun TeamManagementScreenPreview() {
+//    MaterialTheme {
+//        TeamManagementScreen(
+//            navController = rememberNavController(),
+//            classId = "1"
+//        )
+//    }
+//}

@@ -67,7 +67,7 @@ fun StudentHomeScreen(
                             modifier = Modifier.fillMaxWidth()
                         )
                     }
-                    
+
                     // 개발용 더미 데이터 로드 버튼
                     item {
                         NatureComponents.NatureCard(
@@ -107,7 +107,7 @@ fun StudentHomeScreen(
                             }
                         }
                     }
-                    
+
                     // 참여한 반 목록
                     if (uiState.classes.isNotEmpty()) {
                         item {
@@ -118,7 +118,7 @@ fun StudentHomeScreen(
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
                         }
-                        
+
                         items(uiState.classes) { classItem ->
                             NatureComponents.NatureCard(
                                 modifier = Modifier
@@ -189,7 +189,7 @@ fun StudentHomeScreen(
                             }
                         }
                     }
-                    
+
                     // 네비게이션 메뉴
                     item {
                         NatureComponents.NatureCard(
@@ -204,7 +204,7 @@ fun StudentHomeScreen(
                                     color = NatureColors.earthBrown,
                                     modifier = Modifier.padding(bottom = 12.dp)
                                 )
-                                
+
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -219,7 +219,7 @@ fun StudentHomeScreen(
                                     ) {
                                         Text("👤 프로필", style = NatureTypography.labelMedium)
                                     }
-                                    
+
                                     Button(
                                         onClick = { navController.navigate(Screen.Settings.route) },
                                         modifier = Modifier.weight(1f),
@@ -230,7 +230,7 @@ fun StudentHomeScreen(
                                     ) {
                                         Text("⚙️ 설정", style = NatureTypography.labelMedium)
                                     }
-                                    
+
                                     Button(
                                         onClick = { viewModel.refreshData() },
                                         modifier = Modifier.weight(1f),
@@ -245,7 +245,7 @@ fun StudentHomeScreen(
                             }
                         }
                     }
-                    
+
                     // 에러 메시지 표시
                     uiState.errorMessage?.let { error ->
                         item {
@@ -271,7 +271,7 @@ fun StudentHomeScreen(
                             }
                         }
                     }
-                    
+
                     // 기타 테스트 아이템들 (개발용)
                     itemsIndexed(uiState.items) { index, item ->
                         NatureComponents.NatureCard(

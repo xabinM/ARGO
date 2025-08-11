@@ -1,8 +1,11 @@
 package com.example.bogoargo.ui.screens.user
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -22,23 +25,51 @@ import com.example.bogoargo.ui.theme.NatureElevation
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
 import com.example.bogoargo.ui.viewmodels.user.TeacherHomeViewModel
+import com.example.bogoargo.ui.viewmodels.user.LogoutViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeacherHomeScreen(
     navController: NavController,
-    viewModel: TeacherHomeViewModel = hiltViewModel()
+    viewModel: TeacherHomeViewModel = hiltViewModel(),
+    logoutViewModel: LogoutViewModel = hiltViewModel()
 ) {
-     val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
+    val logoutUiState by logoutViewModel.uiState.collectAsState()
+    
+    // 로그아웃 성공 시 로그인 화면으로 이동
+    LaunchedEffect(logoutUiState.isLoggedOut) {
+        if (logoutUiState.isLoggedOut) {
+            navController.navigate("login") {
+                popUpTo("teacherHome") { inclusive = true }
+            }
+        }
+    }
     
     Scaffold(
         topBar = {
-            NatureComponents.NatureTopAppBar(
-                title = "선생님 홈",
-                emoji = "🌳"
-            ) { 
-                // 메인 화면이므로 뒤로가기 없음 //TODO: 로그아웃 추가
-            }
+            TopAppBar(
+                title = {
+                    Text(
+                        "🌳 선생님 홈",
+                        style = NatureTypography.titleLarge
+                    )
+                },
+                actions = {
+                    IconButton(
+                        onClick = { logoutViewModel.logout() }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.ExitToApp,
+                            contentDescription = "로그아웃",
+                            tint = NatureColors.earthBrown
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = NatureColors.warmBeige
+                )
+            )
         }
     ) { paddingValues ->
         NatureComponents.NatureBackground {
@@ -161,7 +192,7 @@ fun TeacherHomeScreen(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    text = "프로그램 관리",
+                                    text = "미션 추가 생성",
                                     style = NatureTypography.bodyMedium,
                                     textAlign = TextAlign.Center
                                 )
@@ -245,7 +276,7 @@ fun TeacherHomeScreen(
                                 InfoItem(
                                     emoji = "🆔",
                                     label = "사용자 ID",
-                                    value = uiState.currentUser?.userId?.toString() ?: "정보 없음"
+                                    value = uiState.currentUser?.name?.toString() ?: "정보 없음"
                                 )
                             }
                         }

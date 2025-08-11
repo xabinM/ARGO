@@ -2,6 +2,9 @@ package com.example.bogoargo.domain.repository
 
 import com.example.bogoargo.domain.model.Class
 import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.data.dto.response.ApplicationResponseDto
+import com.example.bogoargo.data.dto.response.MessageResponseDto
+import com.example.bogoargo.data.response.ClassMemberResponse
 import com.example.bogoargo.domain.model.StudentClassDetail
 
 interface IClassRepository {
@@ -10,7 +13,8 @@ interface IClassRepository {
         description: String,
         location: String,
         activityDate: String,
-        maxStudents: Int
+        maxStudents: Int,
+        grade: Int
     ): DataResult<Class>
     suspend fun getClasses(): DataResult<List<Class>>
     suspend fun getClassById(classId: Long): DataResult<Class>
@@ -22,7 +26,12 @@ interface IClassRepository {
     // Teacher specific methods
     suspend fun getTeacherClassList(page: Int = 1, size: Int = 10, status: String? = "active"): DataResult<List<Class>>
     suspend fun getStudentClassList(page: Int = 1, size: Int = 10, status: String? = "active"): DataResult<List<Class>>
-    
+
     // Student class detail
     suspend fun getStudentClassDetail(classId: Long, include: String? = null): DataResult<StudentClassDetail>
+
+    // Application related methods
+    suspend fun getApplicationList(classId: Long): DataResult<ApplicationResponseDto>
+    suspend fun approveApplication(classId: Long, applicationId: Long): DataResult<MessageResponseDto>
+    suspend fun getClassMemberList(classId: Long, status: String, page: Int = 10, size: Int = 10): DataResult<ClassMemberResponse>
 }

@@ -16,8 +16,8 @@ class LocationRepositoryImpl @Inject constructor(
 ) : ILocationRepository{
 
     override suspend fun getLocations(): List<Location> {
-        val list: List<LocationResponseDto> = locationApiService.getLocations()
-        return list.map { it.toDomainModel() }
+        val response = locationApiService.getLocations()
+        return response.data.map { it.toDomainModel() }
     }
 
     override suspend fun sendLocationToServer(
@@ -29,9 +29,9 @@ class LocationRepositoryImpl @Inject constructor(
                 latitude = BigDecimal.valueOf(latitude),
                 longitude = BigDecimal.valueOf(longitude)
             )
-            
+
             val response = locationApiService.updateUserCoordinates(request)
-            
+
             if (response.isSuccessful && response.body()?.success == true) {
                 Log.d(TAG, "Location sent successfully: $latitude, $longitude")
                 Result.success(Unit)
@@ -51,7 +51,7 @@ class LocationRepositoryImpl @Inject constructor(
     ): Result<StudentsLocationResponse> {
         return try {
             val response = locationApiService.getStudentLocationsByClass(classId)
-            
+
             if (response.isSuccessful) {
                 val studentsLocation = response.body()
                 if (studentsLocation != null) {

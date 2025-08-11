@@ -12,16 +12,15 @@ import retrofit2.http.Path
 
 interface LocationApiService {
 
-    @GET("api/teacher/classes/locations")
-    suspend fun getLocations(): List<LocationResponseDto>
-    
     @POST("api/gps")
     suspend fun updateUserCoordinates(
         @Body request: UserCoordinatesRequest
     ): Response<UpdateCoordinatesResponse>
-    
+
     @GET("api/teacher/class/{classId}/students/locations")
     suspend fun getStudentLocationsByClass(
         @Path("classId") classId: Long
     ): Response<StudentsLocationResponse>
+
+    suspend fun getLocations(): LocationResponseDto
 }

@@ -1,5 +1,7 @@
 package com.example.bogoargo.navigation
 
+import android.util.Log
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
@@ -18,6 +20,7 @@ import com.example.bogoargo.ui.screens.MissionDetailScreen
 import com.example.bogoargo.ui.screens.user.LoginScreen
 import com.example.bogoargo.ui.screens.user.ProfileScreen
 import com.example.bogoargo.ui.screens.user.SignUpScreen
+import com.example.bogoargo.ui.screens.SelectHomeScreen
 import com.example.bogoargo.ui.screens.SettingsScreen
 import com.example.bogoargo.ui.screens.SplashScreen
 import com.example.bogoargo.ui.screens.user.TeacherHomeScreen
@@ -34,9 +37,10 @@ sealed class Screen(val route: String) {
     data object Splash : Screen("splash")
     data object Login : Screen("login")
     data object SignUp : Screen("signUp")
+    data object SelectHome : Screen("selectHome")
     data object StudentHome : Screen("studentHome")
     data object Game : Screen("game?classId={classId}&teamId={teamId}") {
-        fun createRoute(classId: Long = 1L, teamId: Long = 0L) = 
+        fun createRoute(classId: Long = 1L, teamId: Long = 0L) =
             "game?classId=$classId&teamId=$teamId"
     }
     data object Profile : Screen("profile")
@@ -52,24 +56,24 @@ sealed class Screen(val route: String) {
     data object ClassDetail : Screen("classDetail/{classId}") {
         fun createRoute(classId: Long) = "classDetail/$classId"
     }
-    
+
     data object StudentClassDetail : Screen("studentClassDetail/{classId}") {
         fun createRoute(classId: Long) = "studentClassDetail/$classId"
     }
 
     data object TeamCreate : Screen("teamCreate/{classId}") {
-        fun createRoute(classId: String) = "teamCreate/$classId"
+        fun createRoute(classId: Long) = "teamCreate/$classId"
     }
 
     data object TeamManagement : Screen("teamManagement/{classId}") {
-        fun createRoute(classId: String) = "teamManagement/$classId"
+        fun createRoute(classId: Long) = "teamManagement/$classId"
     }
 
     data object ClassMemberManagement : Screen("classMemberManagement/{classId}") {
-        fun createRoute(classId: String) = "classMemberManagement/$classId"
+        fun createRoute(classId: Long) = "classMemberManagement/$classId"
     }
     data object Mission : Screen("mission/{spotId}?classId={classId}&teamId={teamId}") {
-        fun createRoute(spotId: Long, classId: Long = 1L, teamId: Long = 0L) = 
+        fun createRoute(spotId: Long, classId: Long = 1L, teamId: Long = 0L) =
             "mission/$spotId?classId=$classId&teamId=$teamId"
     }
 
@@ -88,7 +92,7 @@ sealed class Screen(val route: String) {
     data object CardSelection : Screen("cardSelection/{teamId}/{targetTeamId}") {
         fun createRoute(teamId: Long, targetTeamId: Long) = "cardSelection/$teamId/$targetTeamId"
     }
-    
+
     data object BattleResult : Screen("battleResult/{myCardId}/{myCardRarity}/{myCardStance}/{opponentCardId}/{opponentCardRarity}/{opponentCardStance}/{isWin}/{myTeamName}/{opponentTeamName}") {
         fun createRoute(
             myCardId: Long,
@@ -121,17 +125,20 @@ fun AppNavigation(
         composable(Screen.SignUp.route) {
             SignUpScreen(navController = navController)
         }
+        composable(Screen.SelectHome.route) {
+            SelectHomeScreen(navController = navController)
+        }
         composable(Screen.StudentHome.route) {
             StudentHomeScreen(navController = navController)
         }
         composable(
             route = Screen.Game.route,
             arguments = listOf(
-                navArgument("classId") { 
+                navArgument("classId") {
                     type = NavType.LongType
                     defaultValue = 1L
                 },
-                navArgument("teamId") { 
+                navArgument("teamId") {
                     type = NavType.LongType
                     defaultValue = 0L
                 }
@@ -167,10 +174,11 @@ fun AppNavigation(
             )
         ) { backStackEntry ->
             val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
+            Log.d("DEBUG", "classId = $classId")
 
             ClassDetailScreen(
                 navController = navController,
-                classId = classId.toString()
+                classId = classId
             )
         }
         composable(
@@ -188,9 +196,9 @@ fun AppNavigation(
         }
         composable(
             route = Screen.TeamCreate.route,
-            arguments = listOf(navArgument("classId") { type = NavType.StringType })
+            arguments = listOf(navArgument("classId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val classId = backStackEntry.arguments?.getString("classId") ?: ""
+            val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
             TeamCreateScreen(
                 navController = navController,
                 classId = classId
@@ -198,9 +206,9 @@ fun AppNavigation(
         }
         composable(
             route = Screen.TeamManagement.route,
-            arguments = listOf(navArgument("classId") { type = NavType.StringType })
+            arguments = listOf(navArgument("classId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val classId = backStackEntry.arguments?.getString("classId") ?: ""
+            val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
             TeamManagementScreen(
                 navController = navController,
                 classId = classId
@@ -208,9 +216,9 @@ fun AppNavigation(
         }
         composable(
             route = Screen.ClassMemberManagement.route,
-            arguments = listOf(navArgument("classId") { type = NavType.StringType })
+            arguments = listOf(navArgument("classId") { type = NavType.LongType })
         ) { backStackEntry ->
-            val classId = backStackEntry.arguments?.getString("classId") ?: ""
+            val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
             ClassMemberManagementScreen(
                 navController = navController,
                 classId = classId
@@ -220,11 +228,11 @@ fun AppNavigation(
             route = Screen.Mission.route,
             arguments = listOf(
                 navArgument("spotId") { type = NavType.LongType },
-                navArgument("classId") { 
+                navArgument("classId") {
                     type = NavType.LongType
                     defaultValue = 1L
                 },
-                navArgument("teamId") { 
+                navArgument("teamId") {
                     type = NavType.LongType
                     defaultValue = 0L
                 }
@@ -246,11 +254,11 @@ fun AppNavigation(
                 navArgument("spotId") { type = NavType.LongType },
                 navArgument("latitude") { type = NavType.FloatType },
                 navArgument("longitude") { type = NavType.FloatType },
-                navArgument("classId") { 
+                navArgument("classId") {
                     type = NavType.LongType
                     defaultValue = 1L
                 },
-                navArgument("teamId") { 
+                navArgument("teamId") {
                     type = NavType.LongType
                     defaultValue = 0L
                 }
@@ -261,7 +269,7 @@ fun AppNavigation(
             val longitude = backStackEntry.arguments?.getFloat("longitude")?.toDouble() ?: 0.0
             val classId = backStackEntry.arguments?.getLong("classId") ?: 1L
             val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
-            
+
             ARScreen(
                 spotId = spotId,
                 latitude = latitude,
@@ -356,7 +364,7 @@ fun AppNavigation(
             val isWin = backStackEntry.arguments?.getBoolean("isWin") ?: false
             val myTeamName = backStackEntry.arguments?.getString("myTeamName") ?: "우리 팀"
             val opponentTeamName = backStackEntry.arguments?.getString("opponentTeamName") ?: "상대 팀"
-            
+
             val myBattleCard = com.example.bogoargo.domain.model.BattleCard(
                 gameCard = com.example.bogoargo.domain.model.GameCard.create(
                     myCardId,
@@ -371,7 +379,7 @@ fun AppNavigation(
                 ),
                 battleStance = com.example.bogoargo.domain.model.BattleStance.valueOf(opponentCardStance)
             )
-            
+
             BattleResultScreen(
                 navController = navController,
                 myBattleCard = myBattleCard,
