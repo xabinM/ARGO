@@ -50,3 +50,9 @@ data class SelfieMissionValidationResponseDto(
     @SerializedName("message") val message: String,
     @SerializedName("confidence") val confidence: Float?
 )
+
+// 미션 지점 가능 여부 확인 응답 DTO
+data class MissionPossibleCheckResponseDto(
+    @SerializedName("isSuccess") val isSuccess: Boolean,
+    @SerializedName("message") val message: String
+)

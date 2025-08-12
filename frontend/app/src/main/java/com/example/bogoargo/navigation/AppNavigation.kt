@@ -245,7 +245,12 @@ fun AppNavigation(
                 spotId = spotId,
                 classId = classId,
                 teamId = teamId,
-                onNavigateBack = { navController.popBackStack() }
+                onNavigateBack = { navController.popBackStack() },
+                onNavigateToGame = {
+                    navController.navigate(Screen.Game.createRoute(classId, teamId)) {
+                        popUpTo(Screen.Game.route) { inclusive = false }
+                    }
+                }
             )
         }
         composable(

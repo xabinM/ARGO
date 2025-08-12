@@ -223,4 +223,30 @@ class MissionRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    // 미션 지점 가능 여부 확인
+    override suspend fun checkPossibleMissionSpot(teamId: Long, spotId: Long): DataResult<MissionPossibleCheckResult> {
+        return withContext(Dispatchers.IO) {
+            try {
+                val response = missionApiService.checkPossibleMissionSpot(teamId, spotId)
+                if (response.isSuccessful) {
+                    val body = response.body()
+                    if (body != null) {
+                        val result = MissionProblemMapper.mapToMissionPossibleCheckResult(body)
+                        DataResult.Success(result)
+                    } else {
+                        DataResult.Error(DataException.UnknownError("Empty response body"))
+                    }
+                } else {
+                    when (response.code()) {
+                        403 -> DataResult.Error(DataException.UnauthorizedError)
+                        404 -> DataResult.Error(DataException.NotFoundError)
+                        else -> DataResult.Error(DataException.NetworkError)
+                    }
+                }
+            } catch (e: Exception) {
+                DataResult.Error(DataException.UnknownError(e.message ?: "Failed to check mission possibility"))
+            }
+        }
+    }
 }

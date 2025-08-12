@@ -73,6 +73,8 @@ fun GameScreen(
     var isGameStarted by remember { mutableStateOf(false) }
     var showMissionList by remember { mutableStateOf(false) }
     var hasMovedToUserLocation by remember { mutableStateOf(false) }
+    var showMissionBlockedDialog by remember { mutableStateOf(false) }
+    var blockedMissionMessage by remember { mutableStateOf("") }
     
     // 권한 확인 및 위치 추적 시작
     LaunchedEffect(isGameStarted) {
@@ -287,11 +289,31 @@ fun GameScreen(
                     missions = uiState.nearbyMissionSpots,
                     classId = classId,
                     teamId = teamId,
+                    isCheckingPossibility = uiState.isCheckingMissionPossibility,
                     onMissionSelect = { spot ->
-                        // AR 화면으로 이동 (위치 정보와 classId, teamId 포함)
-                        navController.navigate("ar/${spot.spotId}/${spot.coordinates.latitude}/${spot.coordinates.longitude}?classId=$classId&teamId=$teamId")
+                        // 미션 가능 여부 확인 후 처리
+                        viewModel.checkMissionPossibility(teamId, spot.spotId) { isSuccess, message ->
+                            if (isSuccess) {
+                                // 미션 진행 가능 - AR 화면으로 이동
+                                showMissionList = false
+                                navController.navigate("ar/${spot.spotId}/${spot.coordinates.latitude}/${spot.coordinates.longitude}?classId=$classId&teamId=$teamId")
+                            } else {
+                                // 미션 진행 불가 - 경고 다이얼로그 표시
+                                showMissionList = false
+                                blockedMissionMessage = message
+                                showMissionBlockedDialog = true
+                            }
+                        }
                     },
                     onDismiss = { showMissionList = false }
+                )
+            }
+
+            // 미션 차단 다이얼로그
+            if (showMissionBlockedDialog) {
+                MissionBlockedDialog(
+                    message = blockedMissionMessage,
+                    onDismiss = { showMissionBlockedDialog = false }
                 )
             }
         }
@@ -533,6 +555,7 @@ fun MissionListDialog(
     missions: List<MissionSpot>,
     classId: Long,
     teamId: Long,
+    isCheckingPossibility: Boolean = false,
     onMissionSelect: (MissionSpot) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -570,9 +593,11 @@ fun MissionListDialog(
                 missions.forEach { mission ->
                     MissionListItem(
                         mission = mission,
+                        isCheckingPossibility = isCheckingPossibility,
                         onClick = {
-                            onMissionSelect(mission)
-                            onDismiss()
+                            if (!isCheckingPossibility) {
+                                onMissionSelect(mission)
+                            }
                         }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -594,6 +619,7 @@ fun MissionListDialog(
 @Composable
 fun MissionListItem(
     mission: MissionSpot,
+    isCheckingPossibility: Boolean = false,
     onClick: () -> Unit
 ) {
     NatureComponents.NatureCard(
@@ -640,16 +666,74 @@ fun MissionListItem(
             Column(
                 horizontalAlignment = Alignment.End
             ) {
+                if (isCheckingPossibility) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        strokeWidth = 2.dp,
+                        color = NatureColors.leafGreen
+                    )
+                } else {
+                    Text(
+                        text = "📱",
+                        fontSize = 24.sp
+                    )
+                }
                 Text(
-                    text = "📱",
-                    fontSize = 24.sp
-                )
-                Text(
-                    text = "AR 시작",
+                    text = if (isCheckingPossibility) "확인중..." else "AR 시작",
                     style = NatureTypography.bodySmall,
-                    color = NatureColors.leafGreen
+                    color = if (isCheckingPossibility) NatureColors.earthBrown else NatureColors.leafGreen
                 )
             }
         }
     }
+}
+
+@Composable
+fun MissionBlockedDialog(
+    message: String,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "⚠️ 미션 진행 불가",
+                    style = NatureTypography.titleLarge,
+                    color = NatureColors.earthBrown
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = message,
+                    style = NatureTypography.bodyMedium,
+                    color = NatureColors.earthBrown,
+                    modifier = Modifier.padding(vertical = 16.dp)
+                )
+                Text(
+                    text = "다른 미션을 선택하시거나 나중에 다시 시도해주세요.",
+                    style = NatureTypography.bodySmall,
+                    color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                )
+            }
+        },
+        confirmButton = {
+            NatureComponents.NatureButton(
+                onClick = onDismiss,
+                text = "확인",
+                backgroundColor = NatureColors.leafGreen
+            )
+        },
+        containerColor = NatureColors.whiteTransparent90,
+        modifier = Modifier.padding(16.dp)
+    )
 }

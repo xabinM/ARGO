@@ -111,4 +111,12 @@ object MissionProblemMapper {
             pose = pose
         )
     }
+
+    // 미션 지점 가능 여부 확인 결과 매퍼
+    fun mapToMissionPossibleCheckResult(dto: MissionPossibleCheckResponseDto): MissionPossibleCheckResult {
+        return MissionPossibleCheckResult(
+            isSuccess = dto.isSuccess,
+            message = dto.message
+        )
+    }
 }

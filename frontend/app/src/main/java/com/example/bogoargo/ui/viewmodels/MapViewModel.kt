@@ -8,6 +8,7 @@ import com.example.bogoargo.domain.model.SpotCoordinates
 import com.example.bogoargo.data.repository.MissionRepositoryImpl
 import com.example.bogoargo.domain.model.onError
 import com.example.bogoargo.domain.model.onSuccess
+import com.example.bogoargo.domain.use_case.mission.CheckMissionPossibilityUseCase
 import com.example.bogoargo.util.LocationUtils
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MapViewModel @Inject constructor(
-    private val missionRepository: MissionRepositoryImpl
+    private val missionRepository: MissionRepositoryImpl,
+    private val checkMissionPossibilityUseCase: CheckMissionPossibilityUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MapUiState())
@@ -125,6 +127,26 @@ class MapViewModel @Inject constructor(
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
+
+    // 미션 지점 가능 여부 확인
+    fun checkMissionPossibility(teamId: Long, spotId: Long, onResult: (Boolean, String) -> Unit) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isCheckingMissionPossibility = true)
+            
+            checkMissionPossibilityUseCase(teamId, spotId)
+                .onSuccess { result ->
+                    _uiState.value = _uiState.value.copy(isCheckingMissionPossibility = false)
+                    onResult(result.isSuccess, result.message)
+                }
+                .onError { exception ->
+                    _uiState.value = _uiState.value.copy(
+                        isCheckingMissionPossibility = false,
+                        error = exception.message
+                    )
+                    onResult(false, exception.message ?: "알 수 없는 오류가 발생했습니다")
+                }
+        }
+    }
 }
 
 data class MapUiState(
@@ -132,5 +154,6 @@ data class MapUiState(
     val nearbyMissionSpots: List<MissionSpot> = emptyList(),
     val userLocation: Location? = null,
     val isLoading: Boolean = false,
+    val isCheckingMissionPossibility: Boolean = false,
     val error: String? = null
 )

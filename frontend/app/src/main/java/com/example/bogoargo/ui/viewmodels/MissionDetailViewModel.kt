@@ -22,6 +22,13 @@ data class MissionDetailUiState(
     val isCompleted: Boolean = false,
     val isMissionSuccessful: Boolean? = null, // 미션 성공/실패 상태
     
+    // 퀴즈 2회 기회 시스템 관련 상태
+    val attemptCount: Int = 0, // 시도 횟수 (0, 1, 2)
+    val showRetryButton: Boolean = false, // 재도전 버튼 표시 여부
+    val isFinalAttempt: Boolean = false, // 마지막 시도 여부
+    val canSubmitAnswer: Boolean = true, // 답안 제출 가능 여부
+    val showCorrectAnswer: Boolean = false, // 정답 공개 여부 (2차 실패 시에만 true)
+    
     // 셀피 관련 상태
     val capturedImageBase64: String? = null,
     val isSelfieValidating: Boolean = false,
@@ -68,26 +75,64 @@ class MissionDetailViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(selectedAnswer = answerIndex)
     }
 
-    fun submitQuizAnswer() {
+    fun checkAnswer() {
         val currentState = _uiState.value
-        val missionId = currentState.missionCreateResult?.missionId ?: return
         val selectedAnswer = currentState.selectedAnswer ?: return
         val problemDetail = currentState.problemDetail as? QuizProblem ?: return
         
         // 정답 확인
         val isCorrect = selectedAnswer == problemDetail.correctIndex
         
+        // 답안 제출 상태로 변경
+        _uiState.value = _uiState.value.copy(isAnswerSubmitted = true)
+        
+        if (isCorrect) {
+            // 정답이면 즉시 성공 API 호출
+            submitSuccessfulMission()
+        } else {
+            // 오답이면 시도 횟수에 따라 처리
+            handleWrongAnswer()
+        }
+    }
+    
+    private fun handleWrongAnswer() {
+        val currentState = _uiState.value
+        val newAttemptCount = currentState.attemptCount + 1
+        
+        if (newAttemptCount == 1) {
+            // 1차 실패: 재도전 기회 제공 (정답은 공개하지 않음)
+            _uiState.value = _uiState.value.copy(
+                attemptCount = newAttemptCount,
+                showRetryButton = true,
+                canSubmitAnswer = false,
+                showCorrectAnswer = false // 1차 실패시에는 정답 비공개
+            )
+        } else {
+            // 2차 실패: 정답 공개 후 미션 실패로 처리
+            _uiState.value = _uiState.value.copy(
+                attemptCount = newAttemptCount,
+                canSubmitAnswer = false,
+                showCorrectAnswer = true // 2차 실패시에만 정답 공개
+            )
+            submitFailedMission()
+        }
+    }
+    
+    private fun submitSuccessfulMission() {
+        val currentState = _uiState.value
+        val missionId = currentState.missionCreateResult?.missionId ?: return
+        
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, isAnswerSubmitted = true)
+            _uiState.value = _uiState.value.copy(isLoading = true)
             
-            when (val result = submitQuizMissionUseCase(missionId, isCorrect)) {
+            when (val result = submitQuizMissionUseCase(missionId, true)) {
                 is DataResult.Success -> {
                     val missionResult = result.data
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         submitResult = missionResult,
                         isCompleted = true,
-                        isMissionSuccessful = missionResult.successful
+                        isMissionSuccessful = true
                     )
                 }
                 is DataResult.Error -> {
@@ -101,6 +146,47 @@ class MissionDetailViewModel @Inject constructor(
                 }
             }
         }
+    }
+    
+    private fun submitFailedMission() {
+        val currentState = _uiState.value
+        val missionId = currentState.missionCreateResult?.missionId ?: return
+        
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true)
+            
+            when (val result = submitQuizMissionUseCase(missionId, false)) {
+                is DataResult.Success -> {
+                    val missionResult = result.data
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        submitResult = missionResult,
+                        isCompleted = true,
+                        isMissionSuccessful = false
+                    )
+                }
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    _uiState.value = _uiState.value.copy(isLoading = true)
+                }
+            }
+        }
+    }
+    
+    fun retryQuiz() {
+        _uiState.value = _uiState.value.copy(
+            selectedAnswer = null,
+            isAnswerSubmitted = false,
+            showRetryButton = false,
+            isFinalAttempt = true,
+            canSubmitAnswer = true,
+            showCorrectAnswer = false // 재도전 시 정답 비공개
+        )
     }
 
     // TODO: 셀피 관련 메서드들 (백엔드 API 완성 후 구현)
@@ -183,7 +269,12 @@ class MissionDetailViewModel @Inject constructor(
             submitResult = null,
             isMissionSuccessful = null,
             isCompleted = false,
-            errorMessage = null
+            errorMessage = null,
+            attemptCount = 0,
+            showRetryButton = false,
+            isFinalAttempt = false,
+            canSubmitAnswer = true,
+            showCorrectAnswer = false // 미션 재시작 시 정답 비공개
         )
     }
 }

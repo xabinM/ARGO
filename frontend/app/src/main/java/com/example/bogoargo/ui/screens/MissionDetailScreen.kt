@@ -45,6 +45,7 @@ fun MissionDetailScreen(
     classId: Long,
     teamId: Long,
     onNavigateBack: () -> Unit,
+    onNavigateToGame: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MissionDetailViewModel = hiltViewModel()
 ) {
@@ -89,6 +90,7 @@ fun MissionDetailScreen(
                             submitResult = uiState.submitResult,
                             isMissionSuccessful = uiState.isMissionSuccessful ?: false,
                             onNavigateBack = onNavigateBack,
+                            onNavigateToGame = onNavigateToGame,
                             onRetryMission = { viewModel.retryMission() }
                         )
                     }
@@ -100,8 +102,13 @@ fun MissionDetailScreen(
                                     selectedAnswer = uiState.selectedAnswer,
                                     isAnswerSubmitted = uiState.isAnswerSubmitted,
                                     onAnswerSelected = viewModel::selectAnswer,
-                                    onSubmitAnswer = viewModel::submitQuizAnswer,
-                                    isLoading = uiState.isLoading
+                                    onSubmitAnswer = viewModel::checkAnswer,
+                                    onRetryQuiz = viewModel::retryQuiz,
+                                    isLoading = uiState.isLoading,
+                                    attemptCount = uiState.attemptCount,
+                                    showRetryButton = uiState.showRetryButton,
+                                    canSubmitAnswer = uiState.canSubmitAnswer,
+                                    showCorrectAnswer = uiState.showCorrectAnswer
                                 )
                             }
                             is SelfieProblem -> {
@@ -221,7 +228,12 @@ private fun QuizMissionSection(
     isAnswerSubmitted: Boolean,
     onAnswerSelected: (Int) -> Unit,
     onSubmitAnswer: () -> Unit,
-    isLoading: Boolean
+    onRetryQuiz: () -> Unit,
+    isLoading: Boolean,
+    attemptCount: Int,
+    showRetryButton: Boolean,
+    canSubmitAnswer: Boolean,
+    showCorrectAnswer: Boolean
 ) {
     NatureComponents.NatureCard(
         modifier = Modifier.fillMaxWidth()
@@ -231,11 +243,25 @@ private fun QuizMissionSection(
                 .fillMaxWidth()
                 .padding(24.dp)
         ) {
-            Text(
-                text = "📚 퀴즈 미션",
-                style = NatureTypography.titleLarge,
-                color = NatureColors.forestGreen
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "📚 퀴즈 미션",
+                    style = NatureTypography.titleLarge,
+                    color = NatureColors.forestGreen
+                )
+                
+                if (attemptCount > 0) {
+                    Text(
+                        text = "${attemptCount}/2 시도",
+                        style = NatureTypography.bodySmall,
+                        color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                    )
+                }
+            }
             
             Spacer(modifier = Modifier.height(16.dp))
             
@@ -254,8 +280,11 @@ private fun QuizMissionSection(
                 problem.choices.forEachIndexed { index, choice ->
                     val isSelected = selectedAnswer == index
                     val backgroundColor = when {
-                        isAnswerSubmitted && index == problem.correctIndex -> NatureColors.leafGreen.copy(alpha = 0.3f)
+                        // 2차 실패 시에만 정답을 초록색으로 표시
+                        showCorrectAnswer && index == problem.correctIndex -> NatureColors.leafGreen.copy(alpha = 0.3f)
+                        // 1차든 2차든 선택한 오답은 빨간색으로 표시
                         isAnswerSubmitted && isSelected && index != problem.correctIndex -> Color.Red.copy(alpha = 0.3f)
+                        // 기본 선택 상태
                         isSelected -> NatureColors.forestGreen.copy(alpha = 0.2f)
                         else -> NatureColors.lightBeige.copy(alpha = 0.1f)
                     }
@@ -265,9 +294,9 @@ private fun QuizMissionSection(
                             .fillMaxWidth()
                             .selectable(
                                 selected = isSelected,
-                                onClick = { if (!isAnswerSubmitted) onAnswerSelected(index) },
+                                onClick = { if (canSubmitAnswer && !isAnswerSubmitted) onAnswerSelected(index) },
                                 role = Role.RadioButton,
-                                enabled = !isAnswerSubmitted
+                                enabled = canSubmitAnswer && !isAnswerSubmitted
                             ),
                         colors = CardDefaults.cardColors(containerColor = backgroundColor)
                     ) {
@@ -280,7 +309,7 @@ private fun QuizMissionSection(
                             RadioButton(
                                 selected = isSelected,
                                 onClick = null,
-                                enabled = !isAnswerSubmitted,
+                                enabled = canSubmitAnswer && !isAnswerSubmitted,
                                 colors = RadioButtonDefaults.colors(
                                     selectedColor = NatureColors.forestGreen
                                 )
@@ -296,7 +325,9 @@ private fun QuizMissionSection(
                                 Spacer(modifier = Modifier.weight(1f))
                                 Text(
                                     text = when {
-                                        index == problem.correctIndex -> "✅"
+                                        // 2차 실패 시에만 정답에 ✅ 표시
+                                        showCorrectAnswer && index == problem.correctIndex -> "✅"
+                                        // 1차든 2차든 선택한 오답에는 ❌ 표시
                                         isSelected && index != problem.correctIndex -> "❌"
                                         else -> ""
                                     },
@@ -308,7 +339,36 @@ private fun QuizMissionSection(
                 }
             }
             
-            if (isAnswerSubmitted && problem.explanation.isNotEmpty()) {
+            // 1차 실패 시 안내 메시지
+            if (isAnswerSubmitted && attemptCount == 1 && !showCorrectAnswer) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = NatureColors.softOrange.copy(alpha = 0.2f)
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "😔 아쉬워요!",
+                            style = NatureTypography.titleSmall,
+                            color = NatureColors.earthBrown
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "다시 한번 생각해보세요. 한 번 더 기회가 있어요!",
+                            style = NatureTypography.bodyMedium,
+                            color = NatureColors.earthBrown,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+            
+            // 2차 실패 시에만 해설 표시
+            if (showCorrectAnswer && problem.explanation.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(16.dp))
                 Card(
                     colors = CardDefaults.cardColors(
@@ -319,7 +379,7 @@ private fun QuizMissionSection(
                         modifier = Modifier.padding(16.dp)
                     ) {
                         Text(
-                            text = "💡 설명",
+                            text = "💡 정답 해설",
                             style = NatureTypography.titleSmall,
                             color = NatureColors.forestGreen
                         )
@@ -335,13 +395,34 @@ private fun QuizMissionSection(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            NatureComponents.NatureButton(
-                onClick = onSubmitAnswer,
-                text = if (isLoading) "제출 중..." else "정답 제출",
-                modifier = Modifier.fillMaxWidth(),
-                enabled = selectedAnswer != null && !isAnswerSubmitted && !isLoading,
-                backgroundColor = NatureColors.forestGreen
-            )
+            // 버튼 영역
+            if (showRetryButton) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    NatureComponents.NatureButton(
+                        onClick = onRetryQuiz,
+                        text = "💪 재도전",
+                        modifier = Modifier.weight(1f),
+                        backgroundColor = NatureColors.forestGreen
+                    )
+                }
+            } else {
+                val buttonText = when {
+                    isLoading -> "처리 중..."
+                    attemptCount == 0 -> "답안 확인"
+                    else -> "답안 확인"
+                }
+                
+                NatureComponents.NatureButton(
+                    onClick = onSubmitAnswer,
+                    text = buttonText,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = selectedAnswer != null && canSubmitAnswer && !isLoading,
+                    backgroundColor = NatureColors.forestGreen
+                )
+            }
         }
     }
 }
@@ -591,6 +672,7 @@ private fun MissionCompletedSection(
     submitResult: MissionSubmitResult?,
     isMissionSuccessful: Boolean,
     onNavigateBack: () -> Unit,
+    onNavigateToGame: () -> Unit,
     onRetryMission: () -> Unit
 ) {
     NatureComponents.NatureCard(
@@ -687,7 +769,7 @@ private fun MissionCompletedSection(
             // 성공/실패에 따른 다른 버튼 구성
             if (isMissionSuccessful) {
                 NatureComponents.NatureButton(
-                    onClick = onNavigateBack,
+                    onClick = onNavigateToGame,
                     text = "🎉 완료",
                     modifier = Modifier.fillMaxWidth(),
                     backgroundColor = NatureColors.forestGreen
@@ -698,7 +780,7 @@ private fun MissionCompletedSection(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     NatureComponents.NatureButton(
-                        onClick = onNavigateBack,
+                        onClick = onNavigateToGame,
                         text = "나가기",
                         modifier = Modifier.weight(1f),
                         backgroundColor = NatureColors.earthBrown.copy(alpha = 0.7f)

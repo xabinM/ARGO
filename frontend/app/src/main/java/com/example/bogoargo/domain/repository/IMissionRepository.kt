@@ -16,4 +16,7 @@ interface IMissionRepository {
     // TODO: 셀피 미션 관련 메서드들 (백엔드 API 완성 후 구현)
     suspend fun submitSelfieMission(missionId: Long, imageBase64: String, pose: String): DataResult<MissionSubmitResult>
     suspend fun validateSelfie(imageBase64: String, pose: String): DataResult<Boolean>
+    
+    // 미션 지점 가능 여부 확인
+    suspend fun checkPossibleMissionSpot(teamId: Long, spotId: Long): DataResult<MissionPossibleCheckResult>
 }

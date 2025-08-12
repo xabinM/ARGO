@@ -35,4 +35,11 @@ interface MissionApiService {
     suspend fun validateSelfie(
         @Body request: SelfieMissionSubmitRequestDto
     ): Response<SelfieMissionValidationResponseDto>
+
+    // 미션 지점 가능 여부 확인 API
+    @GET("api/missions/checkPossible/team/{teamId}/spot/{spotId}")
+    suspend fun checkPossibleMissionSpot(
+        @Path("teamId") teamId: Long,
+        @Path("spotId") spotId: Long
+    ): Response<MissionPossibleCheckResponseDto>
 }
