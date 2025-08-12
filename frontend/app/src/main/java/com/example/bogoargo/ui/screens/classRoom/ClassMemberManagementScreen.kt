@@ -22,6 +22,7 @@ import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
 import com.example.bogoargo.ui.theme.NatureElevation
 import com.example.bogoargo.ui.viewmodels.classRoom.ClassMemberManagementViewModel
+import com.example.bogoargo.ui.viewmodels.classRoom.ManagementTab
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,12 +32,10 @@ fun ClassMemberManagementScreen(
     viewModel: ClassMemberManagementViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    var selectedTab by remember { mutableStateOf(0) }
-    
+
     LaunchedEffect(classId) {
-        val classIdLong = classId
-        viewModel.loadClassMembers(classIdLong)
-        viewModel.loadPendingApplications(classIdLong)
+        // 진입 시 현재 탭의 데이터를 로드
+        viewModel.loadData(classId)
     }
 
     Scaffold(
@@ -68,37 +67,39 @@ fun ClassMemberManagementScreen(
                         )
                     }
                 }
-                
+
                 // 탭 선택
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     NatureComponents.NatureButton(
-                        onClick = { selectedTab = 0 },
+                        onClick = { viewModel.switchTab(ManagementTab.MEMBERS, classId) },
                         text = "반 구성원",
                         modifier = Modifier.weight(1f),
-                        backgroundColor = if (selectedTab == 0) NatureColors.forestGreen else NatureColors.earthBrown.copy(alpha = 0.3f)
+                        backgroundColor = if (uiState.currentTab == ManagementTab.MEMBERS)
+                            NatureColors.forestGreen else NatureColors.earthBrown.copy(alpha = 0.3f)
                     )
                     NatureComponents.NatureButton(
-                        onClick = { selectedTab = 1 },
+                        onClick = { viewModel.switchTab(ManagementTab.APPLICATIONS, classId) },
                         text = "참여 신청",
                         modifier = Modifier.weight(1f),
-                        backgroundColor = if (selectedTab == 1) NatureColors.forestGreen else NatureColors.earthBrown.copy(alpha = 0.3f)
+                        backgroundColor = if (uiState.currentTab == ManagementTab.APPLICATIONS)
+                            NatureColors.forestGreen else NatureColors.earthBrown.copy(alpha = 0.3f)
                     )
                 }
-                
+
                 // 통계 카드
                 NatureComponents.StatsCard(
                     modifier = Modifier.fillMaxWidth(),
-                    title = if (selectedTab == 0) "구성원 현황" else "신청 현황",
+                    title = if (uiState.currentTab == ManagementTab.MEMBERS) "구성원 현황" else "신청 현황",
                     emoji = "👥"
                 ) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        if (selectedTab == 0) {
+                        if (uiState.currentTab == ManagementTab.MEMBERS) {
                             NatureComponents.StatItem(
                                 "전체",
                                 uiState.classMembers.size.toString(),
@@ -115,13 +116,12 @@ fun ClassMemberManagementScreen(
                         }
                     }
                 }
-                
+
                 if (uiState.isLoading) {
                     NatureComponents.NatureLoadingIndicator()
                 } else {
-                    when (selectedTab) {
-                        0 -> {
-                            // 반 구성원 목록
+                    when (uiState.currentTab) {
+                        ManagementTab.MEMBERS -> {
                             if (uiState.classMembers.isEmpty()) {
                                 NatureComponents.EmptyStateCard(
                                     emoji = "👥",
@@ -133,14 +133,13 @@ fun ClassMemberManagementScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    items(uiState.classMembers) { member ->
+                                    items(uiState.classMembers, key = { it.studentId }) { member ->
                                         StudentCard(student = member)
                                     }
                                 }
                             }
                         }
-                        1 -> {
-                            // 참여 신청 목록
+                        ManagementTab.APPLICATIONS -> {
                             if (uiState.pendingApplications.isEmpty()) {
                                 NatureComponents.EmptyStateCard(
                                     emoji = "📝",
@@ -148,24 +147,47 @@ fun ClassMemberManagementScreen(
                                     description = "아직 참여 신청을 한 학생들이 없습니다."
                                 )
                             } else {
-                                LazyColumn(
-                                    modifier = Modifier.fillMaxSize(),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    items(uiState.pendingApplications) { application ->
-                                        ApplicationCard(
-                                            application = application,
-                                            isSelected = uiState.selectedApplicationIds.contains(application.applicationId),
-                                            onSelectionChanged = { isSelected ->
-                                                viewModel.selectApplication(application.applicationId)
-                                            },
-                                            onApprove = {
-                                                viewModel.approveSingleApplication(classId, application.applicationId)
-                                            },
-                                            onReject = {
-                                                viewModel.rejectSingleApplication(classId, application.applicationId)
-                                            }
-                                        )
+                                Column {
+                                    // 선택된 항목이 있을 때만 버튼 표시
+                                    if (uiState.selectedApplicationIds.isNotEmpty()) {
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(bottom = 16.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            NatureComponents.NatureButton(
+                                                onClick = { 
+                                                    viewModel.rejectSelectedApplications(classId)
+                                                },
+                                                text = "거부 (${uiState.selectedApplicationIds.size})",
+                                                backgroundColor = NatureColors.softOrange,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                            NatureComponents.NatureButton(
+                                                onClick = { 
+                                                    viewModel.approveSelectedApplications(classId)
+                                                },
+                                                text = "승인 (${uiState.selectedApplicationIds.size})",
+                                                backgroundColor = NatureColors.leafGreen,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
+                                    }
+                                    
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxSize(),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        items(uiState.pendingApplications, key = { it.applicationId }) { application ->
+                                            ApplicationCard(
+                                                application = application,
+                                                isSelected = uiState.selectedApplicationIds.contains(application.applicationId),
+                                                onSelectionChanged = {
+                                                    viewModel.selectApplication(application.applicationId)
+                                                }
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -176,6 +198,7 @@ fun ClassMemberManagementScreen(
         }
     }
 }
+
 
 @Composable
 fun MemberCard(member: UserDataDto) {
@@ -269,79 +292,53 @@ fun StudentCard(student: StudentListResponseDto) {
 fun ApplicationCard(
     application: Application,
     isSelected: Boolean = false,
-    onSelectionChanged: (Boolean) -> Unit = {},
-    onApprove: () -> Unit,
-    onReject: () -> Unit
+    onSelectionChanged: () -> Unit = {}
 ) {
     NatureComponents.NatureCard(
         modifier = Modifier.fillMaxWidth(),
         containerColor = if (isSelected) NatureColors.leafGreen.copy(alpha = 0.1f) else NatureColors.lightBeige
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Checkbox(
-                    checked = isSelected,
-                    onCheckedChange = onSelectionChanged,
-                    colors = CheckboxDefaults.colors(
-                        checkedColor = NatureColors.forestGreen
-                    )
+            Checkbox(
+                checked = isSelected,
+                onCheckedChange = { onSelectionChanged() },
+                colors = CheckboxDefaults.colors(
+                    checkedColor = NatureColors.forestGreen
                 )
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                NatureComponents.ProfileAvatar(
-                    emoji = "👶",
-                    backgroundColor = NatureColors.sunnyYellow,
-                    size = 50.dp
-                )
-                
-                Spacer(modifier = Modifier.width(16.dp))
-                
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = application.user.name,
-                        style = NatureTypography.titleMedium
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "신청 일시: ${application.processedAt}",
-                        style = NatureTypography.bodySmall.copy(
-                            color = NatureColors.earthBrown.copy(alpha = 0.7f)
-                        )
-                    )
-                    Text(
-                        text = "상태: ${application.status}",
-                        style = NatureTypography.bodySmall.copy(
-                            color = NatureColors.sunnyYellow
-                        )
-                    )
-                }
-            }
+            )
             
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.width(12.dp))
             
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                NatureComponents.NatureButton(
-                    onClick = onReject,
-                    text = "거부",
-                    backgroundColor = NatureColors.softOrange,
-                    modifier = Modifier.padding(end = 8.dp)
+            NatureComponents.ProfileAvatar(
+                emoji = "👶",
+                backgroundColor = NatureColors.sunnyYellow,
+                size = 50.dp
+            )
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = application.studentName,
+                    style = NatureTypography.titleMedium
                 )
-                NatureComponents.NatureButton(
-                    onClick = onApprove,
-                    text = "승인",
-                    backgroundColor = NatureColors.leafGreen
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "신청 일시: ${application.appliedAt}",
+                    style = NatureTypography.bodySmall.copy(
+                        color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                    )
+                )
+                Text(
+                    text = "상태: ${application.status}",
+                    style = NatureTypography.bodySmall.copy(
+                        color = NatureColors.sunnyYellow
+                    )
                 )
             }
         }

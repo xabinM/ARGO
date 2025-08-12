@@ -4,16 +4,18 @@ import com.example.bogoargo.data.dto.response.ApplicationResponseDto
 import com.example.bogoargo.data.dto.response.ApplicationDataDto
 import com.example.bogoargo.domain.model.Application
 
-fun ApplicationDataDto.toDomainModel(): Application {
+fun ApplicationDataDto.toDomainModel(classId: Long): Application {
     return Application(
-        applicationId = applicationId,
-        user = user,
-        classRoom = classRoom,
-        status = status,
-        processedAt = processedAt
+        applicationId = this.applicationId,
+        studentId = this.studentId,
+        studentName = this.studentName,
+        classId = classId,
+        status = this.status,
+        appliedAt = this.appliedAt,
+        processedAt = this.processedAt
     )
 }
 
-fun ApplicationResponseDto.toApplicationList(): List<Application> {
-    return applications?.map { it.toDomainModel() } ?: emptyList()
+fun ApplicationResponseDto.toApplicationList(classId: Long): List<Application> {
+    return data?.applications?.map { it.toDomainModel(classId) } ?: emptyList()
 }

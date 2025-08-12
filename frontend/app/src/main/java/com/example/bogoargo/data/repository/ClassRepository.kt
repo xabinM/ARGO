@@ -316,7 +316,7 @@ class ClassRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val applicationResponse = response.body()
                 if (applicationResponse != null) {
-                    val applications = applicationResponse.toApplicationList()
+                    val applications = applicationResponse.toApplicationList(classId)
                     DataResult.Success(applications)
                 } else {
                     DataResult.Error(DataException.ServerError)

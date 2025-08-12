@@ -64,10 +64,11 @@ interface ClassApiService {
         @Body  classCreateRequest: ClassCreateRequest
     ) : Response<ClassCreateResponse>
 
-    // 참여 신청한 학생 목록 조회
+    // 참여 신청한 학생 목록 조회 (교사 기능)
     @GET("api/teacher/classes/{classId}/applications")
     suspend fun getApplicationList(
-        @Path("classId") classId: Long
+        @Path("classId") classId: Long,
+        @Query("status") status: String = "PENDING"
     ): Response<ApplicationResponseDto>
 
     // 참여 신청 승인, 거절 (교사 기능)

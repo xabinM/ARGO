@@ -41,9 +41,11 @@ class ClassMemberManagementViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(ClassMemberManagementUiState())
     val uiState: StateFlow<ClassMemberManagementUiState> = _uiState
 
-    fun switchTab(tab: ManagementTab) {
+    fun switchTab(tab: ManagementTab, classId: Long) {
         _uiState.value = _uiState.value.copy(currentTab = tab)
+        loadData(classId) // 탭 변경 시 자동 데이터 로드
     }
+
 
     fun loadData(classId: Long) {
         when (_uiState.value.currentTab) {
@@ -125,7 +127,7 @@ class ClassMemberManagementViewModel @Inject constructor(
             return
         }
         
-        processApplications(classId, "APPROVE", selectedIds)
+        processApplications(classId, "approve", selectedIds)
     }
 
     fun rejectSelectedApplications(classId: Long) {
@@ -135,15 +137,15 @@ class ClassMemberManagementViewModel @Inject constructor(
             return
         }
         
-        processApplications(classId, "REJECT", selectedIds)
+        processApplications(classId, "reject", selectedIds)
     }
 
     fun approveSingleApplication(classId: Long, applicationId: Long) {
-        processApplications(classId, "APPROVE", listOf(applicationId))
+        processApplications(classId, "approve", listOf(applicationId))
     }
 
     fun rejectSingleApplication(classId: Long, applicationId: Long) {
-        processApplications(classId, "REJECT", listOf(applicationId))
+        processApplications(classId, "reject", listOf(applicationId))
     }
 
     private fun processApplications(classId: Long, action: String, applicationIds: List<Long>) {
@@ -152,7 +154,7 @@ class ClassMemberManagementViewModel @Inject constructor(
             
             when (val result = approveApplicationUseCase(classId, action, applicationIds)) {
                 is DataResult.Success -> {
-                    val actionText = if (action == "APPROVE") "approved" else "rejected"
+                    val actionText = if (action.uppercase() == "APPROVE") "approved" else "rejected"
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
                         actionSuccess = true,
