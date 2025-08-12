@@ -56,16 +56,6 @@ public class ProblemController {
         );
     }
 
-//    // 테스트용 - 보안 X
-//    @PostMapping("/generate-test")
-//    public ResponseEntity<?> generateProblemTest(@RequestBody ProblemGenerateRequestFromCli request) {
-//        ProblemGenerateTransDto dto = problemService.generateProblem(request);
-//        return ResponseEntity.ok(new ProblemGenerateResponse(
-//                true, ResponseMessage.SUCCESS_GENERATE_PROBLEM.getMessage(), dto.getGrade(),
-//                dto.getSpotName(), dto.getProblems()
-//        ));
-//    }
-
     @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/spot/{spotId}")
     public ResponseEntity<?> getProblemsBySpotId(@PathVariable Long spotId) {
