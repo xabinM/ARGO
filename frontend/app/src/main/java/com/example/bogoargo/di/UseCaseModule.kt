@@ -17,9 +17,12 @@ import com.example.bogoargo.domain.use_case.auth.LogoutUseCase
 import com.example.bogoargo.domain.use_case.auth.RefreshTokenUseCase
 import com.example.bogoargo.domain.use_case.auth.SaveTokensUseCase
 import com.example.bogoargo.domain.use_case.classroom.ApplyClassUseCase
+import com.example.bogoargo.domain.use_case.classroom.ApproveApplicationUseCase
 import com.example.bogoargo.domain.use_case.classroom.CreateClassUseCase
 import com.example.bogoargo.domain.use_case.classroom.DeleteClassUseCase
+import com.example.bogoargo.domain.use_case.classroom.GetApplicationListUseCase
 import com.example.bogoargo.domain.use_case.classroom.GetClassDetailUseCase
+import com.example.bogoargo.domain.use_case.classroom.GetClassMemberListUseCase
 import com.example.bogoargo.domain.use_case.classroom.GetClassesUseCase
 import com.example.bogoargo.domain.use_case.classroom.GetStudentClassListUseCase
 import com.example.bogoargo.domain.use_case.classroom.GetTeacherClassListUseCase
@@ -169,6 +172,24 @@ object UseCaseModule {
     @Singleton
     fun provideGetStudentClassListUseCase(classRepository: IClassRepository): GetStudentClassListUseCase {
         return GetStudentClassListUseCase(classRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetApplicationListUseCase(classRepository: IClassRepository): GetApplicationListUseCase {
+        return GetApplicationListUseCase(classRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideApproveApplicationUseCase(classRepository: IClassRepository): ApproveApplicationUseCase {
+        return ApproveApplicationUseCase(classRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetClassMemberListUseCase(classRepository: IClassRepository): GetClassMemberListUseCase {
+        return GetClassMemberListUseCase(classRepository)
     }
     
     // Mission Use Cases

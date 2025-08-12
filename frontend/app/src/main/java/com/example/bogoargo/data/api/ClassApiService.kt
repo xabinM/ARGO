@@ -1,5 +1,6 @@
 package com.example.bogoargo.data.api
 
+import com.example.bogoargo.data.dto.request.ApplicationRequestDto
 import com.example.bogoargo.data.dto.request.ClassCreateRequest
 import com.example.bogoargo.data.dto.response.ApplicationResponseDto
 import com.example.bogoargo.data.dto.response.MessageResponseDto
@@ -8,9 +9,9 @@ import com.example.bogoargo.data.response.ClassDataDto
 import com.example.bogoargo.data.response.ClassDetailResponse
 import com.example.bogoargo.data.response.ClassLeaveResponse
 import com.example.bogoargo.data.response.ClassListResponse
-import com.example.bogoargo.data.response.ClassMemberResponse
 import com.example.bogoargo.data.response.StudentClassDetailResponse
-import com.example.bogoargo.data.response.applyClassResponse
+import com.example.bogoargo.data.response.ApplyClassResponse
+import com.example.bogoargo.data.response.ClassMemberResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -69,11 +70,11 @@ interface ClassApiService {
         @Path("classId") classId: Long
     ): Response<ApplicationResponseDto>
 
-    // 참여 신청 승인, 거절 (교사 기능) //TODO: 신청 리스트로 전달
-    @PUT("api/teacher/classes/{classId}/applications/{applicationId}")
+    // 참여 신청 승인, 거절 (교사 기능)
+    @PUT("api/teacher/classes/{classId}/applications")
     suspend fun approveApplication(
         @Path("classId") classId: Long,
-        @Path("applicationId") applicationId: Long
+        @Body applicationRequestDto: ApplicationRequestDto
     ): Response<MessageResponseDto>
 
     // 반에 소속된 학생 목록 조회 (교사 기능)
@@ -96,7 +97,7 @@ interface ClassApiService {
     @POST("api/student/classes/apply")
     suspend fun applyClass(
         @Query("inviteCode") inviteCode: String
-    ): Response<applyClassResponse>
+    ): Response<ApplyClassResponse>
 
     // 반 탈퇴
     @DELETE("api/student/classes/{classId}/leave")
