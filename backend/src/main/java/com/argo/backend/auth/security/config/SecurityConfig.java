@@ -39,6 +39,11 @@ public class SecurityConfig {
                         .frameOptions(frameOptions -> frameOptions.sameOrigin())
                 )
                 .authorizeHttpRequests(auth -> auth
+                        // 🔥 테스트용: 모든 요청 허용
+                        .anyRequest().permitAll()
+                        
+                        // 원래 설정 (테스트 후 복구용)
+                        /*
                         .requestMatchers(
                                 "/api/users/signup",
                                 "/api/users/login",
@@ -48,16 +53,13 @@ public class SecurityConfig {
                                 "/api/problem/**",
                                 "/h2-console/**",
                                 "/swagger-ui.html"
-
                         ).permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/problem/generate").permitAll() // 테스트용 임시 추가
+                        .requestMatchers(HttpMethod.POST, "/api/problem/generate").permitAll()
                         .anyRequest().authenticated()
-                ) // 아랫줄 테스트용 임시 주석 처리
-//                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, entryPoint), UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling(exceptionHandling -> exceptionHandling
-                        .accessDeniedHandler(new CustomAccessDeniedHandler())
+                        */
                 );
-        ;
+                // JWT 필터도 테스트용으로 주석 처리 (이미 주석처리됨)
+                //.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, entryPoint), UsernamePasswordAuthenticationFilter.class)
 
         return http.build();
     }

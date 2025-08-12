@@ -8,6 +8,15 @@ spring:
   profiles:
     active: local  # 필요하면 명시, 아니면 이 줄 빼도 됨
 
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+    mvc:
+      servlet:
+        path: /
+
 logging:
   level:
     org.springframework.security: DEBUG

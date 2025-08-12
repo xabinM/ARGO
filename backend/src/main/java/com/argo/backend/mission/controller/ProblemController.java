@@ -17,6 +17,7 @@ import com.argo.backend.mission.dto.selfieDetermine.SelfieResultResponse;
 import com.argo.backend.mission.service.ProblemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -86,9 +87,9 @@ public class ProblemController {
     }
 
     @PreAuthorize("hasRole('STUDENT')")
-    @PostMapping("/selfie/determine")
+    @PostMapping(value = "/selfie/determine", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> determineSelfiePose(@RequestParam("image") MultipartFile imageFile,
-                                                 PhotoPose pose) throws IOException {
+                                                 @RequestParam("pose") PhotoPose pose) throws IOException {
         SelfieResultDto result = problemService.determineSelfie(new SelfieRequestDto(imageFile, pose));
 
         return ResponseEntity.ok(new SelfieResultResponse(true, result));

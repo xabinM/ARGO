@@ -10,6 +10,7 @@ import com.argo.backend.mission.exception.problem.ProblemGenerationFailedExcepti
 import com.argo.backend.mission.exception.problem.PythonServerNoResponseException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -20,6 +21,7 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 
@@ -43,7 +45,7 @@ public class PythonApiClient {
         log.info("퀴즈 생성 요청: spotName={}, grade={}, problemCnt={}", spotName, grade, problemCnt);
         
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.setContentType(new MediaType("application", "json", StandardCharsets.UTF_8));
 
         // FastAPI 요청 형식
         ProblemGenerateRequestToAI request = new ProblemGenerateRequestToAI(spotName, grade, problemCnt);
@@ -96,35 +98,66 @@ public class PythonApiClient {
     /**
      * 셀피 포즈 분석 요청 (기존 메서드 시그니처 유지)
      */
+    /**
+     * 셀피 포즈 분석 요청 (최신 수정)
+     */
     public SelfieResultDto requestDeterMineSelfie(SelfieRequestDto request) throws IOException {
         log.info("포즈 분석 요청: pose={}", request.getPose());
-        
+
+        // 1) 헤더
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
+        // 2) 파일 바이트 추출
+        byte[] imageBytes = request.getMultipartFile().getBytes();
+        if (imageBytes == null || imageBytes.length == 0) {
+            throw new PythonApiException("이미지 바이트가 비어 있습니다.");
+        }
+
+        // 3) 파일 리소스 (filename + contentLength 오버라이드)
+        ByteArrayResource fileResource = new ByteArrayResource(imageBytes) {
+            @Override
+            public String getFilename() {
+                String name = request.getMultipartFile().getOriginalFilename();
+                return (name == null || name.isBlank()) ? "upload.jpg" : name;
+            }
+
+            @Override
+            public long contentLength() {
+                return imageBytes.length;
+            }
+        };
+
+        // 4) 멀티파트 바디 구성 (필드명 FastAPI와 일치)
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", new MultipartInputStreamFileResource(
-                request.getMultipartFile().getInputStream(),
-                request.getMultipartFile().getOriginalFilename()));
-        body.add("pose_select", request.getPose().name().toLowerCase());
+        body.add("file", fileResource); // ✅ "file"
+        body.add("pose_select", request.getPose().name().toLowerCase()); // ✅ "pose_select"
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
         try {
+            // 5) 호출
             ResponseEntity<SelfieResultDto> response = restTemplate.postForEntity(
                     pythonApiBaseUrl + "/pose/predict",
                     requestEntity,
                     SelfieResultDto.class
             );
 
-            log.info("포즈 분석 완료");
-            return response.getBody();
-            
+            if (!response.getStatusCode().is2xxSuccessful() || response.getBody() == null) {
+                throw new PythonApiException("포즈 분석 실패: FastAPI 응답이 비정상입니다. status=" + response.getStatusCode());
+            }
+
+            SelfieResultDto result = response.getBody();
+            log.info("포즈 분석 완료: success={}, result={}", result.isSuccess(), result.getResult());
+            return result;
+
         } catch (Exception e) {
             log.error("포즈 분석 실패: {}", e.getMessage());
             throw new PythonApiException("포즈 분석 실패: " + e.getMessage(), e);
         }
     }
+
+
 
     /**
      * Python API 예외 클래스 (GlobalExceptionHandler용)
