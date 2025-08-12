@@ -3,10 +3,11 @@ package com.example.bogoargo.data.api
 import com.example.bogoargo.data.dto.response.ProblemListSpotResponseDto
 import com.example.bogoargo.data.dto.response.ProblemListSpotTypeResponseDto
 import com.example.bogoargo.data.dto.response.ProblemMessageResponse
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Path
-import retrofit2.http.Query
+import com.example.bogoargo.data.dto.response.SelfieResultResponseDto
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import retrofit2.Response
+import retrofit2.http.*
 
 interface ProblemApiService {
 
@@ -30,7 +31,13 @@ interface ProblemApiService {
         @Query("type") type: String
     ): ProblemListSpotTypeResponseDto
 
-
+    // 셀피 포즈 검증 요청 (학생 기능)
+    @Multipart
+    @POST("api/problem/selfie/determine")
+    suspend fun determineSelfiePose(
+        @Part image: MultipartBody.Part,
+        @Part("pose") pose: RequestBody
+    ): Response<SelfieResultResponseDto>
 
 
 }

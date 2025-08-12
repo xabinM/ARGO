@@ -1,17 +1,27 @@
 package com.example.bogoargo.ui.screens
 
+import android.Manifest
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -23,13 +33,17 @@ import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureTypography
 import com.example.bogoargo.ui.viewmodels.MissionDetailViewModel
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import com.google.accompanist.permissions.isGranted
+import com.google.accompanist.permissions.rememberPermissionState
+import java.io.ByteArrayOutputStream
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalPermissionsApi::class)
 @Composable
 fun MissionDetailScreen(
     spotId: Long,
-    classId: Long = 1L,
-    teamId: Long = 0L,
+    classId: Long,
+    teamId: Long,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MissionDetailViewModel = hiltViewModel()
@@ -330,6 +344,7 @@ private fun QuizMissionSection(
     }
 }
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 private fun SelfieMissionSection(
     problem: SelfieProblem,
@@ -341,7 +356,32 @@ private fun SelfieMissionSection(
     onValidateSelfie: () -> Unit,
     onSubmitMission: () -> Unit
 ) {
-    // TODO: 카메라 관련 기능은 백엔드 API 완성 후 구현
+    val context = LocalContext.current
+    val cameraPermissionState = rememberPermissionState(Manifest.permission.CAMERA)
+    
+    // 카메라 촬영 결과를 처리하는 launcher
+    val takePictureLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicturePreview()
+    ) { bitmap: Bitmap? ->
+        bitmap?.let {
+            // Bitmap을 Base64로 변환
+            val outputStream = ByteArrayOutputStream()
+            it.compress(Bitmap.CompressFormat.JPEG, 90, outputStream)
+            val byteArray = outputStream.toByteArray()
+            val base64String = Base64.encodeToString(byteArray, Base64.DEFAULT)
+            onImageCaptured(base64String)
+        }
+    }
+    
+    // 카메라 권한 요청 launcher
+    val requestPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted: Boolean ->
+        if (isGranted) {
+            takePictureLauncher.launch(null)
+        }
+    }
+    
     NatureComponents.NatureCard(
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -394,25 +434,152 @@ private fun SelfieMissionSection(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            Text(
-                text = "📱 TODO: 카메라 기능은 백엔드 API 완성 후 구현됩니다",
-                style = NatureTypography.bodyMedium,
-                color = NatureColors.earthBrown.copy(alpha = 0.7f),
-                textAlign = TextAlign.Center
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            NatureComponents.NatureButton(
-                onClick = { 
-                    // TODO: 실제 카메라 연동
-                    onImageCaptured("dummy_base64_image")
-                    onValidateSelfie()
-                },
-                text = "테스트 미션 완료",
-                modifier = Modifier.fillMaxWidth(),
-                backgroundColor = NatureColors.softOrange
-            )
+            // 촬영된 이미지 표시
+            if (capturedImage != null) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = NatureColors.lightBeige.copy(alpha = 0.3f)
+                    )
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val bitmap = remember(capturedImage) {
+                            try {
+                                val imageBytes = Base64.decode(capturedImage, Base64.DEFAULT)
+                                BitmapFactory.decodeByteArray(imageBytes, 0, imageBytes.size)
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+                        
+                        if (bitmap != null) {
+                            Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = "촬영된 사진",
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(8.dp))
+                            )
+                        } else {
+                            Text(
+                                text = "🖼️ 사진이 촬영되었습니다",
+                                style = NatureTypography.bodyMedium,
+                                color = NatureColors.earthBrown
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // 검증 결과 표시
+                if (validationResult != null) {
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (validationResult) 
+                                NatureColors.leafGreen.copy(alpha = 0.2f) 
+                            else 
+                                Color.Red.copy(alpha = 0.2f)
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (validationResult) "✅ 포즈 확인!" else "❌ 포즈가 일치하지 않아요",
+                                style = NatureTypography.bodyMedium,
+                                color = NatureColors.earthBrown
+                            )
+                        }
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                
+                // 버튼들
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // 다시 촬영 버튼
+                    NatureComponents.NatureButton(
+                        onClick = {
+                            if (cameraPermissionState.status.isGranted) {
+                                takePictureLauncher.launch(null)
+                            } else {
+                                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+                            }
+                        },
+                        text = "다시 촬영",
+                        modifier = Modifier.weight(1f),
+                        backgroundColor = NatureColors.softOrange
+                    )
+                    
+                    // 검증 또는 제출 버튼
+                    if (validationResult == null) {
+                        NatureComponents.NatureButton(
+                            onClick = onValidateSelfie,
+                            text = if (isValidating) "검증 중..." else "포즈 검증",
+                            modifier = Modifier.weight(1f),
+                            enabled = !isValidating,
+                            backgroundColor = NatureColors.forestGreen
+                        )
+                    } else if (validationResult) {
+                        NatureComponents.NatureButton(
+                            onClick = onSubmitMission,
+                            text = if (isLoading) "제출 중..." else "미션 완료",
+                            modifier = Modifier.weight(1f),
+                            enabled = !isLoading,
+                            backgroundColor = NatureColors.forestGreen
+                        )
+                    }
+                }
+            } else {
+                // 촬영 버튼
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(200.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = NatureColors.lightBeige.copy(alpha = 0.1f)
+                    ),
+                    onClick = {
+                        if (cameraPermissionState.status.isGranted) {
+                            takePictureLauncher.launch(null)
+                        } else {
+                            requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
+                    }
+                ) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CameraAlt,
+                                contentDescription = "카메라",
+                                modifier = Modifier.size(48.dp),
+                                tint = NatureColors.forestGreen
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "사진 촬영하기",
+                                style = NatureTypography.bodyLarge,
+                                color = NatureColors.forestGreen
+                            )
+                        }
+                    }
+                }
+            }
         }
     }
 }

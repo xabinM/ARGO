@@ -1,7 +1,9 @@
 package com.example.bogoargo.di
 
 import android.content.Context
-import com.example.bogoargo.data.api.*
+import com.example.bogoargo.data.api.AuthApiService
+import com.example.bogoargo.data.api.MissionApiService
+import com.example.bogoargo.data.api.ProblemApiService
 import com.example.bogoargo.data.repository.*
 import com.example.bogoargo.domain.repository.*
 import javax.inject.Named
@@ -59,9 +61,10 @@ object RepositoryProvidesModule {
     fun provideMissionRepository(
         authApiService: AuthApiService,
         missionApiService: MissionApiService,
+        problemApiService: ProblemApiService,
         @ApplicationContext context: Context
     ): MissionRepositoryImpl {
-        return MissionRepositoryImpl(authApiService, missionApiService, context)
+        return MissionRepositoryImpl(authApiService, missionApiService, problemApiService, context)
     }
     
     @Provides
