@@ -20,6 +20,7 @@ data class MissionDetailUiState(
     val submitResult: MissionSubmitResult? = null,
     val errorMessage: String? = null,
     val isCompleted: Boolean = false,
+    val isMissionSuccessful: Boolean? = null, // 미션 성공/실패 상태
     
     // 셀피 관련 상태
     val capturedImageBase64: String? = null,
@@ -81,10 +82,12 @@ class MissionDetailViewModel @Inject constructor(
             
             when (val result = submitQuizMissionUseCase(missionId, isCorrect)) {
                 is DataResult.Success -> {
+                    val missionResult = result.data
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        submitResult = result.data,
-                        isCompleted = true
+                        submitResult = missionResult,
+                        isCompleted = true,
+                        isMissionSuccessful = missionResult.successful
                     )
                 }
                 is DataResult.Error -> {
@@ -144,10 +147,12 @@ class MissionDetailViewModel @Inject constructor(
             
             when (val result = submitSelfieMissionUseCase(missionId, imageBase64, problemDetail.pose)) {
                 is DataResult.Success -> {
+                    val missionResult = result.data
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
-                        submitResult = result.data,
-                        isCompleted = true
+                        submitResult = missionResult,
+                        isCompleted = true,
+                        isMissionSuccessful = missionResult.successful
                     )
                 }
                 is DataResult.Error -> {
@@ -169,5 +174,16 @@ class MissionDetailViewModel @Inject constructor(
 
     fun resetMission() {
         _uiState.value = MissionDetailUiState()
+    }
+    
+    fun retryMission() {
+        _uiState.value = _uiState.value.copy(
+            selectedAnswer = null,
+            isAnswerSubmitted = false,
+            submitResult = null,
+            isMissionSuccessful = null,
+            isCompleted = false,
+            errorMessage = null
+        )
     }
 }

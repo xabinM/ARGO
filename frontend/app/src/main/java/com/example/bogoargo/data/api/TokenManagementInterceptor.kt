@@ -93,16 +93,16 @@ class TokenManagementInterceptor(
         
         return try {
             val refreshCall = authApiService.refreshToken(
-                RefreshTokenRequest(refreshToken)
+                "Bearer $refreshToken"
             )
             val refreshResponse = refreshCall.execute()
             
             if (refreshResponse.isSuccessful) {
-                val tokenInfo = refreshResponse.body()
-                if (tokenInfo != null) {
+                val refreshResult = refreshResponse.body()
+                if (refreshResult != null && refreshResult.success) {
                     secureStorage.saveTokens(
-                        tokenInfo.accessToken,
-                        tokenInfo.refreshToken
+                        refreshResult.tokens.accessToken,
+                        refreshResult.tokens.refreshToken
                     )
                     true
                 } else {

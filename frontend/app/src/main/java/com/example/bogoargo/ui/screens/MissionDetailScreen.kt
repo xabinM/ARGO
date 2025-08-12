@@ -87,7 +87,9 @@ fun MissionDetailScreen(
                     uiState.isCompleted -> {
                         MissionCompletedSection(
                             submitResult = uiState.submitResult,
-                            onNavigateBack = onNavigateBack
+                            isMissionSuccessful = uiState.isMissionSuccessful ?: false,
+                            onNavigateBack = onNavigateBack,
+                            onRetryMission = { viewModel.retryMission() }
                         )
                     }
                     uiState.problemDetail != null -> {
@@ -587,7 +589,9 @@ private fun SelfieMissionSection(
 @Composable
 private fun MissionCompletedSection(
     submitResult: MissionSubmitResult?,
-    onNavigateBack: () -> Unit
+    isMissionSuccessful: Boolean,
+    onNavigateBack: () -> Unit,
+    onRetryMission: () -> Unit
 ) {
     NatureComponents.NatureCard(
         modifier = Modifier.fillMaxWidth()
@@ -598,22 +602,23 @@ private fun MissionCompletedSection(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "🎉",
-                style = NatureTypography.headlineMedium
-            )
-            
-            Spacer(modifier = Modifier.height(16.dp))
-            
-            Text(
-                text = "미션 완료!",
-                style = NatureTypography.titleLarge,
-                color = NatureColors.forestGreen
-            )
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            if (submitResult?.successful == true) {
+            // 성공/실패에 따른 이모지와 제목
+            if (isMissionSuccessful) {
+                Text(
+                    text = "🎉",
+                    style = NatureTypography.headlineMedium
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "미션 성공!",
+                    style = NatureTypography.titleLarge,
+                    color = NatureColors.forestGreen
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
                 Text(
                     text = "축하합니다! 미션을 성공적으로 완료했어요 🎊",
                     style = NatureTypography.bodyMedium,
@@ -621,7 +626,8 @@ private fun MissionCompletedSection(
                     textAlign = TextAlign.Center
                 )
                 
-                submitResult.cardId?.let { cardId ->
+                // 카드 정보 표시 (성공 시에만)
+                submitResult?.cardId?.let { cardId ->
                     Spacer(modifier = Modifier.height(16.dp))
                     Card(
                         colors = CardDefaults.cardColors(
@@ -652,8 +658,24 @@ private fun MissionCompletedSection(
                     }
                 }
             } else {
+                // 실패 케이스
                 Text(
-                    text = "미션을 완료했지만 결과를 확인할 수 없어요. 다시 시도해보세요.",
+                    text = "😔",
+                    style = NatureTypography.headlineMedium
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "미션 실패!",
+                    style = NatureTypography.titleLarge,
+                    color = NatureColors.earthBrown
+                )
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = "아쉽게도 이번 미션은 실패했어요.\n다시 도전해보세요! 💪",
                     style = NatureTypography.bodyMedium,
                     color = NatureColors.earthBrown.copy(alpha = 0.8f),
                     textAlign = TextAlign.Center
@@ -662,12 +684,34 @@ private fun MissionCompletedSection(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            NatureComponents.NatureButton(
-                onClick = onNavigateBack,
-                text = "완료",
-                modifier = Modifier.fillMaxWidth(),
-                backgroundColor = NatureColors.forestGreen
-            )
+            // 성공/실패에 따른 다른 버튼 구성
+            if (isMissionSuccessful) {
+                NatureComponents.NatureButton(
+                    onClick = onNavigateBack,
+                    text = "🎉 완료",
+                    modifier = Modifier.fillMaxWidth(),
+                    backgroundColor = NatureColors.forestGreen
+                )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    NatureComponents.NatureButton(
+                        onClick = onNavigateBack,
+                        text = "나가기",
+                        modifier = Modifier.weight(1f),
+                        backgroundColor = NatureColors.earthBrown.copy(alpha = 0.7f)
+                    )
+                    
+                    NatureComponents.NatureButton(
+                        onClick = onRetryMission,
+                        text = "💪 다시 도전",
+                        modifier = Modifier.weight(1f),
+                        backgroundColor = NatureColors.forestGreen
+                    )
+                }
+            }
         }
     }
 }

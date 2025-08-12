@@ -7,42 +7,32 @@ data class MissionCreateResponseDto(
     @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String,
     @SerializedName("missionId") val missionId: Long,
-    @SerializedName("problemDetail") val problemDetail: ProblemDetailDto
+    @SerializedName("problem") val problem: ProblemDetailDto?
 )
 
-// 문제 상세 DTO (다형성 처리를 위한 기본 클래스)
-abstract class ProblemDetailDto {
-    abstract val id: Long
-    abstract val dtype: String
-}
-
-// 퀴즈 문제 DTO
-data class QuizProblemDto(
-    @SerializedName("id") override val id: Long,
-    @SerializedName("dtype") override val dtype: String,
-    @SerializedName("question") val question: String,
-    @SerializedName("choices") val choices: List<String>,
-    @SerializedName("correctIndex") val correctIndex: Int,
-    @SerializedName("explanation") val explanation: String
-) : ProblemDetailDto()
-
-// 셀피 문제 DTO
-data class SelfieProblemDto(
-    @SerializedName("id") override val id: Long,
-    @SerializedName("dtype") override val dtype: String,
-    @SerializedName("guideline") val guideline: String,
-    @SerializedName("pose") val pose: String,
-    @SerializedName("poseHint") val poseHint: String
-) : ProblemDetailDto()
+// 문제 상세 DTO (모든 필드를 포함하는 통합 클래스)
+data class ProblemDetailDto(
+    @SerializedName("id") val id: Long,
+    @SerializedName("dtype") val dtype: String,
+    // 퀴즈 문제 필드들 (nullable)
+    @SerializedName("question") val question: String? = null,
+    @SerializedName("choices") val choices: List<String>? = null,
+    @SerializedName("correctIndex") val correctIndex: Int? = null,
+    @SerializedName("explanation") val explanation: String? = null,
+    // 셀피 문제 필드들 (nullable)
+    @SerializedName("guideline") val guideline: String? = null,
+    @SerializedName("pose") val pose: String? = null,
+    @SerializedName("poseHint") val poseHint: String? = null
+)
 
 // 미션 제출 요청 DTO
 data class MissionSubmitRequestDto(
-    @SerializedName("isSuccess") val isSuccess: Boolean
+    @SerializedName("success") val success: Boolean
 )
 
 // 미션 제출 응답 DTO
 data class MissionSubmitResponseDto(
-    @SerializedName("successful") val successful: Boolean,
+    @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String,
     @SerializedName("cardId") val cardId: Long?,
     @SerializedName("tier") val tier: String?

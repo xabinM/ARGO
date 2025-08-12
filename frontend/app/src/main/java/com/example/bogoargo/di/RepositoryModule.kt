@@ -2,6 +2,7 @@ package com.example.bogoargo.di
 
 import android.content.Context
 import com.example.bogoargo.data.api.AuthApiService
+import com.example.bogoargo.data.api.ClassApiService
 import com.example.bogoargo.data.api.MissionApiService
 import com.example.bogoargo.data.api.ProblemApiService
 import com.example.bogoargo.data.repository.*
@@ -59,12 +60,12 @@ object RepositoryProvidesModule {
     @Provides
     @Singleton
     fun provideMissionRepository(
-        authApiService: AuthApiService,
+        classApiService: ClassApiService,
         missionApiService: MissionApiService,
         problemApiService: ProblemApiService,
         @ApplicationContext context: Context
     ): MissionRepositoryImpl {
-        return MissionRepositoryImpl(authApiService, missionApiService, problemApiService, context)
+        return MissionRepositoryImpl(classApiService, missionApiService, problemApiService, context)
     }
     
     @Provides

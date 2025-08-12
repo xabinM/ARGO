@@ -76,14 +76,14 @@ class AuthRepositoryImpl @Inject constructor(
             
             try {
                 val call = authApiService.refreshToken(
-                    RefreshTokenRequest(refreshToken)
+                    "Bearer $refreshToken"
                 )
                 val response = call.execute()
                 
                 if (response.isSuccessful) {
                     val refreshResponse = response.body()
                     if (refreshResponse != null) {
-                        saveTokens(refreshResponse.accessToken, refreshResponse.refreshToken)
+                        saveTokens(refreshResponse.tokens.accessToken, refreshResponse.tokens.refreshToken)
                         return@withLock DataResult.Success(true)
                     }
                 }

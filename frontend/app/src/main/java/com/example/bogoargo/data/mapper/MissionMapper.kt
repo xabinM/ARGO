@@ -63,29 +63,30 @@ fun HintDto.getAvailableAfter(): LocalDateTime = this.availableAfter
 // 새로운 미션 관련 매퍼 함수들
 object MissionProblemMapper {
 
-    fun mapToMissionCreateResult(dto: MissionCreateResponseDto): MissionCreateResult {
+    fun mapToMissionCreateResult(dto: MissionCreateResponseDto): MissionCreateResult? {
+        val problemDto = dto.problem ?: return null
         return MissionCreateResult(
             missionId = dto.missionId,
-            problemDetail = mapToProblemDetail(dto.problemDetail)
+            problemDetail = mapToProblemDetail(problemDto)
         )
     }
 
     private fun mapToProblemDetail(dto: ProblemDetailDto): ProblemDetail {
-        return when (dto) {
-            is QuizProblemDto -> QuizProblem(
+        return when (dto.dtype) {
+            "QUIZ" -> QuizProblem(
                 id = dto.id,
                 dtype = dto.dtype,
-                question = dto.question,
-                choices = dto.choices,
-                correctIndex = dto.correctIndex,
-                explanation = dto.explanation
+                question = dto.question ?: "",
+                choices = dto.choices ?: emptyList(),
+                correctIndex = dto.correctIndex ?: 0,
+                explanation = dto.explanation ?: ""
             )
-            is SelfieProblemDto -> SelfieProblem(
+            "SELFIE" -> SelfieProblem(
                 id = dto.id,
                 dtype = dto.dtype,
-                guideline = dto.guideline,
-                pose = dto.pose,
-                poseHint = dto.poseHint
+                guideline = dto.guideline ?: "",
+                pose = dto.pose ?: "",
+                poseHint = dto.poseHint ?: ""
             )
             else -> throw IllegalArgumentException("Unknown problem type: ${dto.dtype}")
         }
@@ -93,14 +94,14 @@ object MissionProblemMapper {
 
     fun mapToMissionSubmitResult(dto: MissionSubmitResponseDto): MissionSubmitResult {
         return MissionSubmitResult(
-            successful = dto.successful,
+            successful = dto.success,
             cardId = dto.cardId,
             tier = dto.tier
         )
     }
 
     fun mapToMissionSubmitRequest(isSuccess: Boolean): MissionSubmitRequestDto {
-        return MissionSubmitRequestDto(isSuccess = isSuccess)
+        return MissionSubmitRequestDto(success = isSuccess)
     }
 
     // TODO: 셀피 미션 관련 매퍼는 백엔드 API 완성 후 구현

@@ -6,6 +6,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.clickable
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.example.bogoargo.ui.theme.NatureColors
@@ -34,8 +35,8 @@ import com.google.maps.android.compose.*
 @Composable
 fun GameScreen(
     navController: NavHostController,
-    classId: Long = 1, // 기본 클래스 ID
-    teamId: Long = 0, // 팀 ID 추가
+    classId: Long, // 기본 클래스 ID
+    teamId: Long, // 팀 ID 추가
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -70,6 +71,8 @@ fun GameScreen(
     }
     
     var isGameStarted by remember { mutableStateOf(false) }
+    var showMissionList by remember { mutableStateOf(false) }
+    var hasMovedToUserLocation by remember { mutableStateOf(false) }
     
     // 권한 확인 및 위치 추적 시작
     LaunchedEffect(isGameStarted) {
@@ -93,6 +96,21 @@ fun GameScreen(
                     )
                 )
             }
+        }
+    }
+    
+    // 사용자 위치가 업데이트되면 처음에만 카메라 이동
+    LaunchedEffect(uiState.userLocation) {
+        val location = uiState.userLocation
+        if (location != null && !hasMovedToUserLocation && isGameStarted) {
+            cameraPositionState.animate(
+                CameraUpdateFactory.newLatLngZoom(
+                    LatLng(location.latitude, location.longitude),
+                    16f
+                ),
+                durationMs = 1000
+            )
+            hasMovedToUserLocation = true
         }
     }
     
@@ -156,46 +174,23 @@ fun GameScreen(
                             val isNearby = uiState.nearbyMissionSpots.contains(spot)
                             Marker(
                                 state = MarkerState(
-                                    position = LatLng(spot.latitude, spot.longitude)
+                                    position = LatLng(spot.coordinates.latitude, spot.coordinates.longitude)
                                 ),
-                                title = if (isNearby) "🎯 ${spot.spotName} (활성화됨)" else "📍 ${spot.spotName}",
+                                title = if (isNearby) "🎯 ${spot.name} (활성화됨)" else "📍 ${spot.name}",
                                 snippet = if (isNearby) "미션을 시작할 수 있습니다!" else "가까이 이동하세요 (${spot.spotId})"
-                            )
-                        }
-                        
-                        // 사용자 위치 마커
-                        uiState.userLocation?.let { location ->
-                            Marker(
-                                state = MarkerState(
-                                    position = LatLng(location.latitude, location.longitude)
-                                ),
-                                title = "🚶‍♂️ 내 위치"
                             )
                         }
                         
                         // 근처 미션 범위 표시 (Circle)
                         uiState.nearbyMissionSpots.forEach { spot ->
                             Circle(
-                                center = LatLng(spot.latitude, spot.longitude),
+                                center = LatLng(spot.coordinates.latitude, spot.coordinates.longitude),
                                 radius = 50.0, // 50미터 범위
                                 strokeColor = androidx.compose.ui.graphics.Color.Green,
                                 strokeWidth = 3f,
                                 fillColor = androidx.compose.ui.graphics.Color.Green.copy(alpha = 0.2f)
                             )
                         }
-                    }
-                }
-
-                // 지도 카메라 위치 업데이트
-                LaunchedEffect(uiState.missionSpots) {
-                    if (uiState.missionSpots.isNotEmpty()) {
-                        val firstSpot = uiState.missionSpots.first()
-                        cameraPositionState.move(
-                            CameraUpdateFactory.newLatLngZoom(
-                                LatLng(firstSpot.latitude, firstSpot.longitude),
-                                12f
-                            )
-                        )
                     }
                 }
             }
@@ -218,31 +213,6 @@ fun GameScreen(
                     completedCount = 0
                 )
                 
-                // 디버그 AR 버튼 (우측 상단)
-                NatureComponents.NatureCard(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(top = 80.dp, end = 16.dp),
-                    containerColor = NatureColors.sunnyYellow.copy(alpha = 0.9f),
-                    elevation = NatureElevation.medium
-                ) {
-                    NatureComponents.NatureButton(
-                        onClick = {
-                            // 현재 위치 기준으로 가상의 미션 위치 생성 (±5m)
-                            val currentLat = uiState.userLocation?.latitude ?: 37.5665
-                            val currentLon = uiState.userLocation?.longitude ?: 126.9780
-                            val debugLat = currentLat + 0.00005 // 약 5m 북쪽
-                            val debugLon = currentLon + 0.00005 // 약 5m 동쪽
-                            
-                            // 디버그용 하드코딩된 미션 ID와 위치로 AR 화면 이동 (classId, teamId 포함)
-                            navController.navigate("ar/999/$debugLat/$debugLon?classId=$classId&teamId=$teamId")
-                        },
-                        text = "🔧 Debug AR",
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        backgroundColor = NatureColors.sunnyYellow
-                    )
-                }
-                
                 // 근처 미션 AR 버튼들 (포켓몬GO 스타일)
                 if (uiState.nearbyMissionSpots.isNotEmpty()) {
                     Column(
@@ -264,34 +234,32 @@ fun GameScreen(
                             )
                         }
                         
-                        uiState.nearbyMissionSpots.forEach { spot ->
-                            NatureComponents.NatureButton(
-                                onClick = { 
-                                    // AR 화면으로 이동 (위치 정보와 classId, teamId 포함)
-                                    navController.navigate("ar/${spot.spotId}/${spot.latitude}/${spot.longitude}?classId=$classId&teamId=$teamId")
-                                },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(vertical = 4.dp),
-                                backgroundColor = NatureColors.forestGreen
+                        // 근처 미션 선택 버튼
+                        NatureComponents.NatureButton(
+                            onClick = { 
+                                showMissionList = true
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            backgroundColor = NatureColors.forestGreen
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.Center
-                                ) {
-                                    Text(
-                                        text = "📱",
-                                        fontSize = 20.sp,
-                                        modifier = Modifier.padding(end = 8.dp)
-                                    )
-                                    Text(
-                                        text = "${spot.spotName} AR 시작",
-                                        style = NatureTypography.titleMedium.copy(
-                                            fontWeight = FontWeight.Bold
-                                        ),
-                                        color = androidx.compose.ui.graphics.Color.White
-                                    )
-                                }
+                                Text(
+                                    text = "🎯",
+                                    fontSize = 20.sp,
+                                    modifier = Modifier.padding(end = 8.dp)
+                                )
+                                Text(
+                                    text = "근처 미션 보기 (${uiState.nearbyMissionSpots.size}개)",
+                                    style = NatureTypography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold
+                                    ),
+                                    color = androidx.compose.ui.graphics.Color.White
+                                )
                             }
                         }
                     }
@@ -310,6 +278,20 @@ fun GameScreen(
                     onStartGame = { 
                         isGameStarted = true 
                     }
+                )
+            }
+            
+            // 미션 리스트 다이얼로그
+            if (showMissionList && uiState.nearbyMissionSpots.isNotEmpty()) {
+                MissionListDialog(
+                    missions = uiState.nearbyMissionSpots,
+                    classId = classId,
+                    teamId = teamId,
+                    onMissionSelect = { spot ->
+                        // AR 화면으로 이동 (위치 정보와 classId, teamId 포함)
+                        navController.navigate("ar/${spot.spotId}/${spot.coordinates.latitude}/${spot.coordinates.longitude}?classId=$classId&teamId=$teamId")
+                    },
+                    onDismiss = { showMissionList = false }
                 )
             }
         }
@@ -469,17 +451,18 @@ fun CurrentLocationOverlay(
                 color = NatureColors.forestGreen
             )
             Spacer(modifier = Modifier.height(4.dp))
-            if (userLocation != null) {
+            val location = userLocation
+            if (location != null) {
                 Text(
-                    text = "위도: ${String.format("%.6f", userLocation.latitude)}",
+                    text = "위도: ${String.format("%.6f", location.latitude)}",
                     style = NatureTypography.bodySmall
                 )
                 Text(
-                    text = "경도: ${String.format("%.6f", userLocation.longitude)}",
+                    text = "경도: ${String.format("%.6f", location.longitude)}",
                     style = NatureTypography.bodySmall
                 )
                 Text(
-                    text = "정확도: ${userLocation.accuracy.toInt()}m",
+                    text = "정확도: ${location.accuracy.toInt()}m",
                     style = NatureTypography.bodySmall,
                     color = NatureColors.leafGreen
                 )
@@ -543,4 +526,130 @@ private fun startContinuousLocationTracking(
     }
     
     return Pair(fusedLocationClient, locationCallback)
+}
+
+@Composable
+fun MissionListDialog(
+    missions: List<MissionSpot>,
+    classId: Long,
+    teamId: Long,
+    onMissionSelect: (MissionSpot) -> Unit,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "🎯 근처 미션 선택",
+                    style = NatureTypography.titleLarge,
+                    color = NatureColors.forestGreen
+                )
+                Text(
+                    text = "${missions.size}개",
+                    style = NatureTypography.bodyMedium,
+                    color = NatureColors.earthBrown
+                )
+            }
+        },
+        text = {
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    text = "참여하고 싶은 미션을 선택하세요",
+                    style = NatureTypography.bodyMedium,
+                    color = NatureColors.earthBrown,
+                    modifier = Modifier.padding(bottom = 16.dp)
+                )
+                
+                missions.forEach { mission ->
+                    MissionListItem(
+                        mission = mission,
+                        onClick = {
+                            onMissionSelect(mission)
+                            onDismiss()
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+            }
+        },
+        confirmButton = {
+            NatureComponents.NatureButton(
+                onClick = onDismiss,
+                text = "취소",
+                backgroundColor = NatureColors.earthBrown
+            )
+        },
+        containerColor = NatureColors.whiteTransparent90,
+        modifier = Modifier.padding(16.dp)
+    )
+}
+
+@Composable
+fun MissionListItem(
+    mission: MissionSpot,
+    onClick: () -> Unit
+) {
+    NatureComponents.NatureCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        containerColor = NatureColors.whiteTransparent,
+        elevation = NatureElevation.small
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "📍",
+                        fontSize = 18.sp,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = mission.name,
+                        style = NatureTypography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = NatureColors.forestGreen
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "미션 ID: ${mission.spotId}",
+                    style = NatureTypography.bodySmall,
+                    color = NatureColors.earthBrown
+                )
+            }
+            
+            Column(
+                horizontalAlignment = Alignment.End
+            ) {
+                Text(
+                    text = "📱",
+                    fontSize = 24.sp
+                )
+                Text(
+                    text = "AR 시작",
+                    style = NatureTypography.bodySmall,
+                    color = NatureColors.leafGreen
+                )
+            }
+        }
+    }
 }

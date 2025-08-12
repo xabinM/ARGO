@@ -2,7 +2,7 @@ package com.example.bogoargo.data.repository
 
 import android.content.Context
 import android.util.Base64
-import com.example.bogoargo.data.api.AuthApiService
+import com.example.bogoargo.data.api.ClassApiService
 import com.example.bogoargo.data.api.MissionApiService
 import com.example.bogoargo.data.api.ProblemApiService
 import com.example.bogoargo.data.cache.MissionCache
@@ -18,7 +18,7 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import javax.inject.Inject
 
 class MissionRepositoryImpl @Inject constructor(
-    private val apiService: AuthApiService,
+    private val classApiService: ClassApiService,
     private val missionApiService: MissionApiService,
     private val problemApiService: ProblemApiService,
     private val context: Context? = null
@@ -91,7 +91,7 @@ class MissionRepositoryImpl @Inject constructor(
             
             // 캐시가 없거나 유효하지 않으면 API 호출
             try {
-                val response = apiService.getMissionSpots(classId)
+                val response = classApiService.getSpots(classId)
                 if (response.isSuccessful) {
                     val body = response.body()
                     if (body?.success == true) {
@@ -123,7 +123,11 @@ class MissionRepositoryImpl @Inject constructor(
                     val body = response.body()
                     if (body != null) {
                         val result = MissionProblemMapper.mapToMissionCreateResult(body)
-                        DataResult.Success(result)
+                        if (result != null) {
+                            DataResult.Success(result)
+                        } else {
+                            DataResult.Error(DataException.UnknownError("Failed to parse problem detail"))
+                        }
                     } else {
                         DataResult.Error(DataException.UnknownError("Empty response body"))
                     }
