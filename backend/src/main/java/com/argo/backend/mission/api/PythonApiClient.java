@@ -8,8 +8,6 @@ import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestToAI;
 import com.argo.backend.mission.exception.problem.ProblemCountMismatchException;
 import com.argo.backend.mission.exception.problem.ProblemGenerationFailedException;
 import com.argo.backend.mission.exception.problem.PythonServerNoResponseException;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -20,122 +18,63 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
 
-@Slf4j
 @Component
 public class PythonApiClient {
 
     private final RestTemplate restTemplate;
-    
-    @Value("${python.api.base-url:http://localhost:8000}")
-    private String pythonApiBaseUrl;
+    private static final String PROBLEM_GENERATE_API_URL = "http://localhost:5000/api/generate";
+    private static final String SELFIE_POSE_API_URL = "http://localhost:5000/api/predict-pose";
 
     public PythonApiClient(RestTemplate restTemplate) {
         this.restTemplate = restTemplate;
     }
 
-    /**
-     * 퀴즈 생성 요청 - Map 방식으로 수정
-     */
-    public Map<String, Object> requestProblemAsMap(String spotName, int grade, int problemCnt) {
-        log.info("퀴즈 생성 요청: spotName={}, grade={}, problemCnt={}", spotName, grade, problemCnt);
-        
+    public ProblemGenerateDto requestProblem(String spotName, Integer grade, int problemCnt) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        // FastAPI 요청 형식
         ProblemGenerateRequestToAI request = new ProblemGenerateRequestToAI(spotName, grade, problemCnt);
+
         HttpEntity<ProblemGenerateRequestToAI> entity = new HttpEntity<>(request, headers);
 
-        try {
-            // 🔥 핵심 변경: Map으로 받기
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                    pythonApiBaseUrl + "/generate-problem",
-                    entity,
-                    Map.class
-            );
+        ResponseEntity<ProblemGenerateDto> response = restTemplate.postForEntity(
+                PROBLEM_GENERATE_API_URL,
+                entity,
+                ProblemGenerateDto.class
+        );
 
-            @SuppressWarnings("unchecked")
-            Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
-            
-            if (responseBody == null) {
-                throw new PythonServerNoResponseException();
-            }
-            
-            @SuppressWarnings("unchecked")
-            List<Map<String, Object>> problemsData = (List<Map<String, Object>>) responseBody.get("problems");
-            
-            if (problemsData == null) {
-                throw new ProblemGenerationFailedException();
-            }
-            if (problemsData.size() != problemCnt) {
-                throw new ProblemCountMismatchException();
-            }
-
-            log.info("퀴즈 생성 성공: {}개 문제", problemsData.size());
-            return responseBody;
-            
-        } catch (Exception e) {
-            log.error("Python API 호출 실패: {}", e.getMessage());
-            throw new PythonApiException("Python API 호출 실패: " + e.getMessage(), e);
+        ProblemGenerateDto body = response.getBody();
+        if (body == null) {
+            throw new PythonServerNoResponseException();
         }
+        if (body.getProblems() == null) {
+            throw new ProblemGenerationFailedException();
+        }
+        if (body.getProblems().size() != request.getProblemCnt()) {
+            throw new ProblemCountMismatchException();
+        }
+
+        return body;
     }
 
-    /**
-     * 기존 메서드 - 호환성 유지용 (deprecated)
-     * @deprecated Map 방식 사용 권장
-     */
-    @Deprecated
-    public ProblemGenerateDto requestProblem(String spotName, int grade, int problemCnt) {
-        // 일단 빈 DTO 반환 (실제로는 requestProblemAsMap 사용)
-        throw new UnsupportedOperationException("requestProblemAsMap 메서드를 사용하세요");
-    }
-
-    /**
-     * 셀피 포즈 분석 요청 (기존 메서드 시그니처 유지)
-     */
     public SelfieResultDto requestDeterMineSelfie(SelfieRequestDto request) throws IOException {
-        log.info("포즈 분석 요청: pose={}", request.getPose());
-        
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.MULTIPART_FORM_DATA);
 
         MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
-        body.add("file", new MultipartInputStreamFileResource(
-                request.getMultipartFile().getInputStream(),
+        body.add("image", new MultipartInputStreamFileResource(request.getMultipartFile().getInputStream(),
                 request.getMultipartFile().getOriginalFilename()));
-        body.add("pose_select", request.getPose().name().toLowerCase());
+        body.add("pose", request.getPose());
 
         HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
 
-        try {
-            ResponseEntity<SelfieResultDto> response = restTemplate.postForEntity(
-                    pythonApiBaseUrl + "/pose/predict",
-                    requestEntity,
-                    SelfieResultDto.class
-            );
+        ResponseEntity<SelfieResultDto> response = restTemplate.postForEntity(
+                SELFIE_POSE_API_URL,
+                requestEntity,
+                SelfieResultDto.class
+        );
 
-            log.info("포즈 분석 완료");
-            return response.getBody();
-            
-        } catch (Exception e) {
-            log.error("포즈 분석 실패: {}", e.getMessage());
-            throw new PythonApiException("포즈 분석 실패: " + e.getMessage(), e);
-        }
-    }
-
-    /**
-     * Python API 예외 클래스 (GlobalExceptionHandler용)
-     */
-    public static class PythonApiException extends RuntimeException {
-        public PythonApiException(String message) {
-            super(message);
-        }
-        
-        public PythonApiException(String message, Throwable cause) {
-            super(message, cause);
-        }
+        return response.getBody();
     }
 }
