@@ -58,11 +58,11 @@ public class DataLoader implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-//        // 이미 데이터가 있으면 생성하지 않음
-//        if (userRepository.count() > 50) {
-//            log.info("데이터가 이미 존재하므로 초기 데이터 생성을 건너뜁니다.");
-//            return;
-//        }
+        // 이미 데이터가 있으면 생성하지 않음
+        if (userRepository.count() > 10) {
+            log.info("데이터가 이미 존재하므로 초기 데이터 생성을 건너뜁니다.");
+            return;
+        }
 
         log.info("=== 초기 테스트 데이터 생성 시작 ===");
 
