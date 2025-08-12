@@ -1,5 +1,6 @@
 package com.argo.backend.auth.security.jwt;
 
+import com.argo.backend.auth.dto.common.Tokens;
 import com.argo.backend.auth.exception.ExpiredTokenException;
 import com.argo.backend.auth.exception.InvalidClaimTypeException;
 import com.argo.backend.auth.exception.InvalidTokenException;
@@ -30,7 +31,15 @@ public class JwtTokenProvider {
         this.refreshTokenExpirationMs = refreshTokenExpiration; // 만료시간 주입
     }
 
-    public String generateAccessToken(Long userId, String username, List<String> roles) {
+    public Tokens generateTokens(Long userId, String username, List<String> roles) {
+
+        String accessToken = generateAccessToken(userId, username, roles);
+        String refreshToken =generateRefreshToken(userId, username, roles);
+
+        return new Tokens(accessToken, refreshToken);
+    }
+
+    private String generateAccessToken(Long userId, String username, List<String> roles) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessTokenExpirationMs);
 
@@ -44,7 +53,7 @@ public class JwtTokenProvider {
                 .compact();
     }
 
-    public String generateRefreshToken(Long userId, String username, List<String> roles) {
+    private String generateRefreshToken(Long userId, String username, List<String> roles) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + refreshTokenExpirationMs);
 
