@@ -9,7 +9,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
-import com.example.bogoargo.data.storage.TokenStorage
+import com.example.bogoargo.data.storage.SecureStorage
 import com.example.bogoargo.domain.repository.ILocationRepository
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
@@ -24,7 +24,7 @@ class LocationWorker @AssistedInject constructor(
     @Assisted private val context: Context,
     @Assisted workerParams: WorkerParameters,
     private val locationRepository: ILocationRepository,
-    private val tokenStorage: TokenStorage
+    private val secureStorage: SecureStorage
 ) : CoroutineWorker(context, workerParams) {
 
     private val fusedLocationClient: FusedLocationProviderClient = 
@@ -40,7 +40,7 @@ class LocationWorker @AssistedInject constructor(
         }
 
         // 토큰 확인 (로그인 상태 확인)
-        val accessToken = tokenStorage.getAccessToken()
+        val accessToken = secureStorage.getAccessToken()
         if (accessToken == null) {
             Log.d(TAG, "User not logged in, skipping location update")
             return Result.success()

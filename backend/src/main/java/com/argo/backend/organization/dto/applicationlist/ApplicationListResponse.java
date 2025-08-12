@@ -5,7 +5,7 @@ import java.util.List;
 public record ApplicationListResponse(
     ClassInfoDto classInfo,
     List<ApplicationDto> applications,
-    StatisticsDto statistics,
+    ApplicationStatisticsDto statistics,
     PaginationDto pagination
 ) {
 }

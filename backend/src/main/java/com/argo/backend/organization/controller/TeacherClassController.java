@@ -1,6 +1,5 @@
 package com.argo.backend.organization.controller;
 
-import com.argo.backend.domain.spot.entity.Spot;
 import com.argo.backend.organization.dto.CommonApiResponse;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateRequest;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateResponse;
@@ -26,6 +25,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import com.argo.backend.organization.message.ResponseMessage;
 
 import java.util.List;
 
@@ -33,31 +34,28 @@ import java.util.List;
 @RequiredArgsConstructor
 @RequestMapping("/api/teacher/classes")
 @Validated
+@PreAuthorize("hasRole('TEACHER')")
 public class TeacherClassController {
 
     private final ClassService classService;
     private final ClassApplicationService classApplicationService;
 
-    // 클리어
+    @PreAuthorize("hasRole('TEACHER','STUDENT)")
     @GetMapping("/locations")
-    public ResponseEntity<CommonApiResponse<List<LocationsResponse>>> getLocations(
-            @AuthenticationPrincipal Long teacherId
-    ) {
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "지역 목록 조회 성공", classService.getLocations(teacherId)));
+    public ResponseEntity<CommonApiResponse<List<LocationsResponse>>> getLocations() {
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.LOCATION_LIST_SUCCESS, classService.getLocations()));
     }
 
-
+    @PreAuthorize("hasRole('TEACHER','STUDENT)")
     @GetMapping("{classId}/spots")
     public ResponseEntity<CommonApiResponse<List<SpotsResponse>>> getSpots(
             @PathVariable Long classId,
             @AuthenticationPrincipal Long teacherId
     ) {
         List<SpotsResponse> spots = classService.getSpots(classId, teacherId);
-
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "장소 목록 조회 성공", spots));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.SPOT_LIST_SUCCESS, spots));
     }
 
-    // 클리어
     @GetMapping
     public ResponseEntity<CommonApiResponse<ClassListResponse.ClassListData>> getClassList(
             @RequestParam(value = "page", defaultValue = "1") int page,
@@ -69,10 +67,10 @@ public class TeacherClassController {
     ) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.unsorted());
         ClassListResponse response = classService.getTeacherClassList(teacherId, status, pageable);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 목록 조회 성공", response.getData()));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.CLASS_LIST_SUCCESS, response.getData()));
     }
 
-    // 통합된 반 상세정보 조회 (선생/학생 공통)
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     @GetMapping("/{classId}")
     public ResponseEntity<CommonApiResponse<ClassDetailResponse>> getClassDetail(
             @PathVariable Long classId,
@@ -80,20 +78,18 @@ public class TeacherClassController {
             @AuthenticationPrincipal Long userId
     ) {
         ClassDetailResponse response = classService.getClassDetail(userId, classId, include);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 상세정보 조회 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.CLASS_DETAIL_SUCCESS, response));
     }
 
-    // 클리어
     @PostMapping
     public ResponseEntity<CommonApiResponse<ClassCreateResponse>> createClass(
             @Valid @RequestBody ClassCreateRequest request,
             @AuthenticationPrincipal Long teacherId
     ) {
         ClassCreateResponse response = classService.createClass(teacherId, request);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 생성 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.CLASS_CREATE_SUCCESS, response));
     }
 
-    // 클리어
     @GetMapping("/{classId}/applications")
     public ResponseEntity<CommonApiResponse<ApplicationListResponse>> getApplicationList(
             @PathVariable Long classId,
@@ -104,10 +100,9 @@ public class TeacherClassController {
             @AuthenticationPrincipal Long teacherId
     ) {
         ApplicationListResponse response = classApplicationService.getApplicationList(classId, status, pageable, teacherId);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "신청 목록 조회 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.APPLICATION_LIST_SUCCESS, response));
     }
 
-    // 클리어
     @PutMapping("/{classId}/applications")
     public ResponseEntity<CommonApiResponse<ApplicationProcessResponse>> processApplications(
             @PathVariable Long classId,
@@ -115,10 +110,9 @@ public class TeacherClassController {
             @AuthenticationPrincipal Long teacherId
     ) {
         ApplicationProcessResponse response = classApplicationService.processApplications(classId, request, teacherId);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "신청 처리 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.APPLICATION_PROCESS_SUCCESS, response));
     }
 
-    // 확인해야하는데 거의 클리어인듯
     @GetMapping("/{classId}/students")
     public ResponseEntity<CommonApiResponse<StudentListResponse>> getClassStudents(
             @PathVariable Long classId,
@@ -129,17 +123,16 @@ public class TeacherClassController {
     ) {
         Pageable pageable = PageRequest.of(page - 1, size);
         StudentListResponse response = classService.getClassStudents(teacherId, classId, status, pageable);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "학생 목록 조회 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.STUDENT_LIST_SUCCESS, response));
     }
 
-    // 클리어
     @DeleteMapping("/{classId}")
     public ResponseEntity<CommonApiResponse<ClassDeleteResponse>> deleteClass(
             @PathVariable Long classId,
             @AuthenticationPrincipal Long teacherId
     ) {
         ClassDeleteResponse response = classService.deleteClass(teacherId, classId);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 삭제 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.CLASS_DELETE_SUCCESS, response));
     }
 }
 

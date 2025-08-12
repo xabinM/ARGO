@@ -10,11 +10,13 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
-import com.example.bogoargo.data.preferences.UserPreferences
 import com.example.bogoargo.domain.model.UserRole
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.viewmodels.SelectHomeViewModel
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -24,12 +26,24 @@ fun SelectHomeScreen(
     modifier: Modifier = Modifier
 ) {
     var currentUser by remember { mutableStateOf(null as com.example.bogoargo.domain.model.User?) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
     
-    // 사용자 정보 로드 - LoginUseCase를 이용
+    // ViewModels
     val loginUseCase = hiltViewModel<com.example.bogoargo.ui.viewmodels.user.LoginViewModel>()
+    val viewModel: SelectHomeViewModel = hiltViewModel()
     
+    // 사용자 정보 로드
     LaunchedEffect(Unit) {
         currentUser = loginUseCase.getLoggedInUser()
+    }
+    
+    // 네비게이션 이벤트 처리
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collectLatest { route ->
+            navController.navigate(route) {
+                popUpTo(0) { inclusive = true }
+            }
+        }
     }
     
     Scaffold(
@@ -60,14 +74,6 @@ fun SelectHomeScreen(
                         modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        NatureComponents.ProfileAvatar(
-                            emoji = if (currentUser?.role == UserRole.ROLE_TEACHER) "👩‍🏫" else "👶",
-                            backgroundColor = NatureColors.leafGreen,
-                            size = 80.dp
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
                         Text(
                             text = "${currentUser?.name ?: "사용자"}님, 환영합니다!",
                             style = NatureTypography.titleLarge
@@ -147,8 +153,95 @@ fun SelectHomeScreen(
                         }
                     }
                 }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // 메뉴 섹션
+                NatureComponents.NatureCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Text(
+                            text = "⚙️ 메뉴",
+                            style = NatureTypography.titleMedium
+                        )
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            // 설정 버튼
+                            NatureComponents.NatureButton(
+                                onClick = { 
+                                    navController.navigate("settings")
+                                },
+                                text = "⚙️ 설정",
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(56.dp),
+                                backgroundColor = NatureColors.leafGreen.copy(alpha = 0.8f)
+                            )
+
+                            // 로그아웃 버튼
+                            NatureComponents.NatureButton(
+                                onClick = { 
+                                    showLogoutDialog = true
+                                },
+                                text = "🚪 로그아웃",
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(56.dp),
+                                backgroundColor = NatureColors.softOrange.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                }
             }
         }
+    }
+    
+    // 로그아웃 확인 Dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = {
+                Text(
+                    text = "🚪 로그아웃",
+                    style = NatureTypography.titleMedium
+                )
+            },
+            text = {
+                Text(
+                    text = "정말 로그아웃하시겠습니까?\n다시 로그인해야 앱을 사용할 수 있습니다.",
+                    style = NatureTypography.bodyMedium
+                )
+            },
+            confirmButton = {
+                NatureComponents.NatureButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        viewModel.logout()
+                    },
+                    text = "로그아웃",
+                    backgroundColor = NatureColors.softOrange
+                )
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showLogoutDialog = false },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = NatureColors.earthBrown
+                    )
+                ) {
+                    Text("취소")
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = NatureShapes.medium
+        )
     }
 }
 

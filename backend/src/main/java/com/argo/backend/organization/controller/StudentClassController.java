@@ -15,11 +15,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.security.access.prepost.PreAuthorize;
+import com.argo.backend.organization.message.ResponseMessage;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/student/classes")
 @Validated
+@PreAuthorize("hasRole('STUDENT')")
 public class StudentClassController {
 
     private final ClassService classService;
@@ -35,10 +38,10 @@ public class StudentClassController {
     ) {
         Pageable pageable = PageRequest.of(page - 1, size, Sort.unsorted());
         ClassListResponse response = classService.getStudentClassList(studentId, status, pageable);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 목록 조회 성공", response.getData()));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.CLASS_LIST_SUCCESS, response.getData()));
     }
 
-    // 통합된 반 상세정보 조회 (선생/학생 공통)
+    @PreAuthorize("hasAnyRole('TEACHER', 'STUDENT')")
     @GetMapping("/{classId}")
     public ResponseEntity<CommonApiResponse<ClassDetailResponse>> getClassDetail(
             @PathVariable Long classId,
@@ -46,17 +49,16 @@ public class StudentClassController {
             @AuthenticationPrincipal Long userId
     ) {
         ClassDetailResponse response = classService.getClassDetail(userId, classId, include);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 상세정보 조회 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.CLASS_DETAIL_SUCCESS, response));
     }
 
-    // 클리어
     @PostMapping("/apply")
     public ResponseEntity<CommonApiResponse<ClassApplyResponse>> applyClass(
             @RequestParam String inviteCode,
             @AuthenticationPrincipal Long studentId
     ) {
         ClassApplyResponse response = classService.applyToClass(studentId, inviteCode);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 신청 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.CLASS_APPLY_SUCCESS, response));
     }
 
     @DeleteMapping("/{classId}/leave")
@@ -65,6 +67,6 @@ public class StudentClassController {
             @AuthenticationPrincipal Long studentId
     ) {
         ClassLeaveResponse response = classService.leaveClass(studentId, classId);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "반 탈퇴 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.CLASS_LEAVE_SUCCESS, response));
     }
 }
