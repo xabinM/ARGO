@@ -23,7 +23,7 @@ import com.argo.backend.organization.dto.classdelete.DeletedDataDto;
 import com.argo.backend.organization.dto.classdelete.DeletedStudentsDto;
 import com.argo.backend.organization.dto.classdelete.DeletedTeamsDto;
 import com.argo.backend.organization.dto.classdelete.DeletedApplicationsDto;
-import com.argo.backend.organization.dto.classdetail.StatisticsDto;
+import com.argo.backend.organization.dto.classdetail.ClassStatisticsDto;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateRequest;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateResponse;
 import com.argo.backend.organization.dto.classlist.ClassListResponse;
@@ -88,15 +88,12 @@ public class ClassService {
 
 
     @Transactional
-    public List<LocationsResponse> getLocations(Long teacherId) {
-        // 선생님 권한 검증
-        teacherRepository.findById(teacherId)
-                .orElseThrow(() -> new UserNotFoundException());
-                
+    public List<LocationsResponse> getLocations() {
         return locationRepository.findAll().stream()
                 .map(LocationsResponse::from)
                 .collect(Collectors.toList());
     }
+
 
     @Transactional
     public List<SpotsResponse> getSpots(Long classId, Long teacherId){
@@ -167,8 +164,6 @@ public class ClassService {
 
         validateUserRole(user);
 
-//        ClassRoom classRoom = classRoomRepository.findByInviteCode(inviteCode)
-//                .orElseThrow(InvalidInviteCodeException::new);
         ClassRoom classRoom = classRoomRepository.findByInviteCodeWithLocationAndTeacher(inviteCode)
                 .orElseThrow(InvalidInviteCodeException::new);
 
@@ -198,40 +193,7 @@ public class ClassService {
         );
     }
 
-    private boolean isValidInviteCode(String inviteCode) {
-        return inviteCode != null && !inviteCode.trim().isEmpty();
-    }
 
-    private void validateUserRole(User user) {
-        if (user.getRole() != Role.ROLE_STUDENT) {
-            throw new StudentOnlyException();
-        }
-    }
-
-    private String generateUniqueInviteCode() {
-        SecureRandom random = new SecureRandom();
-        String code;
-
-        do {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < INVITE_CODE_LENGTH; i++) {
-                int index = random.nextInt(INVITE_CHARACTERS.length());
-                sb.append(INVITE_CHARACTERS.charAt(index));
-            }
-            code = sb.toString();
-        } while (classRoomRepository.existsByInviteCode(code));
-
-        return code;
-    }
-
-    public boolean isAvailableForApplication(ClassRoom classRoom) {
-        return classRoom.getStatus() == ClassStatus.ACTIVE
-                && classRoom.getActivityDate() != null
-                && !classRoom.getActivityDate().isBefore(LocalDate.now());
-    }
-    
-
-    /// 페이지네이션 공부해야한다
     @Transactional
     public ClassListResponse getTeacherClassList(Long teacherId, String status, Pageable pageable) {
         Teacher teacher = teacherRepository.findById(teacherId)
@@ -260,17 +222,9 @@ public class ClassService {
         return ClassListResponse.success(classInfoList, pagination);
     }
 
-    /// 페이지네이션 공부해야한다
-    // 학생의 반 목록 조회
+
     @Transactional
     public ClassListResponse getStudentClassList(Long studentId, String status, Pageable pageable) {
-        User student = userRepository.findById(studentId)
-                .orElseThrow(UserNotFoundException::new);
-        
-        if (student.getRole() != Role.ROLE_STUDENT) {
-            throw new StudentOnlyException();
-        }
-        
         Page<Object[]> classRoomsWithCounts;
         
         if ("all".equals(status)) {
@@ -293,27 +247,8 @@ public class ClassService {
         
         return ClassListResponse.success(classInfoList, pagination);
     }
-    
-    private ClassStatus parseClassStatus(String status) {
-        return switch (status.toLowerCase()) {
-            case "active" -> ClassStatus.ACTIVE;
-            case "inactive" -> ClassStatus.INACTIVE;
-            default -> ClassStatus.ACTIVE;
-        };
-    }
-    
-    private int getApprovedStudentCount(Long classId) {
-        return (int) classApplicationRepository.countByClassRoomClassIdAndStatus(
-                classId, ApplicationStatus.APPROVED);
-    }
-    
-    private int getTeamCount(Long classId) {
-        ClassRoom classRoom = classRoomRepository.findById(classId).orElse(null);
-        if (classRoom == null) return 0;
-        return (int) teamRepository.countByClassRoom(classRoom); // COUNT 쿼리로 최적화
-    }
-    
-    // 통합된 반 상세정보 조회 (선생/학생 공통)
+
+
     @Transactional
     public ClassDetailResponse getClassDetail(Long userId, Long classId, String include) {
         validateClassId(classId);
@@ -344,7 +279,7 @@ public class ClassService {
             teams = getTeamsForClass(classId);
         }
         
-        StatisticsDto statistics = new StatisticsDto(
+        ClassStatisticsDto statistics = new ClassStatisticsDto(
                 students != null ? students.size() : getApprovedStudentCount(classId),
                 teams != null ? teams.size() : getTeamCount(classId)
         );
@@ -353,42 +288,6 @@ public class ClassService {
     }
 
 
-    private void validateClassId(Long classId) {
-        if (classId == null || classId <= 0) {
-            throw new InvalidClassIdException();
-        }
-    }
-
-
-    private List<StudentDto> getStudentsForClass(Long classId) {
-        List<Object[]> results = classStudentRepository.findApprovedStudentsWithTeamAndJoinDateByClassId(classId);
-        return results.stream()
-                .map(result -> {
-                    User student = (User) result[0];
-                    java.time.LocalDateTime joinedAt = (java.time.LocalDateTime) result[1];
-                    Team team = (Team) result[2]; // UserTeam 기반으로 수정된 쿼리에서 team 정보 가져옴
-                    Long teamId = team != null ? team.getTeamId() : null;
-                    String teamName = team != null ? team.getTeamName() : null;
-                    return StudentDto.from(student, teamId, teamName, joinedAt);
-                })
-                .toList();
-    }
-
-    // 선생 전용
-    private List<TeamDetailDto> getTeamsForClass(Long classId) {
-        List<Team> teams = teamRepository.findTeamsByClassIdWithActiveMembersAndLeader(classId);
-        return teams.stream()
-                .map(team -> {
-                    List<User> members = team.getActiveMembers(); // 이미 FETCH JOIN으로 로딩됨 (쿼리 없음)
-                    List<TeamMemberDto> memberDtos = members.stream()
-                            .map(TeamMemberDto::from)
-                            .toList();
-                    return TeamDetailDto.from(team, memberDtos); // leader도 이미 로딩됨 (쿼리 없음)
-                })
-                .toList();
-    }
-    
-    // 반 참여 학생 목록 조회
     @Transactional
     public StudentListResponse getClassStudents(Long teacherId, Long classId, String status, Pageable pageable) {
         ClassRoom classRoom = validateClassAccess(teacherId, classId);
@@ -408,83 +307,12 @@ public class ClassService {
         return StudentListResponse.of(classInfo, students, teamSummary, pagination);
     }
 
-    // N+1 문제 해결: Teacher를 FETCH JOIN으로 한 번에 로딩하여 추가 쿼리 방지
-    private ClassRoom validateClassAccess(Long teacherId, Long classId) {
-        validateClassId(classId);
-        ClassRoom classRoom = classRoomRepository.findByIdWithTeacher(classId)
-                .orElseThrow(ClassNotFoundException::new);
-        if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
-            throw new UnauthorizedClassAccessException();
-        }
-        return classRoom;
-    }
-    
-    private StudentDetailDto mapToStudentDetailDto(Object[] result) {
-        User student = (User) result[0];
-        java.time.LocalDateTime joinedAt = (java.time.LocalDateTime) result[1];
-        Team team = (Team) result[2]; // UserTeam 기반으로 수정된 쿼리에서 team 정보 가져옴
-        com.argo.backend.organization.dto.studentlist.TeamInfoDto teamInfo = team != null ? 
-            com.argo.backend.organization.dto.studentlist.TeamInfoDto.from(team, null) : null;
-        return StudentDetailDto.from(student, joinedAt, teamInfo);
-    }
 
-    // string -> statusType
-    private StatusType parseStatusFilter(String status) {
-        if (status == null || "all".equals(status)) {
-            return StatusType.ALL;
-        } else if ("assigned".equals(status)) {
-            return StatusType.ASSIGNED;
-        } else if ("unassigned".equals(status)) {
-            return StatusType.UNASSIGNED;
-        } else {
-            throw new InvalidStatusParameterException();
-        }
-    }
-    
-    private Page<Object[]> getStudentsByStatus(Long classId, StatusType statusType, Pageable pageable) {
-        return switch (statusType) {
-            case ALL -> classStudentRepository.findApprovedStudentsWithTeamAndJoinDateByClassIdPaged(classId, pageable);
-            case ASSIGNED -> classStudentRepository.findAssignedStudentsWithTeamAndJoinDateByClassIdPaged(classId, pageable);
-            case UNASSIGNED -> classStudentRepository.findUnassignedStudentsWithTeamAndJoinDateByClassIdPaged(classId, pageable);
-        };
-    }
-    
-    private TeamSummaryDto buildTeamSummary(Long classId, int totalStudents) {
-        List<Team> teams = teamRepository.findTeamsByClassId(classId);
-        
-        // N+1 문제 해결: 모든 팀의 멤버 수를 한 번에 조회
-        List<Long> teamIds = teams.stream()
-                .map(Team::getTeamId)
-                .toList();
-        
-        // 배치 쿼리로 모든 팀의 멤버 수 조회
-        List<Object[]> memberCounts = classStudentRepository.findTeamMemberCounts(teamIds);
-        Map<Long, Integer> teamMemberCountMap = memberCounts.stream()
-                .collect(Collectors.toMap(
-                    result -> (Long) result[0],
-                    result -> ((Number) result[1]).intValue()
-                ));
-        
-        List<TeamStatusDto> teamStatuses = teams.stream()
-                .map(team -> TeamStatusDto.from(team, teamMemberCountMap.getOrDefault(team.getTeamId(), 0)))
-                .toList();
-        
-        int totalAssigned = teamStatuses.stream()
-                .mapToInt(TeamStatusDto::getCurrentMembers)
-                .sum();
-        
-        return TeamSummaryDto.of(teams.size(), totalAssigned, totalStudents - totalAssigned, teamStatuses);
-    }
-    
     @Transactional
     public ClassLeaveResponse leaveClass(Long studentId, Long classId) {
         User student = userRepository.findById(studentId)
                 .orElseThrow(UserNotFoundException::new);
-        
-        if (student.getRole() != Role.ROLE_STUDENT) {
-            throw new StudentOnlyException();
-        }
-        
+
         ClassRoom classRoom = classRoomRepository.findById(classId)
                 .orElseThrow(ClassNotFoundException::new);
         
@@ -519,35 +347,10 @@ public class ClassService {
             classStatus
         );
     }
-    
-    private ClassApplication findStudentApplication(Long studentId, Long classId) {
-        ClassApplication application = classApplicationRepository.findApprovedApplicationByStudentAndClass(studentId, classId);
-        
-        if (application == null) {
-            throw new NotParticipatingClassException();
-        }
-        
-        return application;
-    }
-    
-    private void validateActivityStatus(ClassRoom classRoom) {
-        LocalDate today = LocalDate.now();
-        if (classRoom.getActivityDate().equals(today)) {
-            throw new ActivityInProgressException();
-        }
-    }
-    
-    private ClassStatusDto buildClassStatus(ClassRoom classRoom) {
-        long approvedCount = classApplicationRepository.countByClassRoomClassIdAndStatus(classRoom.getClassId(), ApplicationStatus.APPROVED);
-        
-        return ClassStatusDto.of((int) approvedCount, classRoom.getMaxStudents());
-    }
+
 
     @Transactional
     public ClassDeleteResponse deleteClass(Long teacherId, Long classId) {
-        Teacher teacher = teacherRepository.findById(teacherId)
-                .orElseThrow(InsufficientPermissionException::new);
-                
         ClassRoom classRoom = classRoomRepository.findById(classId)
                 .orElseThrow(ClassNotFoundException::new);
                 
@@ -600,7 +403,186 @@ public class ClassService {
         
         return ClassDeleteResponse.of(deletedClass, deletedData);
     }
-    
+
+
+
+    private boolean isValidInviteCode(String inviteCode) {
+        return inviteCode != null && !inviteCode.trim().isEmpty();
+    }
+
+    private void validateUserRole(User user) {
+        if (user.getRole() != Role.ROLE_STUDENT) {
+            throw new StudentOnlyException();
+        }
+    }
+
+    private String generateUniqueInviteCode() {
+        SecureRandom random = new SecureRandom();
+        String code;
+
+        do {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < INVITE_CODE_LENGTH; i++) {
+                int index = random.nextInt(INVITE_CHARACTERS.length());
+                sb.append(INVITE_CHARACTERS.charAt(index));
+            }
+            code = sb.toString();
+        } while (classRoomRepository.existsByInviteCode(code));
+
+        return code;
+    }
+
+    public boolean isAvailableForApplication(ClassRoom classRoom) {
+        return classRoom.getStatus() == ClassStatus.ACTIVE
+                && classRoom.getActivityDate() != null
+                && !classRoom.getActivityDate().isBefore(LocalDate.now());
+    }
+
+    private ClassStatus parseClassStatus(String status) {
+        return switch (status.toLowerCase()) {
+            case "active" -> ClassStatus.ACTIVE;
+            case "inactive" -> ClassStatus.INACTIVE;
+            default -> ClassStatus.ACTIVE;
+        };
+    }
+
+    private int getApprovedStudentCount(Long classId) {
+        return (int) classApplicationRepository.countByClassRoomClassIdAndStatus(
+                classId, ApplicationStatus.APPROVED);
+    }
+
+    private int getTeamCount(Long classId) {
+        ClassRoom classRoom = classRoomRepository.findById(classId).orElse(null);
+        if (classRoom == null) return 0;
+        return (int) teamRepository.countByClassRoom(classRoom); // COUNT 쿼리로 최적화
+    }
+
+    private void validateClassId(Long classId) {
+        if (classId == null || classId <= 0) {
+            throw new InvalidClassIdException();
+        }
+    }
+
+
+    private List<StudentDto> getStudentsForClass(Long classId) {
+        List<Object[]> results = classStudentRepository.findApprovedStudentsWithTeamAndJoinDateByClassId(classId);
+        return results.stream()
+                .map(result -> {
+                    User student = (User) result[0];
+                    java.time.LocalDateTime joinedAt = (java.time.LocalDateTime) result[1];
+                    Team team = (Team) result[2]; // UserTeam 기반으로 수정된 쿼리에서 team 정보 가져옴
+                    Long teamId = team != null ? team.getTeamId() : null;
+                    String teamName = team != null ? team.getTeamName() : null;
+                    return StudentDto.from(student, teamId, teamName, joinedAt);
+                })
+                .toList();
+    }
+
+    // 선생 전용
+    private List<TeamDetailDto> getTeamsForClass(Long classId) {
+        List<Team> teams = teamRepository.findTeamsByClassIdWithActiveMembersAndLeader(classId);
+        return teams.stream()
+                .map(team -> {
+                    List<User> members = team.getActiveMembers(); // 이미 FETCH JOIN으로 로딩됨 (쿼리 없음)
+                    List<TeamMemberDto> memberDtos = members.stream()
+                            .map(TeamMemberDto::from)
+                            .toList();
+                    return TeamDetailDto.from(team, memberDtos); // leader도 이미 로딩됨 (쿼리 없음)
+                })
+                .toList();
+    }
+
+    // N+1 문제 해결: Teacher를 FETCH JOIN으로 한 번에 로딩하여 추가 쿼리 방지
+    private ClassRoom validateClassAccess(Long teacherId, Long classId) {
+        validateClassId(classId);
+        ClassRoom classRoom = classRoomRepository.findByIdWithTeacher(classId)
+                .orElseThrow(ClassNotFoundException::new);
+        if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
+            throw new UnauthorizedClassAccessException();
+        }
+        return classRoom;
+    }
+
+    private StudentDetailDto mapToStudentDetailDto(Object[] result) {
+        User student = (User) result[0];
+        java.time.LocalDateTime joinedAt = (java.time.LocalDateTime) result[1];
+        Team team = (Team) result[2]; // UserTeam 기반으로 수정된 쿼리에서 team 정보 가져옴
+        com.argo.backend.organization.dto.studentlist.TeamInfoDto teamInfo = team != null ?
+                com.argo.backend.organization.dto.studentlist.TeamInfoDto.from(team, null) : null;
+        return StudentDetailDto.from(student, joinedAt, teamInfo);
+    }
+
+    // string -> statusType
+    private StatusType parseStatusFilter(String status) {
+        if (status == null || "all".equals(status)) {
+            return StatusType.ALL;
+        } else if ("assigned".equals(status)) {
+            return StatusType.ASSIGNED;
+        } else if ("unassigned".equals(status)) {
+            return StatusType.UNASSIGNED;
+        } else {
+            throw new InvalidStatusParameterException();
+        }
+    }
+
+    private Page<Object[]> getStudentsByStatus(Long classId, StatusType statusType, Pageable pageable) {
+        return switch (statusType) {
+            case ALL -> classStudentRepository.findApprovedStudentsWithTeamAndJoinDateByClassIdPaged(classId, pageable);
+            case ASSIGNED -> classStudentRepository.findAssignedStudentsWithTeamAndJoinDateByClassIdPaged(classId, pageable);
+            case UNASSIGNED -> classStudentRepository.findUnassignedStudentsWithTeamAndJoinDateByClassIdPaged(classId, pageable);
+        };
+    }
+
+    private TeamSummaryDto buildTeamSummary(Long classId, int totalStudents) {
+        List<Team> teams = teamRepository.findTeamsByClassId(classId);
+
+        // N+1 문제 해결: 모든 팀의 멤버 수를 한 번에 조회
+        List<Long> teamIds = teams.stream()
+                .map(Team::getTeamId)
+                .toList();
+
+        // 배치 쿼리로 모든 팀의 멤버 수 조회
+        List<Object[]> memberCounts = classStudentRepository.findTeamMemberCounts(teamIds);
+        Map<Long, Integer> teamMemberCountMap = memberCounts.stream()
+                .collect(Collectors.toMap(
+                        result -> (Long) result[0],
+                        result -> ((Number) result[1]).intValue()
+                ));
+
+        List<TeamStatusDto> teamStatuses = teams.stream()
+                .map(team -> TeamStatusDto.from(team, teamMemberCountMap.getOrDefault(team.getTeamId(), 0)))
+                .toList();
+
+        int totalAssigned = teamStatuses.stream()
+                .mapToInt(TeamStatusDto::getCurrentMembers)
+                .sum();
+
+        return TeamSummaryDto.of(teams.size(), totalAssigned, totalStudents - totalAssigned, teamStatuses);
+    }
+
+    private ClassApplication findStudentApplication(Long studentId, Long classId) {
+        ClassApplication application = classApplicationRepository.findApprovedApplicationByStudentAndClass(studentId, classId);
+
+        if (application == null) {
+            throw new NotParticipatingClassException();
+        }
+
+        return application;
+    }
+
+    private void validateActivityStatus(ClassRoom classRoom) {
+        LocalDate today = LocalDate.now();
+        if (classRoom.getActivityDate().equals(today)) {
+            throw new ActivityInProgressException();
+        }
+    }
+
+    private ClassStatusDto buildClassStatus(ClassRoom classRoom) {
+        long approvedCount = classApplicationRepository.countByClassRoomClassIdAndStatus(classRoom.getClassId(), ApplicationStatus.APPROVED);
+
+        return ClassStatusDto.of((int) approvedCount, classRoom.getMaxStudents());
+    }
+
     private void validateDeletionRules(ClassRoom classRoom) {
         LocalDate today = LocalDate.now();
         if (classRoom.getActivityDate().equals(today)) {
@@ -611,4 +593,5 @@ public class ClassService {
     private enum StatusType {
         ALL, ASSIGNED, UNASSIGNED
     }
+
 }
