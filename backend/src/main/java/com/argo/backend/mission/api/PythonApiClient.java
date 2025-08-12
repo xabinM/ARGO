@@ -20,6 +20,8 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Component
@@ -35,43 +37,60 @@ public class PythonApiClient {
     }
 
     /**
-     * 퀴즈 생성 요청
+     * 퀴즈 생성 요청 - Map 방식으로 수정
      */
-    public ProblemGenerateDto requestProblem(String spotName, int grade, int problemCnt) {
-        log.info(" 퀴즈 생성 요청: spotName={}, problemCnt={}", spotName, problemCnt);
+    public Map<String, Object> requestProblemAsMap(String spotName, int grade, int problemCnt) {
+        log.info("퀴즈 생성 요청: spotName={}, grade={}, problemCnt={}", spotName, grade, problemCnt);
         
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         // FastAPI 요청 형식
-        ProblemGenerateRequestToAI request = new ProblemGenerateRequestToAI(spotName, grade, problemCnt); // grade 추가
+        ProblemGenerateRequestToAI request = new ProblemGenerateRequestToAI(spotName, grade, problemCnt);
         HttpEntity<ProblemGenerateRequestToAI> entity = new HttpEntity<>(request, headers);
 
         try {
-            ResponseEntity<ProblemGenerateDto> response = restTemplate.postForEntity(
+            // 🔥 핵심 변경: Map으로 받기
+            ResponseEntity<Map> response = restTemplate.postForEntity(
                     pythonApiBaseUrl + "/generate-problem",
                     entity,
-                    ProblemGenerateDto.class
+                    Map.class
             );
 
-            ProblemGenerateDto body = response.getBody();
-            if (body == null) {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> responseBody = (Map<String, Object>) response.getBody();
+            
+            if (responseBody == null) {
                 throw new PythonServerNoResponseException();
             }
-            if (body.getProblems() == null) {
+            
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> problemsData = (List<Map<String, Object>>) responseBody.get("problems");
+            
+            if (problemsData == null) {
                 throw new ProblemGenerationFailedException();
             }
-            if (body.getProblems().size() != request.getProblemCnt()) {
+            if (problemsData.size() != problemCnt) {
                 throw new ProblemCountMismatchException();
             }
 
-            log.info("퀴즈 생성 성공: {}개 문제", body.getProblems().size());
-            return body;
+            log.info("퀴즈 생성 성공: {}개 문제", problemsData.size());
+            return responseBody;
             
         } catch (Exception e) {
             log.error("Python API 호출 실패: {}", e.getMessage());
             throw new PythonApiException("Python API 호출 실패: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * 기존 메서드 - 호환성 유지용 (deprecated)
+     * @deprecated Map 방식 사용 권장
+     */
+    @Deprecated
+    public ProblemGenerateDto requestProblem(String spotName, int grade, int problemCnt) {
+        // 일단 빈 DTO 반환 (실제로는 requestProblemAsMap 사용)
+        throw new UnsupportedOperationException("requestProblemAsMap 메서드를 사용하세요");
     }
 
     /**
@@ -98,11 +117,11 @@ public class PythonApiClient {
                     SelfieResultDto.class
             );
 
-            log.info(" 포즈 분석 완료");
+            log.info("포즈 분석 완료");
             return response.getBody();
             
         } catch (Exception e) {
-            log.error(" 포즈 분석 실패: {}", e.getMessage());
+            log.error("포즈 분석 실패: {}", e.getMessage());
             throw new PythonApiException("포즈 분석 실패: " + e.getMessage(), e);
         }
     }

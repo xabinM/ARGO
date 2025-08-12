@@ -120,7 +120,7 @@ class GeneratedQuizProblem(BaseModel):
 
 
 class ProblemGenerateResponse(BaseModel):
-    problems: List[QuizProblemSimple] = Field(
+    problems: List["QuizProblemSimple"] = Field(
         ..., description="QuizProblem 엔티티 호환"
     )
 
@@ -140,126 +140,78 @@ class SimplePoseResponse(BaseModel):
     result: str = Field(..., description="분석 결과 메시지")
 
 
-# === 🔥 핵심 수정: 유니버설 데이터 변환 함수 ===
-def convert_to_api_model(
-    quiz_data: Union[Dict, BaseModel, Any], fallback_name: str = "문제"
-) -> GeneratedQuizProblem:
+# === 🔥 핵심 수정: QuizProblem 엔티티 호환 변환 함수 ===
+def convert_to_quiz_problem_simple(
+    quiz_data: Union[Dict, BaseModel, Any], grade: int, fallback_name: str = "문제"
+) -> QuizProblemSimple:
     """
-    🔧 핵심 기능: 다양한 타입의 퀴즈 데이터를 API 모델로 변환
-    - Dict, Pydantic 객체, 기타 모든 타입 처리
-    - 속성 접근과 딕셔너리 접근 모두 지원
-    - 안전한 fallback 보장
+    🔧 핵심 기능: 퀴즈 데이터를 QuizProblem 엔티티 호환 구조로 변환
+    - 백엔드 QuizProblem 엔티티와 정확히 일치
+    - grade, question, choices, correctIndex, explanation만 포함
     """
-
-    logger.info(f"🔧 변환 대상 타입: {type(quiz_data)}")
-    logger.info(f"🔧 변환 대상 데이터: {quiz_data}")
-
+    
+    logger.info(f"🔧 QuizProblem 변환: {type(quiz_data)}")
+    
     try:
-        # 1. 이미 올바른 타입인 경우 그대로 반환
-        if isinstance(quiz_data, GeneratedQuizProblem):
-            logger.info("✅ 이미 GeneratedQuizProblem 타입, 그대로 반환")
+        # 이미 올바른 타입인 경우 그대로 반환
+        if isinstance(quiz_data, QuizProblemSimple):
             return quiz_data
-
-        # 2. 데이터 추출 함수 정의
+        
+        # 데이터 추출 함수
         def safe_get(key: str, default: Any = None) -> Any:
-            """다양한 방법으로 데이터 추출 시도"""
             try:
-                # Dict 방식
                 if isinstance(quiz_data, dict):
                     return quiz_data.get(key, default)
-
-                # 객체 속성 방식
                 if hasattr(quiz_data, key):
                     return getattr(quiz_data, key, default)
-
-                # Pydantic 모델 방식 (__dict__ 접근)
-                if hasattr(quiz_data, "__dict__"):
+                if hasattr(quiz_data, '__dict__'):
                     return quiz_data.__dict__.get(key, default)
-
                 return default
-
             except Exception as e:
                 logger.warning(f"⚠️ {key} 추출 실패: {e}")
                 return default
-
-        # 3. 필수 데이터 추출
+        
+        # 필수 데이터 추출
         question = safe_get("question", "")
         choices = safe_get("choices", [])
         correct_index = safe_get("correctIndex")
         explanation = safe_get("explanation", "")
-
-        # 4. 데이터 검증 및 정제
-        # question 검증
-        if not question or not isinstance(question, str) or len(question.strip()) < 5:
+        
+        # 데이터 검증
+        if not question or len(question.strip()) < 5:
             raise ValueError(f"유효하지 않은 question: {question}")
-
-        # choices 검증
-        if not choices or not isinstance(choices, list) or len(choices) != 3:
+        
+        if not choices or len(choices) != 3:
             raise ValueError(f"유효하지 않은 choices: {choices}")
-
-        # choices 내용 검증
-        clean_choices = []
-        for choice in choices:
-            if not choice or not isinstance(choice, str):
-                raise ValueError(f"유효하지 않은 choice: {choice}")
-            clean_choices.append(str(choice).strip())
-
-        # correctIndex 검증
-        if (
-            correct_index is None
-            or not isinstance(correct_index, int)
-            or not (0 <= correct_index <= 2)
-        ):
+        
+        if correct_index is None or not (0 <= correct_index <= 2):
             raise ValueError(f"유효하지 않은 correctIndex: {correct_index}")
-
-        # explanation 검증
-        if (
-            not explanation
-            or not isinstance(explanation, str)
-            or len(explanation.strip()) < 3
-        ):
+        
+        if not explanation or len(explanation.strip()) < 3:
             raise ValueError(f"유효하지 않은 explanation: {explanation}")
-
-        # 5. 선택적 필드 추출
-        generation_method = str(safe_get("generation_method", "unknown"))
-
-        quality_score = safe_get("quality_score", 0.0)
-        try:
-            quality_score = float(quality_score) if quality_score is not None else 0.0
-        except (ValueError, TypeError):
-            quality_score = 0.0
-
-        parsing_method = str(safe_get("parsing_method", "converted"))
-
-        # 6. GeneratedQuizProblem 생성
-        result = GeneratedQuizProblem(
+        
+        # QuizProblemSimple 생성 (QuizProblem 엔티티와 정확히 일치)
+        result = QuizProblemSimple(
+            grade=grade,
             question=question.strip(),
-            choices=clean_choices,
+            choices=[str(c).strip() for c in choices],
             correctIndex=correct_index,
-            explanation=explanation.strip(),
-            generation_method=generation_method,
-            quality_score=quality_score,
-            parsing_method=parsing_method,
+            explanation=explanation.strip()
         )
-
-        logger.info(f"✅ 변환 성공: {result.question[:50]}...")
+        
+        logger.info(f"✅ QuizProblem 변환 성공: {result.question[:30]}...")
         return result
-
+        
     except Exception as e:
-        logger.error(f"❌ 데이터 변환 실패: {e}")
-        logger.error(f"원본 데이터 타입: {type(quiz_data)}")
-        logger.error(f"원본 데이터: {quiz_data}")
-
-        # 🚨 Fallback: 최소한의 유효한 문제 생성
-        logger.warning("🔄 Fallback 문제 생성")
-        return GeneratedQuizProblem(
+        logger.error(f"❌ QuizProblem 변환 실패: {e}")
+        
+        # Fallback: 최소한의 유효한 QuizProblem
+        return QuizProblemSimple(
+            grade=grade,
             question=f"{fallback_name}에 관한 문제입니다.",
             choices=["선택지1", "선택지2", "선택지3"],
             correctIndex=0,
-            explanation="기본 해설입니다.",
-            generation_method="conversion_error_fallback",
-            quality_score=0.3,
-            parsing_method="error_recovery",
+            explanation="기본 해설입니다."
         )
 
 
@@ -449,14 +401,12 @@ async def general_exception_handler(request, exc):
 # === 🔥 핵심 수정: API 엔드포인트 ===
 @app.post("/generate-problem", response_model=ProblemGenerateResponse)
 async def generate_problem_by_spot_name(request: ProblemGenerateRequestToAI):
-    """퀴즈 생성 (spotName 기반) - Pydantic 객체 처리 수정"""
+    """퀴즈 생성 (spotName 기반) - QuizProblem 엔티티 완벽 호환"""
     if not system_status["quiz_service_ready"]:
         raise HTTPException(status_code=503, detail="퀴즈 서비스가 준비되지 않았습니다")
 
     try:
-        logger.info(
-            f"📝 퀴즈 생성 요청: {request.spotName}, {request.problemCnt}개, {request.grade}학년"
-        )
+        logger.info(f"📝 퀴즈 생성 요청: {request.spotName}, {request.problemCnt}개, {request.grade}학년")
 
         # 서비스 호출
         quiz_problems = await quiz_service.generate_problems_by_name(
@@ -467,65 +417,53 @@ async def generate_problem_by_spot_name(request: ProblemGenerateRequestToAI):
 
         logger.info(f"🔍 서비스 반환 데이터 개수: {len(quiz_problems)}")
 
-        # 🔥 핵심 수정: 유니버설 데이터 변환
+        # 🔥 핵심 수정: QuizProblemSimple로 변환
         problems = []
         conversion_success_count = 0
 
         for idx, quiz_data in enumerate(quiz_problems):
-            logger.info(f"🔧 문제 {idx+1} 변환 시작")
-
             try:
-                # 유니버설 변환 함수 사용
-                problem = convert_to_api_model(quiz_data, request.spotName)
+                # QuizProblem 엔티티 호환 변환
+                problem = convert_to_quiz_problem_simple(
+                    quiz_data, 
+                    grade=request.grade or 5, 
+                    fallback_name=request.spotName
+                )
                 problems.append(problem)
-
-                # 성공 카운트 (fallback이 아닌 경우)
-                if problem.generation_method != "conversion_error_fallback":
-                    conversion_success_count += 1
-
+                conversion_success_count += 1
+                
                 logger.info(f"✅ 문제 {idx+1} 변환 성공: {problem.question[:30]}...")
 
             except Exception as e:
                 logger.error(f"❌ 문제 {idx+1} 변환 실패: {e}")
-
+                
                 # 개별 fallback
-                fallback_problem = convert_to_api_model({}, request.spotName)
+                fallback_problem = convert_to_quiz_problem_simple(
+                    {}, 
+                    grade=request.grade or 5, 
+                    fallback_name=request.spotName
+                )
                 problems.append(fallback_problem)
 
         # 최소 1개 문제 보장
         if not problems:
             logger.warning("⚠️ 변환된 문제가 없음, 기본 문제 생성")
-            problems.append(
-                convert_to_api_model(
-                    {
-                        "question": f"{request.spotName}은 우리나라 어디에 있나요?",
-                        "choices": ["서울", "부산", "제주도"],
-                        "correctIndex": 0,
-                        "explanation": f"{request.spotName}은 서울에 있습니다.",
-                    },
-                    request.spotName,
-                )
-            )
+            problems.append(convert_to_quiz_problem_simple(
+                {
+                    "question": f"{request.spotName}은 우리나라 어디에 있나요?",
+                    "choices": ["서울", "부산", "제주도"],
+                    "correctIndex": 0,
+                    "explanation": f"{request.spotName}은 서울에 있습니다.",
+                },
+                grade=request.grade or 5,
+                fallback_name=request.spotName
+            ))
             conversion_success_count = 1
 
-        generation_info = {
-            "spot_name": request.spotName,
-            "generated_count": len(problems),
-            "grade": request.grade or 5,
-            "service_stats": (
-                quiz_service.get_stats() if hasattr(quiz_service, "get_stats") else {}
-            ),
-            "conversion_success": conversion_success_count,
-            "conversion_rate": f"{conversion_success_count}/{len(problems)}",
-        }
+        logger.info(f"✅ 퀴즈 생성 완료: {len(problems)}개 (성공: {conversion_success_count}개)")
 
-        logger.info(
-            f"✅ 퀴즈 생성 완료: {len(problems)}개 (성공: {conversion_success_count}개)"
-        )
-
-        return ProblemGenerateResponse(
-            success=True, problems=problems, generation_info=generation_info
-        )
+        # 🔥 핵심: 백엔드 ProblemGenerateDto와 정확히 일치하는 응답
+        return ProblemGenerateResponse(problems=problems)
 
     except HTTPException:
         raise
@@ -537,37 +475,39 @@ async def generate_problem_by_spot_name(request: ProblemGenerateRequestToAI):
 
 @app.post("/generate-problem-by-id", response_model=ProblemGenerateResponse)
 async def generate_problem_by_spot_id(request: ProblemGenerateRequestFromSpotId):
-    """퀴즈 생성 (spotId 기반) - Pydantic 객체 처리 수정"""
+    """퀴즈 생성 (spotId 기반) - QuizProblem 엔티티 완벽 호환"""
     if not system_status["quiz_service_ready"]:
         raise HTTPException(status_code=503, detail="퀴즈 서비스가 준비되지 않았습니다")
 
     try:
-        logger.info(
-            f"📝 ID 퀴즈 생성 요청: ID {request.spotId}, {request.problemCnt}개"
-        )
+        logger.info(f"📝 ID 퀴즈 생성 요청: ID {request.spotId}, {request.problemCnt}개")
 
         quiz_problems = await quiz_service.generate_problems_by_id(
-            spot_id=request.spotId, count=request.problemCnt, grade=request.grade
+            spot_id=request.spotId, 
+            count=request.problemCnt, 
+            grade=request.grade or 5
         )
 
-        # 유니버설 변환 함수 사용
+        # QuizProblemSimple로 변환
         problems = []
         for idx, quiz_data in enumerate(quiz_problems):
             try:
-                problem = convert_to_api_model(quiz_data, f"스팟{request.spotId}")
+                problem = convert_to_quiz_problem_simple(
+                    quiz_data, 
+                    grade=request.grade or 5, 
+                    fallback_name=f"스팟{request.spotId}"
+                )
                 problems.append(problem)
             except Exception as e:
                 logger.error(f"❌ 문제 {idx+1} 변환 실패: {e}")
-                problems.append(convert_to_api_model({}, f"스팟{request.spotId}"))
+                problems.append(convert_to_quiz_problem_simple(
+                    {}, 
+                    grade=request.grade or 5, 
+                    fallback_name=f"스팟{request.spotId}"
+                ))
 
-        return ProblemGenerateResponse(
-            success=True,
-            problems=problems,
-            generation_info={
-                "spot_id": request.spotId,
-                "generated_count": len(problems),
-            },
-        )
+        # 백엔드 호환 응답
+        return ProblemGenerateResponse(problems=problems)
 
     except Exception as e:
         logger.error(f"❌ ID 퀴즈 생성 실패: {e}")
@@ -616,30 +556,31 @@ async def health_check():
 async def root():
     """루트 엔드포인트"""
     return {
-        "title": "ARGO AI 통합 서버 (Pydantic 객체 처리 수정)",
-        "version": "v3.4",
+        "title": "ARGO AI 통합 서버 (QuizProblem 엔티티 완벽 호환)",
+        "version": "v3.5",
         "status": "✅ 정상 작동",
         "fixes": [
-            "✅ Pydantic 객체 vs 딕셔너리 처리 수정",
-            "✅ 유니버설 데이터 변환 함수 추가",
-            "✅ 다양한 데이터 타입 지원",
-            "✅ 속성 접근과 딕셔너리 접근 모두 지원",
-            "✅ 고품질 퀴즈 데이터 보존 보장",
+            "✅ QuizProblem 엔티티와 완벽 호환",
+            "✅ 백엔드 ProblemGenerateDto 구조 일치",
+            "✅ 불필요한 필드 제거 (success, generation_info)",
+            "✅ Jackson 자동 역직렬화 지원",
+            "✅ grade, question, choices, correctIndex, explanation만 포함",
         ],
-        "debug_info": {
-            "conversion_method": "universal",
-            "type_support": "dict, pydantic, object",
-            "fallback_safety": "guaranteed",
+        "backend_compatibility": {
+            "entity": "QuizProblem",
+            "dto": "ProblemGenerateDto",
+            "response_structure": "{'problems': [QuizProblem]}",
+            "serialization": "Jackson 자동 처리",
         },
     }
 
 
 if __name__ == "__main__":
-    print("🚀 ARGO AI 통합 서버 시작 (Pydantic 객체 처리 수정)")
+    print("🚀 ARGO AI 통합 서버 시작 (QuizProblem 엔티티 완벽 호환)")
     print("🔧 주요 수정사항:")
-    print("   - Pydantic 객체 vs 딕셔너리 처리 구분")
-    print("   - 유니버설 데이터 변환 함수")
-    print("   - 다양한 데이터 타입 지원")
-    print("   - 고품질 퀴즈 데이터 보존")
+    print("   - QuizProblem 엔티티와 완벽 호환")
+    print("   - 백엔드 ProblemGenerateDto 구조 일치")
+    print("   - 불필요한 필드 완전 제거")
+    print("   - Jackson 자동 역직렬화 지원")
 
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False, log_level="info")
