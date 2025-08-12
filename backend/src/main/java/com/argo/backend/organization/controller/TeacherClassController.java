@@ -40,13 +40,13 @@ public class TeacherClassController {
     private final ClassService classService;
     private final ClassApplicationService classApplicationService;
 
-    @PreAuthorize("hasAnyRole('TEACHER','STUDENT)")
+    @PreAuthorize("hasAnyRole('TEACHER','STUDENT')")
     @GetMapping("/locations")
     public ResponseEntity<CommonApiResponse<List<LocationsResponse>>> getLocations() {
         return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.LOCATION_LIST_SUCCESS, classService.getLocations()));
     }
 
-    @PreAuthorize("hasAnyRole('TEACHER','STUDENT)")
+    @PreAuthorize("hasAnyRole('TEACHER','STUDENT')")
     @GetMapping("{classId}/spots")
     public ResponseEntity<CommonApiResponse<List<SpotsResponse>>> getSpots(
             @PathVariable Long classId

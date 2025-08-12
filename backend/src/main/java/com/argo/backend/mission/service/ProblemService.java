@@ -24,7 +24,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,15 +61,37 @@ public class ProblemService {
         Spot spot = spotRepository.findById(request.getSpotId())
                 .orElseThrow(SpotNotFoundException::new);
 
-        ProblemGenerateDto dto = pythonApiClient.requestProblem(spot.getName(), request.getGrade(), request.getProblemCnt());
+        // Python 응답을 Map으로 받기
+        Map<String, Object> pythonResponse = pythonApiClient.requestProblemAsMap(
+                spot.getName(),
+                request.getGrade(),
+                request.getProblemCnt()
+        );
 
+        // Map을 QuizProblem으로 변환
+        List<QuizProblem> quizProblems = new ArrayList<>();
+
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> problemsData = (List<Map<String, Object>>) pythonResponse.get("problems");
+
+        for (Map<String, Object> problemData : problemsData) {
+            QuizProblem quizProblem = QuizProblem.from(
+                    spot,  // 핵심: spot 정보 추가
+                    (Integer) problemData.get("grade"),
+                    (String) problemData.get("question"),
+                    (List<String>) problemData.get("choices"),
+                    (Integer) problemData.get("correctIndex"),
+                    (String) problemData.get("explanation")
+            );
+            quizProblems.add(quizProblem);
+        }
+
+        ProblemGenerateDto dto = new ProblemGenerateDto(quizProblems);
         return new ProblemGenerateTransDto(request.getGrade(), spot.getName(), dto);
     }
 
     public List<ProblemDetail> getProblemsBySpotId(Long spotId) {
-
         List<Problem> problems = problemRepository.findAllBySpotId(spotId);
-
         return ProblemDetail.from(problems);
     }
 
@@ -84,7 +108,6 @@ public class ProblemService {
     }
 
     public SelfieResultDto determineSelfie(SelfieRequestDto request) throws IOException {
-
         return pythonApiClient.requestDeterMineSelfie(request);
     }
 }
