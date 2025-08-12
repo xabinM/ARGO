@@ -87,112 +87,217 @@ public class DataLoader implements ApplicationRunner {
         // 7. 학생들을 팀에 배정 (각 팀 6명씩)
         assignStudentsToTeams(students, teams);
 
-        // 8. SSAFY 스팟 1개 생성
-        Spot ssafySpot = createSSAFYSpot(ssafyLocation);
+        // 8. 스팟 5개 생성 (SSAFY 1개 + 추가 4개)
+        List<Spot> spots = createAllSpots(ssafyLocation);
 
         // 9. 5개 카드 생성 (1개는 스팟 관련, 4개는 일반)
-        List<Card> cards = createCards(ssafyLocation, ssafySpot);
+        List<Card> cards = createCards(ssafyLocation, spots.get(0)); // 첫 번째 스팟(SSAFY)과 연결
 
-        // 10. SSAFY 스팟에 QuizProblem 생성
-        QuizProblem problem = createQuizProblem(ssafySpot);
+        // 10. 각 스팟에 QuizProblem 생성 (총 5개)
+        List<QuizProblem> problems = createAllQuizProblems(spots);
 
         log.info("=== 초기 테스트 데이터 생성 완료! ===");
         log.info("선생님: teacher1 / password1");
         log.info("학생들: student11~16, student21~26, ..., student101~106 / password1");
         log.info("반: 싸피3반 (SSAFY 위치)");
         log.info("팀: 10개 팀, 각 6명씩 배정");
+        log.info("스팟: 5개 (SSAFY + 4개 추가 스팟)");
+        log.info("퀴즈: 5개 (각 스팟별 1개씩)");
     }
 
-    private Spot createSSAFYSpot(Location location) {
-        // SSAFY 스팟 1개 생성
-        Coordinates coordinates = Coordinates.create(
-            new BigDecimal("37.5012743"), 
-            new BigDecimal("127.0396220")
+    private List<Spot> createAllSpots(Location location) {
+        List<Spot> spots = new ArrayList<>();
+
+        // 1. SSAFY 스팟 (기존)
+        Coordinates ssafyCoords = Coordinates.create(
+                new BigDecimal("37.5012743"),
+                new BigDecimal("127.0396220")
         );
-        Spot ssafySpot = Spot.create("SSAFY 스팟", "SSAFY 교육장 메인 스팟", coordinates, location);
-        Spot saved = spotRepository.save(ssafySpot);
-        
-        log.info("SSAFY 스팟 1개 생성 완료");
-        return saved;
+        Spot ssafySpot = Spot.create("SSAFY 스팟", "SSAFY 교육장 메인 스팟", ssafyCoords, location);
+        spots.add(spotRepository.save(ssafySpot));
+
+        // 2. 학생 수 스팟
+        Coordinates studentCountCoords = Coordinates.create(
+                new BigDecimal("37.501347"),
+                new BigDecimal("127.039765")
+        );
+        Spot studentCountSpot = Spot.create("학생 수 체크 스팟", "우리 반 학생 수를 확인하는 곳", studentCountCoords, location);
+        spots.add(spotRepository.save(studentCountSpot));
+
+        // 3. 도서관 위치 스팟
+        Coordinates libraryCoords = Coordinates.create(
+                new BigDecimal("37.501280"),
+                new BigDecimal("127.039790")
+        );
+        Spot librarySpot = Spot.create("도서관 위치 스팟", "우리 반 도서관 위치를 확인하는 곳", libraryCoords, location);
+        spots.add(spotRepository.save(librarySpot));
+
+        // 4. 입실 시간 스팟
+        Coordinates checkInCoords = Coordinates.create(
+                new BigDecimal("37.501227"),
+                new BigDecimal("127.039658")
+        );
+        Spot checkInSpot = Spot.create("입실 시간 스팟", "입실 마감 시간을 확인하는 곳", checkInCoords, location);
+        spots.add(spotRepository.save(checkInSpot));
+
+        // 5. 퇴실 시간 스팟
+        Coordinates checkOutCoords = Coordinates.create(
+                new BigDecimal("37.501249"),
+                new BigDecimal("127.039600")
+        );
+        Spot checkOutSpot = Spot.create("퇴실 시간 스팟", "퇴실 마감 시간을 확인하는 곳", checkOutCoords, location);
+        spots.add(spotRepository.save(checkOutSpot));
+
+        log.info("스팟 5개 생성 완료 (SSAFY + 4개 추가 스팟)");
+        return spots;
     }
 
     private List<Card> createCards(Location location, Spot ssafySpot) {
         List<Card> cards = new ArrayList<>();
-        
+
         // 스팟 관련 카드 1개 생성
         Card spotCard = Card.from(
-            location,
-            ssafySpot,
-            "SSAFY 특급카드",
-            "SSAFY 스팟에서 얻을 수 있는 특별한 카드입니다",
-            90, // baseAttack
-            80, // baseDefense
-            true // isSpotCard
+                location,
+                ssafySpot,
+                "SSAFY 특급카드",
+                "SSAFY 스팟에서 얻을 수 있는 특별한 카드입니다",
+                90, // baseAttack
+                80, // baseDefense
+                true // isSpotCard
         );
         Card savedSpotCard = cardRepository.save(spotCard);
         cards.add(savedSpotCard);
-        
+
         // 일반 카드 4개 생성
         String[] cardNames = {"하늘빛천사 컨설턴트님", "번개질주 실습코치님", "태양의수호자 실습코치님", "어둠의추격자 프로님"};
         String[] cardDescriptions = {
-            "컨설턴트님",
-            "실습 코치님",
-            "실습 코치님",
-            "프로님"
+                "컨설턴트님",
+                "실습 코치님",
+                "실습 코치님",
+                "프로님"
         };
         int[] attacks = {100, 75, 85, 95};
-        int[] defenses = {100, 50, 35, 90};
-        
+        int[] defenses = {100, 50, 65, 90};
+
         for (int i = 0; i < 4; i++) {
             Card card = Card.from(
-                location,
-                null, // 스팟과 연결되지 않음
-                cardNames[i],
-                cardDescriptions[i],
-                attacks[i],
-                defenses[i],
-                false // isSpotCard
+                    location,
+                    null, // 스팟과 연결되지 않음
+                    cardNames[i],
+                    cardDescriptions[i],
+                    attacks[i],
+                    defenses[i],
+                    false // isSpotCard
             );
             Card saved = cardRepository.save(card);
             cards.add(saved);
         }
-        
+
         log.info("카드 5개 생성 완료 (스팟 관련 1개, 일반 카드 4개)");
         return cards;
     }
 
-    private QuizProblem createQuizProblem(Spot ssafySpot) {
-        // SSAFY 관련 객관식 문제 생성
-        List<String> choices = List.of(
-            "1. 삼성 청년 SW 아카데미",
-            "2. 삼성 청년 소프트웨어 아카데미",
-            "3. 삼성 소프트웨어 아카데미",
-            "4. 삼성 청년 개발자 아카데미"
+    private List<QuizProblem> createAllQuizProblems(List<Spot> spots) {
+        List<QuizProblem> problems = new ArrayList<>();
+
+        // 1. SSAFY 스팟 퀴즈 (기존)
+        List<String> ssafyChoices = List.of(
+                "1. 삼성 청년 SW 아카데미",
+                "2. 삼성 청년 소프트웨어 AI 아카데미",
+                "3. 삼성 소프트웨어 아카데미",
+                "4. 삼성 청년 개발자 아카데미"
         );
-        
-        QuizProblem problem = QuizProblem.from(
-            ssafySpot,
-            3, // grade
-            "SSAFY는 무엇의 줄임말인가요?",
-            choices,
-            1, // correctIndex (두 번째 선택지가 정답)
-            "SSAFY는 Samsung Software Academy For Youth의 줄임말로, 삼성 청년 소프트웨어 아카데미입니다."
+        QuizProblem ssafyProblem = QuizProblem.from(
+                spots.get(0), // SSAFY 스팟
+                3,
+                "SSAFY는 무엇의 줄임말인가요?",
+                ssafyChoices,
+                1, // 정답: 2번
+                "SSAFY는 Samsung Software AI Academy For Youth의 줄임말로, 삼성 청년 소프트웨어 아카데미입니다."
         );
-        
-        QuizProblem saved = quizProblemRepository.save(problem);
-        log.info("SSAFY 스팟에 QuizProblem 생성 완료");
-        return saved;
+        problems.add(quizProblemRepository.save(ssafyProblem));
+
+        // 2. 학생 수 퀴즈
+        List<String> studentCountChoices = List.of(
+                "1. 40명",
+                "2. 50명",
+                "3. 53명",
+                "4. 54명"
+        );
+        QuizProblem studentCountProblem = QuizProblem.from(
+                spots.get(1), // 학생 수 스팟
+                2,
+                "우리반 학생 수는?",
+                studentCountChoices,
+                3, // 정답: 4번 (54명)
+                "우리 반은 총 54명의 학생으로 구성되어 있습니다."
+        );
+        problems.add(quizProblemRepository.save(studentCountProblem));
+
+        // 3. 도서관 위치 퀴즈
+        List<String> libraryChoices = List.of(
+                "1. 맨 뒤",
+                "2. 맨 앞",
+                "3. 문 쪽",
+                "4. 창문 쪽"
+        );
+        QuizProblem libraryProblem = QuizProblem.from(
+                spots.get(2), // 도서관 위치 스팟
+                1,
+                "우리 반의 도서관 위치는?",
+                libraryChoices,
+                0, // 정답: 1번 (맨 뒤)
+                "우리 반의 도서관은 교실 맨 뒤쪽에 위치하고 있습니다."
+        );
+        problems.add(quizProblemRepository.save(libraryProblem));
+
+        // 4. 입실 시간 퀴즈
+        List<String> checkInChoices = List.of(
+                "1. 08:50",
+                "2. 09:00",
+                "3. 10:00",
+                "4. 09:59"
+        );
+        QuizProblem checkInProblem = QuizProblem.from(
+                spots.get(3), // 입실 시간 스팟
+                2,
+                "입실 마감 시간은?",
+                checkInChoices,
+                1, // 정답: 2번 (09:00)
+                "입실 마감 시간은 오전 9시입니다."
+        );
+        problems.add(quizProblemRepository.save(checkInProblem));
+
+        // 5. 퇴실 시간 퀴즈
+        List<String> checkOutChoices = List.of(
+                "1. 18:00",
+                "2. 17:59",
+                "3. 18:30",
+                "4. 19:00"
+        );
+        QuizProblem checkOutProblem = QuizProblem.from(
+                spots.get(4), // 퇴실 시간 스팟
+                2,
+                "퇴실 마감 시간은?",
+                checkOutChoices,
+                2, // 정답: 3번 (18:30)
+                "퇴실 마감 시간은 오후 6시 30분입니다."
+        );
+        problems.add(quizProblemRepository.save(checkOutProblem));
+
+        log.info("퀴즈 5개 생성 완료 (각 스팟별 1개씩)");
+        return problems;
     }
 
 
     private Location createLocation() {
         // Location.create() 팩토리 메서드 사용
         Coordinates coordinates = Coordinates.create(
-            new BigDecimal("37.5012743"), 
-            new BigDecimal("127.0396220")
+                new BigDecimal("37.5012743"),
+                new BigDecimal("127.0396220")
         );
         Location location = Location.create("SSAFY", coordinates);
-        
+
         Location saved = locationRepository.save(location);
         log.info("위치 생성: SSAFY");
         return saved;
@@ -202,22 +307,22 @@ public class DataLoader implements ApplicationRunner {
         // Teacher.from()만 사용 (User 상속받으므로 자동으로 users, teachers 둘 다 저장됨)
         Teacher teacher = Teacher.from("teacher1", passwordEncoder.encode("password1"), "김선생");
         Teacher savedTeacher = teacherRepository.save(teacher);
-        
+
         log.info("선생님 계정 생성: teacher1 (users, teachers 테이블 모두 저장)");
         return savedTeacher;
     }
 
     private List<User> createStudents() {
         List<User> students = new ArrayList<>();
-        String[] teamNames = {"ARGO", "그라데이션", "1중대", "랩핑랩핑", "E1l5", 
-                             "떡잎유치원", "싸자보이즈", "큰일레슨", "Be효율", "싸피"};
-        
+        String[] teamNames = {"ARGO", "그라데이션", "1중대", "랩핑랩핑", "E1l5",
+                "떡잎유치원", "싸자보이즈", "큰일레슨", "Be효율", "싸피"};
+
         // 10개 팀 * 6명씩 = 60명
         for (int team = 1; team <= 10; team++) {
             for (int member = 1; member <= 6; member++) {
                 String username = String.format("student%d%d", team, member);
                 String name = String.format("%s_%d번", teamNames[team-1], member);
-                
+
                 // User.from() 사용
                 User student = User.from(username, passwordEncoder.encode("password1"), name, Role.ROLE_STUDENT);
                 User saved = userRepository.save(student);
@@ -231,14 +336,14 @@ public class DataLoader implements ApplicationRunner {
     private ClassRoom createClassRoom(Teacher teacher, Location location) {
         // ClassRoom.from() 사용
         ClassRoom classRoom = ClassRoom.from(
-            teacher,
-            "싸피3반",
-            "SSAFY 3기 실습반입니다",
-            LocalDate.of(2025, 10, 1),
-            "SSAFY3",
-            60,
-            location,
-            3
+                teacher,
+                "싸피3반",
+                "SSAFY 3기 실습반입니다",
+                LocalDate.of(2025, 10, 1),
+                "SSAFY3",
+                60,
+                location,
+                3
         );
         ClassRoom saved = classRoomRepository.save(classRoom);
         log.info("반 생성: 싸피3반");
@@ -257,9 +362,9 @@ public class DataLoader implements ApplicationRunner {
     }
 
     private List<Team> createTeams(ClassRoom classRoom) {
-        String[] teamNames = {"ARGO", "그라데이션", "1중대", "랩핑랩핑", "E1l5", 
-                             "떡잎유치원", "싸자보이즈", "큰일레슨", "Be효율", "싸피"};
-        
+        String[] teamNames = {"ARGO", "그라데이션", "1중대", "랩핑랩핑", "E1l5",
+                "떡잎유치원", "싸자보이즈", "큰일레슨", "Be효율", "싸피"};
+
         List<Team> teams = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             // Team.from() 사용 (리더는 나중에 설정)
@@ -275,22 +380,22 @@ public class DataLoader implements ApplicationRunner {
         for (int team = 0; team < 10; team++) {
             Team currentTeam = teams.get(team);
             User leader = null;
-            
+
             // 각 팀에 6명 배정
             for (int member = 0; member < 6; member++) {
                 int studentIndex = team * 6 + member;
                 User student = students.get(studentIndex);
-                
+
                 // UserTeam.create() 사용
                 UserTeam userTeam = UserTeam.create(student, currentTeam);
                 userTeamRepository.save(userTeam);
-                
+
                 // 첫 번째 멤버(번호가 1인 학생)를 팀장으로 설정
                 if (member == 0) {
                     leader = student;
                 }
             }
-            
+
             // 팀장 설정
             currentTeam.setLeader(leader);
             teamRepository.save(currentTeam);
