@@ -59,7 +59,7 @@ public class DataLoader implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         // 이미 데이터가 있으면 생성하지 않음
-        if (userRepository.count() > 50) {
+        if (userRepository.count() > 10) {
             log.info("데이터가 이미 존재하므로 초기 데이터 생성을 건너뜁니다.");
             return;
         }
@@ -226,7 +226,7 @@ public class DataLoader implements ApplicationRunner {
         );
         QuizProblem studentCountProblem = QuizProblem.from(
                 spots.get(1), // 학생 수 스팟
-                2,
+                3,
                 "우리반 학생 수는?",
                 studentCountChoices,
                 3, // 정답: 4번 (54명)
@@ -243,7 +243,7 @@ public class DataLoader implements ApplicationRunner {
         );
         QuizProblem libraryProblem = QuizProblem.from(
                 spots.get(2), // 도서관 위치 스팟
-                1,
+                3,
                 "우리 반의 도서관 위치는?",
                 libraryChoices,
                 0, // 정답: 1번 (맨 뒤)
@@ -260,7 +260,7 @@ public class DataLoader implements ApplicationRunner {
         );
         QuizProblem checkInProblem = QuizProblem.from(
                 spots.get(3), // 입실 시간 스팟
-                2,
+                3,
                 "입실 마감 시간은?",
                 checkInChoices,
                 1, // 정답: 2번 (09:00)
@@ -277,7 +277,7 @@ public class DataLoader implements ApplicationRunner {
         );
         QuizProblem checkOutProblem = QuizProblem.from(
                 spots.get(4), // 퇴실 시간 스팟
-                2,
+                3,
                 "퇴실 마감 시간은?",
                 checkOutChoices,
                 2, // 정답: 3번 (18:30)

@@ -14,6 +14,7 @@ import com.argo.backend.domain.team.repository.TeamRepository;
 import com.argo.backend.mission.dto.SubmitMission.MissionSubmitDto;
 import com.argo.backend.mission.dto.common.ProblemDetail;
 import com.argo.backend.mission.dto.missionCreate.MissionCreateDto;
+import com.argo.backend.mission.dto.missionPossibleCheck.MissionPossibleCheckDto;
 import com.argo.backend.mission.exception.*;
 import com.argo.backend.domain.mission.repository.MissionSessionRepository;
 import com.argo.backend.domain.spot.repository.SpotRepository;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -141,5 +143,23 @@ public class MissionService {
 
         Collections.shuffle(cards);
         return cards.get(0);
+    }
+
+    public MissionPossibleCheckDto checkPossibleMissionSpot(Long teamId, Long spotId) {
+        Spot spot = getSpotById(spotId);
+        Team team = getTeamById(teamId);
+
+        Optional<MissionSession> missionSession = missionSessionRepository.findByTeamAndSpot(team, spot);
+
+        MissionPossibleCheckDto dto;
+        if (missionSession.isEmpty()) {
+            dto = new MissionPossibleCheckDto(true, null);
+
+            return dto;
+        }
+
+        dto = new MissionPossibleCheckDto(false, "이미 미션을 진행한 곳입니다.");
+
+        return dto;
     }
 }
