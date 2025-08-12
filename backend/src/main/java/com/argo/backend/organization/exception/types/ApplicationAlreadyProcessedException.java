@@ -1,9 +1,11 @@
 package com.argo.backend.organization.exception.types;
 
-import static com.argo.backend.organization.exception.OrganizationErrorMessage.APPLICATION_ALREADY_PROCESSED;
+import com.argo.backend.organization.exception.OrganizationBusinessException;
+import com.argo.backend.organization.exception.OrganizationErrorMessage;
+import org.springframework.http.HttpStatus;
 
-public class ApplicationAlreadyProcessedException extends RuntimeException {
+public class ApplicationAlreadyProcessedException extends OrganizationBusinessException {
     public ApplicationAlreadyProcessedException() {
-        super(APPLICATION_ALREADY_PROCESSED.getMessage());
+        super(OrganizationErrorMessage.APPLICATION_ALREADY_PROCESSED, HttpStatus.CONFLICT);
     }
 }

@@ -1,9 +1,11 @@
 package com.argo.backend.organization.exception.types;
 
-import static com.argo.backend.organization.exception.OrganizationErrorMessage.TEAM_NOT_FOUND;
+import com.argo.backend.organization.exception.OrganizationBusinessException;
+import com.argo.backend.organization.exception.OrganizationErrorMessage;
+import org.springframework.http.HttpStatus;
 
-public class TeamNotFoundException extends RuntimeException {
+public class TeamNotFoundException extends OrganizationBusinessException {
     public TeamNotFoundException() {
-        super(TEAM_NOT_FOUND.getMessage());
+        super(OrganizationErrorMessage.TEAM_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 }

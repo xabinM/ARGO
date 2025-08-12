@@ -106,10 +106,10 @@ public class DataLoader implements ApplicationRunner {
     private Spot createSSAFYSpot(Location location) {
         // SSAFY 스팟 1개 생성
         Coordinates coordinates = Coordinates.create(
-            new BigDecimal("37.5012743"), 
-            new BigDecimal("127.0396220")
+            new BigDecimal("37.501260"),
+            new BigDecimal("127.039617")
         );
-        Spot ssafySpot = Spot.create("SSAFY 스팟", "SSAFY 교육장 메인 스팟", coordinates, location);
+        Spot ssafySpot = Spot.create("TEST_SSAFY_SPOT", "SSAFY 교육장 메인 스팟", coordinates, location);
         Spot saved = spotRepository.save(ssafySpot);
         
         log.info("SSAFY 스팟 1개 생성 완료");
@@ -178,7 +178,7 @@ public class DataLoader implements ApplicationRunner {
             1, // correctIndex (두 번째 선택지가 정답)
             "SSAFY는 Samsung Software Academy For Youth의 줄임말로, 삼성 청년 소프트웨어 아카데미입니다."
         );
-        
+
         QuizProblem saved = quizProblemRepository.save(problem);
         log.info("SSAFY 스팟에 QuizProblem 생성 완료");
         return saved;
@@ -188,10 +188,10 @@ public class DataLoader implements ApplicationRunner {
     private Location createLocation() {
         // Location.create() 팩토리 메서드 사용
         Coordinates coordinates = Coordinates.create(
-            new BigDecimal("37.5012743"), 
-            new BigDecimal("127.0396220")
+            new BigDecimal("37.501260"),
+            new BigDecimal("127.039617")
         );
-        Location location = Location.create("SSAFY", coordinates);
+        Location location = Location.create("TEST_SSAFY", coordinates);
         
         Location saved = locationRepository.save(location);
         log.info("위치 생성: SSAFY");
