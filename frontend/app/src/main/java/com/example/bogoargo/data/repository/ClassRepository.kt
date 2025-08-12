@@ -1,17 +1,18 @@
 package com.example.bogoargo.data.repository
 
 import com.example.bogoargo.data.api.ClassApiService
+import com.example.bogoargo.data.dto.request.ApplicationRequestDto
 import com.example.bogoargo.data.dto.request.ClassCreateRequest
 import com.example.bogoargo.data.mapper.toDomainModel
 import com.example.bogoargo.data.mapper.toDomainModel as toClassDetailDomainModel
+import com.example.bogoargo.data.mapper.toApplicationList
+import com.example.bogoargo.domain.model.Application
 import com.example.bogoargo.domain.model.Class
 import com.example.bogoargo.domain.model.DataException
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.StudentClassDetail
 import com.example.bogoargo.domain.repository.IClassRepository
-import com.example.bogoargo.data.dto.response.ApplicationResponseDto
 import com.example.bogoargo.data.dto.response.MessageResponseDto
-import com.example.bogoargo.data.dto.response.UserDataDto
 import com.example.bogoargo.data.response.ClassMemberResponse
 import retrofit2.HttpException
 import java.io.IOException
@@ -309,13 +310,14 @@ class ClassRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getApplicationList(classId: Long): DataResult<ApplicationResponseDto> {
+    override suspend fun getApplicationList(classId: Long): DataResult<List<Application>> {
         return try {
             val response = classApiService.getApplicationList(classId)
             if (response.isSuccessful) {
                 val applicationResponse = response.body()
                 if (applicationResponse != null) {
-                    DataResult.Success(applicationResponse)
+                    val applications = applicationResponse.toApplicationList()
+                    DataResult.Success(applications)
                 } else {
                     DataResult.Error(DataException.ServerError)
                 }
@@ -338,9 +340,13 @@ class ClassRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun approveApplication(classId: Long, applicationId: Long): DataResult<MessageResponseDto> {
+    override suspend fun approveApplication(classId: Long, action: String, applicationIds: List<Long>): DataResult<MessageResponseDto> {
         return try {
-            val response = classApiService.approveApplication(classId, applicationId)
+            val request = ApplicationRequestDto(
+                action = action,
+                applicationIds = applicationIds
+            )
+            val response = classApiService.approveApplication(classId, request)
             if (response.isSuccessful) {
                 val messageResponse = response.body()
                 if (messageResponse != null) {

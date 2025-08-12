@@ -1,5 +1,6 @@
 package com.example.bogoargo.data.dto.response
 
+
 data class StudentsLocationResponse(
     val classId: Long,
     val className: String,

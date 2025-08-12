@@ -14,6 +14,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.data.dto.response.UserDataDto
 import com.example.bogoargo.data.dto.response.ApplicationDataDto
+import com.example.bogoargo.data.dto.response.StudentListResponseDto
+import com.example.bogoargo.domain.model.Application
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
@@ -131,9 +133,8 @@ fun ClassMemberManagementScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    items(uiState.classMembers.size) { index ->
-                                        // TODO: Replace with proper member data when available
-                                        Text("Member ${index + 1}")
+                                    items(uiState.classMembers) { member ->
+                                        StudentCard(student = member)
                                     }
                                 }
                             }
@@ -151,9 +152,20 @@ fun ClassMemberManagementScreen(
                                     modifier = Modifier.fillMaxSize(),
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
-                                    items(uiState.pendingApplications.size) { index ->
-                                        // TODO: Replace with proper application data when available
-                                        Text("Application ${index + 1}")
+                                    items(uiState.pendingApplications) { application ->
+                                        ApplicationCard(
+                                            application = application,
+                                            isSelected = uiState.selectedApplicationIds.contains(application.applicationId),
+                                            onSelectionChanged = { isSelected ->
+                                                viewModel.selectApplication(application.applicationId)
+                                            },
+                                            onApprove = {
+                                                viewModel.approveSingleApplication(classId, application.applicationId)
+                                            },
+                                            onReject = {
+                                                viewModel.rejectSingleApplication(classId, application.applicationId)
+                                            }
+                                        )
                                     }
                                 }
                             }
@@ -212,12 +224,58 @@ fun MemberCard(member: UserDataDto) {
 }
 
 @Composable
-fun ApplicationCard(
-    application: ApplicationDataDto,
-    onApprove: () -> Unit
-) {
+fun StudentCard(student: StudentListResponseDto) {
     NatureComponents.NatureCard(
         modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            NatureComponents.ProfileAvatar(
+                emoji = "👶",
+                backgroundColor = NatureColors.sunnyYellow,
+                size = 50.dp
+            )
+            
+            Spacer(modifier = Modifier.width(16.dp))
+            
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = student.studentName,
+                    style = NatureTypography.titleMedium
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "가입일: ${student.joinedAt}",
+                    style = NatureTypography.bodySmall.copy(
+                        color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                    )
+                )
+            }
+            
+            NatureComponents.StatusBadge(
+                text = student.teamInfo.teamName,
+                backgroundColor = NatureColors.forestGreen.copy(alpha = 0.2f),
+                textColor = NatureColors.forestGreen
+            )
+        }
+    }
+}
+
+@Composable
+fun ApplicationCard(
+    application: Application,
+    isSelected: Boolean = false,
+    onSelectionChanged: (Boolean) -> Unit = {},
+    onApprove: () -> Unit,
+    onReject: () -> Unit
+) {
+    NatureComponents.NatureCard(
+        modifier = Modifier.fillMaxWidth(),
+        containerColor = if (isSelected) NatureColors.leafGreen.copy(alpha = 0.1f) else NatureColors.lightBeige
     ) {
         Column(
             modifier = Modifier
@@ -228,6 +286,16 @@ fun ApplicationCard(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = onSelectionChanged,
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = NatureColors.forestGreen
+                    )
+                )
+                
+                Spacer(modifier = Modifier.width(8.dp))
+                
                 NatureComponents.ProfileAvatar(
                     emoji = "👶",
                     backgroundColor = NatureColors.sunnyYellow,
@@ -248,6 +316,12 @@ fun ApplicationCard(
                             color = NatureColors.earthBrown.copy(alpha = 0.7f)
                         )
                     )
+                    Text(
+                        text = "상태: ${application.status}",
+                        style = NatureTypography.bodySmall.copy(
+                            color = NatureColors.sunnyYellow
+                        )
+                    )
                 }
             }
             
@@ -257,8 +331,13 @@ fun ApplicationCard(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
-                //horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                NatureComponents.NatureButton(
+                    onClick = onReject,
+                    text = "거부",
+                    backgroundColor = NatureColors.softOrange,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
                 NatureComponents.NatureButton(
                     onClick = onApprove,
                     text = "승인",
