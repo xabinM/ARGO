@@ -7,7 +7,6 @@ import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateResponse;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateTransDto;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterRequest;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestFromCli;
-import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateDto;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterResponse;
 import com.argo.backend.mission.dto.problemsList.ProblemListPerTypeResponse;
 import com.argo.backend.mission.dto.common.ProblemDetail;
@@ -30,11 +29,11 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/problem")
-@PreAuthorize("hasRole('TEACHER')")
 public class ProblemController {
 
     private final ProblemService problemService;
 
+    @PreAuthorize("hasRole('TEACHER')")
     @PostMapping("/register/spot/{spotId}")
     public ResponseEntity<?> registerProblem(@PathVariable Long spotId,
                                              @RequestBody @Valid ProblemRegisterRequest request) {
@@ -45,6 +44,7 @@ public class ProblemController {
         );
     }
 
+    @PreAuthorize("hasRole('TEACHER')")
     @PostMapping("/generate")
     public ResponseEntity<?> generateProblem(@RequestBody ProblemGenerateRequestFromCli request) {
         ProblemGenerateTransDto dto = problemService.generateProblem(request);
@@ -56,6 +56,7 @@ public class ProblemController {
         );
     }
 
+    @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/spot/{spotId}")
     public ResponseEntity<?> getProblemsBySpotId(@PathVariable Long spotId) {
 
@@ -64,6 +65,7 @@ public class ProblemController {
         return ResponseEntity.ok(new AllProblemListResponse(true, problems));
     }
 
+    @PreAuthorize("hasRole('TEACHER')")
     @GetMapping("/spot/{spotId}/perType")
     public ResponseEntity<ProblemListPerTypeResponse> getProblemsBySpotAndType(
             @PathVariable Long spotId,
@@ -73,6 +75,7 @@ public class ProblemController {
         return ResponseEntity.ok(new ProblemListPerTypeResponse(true, problems));
     }
 
+    @PreAuthorize("hasRole('STUDENT')")
     @PostMapping("/selfie/determine")
     public ResponseEntity<?> determineSelfiePose(@RequestParam("image") MultipartFile imageFile,
                                                  PhotoPose pose) throws IOException {

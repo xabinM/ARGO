@@ -1,7 +1,6 @@
 package com.example.bogoargo.di
 
 import com.example.bogoargo.data.repository.AR3DObjectRepository
-import com.example.bogoargo.data.storage.SecureStorage
 import com.example.bogoargo.domain.repository.IAuthRepository
 import com.example.bogoargo.domain.repository.IClassRepository
 import com.example.bogoargo.domain.repository.ILocationRepository
@@ -71,8 +70,8 @@ object UseCaseModule {
 
     @Provides
     @Singleton
-    fun provideLogoutUseCase(secureStorage: SecureStorage): LogoutUseCase {
-        return LogoutUseCase(secureStorage)
+    fun provideLogoutUseCase(authRepository: IAuthRepository): LogoutUseCase {
+        return LogoutUseCase(authRepository)
     }
 
     @Provides

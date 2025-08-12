@@ -9,7 +9,7 @@ import com.example.bogoargo.domain.model.DataException
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.RefreshTokenRequest
 import com.example.bogoargo.domain.model.TokenInfo
-import com.example.bogoargo.data.storage.SecureStorage
+import com.example.bogoargo.data.storage.TokenStorage
 import com.example.bogoargo.domain.repository.IAuthRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.sync.Mutex
@@ -24,7 +24,7 @@ private val Context.authDataStore: DataStore<Preferences> by preferencesDataStor
 class AuthRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     @Named("basic") private val authApiService: AuthApiService,
-    private val secureStorage: SecureStorage
+    private val tokenStorage: TokenStorage
 ) : IAuthRepository {
     
     private val refreshMutex = Mutex()
@@ -40,33 +40,34 @@ class AuthRepositoryImpl @Inject constructor(
 
     
     override fun getTokenInfo(): TokenInfo? {
-        val tokenInfo = secureStorage.getTokenInfo()
+        val accessToken = tokenStorage.getAccessToken()
+        val refreshToken = tokenStorage.getRefreshToken()
         
-        return if (tokenInfo != null) {
-            TokenInfo(tokenInfo.first, tokenInfo.second)
+        return if (accessToken != null && refreshToken != null) {
+            TokenInfo(accessToken, refreshToken)
         } else {
             null
         }
     }
     
     override fun saveTokens(accessToken: String, refreshToken: String) {
-        secureStorage.saveTokens(accessToken, refreshToken)
+        tokenStorage.saveTokens(accessToken, refreshToken)
     }
     
     override fun clearTokens() {
-        secureStorage.clearTokens()
+        tokenStorage.clearTokens()
     }
     
     override fun getAccessToken(): String? {
-        return secureStorage.getAccessToken()
+        return tokenStorage.getAccessToken()
     }
     
     override fun getRefreshToken(): String? {
-        return secureStorage.getRefreshToken()
+        return tokenStorage.getRefreshToken()
     }
     
     override fun hasTokens(): Boolean {
-        return secureStorage.hasTokens()
+        return tokenStorage.hasTokens()
     }
     
     override suspend fun refreshToken(): DataResult<Boolean> {

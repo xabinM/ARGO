@@ -6,12 +6,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByUsername(String userName);
 
-    User findByUsername(String username);
-    
-    // 특정 팀에 속한 유저들 조회는 UserTeamRepository나 Team 헬퍼 메서드 사용
+    Optional<User> findByUsername(String username);
 }

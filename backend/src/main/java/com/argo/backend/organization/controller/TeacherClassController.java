@@ -1,5 +1,6 @@
 package com.argo.backend.organization.controller;
 
+import com.argo.backend.domain.spot.entity.Spot;
 import com.argo.backend.organization.dto.CommonApiResponse;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateRequest;
 import com.argo.backend.organization.dto.classroomcreate.ClassCreateResponse;
@@ -45,12 +46,14 @@ public class TeacherClassController {
         return ResponseEntity.ok(new CommonApiResponse<>(true, "지역 목록 조회 성공", classService.getLocations(teacherId)));
     }
 
+
     @GetMapping("{classId}/spots")
     public ResponseEntity<CommonApiResponse<List<SpotsResponse>>> getSpots(
             @PathVariable Long classId,
             @AuthenticationPrincipal Long teacherId
     ) {
         List<SpotsResponse> spots = classService.getSpots(classId, teacherId);
+
         return ResponseEntity.ok(new CommonApiResponse<>(true, "장소 목록 조회 성공", spots));
     }
 

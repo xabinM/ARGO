@@ -17,16 +17,11 @@ import com.argo.backend.redis.logic.AuthRedis;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,7 +34,6 @@ public class AuthService {
     private final UserWithdrawalRepository userWithdrawalRepository;
     private final PasswordEncoder passwordEncoder;
 
-    private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
     private final AuthRedis authRedis;
 
@@ -69,10 +63,8 @@ public class AuthService {
 
 
     public LoginDto login(LoginRequest request) {
-        User user = userRepository.findByUsername(request.getUsername());
-        if (Objects.equals(user, null)) {
-            throw new NotFoundUserException();
-        }
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(NotFoundUserException::new);
 
         if (!user.isPasswordMatching(passwordEncoder, request.getPassword())) {
             throw new WrongPasswordException();
@@ -82,16 +74,9 @@ public class AuthService {
         List<String> roles = new ArrayList<>();
         roles.add(user.getRole().toString());
 
-        String accessToken = jwtTokenProvider.generateAccessToken(user.getUserId(), user.getUsername(), roles);
-        String refreshToken = jwtTokenProvider.generateRefreshToken(user.getUserId(), user.getUsername(), roles);
+        Tokens tokens = jwtTokenProvider.generateTokens(user.getUserId(), user.getUsername(), roles);
 
-        return new LoginDto(new Tokens(accessToken, refreshToken), user.getUserId(), user.getName(), user.getRole());
-    }
-
-    private List<String> getRole(Authentication authentication) {
-        return authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .collect(Collectors.toList());
+        return new LoginDto(tokens, user.getUserId(), user.getName(), user.getRole());
     }
 
     public Tokens refresh(HttpServletRequest request) {
@@ -108,10 +93,7 @@ public class AuthService {
         String username = jwtTokenProvider.getUsernameFromToken(refreshToken);
         List<String> roles = jwtTokenProvider.getRolesFromToken(refreshToken);
 
-        String newAccessToken = jwtTokenProvider.generateAccessToken(userId, username, roles);
-        String newRefreshToken = jwtTokenProvider.generateRefreshToken(userId, username, roles);
-
-        return new Tokens(newAccessToken, newRefreshToken);
+        return jwtTokenProvider.generateTokens(userId, username, roles);
     }
 
     @Transactional

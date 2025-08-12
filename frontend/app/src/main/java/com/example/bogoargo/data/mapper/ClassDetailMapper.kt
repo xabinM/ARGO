@@ -76,7 +76,6 @@ fun TeamDetailDto.toDomainModel(): TeamDetail {
         teamName = teamName,
         memberCount = memberCount,
         totalScore = totalScore,
-        leaderId = teamLeaderId,
         members = members.map { it.toDomainModel() }
     )
 }

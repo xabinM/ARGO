@@ -40,7 +40,6 @@ data class TeamDetail(
     val teamName: String,
     val memberCount: Int,
     val totalScore: Int,
-    val leaderId: Long,
     val members: List<TeamMemberInfo>
 )
 
