@@ -96,10 +96,11 @@ public class ClassService {
 
 
     @Transactional
-    public List<SpotsResponse> getSpots(Long classId, Long teacherId){
+    public List<SpotsResponse> getSpots(Long classId){
         // 권한 검증
-        ClassRoom classRoom = validateClassAccess(teacherId, classId);
-                
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(ClassNotFoundException::new);
+
         Location location = classRoom.getLocation();
         if (location == null) {
             throw new LocationNotFoundException();
