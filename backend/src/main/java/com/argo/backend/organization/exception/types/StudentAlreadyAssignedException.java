@@ -1,9 +1,11 @@
 package com.argo.backend.organization.exception.types;
 
-import static com.argo.backend.organization.exception.OrganizationErrorMessage.STUDENT_ALREADY_ASSIGNED;
+import com.argo.backend.organization.exception.OrganizationBusinessException;
+import com.argo.backend.organization.exception.OrganizationErrorMessage;
+import org.springframework.http.HttpStatus;
 
-public class StudentAlreadyAssignedException extends RuntimeException {
+public class StudentAlreadyAssignedException extends OrganizationBusinessException {
     public StudentAlreadyAssignedException() {
-        super(STUDENT_ALREADY_ASSIGNED.getMessage());
+        super(OrganizationErrorMessage.STUDENT_ALREADY_ASSIGNED, HttpStatus.CONFLICT);
     }
 }

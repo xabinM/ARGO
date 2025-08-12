@@ -1,9 +1,11 @@
 package com.argo.backend.organization.exception.types;
 
-import static com.argo.backend.organization.exception.OrganizationErrorMessage.STUDENT_NOT_FOUND;
+import com.argo.backend.organization.exception.OrganizationBusinessException;
+import com.argo.backend.organization.exception.OrganizationErrorMessage;
+import org.springframework.http.HttpStatus;
 
-public class StudentNotFoundException extends RuntimeException {
+public class StudentNotFoundException extends OrganizationBusinessException {
     public StudentNotFoundException() {
-        super(STUDENT_NOT_FOUND.getMessage());
+        super(OrganizationErrorMessage.STUDENT_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 }
