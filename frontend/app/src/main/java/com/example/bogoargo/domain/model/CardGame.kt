@@ -111,10 +111,10 @@ data class GameCard(
 }
 
 enum class CardTier(val displayName: String, val color: String) {
-    COMMON("일반", "#8E8E93"),
-    RARE("레어", "#007AFF"),
-    EPIC("에픽", "#AF52DE"),
-    LEGENDARY("전설", "#FF9500");
+    COMMON("일반", "#CD7F32"),     // 브론즈(동색)
+    RARE("레어", "#C0C0C0"),       // 실버(은색)
+    EPIC("에픽", "#FFD700"),       // 골드(금색)
+    LEGENDARY("전설", "#4FC3F7");  // 다이아몬드(밝은 파란색)
     
     companion object {
         fun fromString(tier: String): CardTier {
