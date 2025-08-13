@@ -7,9 +7,12 @@ import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.Team
 import com.example.bogoargo.domain.model.User
 import com.example.bogoargo.domain.use_case.team.ManageTeamUseCase
+import com.example.bogoargo.domain.use_case.team.CreateTeamUseCase
+import com.example.bogoargo.domain.use_case.classroom.GetCompleteClassDetailUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
@@ -22,12 +25,16 @@ data class TeamManagementUiState(
     val deleteSuccess: Boolean = false,
     val deletedStudents: List<User>? = null,
     val createdTeam: Team? = null,
-    val createSuccess: Boolean = false
+    val createSuccess: Boolean = false,
+    val teams: List<Team> = emptyList(),
+    val className: String = ""
 )
 
 @HiltViewModel
 class TeamManagementViewModel @Inject constructor(
-    private val manageTeamUseCase: ManageTeamUseCase
+    private val manageTeamUseCase: ManageTeamUseCase,
+    private val createTeamUseCase: CreateTeamUseCase,
+    private val getCompleteClassDetailUseCase: GetCompleteClassDetailUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TeamManagementUiState())
@@ -93,6 +100,76 @@ class TeamManagementViewModel @Inject constructor(
                         isLoading = false,
                         deleteSuccess = true,
                         deletedStudents = result.data
+                    )
+                }
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Already set loading state
+                }
+            }
+        }
+    }
+
+    fun createTeam(classId: Long, teamName: String, maxMembers: Int) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            
+            when (val result = createTeamUseCase(classId, teamName, maxMembers)) {
+                is DataResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        createSuccess = true,
+                        createdTeam = result.data
+                    )
+                    // 팀 생성 후 팀 리스트 다시 로드
+                    loadClassDetail(classId)
+                }
+                is DataResult.Error -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = result.exception.message
+                    )
+                }
+                is DataResult.Loading -> {
+                    // Already set loading state
+                }
+            }
+        }
+    }
+
+    fun loadClassDetail(classId: Long) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            
+            when (val result = getCompleteClassDetailUseCase(classId)) {
+                is DataResult.Success -> {
+                    val classDetailResponse = result.data
+                    // ClassDetailResponse의 teams 필드에서 Team 모델로 변환
+                    val teams = classDetailResponse.teams?.map { teamDto ->
+                        Team(
+                            id = teamDto.teamId,
+                            classId = classId,
+                            name = teamDto.teamName,
+                            maxMembers = teamDto.members.size + 3, // 현재 멤버 + 여유분
+                            currentMembers = teamDto.memberCount,
+                            createdAt = java.time.LocalDate.now(), // 기본값
+                            totalPoints = teamDto.totalScore
+                        )
+                    } ?: emptyList()
+                    
+                    // ClassDetailResponse의 data.classInfo에서 className 추출
+                    val className = classDetailResponse.data?.classInfo?.className ?: ""
+                    
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        teams = teams,
+                        className = className,
+                        errorMessage = null
                     )
                 }
                 is DataResult.Error -> {

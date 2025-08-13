@@ -26,11 +26,11 @@ class TeamCreateViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(TeamCreateUiState())
     val uiState: StateFlow<TeamCreateUiState> = _uiState
 
-    fun createTeam(classId: Long) {
+    fun createTeam(classId: Long, teamName: String, maxMembers:Int) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
-            when (val result = createTeamUseCase(classId)) {
+            when (val result = createTeamUseCase(classId, teamName, maxMembers)) {
                 is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,

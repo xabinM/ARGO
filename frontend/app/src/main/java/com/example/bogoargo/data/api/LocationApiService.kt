@@ -2,6 +2,7 @@ package com.example.bogoargo.data.api
 
 import com.example.bogoargo.data.dto.request.UserCoordinatesRequest
 import com.example.bogoargo.data.dto.response.LocationResponseDto
+import com.example.bogoargo.data.dto.response.StudentCoordinatesResponseDto
 import com.example.bogoargo.data.dto.response.StudentsLocationResponse
 import com.example.bogoargo.data.dto.response.UpdateCoordinatesResponse
 import retrofit2.Response
@@ -22,5 +23,11 @@ interface LocationApiService {
         @Path("classId") classId: Long
     ): Response<StudentsLocationResponse>
 
+    @GET("api/teacher/classes/locations")
     suspend fun getLocations(): LocationResponseDto
+
+    @GET("api/gps/class/{classId}/students")
+    suspend fun getCoordinatesByClass(
+        @Path("classId") classId: Long
+    ): Response<StudentCoordinatesResponseDto>
 }

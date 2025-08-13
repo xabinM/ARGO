@@ -1,5 +1,6 @@
 package com.example.bogoargo.data.dto.response
 
+
 // 팀 정보 응답 DTO
 data class TeamDataDto (
     val teamId: Long,
@@ -8,7 +9,16 @@ data class TeamDataDto (
     val currentMembers: Int,
     val createdAt: String,
     val classId: Long,
-    val className: String
+    val className: String,
+    val assignedAt: String?
+)
+
+// 팀 리스트 응답 DTO
+data class TeamSummary (
+    val totalTeams: Int,
+    val assignedStudents: Int,
+    val unassignedStudents: Int,
+    val teams: List<TeamDataDto>
 )
 
 // 팀 생성 결과 응답 DTO

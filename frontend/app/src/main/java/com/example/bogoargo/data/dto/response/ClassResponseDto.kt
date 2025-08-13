@@ -1,7 +1,9 @@
 package com.example.bogoargo.data.response
 
 import com.example.bogoargo.data.dto.response.ApplicationResponseDto
+import com.example.bogoargo.data.dto.response.StudentListResponseDto
 import com.example.bogoargo.data.dto.response.TeamDataDto
+import com.example.bogoargo.data.dto.response.TeamSummary
 import com.example.bogoargo.data.dto.response.UserDataDto
 
 // 반 정보 응답 DTO
@@ -77,14 +79,17 @@ data class ClassCreateResponse(
 data class ClassDetailResponse(
     val success: Boolean,
     val message: String,
-    val data: ClassInfo?
+    val data: ClassInfo?,
+    val students: List<StudentDto>?,
+    val teams: List<TeamDetailDto>?,
+    val statistics: StatisticsDto?
 )
 
 // 참여 신청 학생 목록 응답 DTO
 data class InviteStudentListResponse(
     val success: Boolean,
     val message: String,
-    val data: List<UserDataDto>? //TODO: 어플리케이션 목록으로 변경 필요
+    val data: List<UserDataDto>?
 )
 
 // 신청 상태 응답 DTO
@@ -98,11 +103,18 @@ data class InviteStatusResponse(
 data class ClassMemberResponse(
     val success: Boolean,
     val message: String,
-    val data: List<UserDataDto>?
+    val data: DataDto
+)
+
+// 반 정보, 구성원, 팀 정보 응답 DTO
+data class DataDto(
+    val classInfo: ClassInfo,
+    val students: List<StudentListResponseDto>,
+    val teamSummary: TeamSummary
 )
 
 // 신청 완료 응답 DTO
-data class applyClassResponse(
+data class ApplyClassResponse(
     val success: Boolean,
     val message: String,
     val data: ApplicationResponseDto?

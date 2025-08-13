@@ -7,6 +7,8 @@ import com.example.bogoargo.data.dto.response.LocationResponseDto
 import com.example.bogoargo.data.dto.response.StudentsLocationResponse
 import com.example.bogoargo.data.mapper.toDomainModel
 import com.example.bogoargo.domain.model.Location
+import com.example.bogoargo.domain.model.StudentLocationData
+import com.example.bogoargo.domain.model.UserCoordinates
 import com.example.bogoargo.domain.repository.ILocationRepository
 import java.math.BigDecimal
 import javax.inject.Inject
@@ -48,7 +50,7 @@ class LocationRepositoryImpl @Inject constructor(
 
     override suspend fun getStudentLocationsByClass(
         classId: Long
-    ): Result<StudentsLocationResponse> {
+    ): Result<StudentLocationData> {
         return try {
             val response = locationApiService.getStudentLocationsByClass(classId)
 
@@ -56,7 +58,7 @@ class LocationRepositoryImpl @Inject constructor(
                 val studentsLocation = response.body()
                 if (studentsLocation != null) {
                     Log.d(TAG, "Successfully retrieved ${studentsLocation.students.size} student locations for class $classId")
-                    Result.success(studentsLocation)
+                    Result.success(studentsLocation.toDomainModel())
                 } else {
                     val errorMessage = "Empty response for class $classId student locations"
                     Log.e(TAG, errorMessage)
@@ -69,6 +71,33 @@ class LocationRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error getting student locations for class $classId", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getCoordinatesByClass(
+        classId: Long
+    ): Result<List<UserCoordinates>> {
+        return try {
+            val response = locationApiService.getCoordinatesByClass(classId)
+
+            if (response.isSuccessful) {
+                val coordinatesResponse = response.body()
+                if (coordinatesResponse != null && coordinatesResponse.success) {
+                    Log.d(TAG, "Successfully retrieved ${coordinatesResponse.coordinates.size} coordinates for class $classId")
+                    Result.success(coordinatesResponse.toDomainModel())
+                } else {
+                    val errorMessage = coordinatesResponse?.message ?: "Empty response for class $classId coordinates"
+                    Log.e(TAG, errorMessage)
+                    Result.failure(Exception(errorMessage))
+                }
+            } else {
+                val errorMessage = "Failed to get coordinates for class $classId: ${response.code()} - ${response.message()}"
+                Log.e(TAG, errorMessage)
+                Result.failure(Exception(errorMessage))
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting coordinates for class $classId", e)
             Result.failure(e)
         }
     }

@@ -148,4 +148,11 @@ object NetworkModule {
     fun provideProblemApiService(retrofit: Retrofit): ProblemApiService {
         return retrofit.create(ProblemApiService::class.java)
     }
+
+
+    @Provides
+    @Singleton
+    fun provideSpotApiService(retrofit: Retrofit): SpotApiService {
+        return retrofit.create(SpotApiService::class.java)
+    }
 }

@@ -179,7 +179,7 @@ fun ClassDetailScreen(
                     }
                 }
 
-                // 관리 버튼들
+                // 관리 버튼들 - 첫 번째 줄
                 item {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -256,6 +256,45 @@ fun ClassDetailScreen(
                                         textAlign = TextAlign.Center
                                     )
                                 }
+                            }
+                        }
+                    }
+                }
+
+                // 학생 위치 보기 버튼
+                item {
+                    NatureComponents.NatureCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        shape = NatureShapes.large,
+                        containerColor = NatureColors.forestGreen.copy(alpha = 0.2f)
+                    ) {
+                        Button(
+                            onClick = {
+                                navController.navigate("studentLocation/$classId")
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Color.Transparent,
+                                contentColor = NatureColors.earthBrown
+                            ),
+                            shape = NatureShapes.large
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "📍",
+                                    fontSize = 28.sp
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "학생 위치 보기",
+                                    style = NatureTypography.bodyMedium,
+                                    textAlign = TextAlign.Center
+                                )
                             }
                         }
                     }
