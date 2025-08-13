@@ -3,6 +3,7 @@ package com.argo.backend.mission.service;
 import com.argo.backend.domain.ploblem.entity.Problem;
 import com.argo.backend.domain.ploblem.enums.ProblemType;
 import com.argo.backend.domain.ploblem.entity.QuizProblem;
+import com.argo.backend.domain.ploblem.entity.SelfieProblem;
 import com.argo.backend.domain.spot.entity.Spot;
 import com.argo.backend.mission.api.PythonApiClient;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateTransDto;
@@ -59,16 +60,33 @@ public class ProblemService {
         problemRepository.save(quiz);
     }
 
+    /**
+     * 🔥 Apache HttpClient로 퀴즈 생성 (메인 메서드)
+     */
     public ProblemGenerateTransDto generateProblem(ProblemGenerateRequestFromCli request) {
         Spot spot = spotRepository.findById(request.getSpotId())
                 .orElseThrow(SpotNotFoundException::new);
 
-        // Python 응답을 Map으로 받기
-        Map<String, Object> pythonResponse = pythonApiClient.requestProblemAsMap(
-                spot.getName(),
-                request.getGrade(),
-                request.getProblemCnt()
-        );
+        log.info("🎯 퀴즈 생성 요청: spotId={}, spotName={}, grade={}, count={}", 
+                request.getSpotId(), spot.getName(), request.getGrade(), request.getProblemCnt());
+
+        // 🔥 Apache HttpClient 방식으로 변경 (422 에러 해결)
+        Map<String, Object> pythonResponse;
+        try {
+            pythonResponse = pythonApiClient.requestProblemAsMapWithApache(
+                    spot.getName(),
+                    request.getGrade(),
+                    request.getProblemCnt()
+            );
+        } catch (Exception e) {
+            log.warn("🔄 Apache 방식 실패, RestTemplate으로 재시도: {}", e.getMessage());
+            // 백업: RestTemplate 방식
+            pythonResponse = pythonApiClient.requestProblemAsMap(
+                    spot.getName(),
+                    request.getGrade(),
+                    request.getProblemCnt()
+            );
+        }
 
         // Map을 QuizProblem으로 변환
         List<QuizProblem> quizProblems = new ArrayList<>();
@@ -88,22 +106,29 @@ public class ProblemService {
             quizProblems.add(quizProblem);
         }
 
+        log.info("✅ 퀴즈 생성 완료: {}개 문제 변환됨", quizProblems.size());
+
         ProblemGenerateDto dto = new ProblemGenerateDto(quizProblems);
         return new ProblemGenerateTransDto(request.getGrade(), spot.getName(), dto);
     }
 
     /**
-     * 🧪 퀴즈 생성 테스트 메서드
+     * 🧪 Apache HttpClient로 퀴즈 테스트 메서드
      */
     public Map<String, Object> testQuizGeneration(String spotName, int grade, int problemCnt) {
         try {
-            log.info("🧪 퀴즈 생성 테스트: spotName={}, grade={}, count={}", spotName, grade, problemCnt);
+            log.info("🧪 Apache 퀴즈 생성 테스트: spotName={}, grade={}, count={}", spotName, grade, problemCnt);
             
-            Map<String, Object> quizResult = pythonApiClient.requestProblemAsMap(
-                spotName, grade, problemCnt
-            );
-            
-            log.info("✅ 퀴즈 생성 성공");
+            // 🔥 Apache HttpClient 방식 먼저 시도
+            Map<String, Object> quizResult;
+            try {
+                quizResult = pythonApiClient.requestProblemAsMapWithApache(spotName, grade, problemCnt);
+                log.info("✅ Apache 방식 성공");
+            } catch (Exception e) {
+                log.warn("🔄 Apache 실패, RestTemplate 재시도: {}", e.getMessage());
+                quizResult = pythonApiClient.requestProblemAsMap(spotName, grade, problemCnt);
+                log.info("✅ RestTemplate 방식 성공");
+            }
             
             // problems 필드 확인
             @SuppressWarnings("unchecked")
@@ -114,7 +139,7 @@ public class ProblemService {
             for (int i = 0; i < problems.size(); i++) {
                 Map<String, Object> problem = problems.get(i);
                 log.info("문제 {}: {}", i+1, problem.get("question"));
-                log.info("정답: {}번", problem.get("answer"));
+                log.info("정답: {}번", problem.get("correctIndex"));
             }
             
             return quizResult;
@@ -125,19 +150,47 @@ public class ProblemService {
         }
     }
 
+    /**
+     * 🧪 Apache HttpClient 직접 테스트 (DB 없이)
+     */
+    public Map<String, Object> testQuizGenerationDirect(String spotName, int grade, int problemCnt) {
+        try {
+            log.info("🧪 Apache 직접 테스트: spotName={}, grade={}, count={}", spotName, grade, problemCnt);
+            
+            // Apache HttpClient 직접 호출 (DB 우회)
+            Map<String, Object> result = pythonApiClient.requestProblemAsMapWithApache(
+                spotName, grade, problemCnt
+            );
+            
+            log.info("✅ 직접 테스트 성공");
+            return result;
+            
+        } catch (Exception e) {
+            log.error("❌ 직접 테스트 실패: {}", e.getMessage());
+            throw e;
+        }
+    }
+
     public List<ProblemDetail> getProblemsBySpotId(Long spotId) {
         List<Problem> problems = problemRepository.findAllBySpotId(spotId);
         return ProblemDetail.from(problems);
     }
 
+    // 🔥 핵심 수정: Repository 문제 해결을 위한 대안 방법
     public List<ProblemDetail> findProblemsBySpotIdAndType(Long spotId, ProblemType type) {
+        
+        // 🔥 기존에 잘 작동하는 ProblemRepository 사용
+        List<Problem> allProblems = problemRepository.findAllBySpotId(spotId);
+        
         return switch (type) {
-            case QUIZ -> quizProblemRepository.findBySpotId(spotId).stream()
-                    .map(QuizProblemDetail::from)
+            case QUIZ -> allProblems.stream()
+                    .filter(p -> p instanceof QuizProblem)  // QuizProblem만 필터링
+                    .map(p -> QuizProblemDetail.from((QuizProblem) p))
                     .collect(Collectors.toList());
 
-            case SELFIE -> selfieProblemRepository.findBySpotId(spotId).stream()
-                    .map(SelfieProblemDetail::from)
+            case SELFIE -> allProblems.stream()
+                    .filter(p -> p instanceof SelfieProblem)  // SelfieProblem만 필터링
+                    .map(p -> SelfieProblemDetail.from((SelfieProblem) p))
                     .collect(Collectors.toList());
         };
     }

@@ -8,6 +8,8 @@ import com.argo.backend.domain.cardgame.repository.TeamCardRepository;
 import com.argo.backend.domain.mission.entity.MissionSession;
 import com.argo.backend.domain.mission.enums.MissionSessionStatus;
 import com.argo.backend.domain.ploblem.entity.Problem;
+import com.argo.backend.domain.ploblem.entity.SelfieProblem;
+import com.argo.backend.domain.ploblem.repository.SelfieProblemRepository;
 import com.argo.backend.domain.spot.entity.Spot;
 import com.argo.backend.domain.team.entity.Team;
 import com.argo.backend.domain.team.repository.TeamRepository;
@@ -22,6 +24,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +38,7 @@ public class MissionService {
     private final TeamRepository teamRepository;
     private final CardRepository cardRepository;
     private final TeamCardRepository teamCardRepository;
+    private final SelfieProblemRepository selfieProblemRepository;
 
     @Transactional
     public MissionCreateDto createMission(Long teamId, Long spotId) {
@@ -69,24 +73,38 @@ public class MissionService {
     }
 
     private MissionSession createNewMissionSession(Team team, Spot spot) {
-        List<Problem> problems = spot.getProblems();
-        Problem problem = findRandomProblem(problems);
+        Problem quizProblem = findRandomQuizProblem(spot);
+        Problem selfieProblem = findRandomSelfieProblem();
 
-        if (problem == null) {
+        List<Problem> problems = new ArrayList<>();
+        if (quizProblem != null) problems.add(quizProblem);
+        if (selfieProblem != null) problems.add(selfieProblem);
+
+        if (problems.isEmpty()) {
             throw new ProblemNotFoundException();
         }
 
-        MissionSession session = MissionSession.from(spot, team, problem);
+        Collections.shuffle(problems);
+        MissionSession session = MissionSession.from(spot, team, problems.get(0));
         missionSessionRepository.save(session);
+
         return session;
     }
 
-    private Problem findRandomProblem(List<Problem> problems) {
-        if (problems.isEmpty()) return null;
-
-        Collections.shuffle(problems);
-        return problems.get(0);
+    private <T> T pickRandom(List<T> list) {
+        if (list.isEmpty()) return null;
+        Collections.shuffle(list);
+        return list.get(0);
     }
+
+    private Problem findRandomQuizProblem(Spot spot) {
+        return pickRandom(spot.getProblems());
+    }
+
+    private Problem findRandomSelfieProblem() {
+        return pickRandom(selfieProblemRepository.findAll());
+    }
+
 
 
     @Transactional

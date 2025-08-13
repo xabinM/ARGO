@@ -77,19 +77,18 @@ class ProblemGenerateRequest(BaseModel):
     problemCnt: int = Field(..., ge=1, le=10, description="문제 개수")
 
 
-class QuizProblemSimple(BaseModel):
+# 🔥 Spring Boot 호환 응답 모델
+class QuizProblemSpringCompatible(BaseModel):
     question: str = Field(..., description="문제")
-    choice1: str = Field(..., description="선택지 1")
-    choice2: str = Field(..., description="선택지 2")
-    choice3: str = Field(..., description="선택지 3")
-    answer: int = Field(..., ge=1, le=3, description="정답")
+    choices: List[str] = Field(..., description="선택지 배열 (3개)")
+    correctIndex: int = Field(..., ge=0, le=2, description="정답 인덱스 (0-based)")
     explanation: str = Field(..., description="해설")
     grade: int = Field(..., ge=1, le=6, description="학년")
     spotName: str = Field(..., description="스팟명")
 
 
 class ProblemGenerateResponse(BaseModel):
-    problems: List[QuizProblemSimple] = Field(..., description="생성된 문제 리스트")
+    problems: List[QuizProblemSpringCompatible] = Field(..., description="생성된 문제 리스트")
 
 
 class SimplePoseResponse(BaseModel):
@@ -178,21 +177,19 @@ async def general_exception_handler(request, exc):
     return JSONResponse(status_code=500, content={"detail": f"서버 오류: {str(exc)}"})
 
 
-# === 헬퍼 함수들 ===
-def convert_to_quiz_problem_simple(
+# === 🔥 Spring Boot 호환 헬퍼 함수 (수정됨) ===
+def convert_to_quiz_problem_spring_compatible(
     quiz_data: Union[Dict, Any], grade: int, fallback_name: str
-) -> QuizProblemSimple:
-    """퀴즈 데이터를 QuizProblemSimple로 변환"""
+) -> QuizProblemSpringCompatible:
+    """퀴즈 데이터를 Spring Boot 호환 형식으로 변환"""
 
     if hasattr(quiz_data, "choices"):
         # Pydantic 객체인 경우
         choices = quiz_data.choices
-        return QuizProblemSimple(
+        return QuizProblemSpringCompatible(
             question=quiz_data.question,
-            choice1=choices[0] if len(choices) > 0 else "선택지 1",
-            choice2=choices[1] if len(choices) > 1 else "선택지 2",
-            choice3=choices[2] if len(choices) > 2 else "선택지 3",
-            answer=quiz_data.correctIndex + 1,  # 0-based -> 1-based
+            choices=choices[:3],  # 🔥 배열 형태로 변경
+            correctIndex=quiz_data.correctIndex,  # 🔥 0-based index 유지
             explanation=quiz_data.explanation,
             grade=grade,
             spotName=fallback_name,
@@ -200,12 +197,10 @@ def convert_to_quiz_problem_simple(
     elif isinstance(quiz_data, dict):
         # 딕셔너리인 경우
         choices = quiz_data.get("choices", ["선택지 1", "선택지 2", "선택지 3"])
-        return QuizProblemSimple(
+        return QuizProblemSpringCompatible(
             question=quiz_data.get("question", f"{fallback_name}에 대한 문제입니다."),
-            choice1=choices[0] if len(choices) > 0 else "선택지 1",
-            choice2=choices[1] if len(choices) > 1 else "선택지 2",
-            choice3=choices[2] if len(choices) > 2 else "선택지 3",
-            answer=quiz_data.get("correctIndex", 0) + 1,
+            choices=choices[:3],  # 🔥 배열 형태로 변경
+            correctIndex=quiz_data.get("correctIndex", 0),  # 🔥 0-based index 유지
             explanation=quiz_data.get(
                 "explanation", f"{fallback_name}에 대한 설명입니다."
             ),
@@ -214,12 +209,10 @@ def convert_to_quiz_problem_simple(
         )
     else:
         # 빈 데이터인 경우 기본값
-        return QuizProblemSimple(
+        return QuizProblemSpringCompatible(
             question=f"{fallback_name}은 우리나라 어디에 있나요?",
-            choice1="서울",
-            choice2="부산",
-            choice3="제주도",
-            answer=1,
+            choices=["서울", "부산", "제주도"],  # 🔥 배열 형태로 변경
+            correctIndex=0,  # 🔥 0-based index
             explanation=f"{fallback_name}은 서울에 있습니다.",
             grade=grade,
             spotName=fallback_name,
@@ -248,10 +241,11 @@ async def generate_problem(request: ProblemGenerateRequest):
                 )
 
                 for problem in problems:
-                    quiz_simple = convert_to_quiz_problem_simple(
+                    # 🔥 Spring Boot 호환 변환 함수 사용
+                    quiz_compatible = convert_to_quiz_problem_spring_compatible(
                         problem, request.grade, request.spotName
                     )
-                    generated_problems.append(quiz_simple)
+                    generated_problems.append(quiz_compatible)
 
                 logger.info(f"✅ 퀴즈 서비스로 {len(generated_problems)}개 생성 완료")
 
@@ -263,12 +257,11 @@ async def generate_problem(request: ProblemGenerateRequest):
             logger.warning("⚠️ 퀴즈 서비스 비활성화 - Fallback 사용")
 
             for i in range(request.problemCnt):
-                fallback_quiz = QuizProblemSimple(
+                # 🔥 Spring Boot 호환 형식으로 변경
+                fallback_quiz = QuizProblemSpringCompatible(
                     question=f"{request.spotName}에 관한 문제 {i+1}번입니다.",
-                    choice1="정답",
-                    choice2="오답 1",
-                    choice3="오답 2",
-                    answer=1,
+                    choices=["정답", "오답 1", "오답 2"],  # 🔥 배열 형태
+                    correctIndex=0,  # 🔥 0-based index
                     explanation=f"{request.spotName}에 대한 설명입니다.",
                     grade=request.grade,
                     spotName=request.spotName,
@@ -295,8 +288,8 @@ async def pose_predict_full(file: UploadFile = File(...), pose_select: str = For
     """🎯 포즈 분석 - 정상 파라미터 방식으로 복원"""
 
     logger.info(f"🎯 /pose/full 요청 받음")
-    logger.info(f"📍 file: {file.filename if file else 'None'}")
-    logger.info(f"📍 pose_select: {pose_select}")
+    logger.info(f"📂 file: {file.filename if file else 'None'}")
+    logger.info(f"📂 pose_select: {pose_select}")
 
     try:
         if not file or not file.filename:
@@ -307,7 +300,7 @@ async def pose_predict_full(file: UploadFile = File(...), pose_select: str = For
 
         # 파일 내용 읽기
         file_content = await file.read()
-        logger.info(f"📍 파일 크기: {len(file_content)} bytes")
+        logger.info(f"📂 파일 크기: {len(file_content)} bytes")
 
         # 🔥 실제 AI_Analyze.py 연결
         try:
@@ -413,8 +406,8 @@ async def pose_debug_fixed(request: Request):
         content_type = request.headers.get("content-type", "")
         content_length = request.headers.get("content-length", "0")
 
-        logger.info(f"📍 Content-Type: {content_type}")
-        logger.info(f"📍 Content-Length: {content_length}")
+        logger.info(f"📂 Content-Type: {content_type}")
+        logger.info(f"📂 Content-Length: {content_length}")
 
         debug_result = {
             "success": True,
@@ -503,13 +496,14 @@ async def root():
             "pose_test": "/pose/test",
             "health": "/health",
         },
+        "response_format": "Spring Boot Compatible",  # 🔥 추가 정보
     }
 
 
 if __name__ == "__main__":
     print("🚀 ARGO AI 통합 서버 시작")
     print("📡 엔드포인트:")
-    print("   - /generate-problem : 퀴즈 생성")
+    print("   - /generate-problem : 퀴즈 생성 (Spring Boot 호환)")
     print("   - /pose/full : 포즈 분석")
     print("   - /health : 헬스체크")
 
