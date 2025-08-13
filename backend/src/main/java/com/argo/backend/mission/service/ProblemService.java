@@ -5,6 +5,8 @@ import com.argo.backend.domain.ploblem.enums.ProblemType;
 import com.argo.backend.domain.ploblem.entity.QuizProblem;
 import com.argo.backend.domain.ploblem.entity.SelfieProblem;
 import com.argo.backend.domain.spot.entity.Spot;
+import com.argo.backend.domain.team.entity.Team;
+import com.argo.backend.domain.team.repository.TeamRepository;
 import com.argo.backend.domain.user.entity.UserTeam;
 import com.argo.backend.domain.user.repository.UserTeamRepository;
 import com.argo.backend.mission.api.PythonApiClient;
@@ -22,6 +24,7 @@ import com.argo.backend.domain.ploblem.repository.ProblemRepository;
 import com.argo.backend.domain.ploblem.repository.QuizProblemRepository;
 import com.argo.backend.domain.ploblem.repository.SelfieProblemRepository;
 import com.argo.backend.domain.spot.repository.SpotRepository;
+import com.argo.backend.mission.exception.TeamNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,6 +49,7 @@ public class ProblemService {
     private final QuizProblemRepository quizProblemRepository;
     private final SelfieProblemRepository selfieProblemRepository;
     private final UserTeamRepository userTeamRepository;
+    private final TeamRepository teamRepository;
 
     @Transactional
     public void registerQuizProblem(Long spotId, ProblemRegisterRequest request) {
@@ -199,7 +203,9 @@ public class ProblemService {
     }
 
     public SelfieResultDto determineSelfie(SelfieRequestDto request) throws IOException {
-        List<UserTeam> userTeams = userTeamRepository.findAllByTeamId(request.getTeamId());
+        Team team = teamRepository.findById(request.getTeamId()).orElseThrow(TeamNotFoundException::new);
+
+        List<UserTeam> userTeams = userTeamRepository.findAllByTeam(team);
 
         Integer teamMemberCnt = userTeams.size();
 

@@ -108,5 +108,5 @@ public interface UserTeamRepository extends JpaRepository<UserTeam, Long> {
     List<Long> findAssignedStudentIdsByStudentIdsAndClassId(@Param("studentIds") List<Long> studentIds, 
                                                            @Param("classId") Long classId);
 
-    List<UserTeam> findAllByTeamId(Long teamId);
+    List<UserTeam> findAllByTeam(Team team);
 }
