@@ -21,6 +21,7 @@ import com.argo.backend.domain.ploblem.repository.SelfieProblemRepository;
 import com.argo.backend.domain.spot.repository.SpotRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProblemService {
@@ -108,6 +110,18 @@ public class ProblemService {
     }
 
     public SelfieResultDto determineSelfie(SelfieRequestDto request) throws IOException {
+        log.info("🎯 포즈 분석 시작");
+
+        // 디버깅 코드 주석처리
+        // try {
+        //     Map<String, Object> debugResult = pythonApiClient.debugPoseRequest(request);
+        //     log.info("🔍 디버깅 결과: {}", debugResult);
+        // } catch (Exception e) {
+        //     log.warn("⚠️ 디버깅 호출 실패: {}", e.getMessage());
+        // }
+
+        // 🔥 한 번만 호출!
+        log.info("🎯 실제 포즈 분석 호출 시작");
         return pythonApiClient.requestDeterMineSelfie(request);
     }
 }

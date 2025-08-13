@@ -8,6 +8,14 @@ spring:
   profiles:
     active: local  # 필요하면 명시, 아니면 이 줄 빼도 됨
 
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+      enabled: true
+      location: ${java.io.tmpdir}
+      file-size-threshold: 1MB
+
   http:
     encoding:
       charset: UTF-8
@@ -16,6 +24,8 @@ spring:
     mvc:
       servlet:
         path: /
+    multipart:
+      enabled: true
 
 logging:
   level:
