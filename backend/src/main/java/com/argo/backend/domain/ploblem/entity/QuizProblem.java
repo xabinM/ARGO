@@ -1,6 +1,7 @@
 package com.argo.backend.domain.ploblem.entity;
 
 import com.argo.backend.domain.spot.entity.Spot;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -34,6 +35,22 @@ public class QuizProblem extends Problem {
     @Lob
     private String explanation;
 
+    // 🔥 핵심 수정: 부모 클래스의 getSpot() 메서드를 오버라이드하여 JSON 제외
+    @Override
+    @JsonIgnore  // ✅ 이제 실제로 적용됨!
+    public Spot getSpot() {
+        return super.getSpot();
+    }
+
+    // 🔥 JSON 응답에 필요한 최소 정보만 제공
+    public Long getSpotId() {
+        return getSpot() != null ? getSpot().getId() : null;
+    }
+
+    public String getSpotName() {
+        return getSpot() != null ? getSpot().getName() : null;
+    }
+    
     public static QuizProblem from(Spot spot, Integer grade, String question,
                                    List<String> choices,
                                    Integer correctIndex,

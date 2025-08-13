@@ -1,20 +1,17 @@
-# main.py - Pydantic 객체 처리 수정 버전
-"""
-🎯 ARGO AI 통합 서버 - Pydantic 객체 처리 수정
-
-문제: quiz_service가 GeneratedQuizProblem 객체를 반환하는데 딕셔너리로 처리
-해결: 객체 타입 확인 후 적절한 변환 처리
-"""
+# main.py - ARGO AI 통합 서버 (퀴즈 생성 + 포즈 분석)
 
 import sys
 import os
 import traceback
 import logging
+from enum import Enum
 from datetime import datetime
 from typing import List, Dict, Optional, Any, Union
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form, Request, Depends
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.datastructures import FormData
 from contextlib import asynccontextmanager
 from pydantic import BaseModel, Field, ValidationError
 from dotenv import load_dotenv
@@ -32,334 +29,113 @@ load_dotenv()
 
 # === 로깅 설정 ===
 logging.basicConfig(
-    level=logging.INFO, 
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger(__name__)
 
 # === 안전한 모듈 Import ===
 quiz_service_available = False
-pose_service_available = False
 spots_available = False
 
 try:
-    try:
-        from services.quiz_service import QuizService
-        quiz_service_available = True
-        logger.info("✅ services.quiz_service 로드 성공")
-    except ImportError:
-        from quiz_service import QuizService
-        quiz_service_available = True
-        logger.info("✅ quiz_service (fallback) 로드 성공")
+    from services.quiz_service import QuizService
+
+    quiz_service_available = True
+    logger.info("✅ services.quiz_service 로드 성공")
 except ImportError as e:
     logger.warning(f"⚠️ 퀴즈 서비스 import 실패: {e}")
     QuizService = None
 
 try:
-    try:
-        from services.pose_service import PoseService
-        pose_service_available = True
-        logger.info("✅ services.pose_service 로드 성공")
-    except ImportError:
-        from pose_service import PoseService
-        pose_service_available = True
-        logger.info("✅ pose_service (fallback) 로드 성공")
-except ImportError as e:
-    logger.warning(f"⚠️ 포즈 서비스 import 실패: {e}")
-    PoseService = None
+    from data.expanded_educational_spots import EXPANDED_EDUCATIONAL_SPOTS
 
-try:
-    from expanded_educational_spots import EXPANDED_EDUCATIONAL_SPOTS
     spots_available = True
-    logger.info(f"✅ 스팟 데이터 로드: {len(EXPANDED_EDUCATIONAL_SPOTS)}개")
+    logger.info(f"✅ 스팟 데이터 로드 성공: {len(EXPANDED_EDUCATIONAL_SPOTS)}개")
 except ImportError as e:
     logger.warning(f"⚠️ 스팟 데이터 import 실패: {e}")
     EXPANDED_EDUCATIONAL_SPOTS = []
+    spots_available = False
+
 
 # === 설정 클래스 ===
 class Settings:
-    def __init__(self):
-        self.YOLO_MODEL_PATH = os.path.join(BASE_DIR, "object_detect", "model", "yolov8m.pt")
-        self.IMAGE_RESIZE_MAX = 1024
-        self.OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-        self.GMS_API_KEY = os.getenv("GMS_API_KEY")
-        self.API_KEY = os.getenv("API_KEY")
+    """애플리케이션 설정"""
+
+    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
+    GMS_API_KEY: str = os.getenv("GMS_API_KEY", "")
+    IMAGE_RESIZE_MAX: int = 1024
+    MAX_QUIZ_COUNT: int = 10
+
 
 settings = Settings()
 
-# === Pydantic 모델들 ===
-class ProblemGenerateRequestToAI(BaseModel):
-    spotName: str = Field(..., description="스팟명", example="근정전")
-    problemCnt: int = Field(..., ge=1, le=10, description="생성할 문제 개수")
-    grade: Optional[int] = Field(default=5, ge=1, le=6, description="학년")
 
-class ProblemGenerateRequestFromSpotId(BaseModel):
-    spotId: int = Field(..., description="스팟 ID")
-    problemCnt: int = Field(..., ge=1, le=10, description="생성할 문제 개수")
-    grade: Optional[int] = Field(default=5, ge=1, le=6, description="학년")
+# === Request/Response 모델 ===
+class ProblemGenerateRequest(BaseModel):
+    spotName: str = Field(..., description="스팟명")
+    grade: int = Field(..., ge=1, le=6, description="학년")
+    problemCnt: int = Field(..., ge=1, le=10, description="문제 개수")
 
-class GeneratedQuizProblem(BaseModel):
-    question: str = Field(..., description="문제 텍스트")
-    choices: List[str] = Field(..., description="선택지 리스트")
-    correctIndex: int = Field(..., ge=0, le=2, description="정답 인덱스")
+
+# 🔥 Spring Boot 호환 응답 모델
+class QuizProblemSpringCompatible(BaseModel):
+    question: str = Field(..., description="문제")
+    choices: List[str] = Field(..., description="선택지 배열 (3개)")
+    correctIndex: int = Field(..., ge=0, le=2, description="정답 인덱스 (0-based)")
     explanation: str = Field(..., description="해설")
-    generation_method: Optional[str] = Field(default="unknown", description="생성 방법")
-    quality_score: Optional[float] = Field(default=0.0, description="품질 점수")
-    parsing_method: Optional[str] = Field(default=None, description="파싱 방법")
+    grade: int = Field(..., ge=1, le=6, description="학년")
+    spotName: str = Field(..., description="스팟명")
+
 
 class ProblemGenerateResponse(BaseModel):
-    success: bool = Field(default=True)
-    problems: List[GeneratedQuizProblem] = Field(..., description="생성된 문제 리스트")
-    generation_info: Dict = Field(default_factory=dict, description="생성 정보")
+    problems: List[QuizProblemSpringCompatible] = Field(..., description="생성된 문제 리스트")
+
 
 class SimplePoseResponse(BaseModel):
-    success: bool = Field(..., description="포즈 조건 만족 여부")
-    result: str = Field(..., description="분석 결과 메시지")
+    success: bool = Field(..., description="성공 여부")
+    result: str = Field(..., description="결과 메시지")
 
-# === 🔥 핵심 수정: 유니버설 데이터 변환 함수 ===
-def convert_to_api_model(quiz_data: Union[Dict, BaseModel, Any], fallback_name: str = "문제") -> GeneratedQuizProblem:
-    """
-    🔧 핵심 기능: 다양한 타입의 퀴즈 데이터를 API 모델로 변환
-    - Dict, Pydantic 객체, 기타 모든 타입 처리
-    - 속성 접근과 딕셔너리 접근 모두 지원
-    - 안전한 fallback 보장
-    """
-    
-    logger.info(f"🔧 변환 대상 타입: {type(quiz_data)}")
-    logger.info(f"🔧 변환 대상 데이터: {quiz_data}")
-    
-    try:
-        # 1. 이미 올바른 타입인 경우 그대로 반환
-        if isinstance(quiz_data, GeneratedQuizProblem):
-            logger.info("✅ 이미 GeneratedQuizProblem 타입, 그대로 반환")
-            return quiz_data
-        
-        # 2. 데이터 추출 함수 정의
-        def safe_get(key: str, default: Any = None) -> Any:
-            """다양한 방법으로 데이터 추출 시도"""
-            try:
-                # Dict 방식
-                if isinstance(quiz_data, dict):
-                    return quiz_data.get(key, default)
-                
-                # 객체 속성 방식
-                if hasattr(quiz_data, key):
-                    return getattr(quiz_data, key, default)
-                
-                # Pydantic 모델 방식 (__dict__ 접근)
-                if hasattr(quiz_data, '__dict__'):
-                    return quiz_data.__dict__.get(key, default)
-                
-                return default
-                
-            except Exception as e:
-                logger.warning(f"⚠️ {key} 추출 실패: {e}")
-                return default
-        
-        # 3. 필수 데이터 추출
-        question = safe_get("question", "")
-        choices = safe_get("choices", [])
-        correct_index = safe_get("correctIndex")
-        explanation = safe_get("explanation", "")
-        
-        # 4. 데이터 검증 및 정제
-        # question 검증
-        if not question or not isinstance(question, str) or len(question.strip()) < 5:
-            raise ValueError(f"유효하지 않은 question: {question}")
-        
-        # choices 검증  
-        if not choices or not isinstance(choices, list) or len(choices) != 3:
-            raise ValueError(f"유효하지 않은 choices: {choices}")
-        
-        # choices 내용 검증
-        clean_choices = []
-        for choice in choices:
-            if not choice or not isinstance(choice, str):
-                raise ValueError(f"유효하지 않은 choice: {choice}")
-            clean_choices.append(str(choice).strip())
-        
-        # correctIndex 검증
-        if correct_index is None or not isinstance(correct_index, int) or not (0 <= correct_index <= 2):
-            raise ValueError(f"유효하지 않은 correctIndex: {correct_index}")
-        
-        # explanation 검증
-        if not explanation or not isinstance(explanation, str) or len(explanation.strip()) < 3:
-            raise ValueError(f"유효하지 않은 explanation: {explanation}")
-        
-        # 5. 선택적 필드 추출
-        generation_method = str(safe_get("generation_method", "unknown"))
-        
-        quality_score = safe_get("quality_score", 0.0)
-        try:
-            quality_score = float(quality_score) if quality_score is not None else 0.0
-        except (ValueError, TypeError):
-            quality_score = 0.0
-        
-        parsing_method = str(safe_get("parsing_method", "converted"))
-        
-        # 6. GeneratedQuizProblem 생성
-        result = GeneratedQuizProblem(
-            question=question.strip(),
-            choices=clean_choices,
-            correctIndex=correct_index,
-            explanation=explanation.strip(),
-            generation_method=generation_method,
-            quality_score=quality_score,
-            parsing_method=parsing_method
-        )
-        
-        logger.info(f"✅ 변환 성공: {result.question[:50]}...")
-        return result
-        
-    except Exception as e:
-        logger.error(f"❌ 데이터 변환 실패: {e}")
-        logger.error(f"원본 데이터 타입: {type(quiz_data)}")
-        logger.error(f"원본 데이터: {quiz_data}")
-        
-        # 🚨 Fallback: 최소한의 유효한 문제 생성
-        logger.warning("🔄 Fallback 문제 생성")
-        return GeneratedQuizProblem(
-            question=f"{fallback_name}에 관한 문제입니다.",
-            choices=["선택지1", "선택지2", "선택지3"],
-            correctIndex=0,
-            explanation="기본 해설입니다.",
-            generation_method="conversion_error_fallback",
-            quality_score=0.3,
-            parsing_method="error_recovery"
-        )
 
-# === 강화된 Fallback 퀴즈 서비스 (기존과 동일) ===
-class SafeFallbackQuizService:
-    def __init__(self):
-        self.is_ready = True
-        self.spots_data = {}
-        self._load_spots()
-    
-    def _load_spots(self):
-        if EXPANDED_EDUCATIONAL_SPOTS:
-            for idx, spot in enumerate(EXPANDED_EDUCATIONAL_SPOTS):
-                self.spots_data[idx + 1] = spot
-                self.spots_data[spot.get("세부스팟", f"spot_{idx}")] = {
-                    **spot, "spot_id": idx + 1
-                }
-        
-        if not self.spots_data:
-            default_spots = [
-                {
-                    "세부스팟": "근정전", "메인장소": "경복궁", 
-                    "설명": "조선시대 정전", "교육키워드": ["조선시대", "궁궐"]
-                }
-            ]
-            for idx, spot in enumerate(default_spots):
-                self.spots_data[idx + 1] = spot
-                self.spots_data[spot["세부스팟"]] = {**spot, "spot_id": idx + 1}
-    
-    async def generate_problems_by_name(self, spot_name: str, count: int, grade: int = 5):
-        spot_info = self.spots_data.get(spot_name, {
-            "세부스팟": spot_name, "메인장소": "서울",
-            "설명": "교육적 장소", "교육키워드": ["역사", "문화"]
-        })
-        
-        problems = []
-        for i in range(count):
-            problem = self._create_safe_quiz(spot_info, grade, i)
-            problems.append(problem)
-        
-        return problems
-    
-    async def generate_problems_by_id(self, spot_id: int, count: int, grade: int = 5):
-        spot_info = self.spots_data.get(spot_id, {
-            "세부스팟": f"스팟 {spot_id}", "메인장소": "서울",
-            "설명": "교육적 장소", "교육키워드": ["역사", "문화"]
-        })
-        
-        return await self.generate_problems_by_name(
-            spot_info.get("세부스팟", f"스팟 {spot_id}"), count, grade
-        )
-    
-    def _create_safe_quiz(self, spot_info: Dict, grade: int, quiz_number: int) -> Dict:
-        spot_name = spot_info.get("세부스팟", "이곳")
-        location = spot_info.get("메인장소", "서울")
-        
-        templates = [
-            {
-                "question": f"{spot_name}은 어디에 있나요?",
-                "choices": [location, "부산", "제주도"],
-                "correctIndex": 0,
-                "explanation": f"{spot_name}은 {location}에 있습니다.",
-            }
-        ]
-        
-        template = templates[quiz_number % len(templates)]
-        
-        return {
-            "question": template["question"],
-            "choices": template["choices"],
-            "correctIndex": template["correctIndex"],
-            "explanation": template["explanation"],
-            "generation_method": "safe_fallback",
-            "quality_score": 0.7,
-            "parsing_method": "template"
-        }
-    
-    def get_stats(self):
-        return {
-            "service_type": "safe_fallback",
-            "spots_loaded": len(self.spots_data),
-            "is_ready": self.is_ready
-        }
-
-# === 전역 서비스 인스턴스 ===
-quiz_service: Optional[object] = None
-pose_service: Optional[object] = None
-
+# === 시스템 상태 ===
 system_status = {
     "quiz_service_ready": False,
     "pose_service_ready": False,
     "startup_time": None,
-    "error_details": []
+    "error_details": [],
 }
 
 # === 서비스 초기화 ===
+quiz_service: Optional[QuizService] = None
+
+
 async def initialize_services():
-    global quiz_service, pose_service, system_status
-    
-    logger.info("🚀 서비스 초기화 시작")
-    
-    try:
-        if quiz_service_available and QuizService:
+    """서비스 초기화"""
+    global quiz_service
+
+    logger.info("🔄 서비스 초기화 시작")
+
+    # 퀴즈 서비스 초기화
+    if quiz_service_available and QuizService:
+        try:
             quiz_service = QuizService(settings)
             await quiz_service.initialize()
             system_status["quiz_service_ready"] = True
-            logger.info("✅ 고급 퀴즈 서비스 활성화")
-        else:
-            quiz_service = SafeFallbackQuizService()
-            system_status["quiz_service_ready"] = True
-            logger.warning("⚠️ Safe Fallback 퀴즈 서비스로 전환")
-    except Exception as e:
-        logger.error(f"❌ 퀴즈 서비스 초기화 실패: {e}")
-        quiz_service = SafeFallbackQuizService()
-        system_status["quiz_service_ready"] = True
-        system_status["error_details"].append(f"퀴즈 서비스: {str(e)}")
-    
-    try:
-        if pose_service_available and PoseService:
-            pose_service = PoseService(settings)
-            await pose_service.initialize()
-            system_status["pose_service_ready"] = pose_service.is_ready
-            logger.info("✅ 포즈 분석 서비스 활성화")
-        else:
-            system_status["pose_service_ready"] = False
-            logger.warning("⚠️ 포즈 분석 서비스 비활성화")
-    except Exception as e:
-        logger.error(f"❌ 포즈 서비스 초기화 실패: {e}")
-        system_status["pose_service_ready"] = False
-        system_status["error_details"].append(f"포즈 서비스: {str(e)}")
-    
-    ready_services = sum([system_status["quiz_service_ready"], system_status["pose_service_ready"]])
+            logger.info("✅ 퀴즈 서비스 초기화 완료")
+        except Exception as e:
+            logger.error(f"❌ 퀴즈 서비스 초기화 실패: {e}")
+            system_status["error_details"].append(f"퀴즈 서비스: {str(e)}")
+
+    # 포즈 서비스는 직접 AI 모듈 사용
+    system_status["pose_service_ready"] = True
+    logger.info("✅ 포즈 분석: AI 모듈 직접 사용")
+
+    ready_services = sum(
+        [system_status["quiz_service_ready"], system_status["pose_service_ready"]]
+    )
     logger.info(f"✅ 서비스 초기화 완료: {ready_services}/2")
 
-# === 에러 핸들러 ===
+
+# === FastAPI 앱 생성 ===
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     system_status["startup_time"] = datetime.now().isoformat()
@@ -367,206 +143,378 @@ async def lifespan(app: FastAPI):
     yield
     logger.info("🔄 서버 종료")
 
+
 app = FastAPI(
     title="ARGO AI 통합 서버",
-    description="Pydantic 객체 처리 수정 완료",
-    version="v3.4",
+    description="퀴즈 생성 + 포즈 분석 완전 통합",
+    version="v4.0",
     lifespan=lifespan,
 )
 
+# CORS 설정
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# === 에러 핸들러 ===
 @app.exception_handler(ValidationError)
 async def validation_exception_handler(request, exc):
     logger.error(f"❌ Validation 에러: {exc}")
     return JSONResponse(
-        status_code=422,
-        content={"detail": "데이터 검증 실패", "errors": str(exc)}
+        status_code=422, content={"detail": "데이터 검증 실패", "errors": str(exc)}
     )
+
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request, exc):
     logger.error(f"❌ 일반 에러: {exc}")
     logger.error(f"Traceback: {traceback.format_exc()}")
-    return JSONResponse(
-        status_code=500,
-        content={"detail": f"서버 오류: {str(exc)}"}
+    return JSONResponse(status_code=500, content={"detail": f"서버 오류: {str(exc)}"})
+
+
+# === 🔥 Spring Boot 호환 헬퍼 함수 (수정됨) ===
+def convert_to_quiz_problem_spring_compatible(
+    quiz_data: Union[Dict, Any], grade: int, fallback_name: str
+) -> QuizProblemSpringCompatible:
+    """퀴즈 데이터를 Spring Boot 호환 형식으로 변환"""
+
+    if hasattr(quiz_data, "choices"):
+        # Pydantic 객체인 경우
+        choices = quiz_data.choices
+        return QuizProblemSpringCompatible(
+            question=quiz_data.question,
+            choices=choices[:3],  # 🔥 배열 형태로 변경
+            correctIndex=quiz_data.correctIndex,  # 🔥 0-based index 유지
+            explanation=quiz_data.explanation,
+            grade=grade,
+            spotName=fallback_name,
+        )
+    elif isinstance(quiz_data, dict):
+        # 딕셔너리인 경우
+        choices = quiz_data.get("choices", ["선택지 1", "선택지 2", "선택지 3"])
+        return QuizProblemSpringCompatible(
+            question=quiz_data.get("question", f"{fallback_name}에 대한 문제입니다."),
+            choices=choices[:3],  # 🔥 배열 형태로 변경
+            correctIndex=quiz_data.get("correctIndex", 0),  # 🔥 0-based index 유지
+            explanation=quiz_data.get(
+                "explanation", f"{fallback_name}에 대한 설명입니다."
+            ),
+            grade=grade,
+            spotName=fallback_name,
+        )
+    else:
+        # 빈 데이터인 경우 기본값
+        return QuizProblemSpringCompatible(
+            question=f"{fallback_name}은 우리나라 어디에 있나요?",
+            choices=["서울", "부산", "제주도"],  # 🔥 배열 형태로 변경
+            correctIndex=0,  # 🔥 0-based index
+            explanation=f"{fallback_name}은 서울에 있습니다.",
+            grade=grade,
+            spotName=fallback_name,
+        )
+
+
+# === 퀴즈 생성 엔드포인트 ===
+@app.post("/generate-problem", response_model=ProblemGenerateResponse)
+async def generate_problem(request: ProblemGenerateRequest):
+    """퀴즈 문제 생성"""
+
+    logger.info(
+        f"📝 퀴즈 생성 요청: {request.spotName}, {request.grade}학년, {request.problemCnt}개"
     )
 
-# === 🔥 핵심 수정: API 엔드포인트 ===
-@app.post("/generate-problem", response_model=ProblemGenerateResponse)
-async def generate_problem_by_spot_name(request: ProblemGenerateRequestToAI):
-    """퀴즈 생성 (spotName 기반) - Pydantic 객체 처리 수정"""
-    if not system_status["quiz_service_ready"]:
-        raise HTTPException(status_code=503, detail="퀴즈 서비스가 준비되지 않았습니다")
-    
     try:
-        logger.info(f"📝 퀴즈 생성 요청: {request.spotName}, {request.problemCnt}개, {request.grade}학년")
-        
-        # 서비스 호출
-        quiz_problems = await quiz_service.generate_problems_by_name(
-            spot_name=request.spotName,
-            count=request.problemCnt,
-            grade=request.grade or 5,
-        )
-        
-        logger.info(f"🔍 서비스 반환 데이터 개수: {len(quiz_problems)}")
-        
-        # 🔥 핵심 수정: 유니버설 데이터 변환
-        problems = []
-        conversion_success_count = 0
-        
-        for idx, quiz_data in enumerate(quiz_problems):
-            logger.info(f"🔧 문제 {idx+1} 변환 시작")
-            
+        generated_problems = []
+
+        if quiz_service and system_status["quiz_service_ready"]:
+            # 퀴즈 서비스 사용
             try:
-                # 유니버설 변환 함수 사용
-                problem = convert_to_api_model(quiz_data, request.spotName)
-                problems.append(problem)
-                
-                # 성공 카운트 (fallback이 아닌 경우)
-                if problem.generation_method != "conversion_error_fallback":
-                    conversion_success_count += 1
-                
-                logger.info(f"✅ 문제 {idx+1} 변환 성공: {problem.question[:30]}...")
-                
+                problems = await quiz_service.generate_problems_by_name(
+                    spot_name=request.spotName,
+                    count=request.problemCnt,
+                    grade=request.grade,
+                )
+
+                for problem in problems:
+                    # 🔥 Spring Boot 호환 변환 함수 사용
+                    quiz_compatible = convert_to_quiz_problem_spring_compatible(
+                        problem, request.grade, request.spotName
+                    )
+                    generated_problems.append(quiz_compatible)
+
+                logger.info(f"✅ 퀴즈 서비스로 {len(generated_problems)}개 생성 완료")
+
             except Exception as e:
-                logger.error(f"❌ 문제 {idx+1} 변환 실패: {e}")
-                
-                # 개별 fallback
-                fallback_problem = convert_to_api_model({}, request.spotName)
-                problems.append(fallback_problem)
-        
-        # 최소 1개 문제 보장
-        if not problems:
-            logger.warning("⚠️ 변환된 문제가 없음, 기본 문제 생성")
-            problems.append(convert_to_api_model({
-                "question": f"{request.spotName}은 우리나라 어디에 있나요?",
-                "choices": ["서울", "부산", "제주도"],
-                "correctIndex": 0,
-                "explanation": f"{request.spotName}은 서울에 있습니다."
-            }, request.spotName))
-            conversion_success_count = 1
-        
-        generation_info = {
-            "spot_name": request.spotName,
-            "generated_count": len(problems),
-            "grade": request.grade or 5,
-            "service_stats": quiz_service.get_stats() if hasattr(quiz_service, "get_stats") else {},
-            "conversion_success": conversion_success_count,
-            "conversion_rate": f"{conversion_success_count}/{len(problems)}"
-        }
-        
-        logger.info(f"✅ 퀴즈 생성 완료: {len(problems)}개 (성공: {conversion_success_count}개)")
-        
-        return ProblemGenerateResponse(
-            success=True,
-            problems=problems,
-            generation_info=generation_info
-        )
-        
+                logger.error(f"❌ 퀴즈 서비스 실패: {e}")
+                raise HTTPException(status_code=500, detail=f"퀴즈 생성 실패: {str(e)}")
+        else:
+            # Fallback: 기본 문제 생성
+            logger.warning("⚠️ 퀴즈 서비스 비활성화 - Fallback 사용")
+
+            for i in range(request.problemCnt):
+                # 🔥 Spring Boot 호환 형식으로 변경
+                fallback_quiz = QuizProblemSpringCompatible(
+                    question=f"{request.spotName}에 관한 문제 {i+1}번입니다.",
+                    choices=["정답", "오답 1", "오답 2"],  # 🔥 배열 형태
+                    correctIndex=0,  # 🔥 0-based index
+                    explanation=f"{request.spotName}에 대한 설명입니다.",
+                    grade=request.grade,
+                    spotName=request.spotName,
+                )
+                generated_problems.append(fallback_quiz)
+
+            logger.info(f"🔄 Fallback으로 {len(generated_problems)}개 생성 완료")
+
+        return ProblemGenerateResponse(problems=generated_problems)
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"❌ 퀴즈 생성 실패: {e}")
+        logger.error(f"❌ 전체 퀴즈 생성 실패: {e}")
         logger.error(f"Traceback: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"퀴즈 생성 실패: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"퀴즈 생성 중 오류 발생: {str(e)}")
 
-@app.post("/generate-problem-by-id", response_model=ProblemGenerateResponse)
-async def generate_problem_by_spot_id(request: ProblemGenerateRequestFromSpotId):
-    """퀴즈 생성 (spotId 기반) - Pydantic 객체 처리 수정"""
-    if not system_status["quiz_service_ready"]:
-        raise HTTPException(status_code=503, detail="퀴즈 서비스가 준비되지 않았습니다")
-    
-    try:
-        logger.info(f"📝 ID 퀴즈 생성 요청: ID {request.spotId}, {request.problemCnt}개")
-        
-        quiz_problems = await quiz_service.generate_problems_by_id(
-            spot_id=request.spotId,
-            count=request.problemCnt,
-            grade=request.grade
-        )
-        
-        # 유니버설 변환 함수 사용
-        problems = []
-        for idx, quiz_data in enumerate(quiz_problems):
-            try:
-                problem = convert_to_api_model(quiz_data, f"스팟{request.spotId}")
-                problems.append(problem)
-            except Exception as e:
-                logger.error(f"❌ 문제 {idx+1} 변환 실패: {e}")
-                problems.append(convert_to_api_model({}, f"스팟{request.spotId}"))
-        
-        return ProblemGenerateResponse(
-            success=True,
-            problems=problems,
-            generation_info={"spot_id": request.spotId, "generated_count": len(problems)}
-        )
-        
-    except Exception as e:
-        logger.error(f"❌ ID 퀴즈 생성 실패: {e}")
-        raise HTTPException(status_code=500, detail=f"퀴즈 생성 실패: {str(e)}")
 
-@app.post("/pose/predict", response_model=SimplePoseResponse)
-async def analyze_pose_simple(file: UploadFile = File(...), pose_select: str = Form(...)):
-    """포즈 분석"""
-    if not system_status["pose_service_ready"]:
-        return SimplePoseResponse(
-            success=False, 
-            result="포즈 분석 서비스가 준비되지 않았습니다"
-        )
-    
+# === 🔥 포즈 분석 엔드포인트 (Stream consumed 에러 완전 해결) ===
+
+
+@app.post("/pose/full")
+async def pose_predict_full(file: UploadFile = File(...), pose_select: str = Form(...)):
+    """🎯 포즈 분석 - 정상 파라미터 방식으로 복원"""
+
+    logger.info(f"🎯 /pose/full 요청 받음")
+    logger.info(f"📂 file: {file.filename if file else 'None'}")
+    logger.info(f"📂 pose_select: {pose_select}")
+
     try:
-        result = await pose_service.analyze_pose(file, pose_select)
-        return SimplePoseResponse(success=True, result=str(result))
+        if not file or not file.filename:
+            return JSONResponse(
+                status_code=400,
+                content={"success": False, "result": "파일이 필요합니다"},
+            )
+
+        # 파일 내용 읽기
+        file_content = await file.read()
+        logger.info(f"📂 파일 크기: {len(file_content)} bytes")
+
+        # 🔥 실제 AI_Analyze.py 연결
+        try:
+            import numpy as np
+            import cv2
+            from service.AI_ObjectDetector import AI_ObjectDetector
+            from service.AI_Analyze import AI_Analyze
+
+            # 이미지 디코딩
+            np_arr = np.frombuffer(file_content, np.uint8)
+            image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+
+            if image is None:
+                return JSONResponse(
+                    status_code=400,
+                    content={"success": False, "result": "이미지 디코딩 실패"},
+                )
+
+            logger.info(f"📷 이미지 크기: {image.shape}")
+
+            # AI 모델 로드 및 추론
+            logger.info("🤖 AI 모델 로드 중...")
+            ai_model = AI_ObjectDetector("model/yolov8m.pt")
+
+            logger.info("🔍 포즈 감지 중...")
+            processed_image, results, poses_info = ai_model.Load_image(image)
+
+            if results is None:
+                logger.error("❌ AI 추론 실패")
+                return JSONResponse(
+                    status_code=500,
+                    content={"success": False, "result": "AI 추론 실패"},
+                )
+
+            if not poses_info:
+                logger.warning("⚠️ 사람 감지 실패")
+                return JSONResponse(
+                    status_code=404,
+                    content={
+                        "success": False,
+                        "result": "사람 감지 실패 / 포즈 탐색 실패",
+                    },
+                )
+
+            logger.info(f"✅ 포즈 감지 성공: {len(poses_info)}명")
+
+            # AI_Analyze로 포즈 분석
+            logger.info(f"🎯 포즈 분석 시작: {pose_select}")
+            processor = AI_Analyze(processed_image, results, poses_info)
+            ai_result = processor.print_keypoints(pose_select=pose_select)
+
+            logger.info(f"📊 AI 분석 결과: {ai_result}")
+
+            # 🔥 AI 결과를 JSON 형태로 변환
+            if isinstance(ai_result, str):
+                # 문자열 응답인 경우 JSON 객체로 래핑
+                if "성공" in ai_result or "올바른" in ai_result:
+                    return {"success": True, "result": ai_result}
+                else:
+                    return {"success": False, "result": ai_result}
+            elif isinstance(ai_result, dict):
+                # 이미 딕셔너리인 경우 그대로 반환
+                return ai_result
+            else:
+                # 기타 타입인 경우 문자열로 변환
+                return {"success": True, "result": str(ai_result)}
+
+        except ImportError as e:
+            logger.error(f"❌ AI 모듈 import 실패: {e}")
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "success": False,
+                    "result": f"AI 분석 모듈을 사용할 수 없습니다: {str(e)}",
+                },
+            )
+
+        except Exception as e:
+            logger.error(f"❌ AI 분석 실패: {e}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            return JSONResponse(
+                status_code=500,
+                content={"success": False, "result": f"포즈 분석 실패: {str(e)}"},
+            )
+
     except Exception as e:
         logger.error(f"❌ 포즈 분석 실패: {e}")
-        return SimplePoseResponse(success=False, result=f"분석 오류: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "result": f"분석 실패: {str(e)}"},
+        )
 
-@app.get("/health")
-async def health_check():
-    """시스템 상태 확인"""
+
+@app.post("/pose/debug")
+async def pose_debug_fixed(request: Request):
+    """🔍 디버깅 - Stream consumed 에러 완전 해결"""
+
+    logger.info("🔍 /pose/debug 요청 받음 (수정된 버전)")
+
+    try:
+        # 헤더 정보 수집
+        headers_info = dict(request.headers)
+        content_type = request.headers.get("content-type", "")
+        content_length = request.headers.get("content-length", "0")
+
+        logger.info(f"📂 Content-Type: {content_type}")
+        logger.info(f"📂 Content-Length: {content_length}")
+
+        debug_result = {
+            "success": True,
+            "method": "header_only_analysis",
+            "headers": headers_info,
+            "content_type": content_type,
+            "content_length": content_length,
+            "is_multipart": "multipart/form-data" in content_type.lower(),
+            "timestamp": datetime.now().isoformat(),
+        }
+
+        # 🔥 Stream을 건드리지 않고 헤더만으로 분석
+        if "multipart/form-data" in content_type.lower():
+            boundary = None
+            if "boundary=" in content_type:
+                boundary = content_type.split("boundary=")[1].split(";")[0]
+
+            debug_result.update(
+                {
+                    "detected_boundary": boundary,
+                    "analysis": "멀티파트 요청 감지됨 - 정상적인 파일 업로드 형식",
+                }
+            )
+        else:
+            debug_result.update(
+                {"analysis": "멀티파트가 아닌 요청 - Content-Type 확인 필요"}
+            )
+
+        logger.info(f"📋 디버그 결과: {debug_result}")
+
+        return debug_result
+
+    except Exception as e:
+        logger.error(f"❌ 디버깅 실패: {e}")
+        return {
+            "success": False,
+            "error": str(e),
+            "timestamp": datetime.now().isoformat(),
+        }
+
+
+@app.post("/pose/test")
+async def pose_test_simple():
+    """📡 간단한 연결 테스트"""
     return {
-        "status": "healthy" if system_status["quiz_service_ready"] else "partial",
+        "status": "연결 성공",
+        "service": "ARGO AI Pose Analysis",
         "timestamp": datetime.now().isoformat(),
-        "services": {
-            "quiz_generation": system_status["quiz_service_ready"],
-            "pose_analysis": system_status["pose_service_ready"],
-        },
-        "modules": {
-            "quiz_service_available": quiz_service_available,
-            "pose_service_available": pose_service_available,
-            "spots_available": spots_available,
-        },
-        "startup_time": system_status["startup_time"],
-        "error_details": system_status["error_details"]
+        "ai_modules_available": "object_detect.src" in sys.modules,
     }
 
+
+@app.get("/pose/test")
+async def pose_test_get():
+    """📡 GET 방식 연결 테스트"""
+    return {
+        "status": "GET 연결 성공",
+        "service": "ARGO AI Pose Analysis",
+        "timestamp": datetime.now().isoformat(),
+    }
+
+
+# === 헬스체크 엔드포인트 ===
+@app.get("/health")
+async def health_check():
+    """헬스체크"""
+    return {
+        "status": "healthy",
+        "timestamp": datetime.now().isoformat(),
+        "services": system_status,
+        "version": "v4.0",
+    }
+
+
+# === 시스템 정보 엔드포인트 ===
 @app.get("/")
 async def root():
     """루트 엔드포인트"""
     return {
-        "title": "ARGO AI 통합 서버 (Pydantic 객체 처리 수정)",
-        "version": "v3.4",
-        "status": "✅ 정상 작동",
-        "fixes": [
-            "✅ Pydantic 객체 vs 딕셔너리 처리 수정",
-            "✅ 유니버설 데이터 변환 함수 추가",
-            "✅ 다양한 데이터 타입 지원",
-            "✅ 속성 접근과 딕셔너리 접근 모두 지원",
-            "✅ 고품질 퀴즈 데이터 보존 보장"
-        ],
-        "debug_info": {
-            "conversion_method": "universal",
-            "type_support": "dict, pydantic, object", 
-            "fallback_safety": "guaranteed"
-        }
+        "service": "ARGO AI 통합 서버",
+        "version": "v4.0",
+        "status": system_status,
+        "endpoints": {
+            "quiz_generation": "/generate-problem",
+            "pose_analysis": "/pose/full",
+            "pose_test": "/pose/test",
+            "health": "/health",
+        },
+        "response_format": "Spring Boot Compatible",  # 🔥 추가 정보
     }
 
+
 if __name__ == "__main__":
-    print("🚀 ARGO AI 통합 서버 시작 (Pydantic 객체 처리 수정)")
-    print("🔧 주요 수정사항:")
-    print("   - Pydantic 객체 vs 딕셔너리 처리 구분")
-    print("   - 유니버설 데이터 변환 함수")
-    print("   - 다양한 데이터 타입 지원")
-    print("   - 고품질 퀴즈 데이터 보존")
-    
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False, log_level="info")
+    print("🚀 ARGO AI 통합 서버 시작")
+    print("📡 엔드포인트:")
+    print("   - /generate-problem : 퀴즈 생성 (Spring Boot 호환)")
+    print("   - /pose/full : 포즈 분석")
+    print("   - /health : 헬스체크")
+
+    # 🔥 uvicorn 설정 변경 - 멀티파트 처리 강화
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=False,
+        loop="asyncio",  # 명시적 이벤트 루프
+        http="httptools",  # HTTP 파서 명시
+        limit_max_requests=1000,
+        timeout_keep_alive=5,
+    )
