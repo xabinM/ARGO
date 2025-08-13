@@ -227,7 +227,6 @@ public class ClassService {
     @Transactional
     public ClassListResponse getStudentClassList(Long studentId, String status, Pageable pageable) {
         Page<Object[]> classRoomsWithCounts;
-        
         if ("all".equals(status)) {
             classRoomsWithCounts = classRoomRepository.findStudentClassesWithCounts(studentId, pageable);
         } else {

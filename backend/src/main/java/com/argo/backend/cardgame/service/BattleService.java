@@ -27,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -108,6 +109,7 @@ public class BattleService {
             processBattleResult(match);
 
             // 여기 FCM 알릶 보내야함 //
+
             return BattleResponse.success("대전 수락이 완료되었습니다");
         } else {
             match.setStatus(MatchStatus.CANCELLED);
@@ -157,7 +159,9 @@ public class BattleService {
         
         // 매치 상태 완료로 변경
         match.setStatus(MatchStatus.COMPLETED);
-        
+        match.setEndedAt(LocalDateTime.now());
+
+
         // 카드 잠금 해제
         if (challengerCard != null) {
             challengerCard.setIsLocked(false);
@@ -201,7 +205,6 @@ public class BattleService {
             throw new CardValidationException("완료된 대전만 결과를 확인할 수 있습니다");
         }
         
-        // N+1 문제 해결: Repository 메서드로 대체 (FETCH JOIN 사용)
         Long classId = match.getChallengerTeam().getClassRoom().getClassId();
         Optional<UserTeam> userTeamOpt = userTeamRepository.findActiveByUserIdAndClassId(userId, classId);
         Team userTeam = userTeamOpt.map(UserTeam::getTeam).orElse(null);
@@ -383,9 +386,11 @@ public class BattleService {
         // 카드 제거 처리
         if (result.challengerLoseCard() && match.getChallengerCard() != null) {
             match.getChallengerCard().setIsLost(true);
+            teamCardRepository.save(match.getChallengerCard());
         }
         if (result.challengedLoseCard() && match.getChallengedCard() != null) {
             match.getChallengedCard().setIsLost(true);
+            teamCardRepository.save(match.getChallengedCard());
         }
         
         // 승부 결과 설정
@@ -403,6 +408,7 @@ public class BattleService {
             match.setLoserTeam(challengerTeam);
             match.setDraw(false);
         }
+
     }
     
     private void updateTeamScore(Team team, int score, boolean isWinner) {
