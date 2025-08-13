@@ -171,7 +171,7 @@ fun CardGameScreen(
                             navController.navigate(Screen.CardCollection.createRoute(teamId, classId))
                         },
                         onRequestBattle = {
-                            navController.navigate(Screen.BattleRequest.createRoute(teamId, leaderId))
+                            navController.navigate(Screen.BattleRequest.createRoute(teamId, leaderId, classId))
                         }
                     )
                 }
@@ -181,7 +181,7 @@ fun CardGameScreen(
                     item {
                         EmptyBattleStateCard(
                             onRequestBattle = {
-                                navController.navigate(Screen.BattleRequest.createRoute(teamId, leaderId))
+                                navController.navigate(Screen.BattleRequest.createRoute(teamId, leaderId, classId))
                             }
                         )
                     }
@@ -246,6 +246,7 @@ fun CardGameScreen(
                                     Screen.CardSelection.createRoute(
                                         teamId = teamId,
                                         targetTeamId = if (it.isMyChallenge) it.challengedTeamId else it.challengerTeamId,
+                                        classId = classId,
                                         matchId = matchId,
                                         isResponse = true,
                                         targetTeamName = it.opponentTeamName
@@ -384,17 +385,6 @@ fun TeamStatsCard(teamStats: TeamCardStats) {
                     style = NatureTypography.titleMedium,
                     color = NatureColors.forestGreen
                 )
-                NatureComponents.NatureCard(
-                    containerColor = NatureColors.leafGreen,
-                    shape = NatureShapes.small
-                ) {
-                    Text(
-                        text = "랭킹 ${teamStats.rank}위",
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
-                        style = NatureTypography.labelMedium,
-                        color = Color.White
-                    )
-                }
             }
 
             HorizontalDivider(color = Color.Gray.copy(alpha = 0.2f))
@@ -658,12 +648,18 @@ fun BattleHistoryItem(
                     }
                     
                     if (dateText.isNotEmpty()) {
+                        // 시간 포맷팅: "2025-08-12T04:03:02.100531" -> "2025-08-12 04:03"
+                        val formattedDate = dateText
+                            .replace("T", " ")
+                            .substringBefore(".")
+                            .take(16) // "2025-08-12 04:03" 까지만
+                        
                         Text(
                             text = when (battle.status) {
-                                BattleStatus.COMPLETED -> "대전일: $dateText"
-                                BattleStatus.CANCELLED -> "취소일: $dateText"
-                                BattleStatus.EXPIRED -> "만료일: $dateText"
-                                else -> "신청일: $dateText"
+                                BattleStatus.COMPLETED -> "대전일: $formattedDate"
+                                BattleStatus.CANCELLED -> "취소일: $formattedDate"
+                                BattleStatus.EXPIRED -> "만료일: $formattedDate"
+                                else -> "신청일: $formattedDate"
                             },
                             style = NatureTypography.labelSmall,
                             color = Color.Gray.copy(alpha = 0.6f)

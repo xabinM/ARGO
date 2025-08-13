@@ -270,8 +270,7 @@ class CardGameViewModel @Inject constructor(
                 teamName = "드래곤 슬레이어",
                 wins = 12,
                 losses = 3,
-                totalScore = 2450,
-                rank = 2
+                totalScore = 2450
             )
             
             _uiState.value = _uiState.value.copy(

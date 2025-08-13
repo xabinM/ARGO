@@ -208,8 +208,8 @@ fun CardSelectionScreen(
                     displayMode = CardDisplayMode.SINGLE_SELECT,
                     onCardClick = { card ->
                         // 활성 카드만 선택 가능
-                        if (card.isActive) {
-                            selectedCard = if (selectedCard == card.cardId) null else card.cardId
+                        if (card.isActive && card.teamCardId != null) {
+                            selectedCard = if (selectedCard == card.teamCardId) null else card.teamCardId
                         }
                     },
                     onCardLongClick = {
@@ -225,15 +225,15 @@ fun CardSelectionScreen(
 
         if (showConfirmDialog) {
             BattleConfirmDialog(
-                selectedCards = listOfNotNull(availableCards.find { it.cardId == selectedCard }),
+                selectedCards = listOfNotNull(availableCards.find { it.teamCardId == selectedCard }),
                 selectedStance = selectedStance!!,
                 targetTeamName = targetTeamName,
                 onDismiss = { showConfirmDialog = false },
                 onConfirm = {
                     showConfirmDialog = false
                     
-                    // 선택된 카드의 teamCardId 찾기
-                    val selectedGameCard = availableCards.find { it.cardId == selectedCard }
+                    // 선택된 카드의 teamCardId 사용
+                    val selectedGameCard = availableCards.find { it.teamCardId == selectedCard }
                     selectedGameCard?.teamCardId?.let { teamCardId ->
                         if (params.isResponse && params.matchId != null) {
                             // 대전 응답
@@ -281,7 +281,7 @@ fun CardSelectionScreen(
             onRetry = if (uiState.battleErrorMessage != null) {
                 {
                     // 재시도 로직
-                    val selectedGameCard = availableCards.find { it.cardId == selectedCard }
+                    val selectedGameCard = availableCards.find { it.teamCardId == selectedCard }
                     selectedGameCard?.teamCardId?.let { teamCardId ->
                         if (params.isResponse && params.matchId != null) {
                             viewModel.respondToBattle(

@@ -5,8 +5,7 @@ data class TeamCardStats(
     val teamName: String,
     val wins: Int,
     val losses: Int,
-    val totalScore: Int,
-    val rank: Int
+    val totalScore: Int
 )
 
 data class GameCard(

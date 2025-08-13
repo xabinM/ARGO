@@ -31,7 +31,7 @@ fun StatChip(
 ) {
     NatureComponents.NatureCard(
         modifier = modifier,
-        containerColor = NatureColors.forestGreen.copy(alpha = 0.8f),
+        containerColor = Color.Black.copy(alpha = 0.7f),
         shape = NatureShapes.medium,
         elevation = NatureElevation.small
     ) {

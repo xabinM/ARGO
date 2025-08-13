@@ -85,8 +85,8 @@ sealed class Screen(val route: String) {
         fun createRoute(teamId: Long, classId: Long) = "cardCollection/$teamId/$classId"
     }
 
-    data object BattleRequest : Screen("battleRequest/{teamId}/{leaderId}") {
-        fun createRoute(teamId: Long, leaderId: Long) = "battleRequest/$teamId/$leaderId"
+    data object BattleRequest : Screen("battleRequest/{teamId}/{leaderId}/{classId}") {
+        fun createRoute(teamId: Long, leaderId: Long, classId: Long) = "battleRequest/$teamId/$leaderId/$classId"
     }
 
     data object CardSelection : Screen("cardSelection/{teamId}/{targetTeamId}/{classId}?matchId={matchId}&isResponse={isResponse}&targetTeamName={targetTeamName}") {
@@ -331,15 +331,18 @@ fun AppNavigation(
             route = Screen.BattleRequest.route,
             arguments = listOf(
                 navArgument("teamId") { type = NavType.LongType },
-                navArgument("leaderId") { type = NavType.LongType }
+                navArgument("leaderId") { type = NavType.LongType },
+                navArgument("classId") { type = NavType.LongType }
             )
         ) { backStackEntry ->
             val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
             val leaderId = backStackEntry.arguments?.getLong("leaderId") ?: 0L
+            val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
             BattleRequestScreen(
                 navController = navController,
                 teamId = teamId,
-                leaderId = leaderId
+                leaderId = leaderId,
+                classId = classId
             )
         }
         composable(

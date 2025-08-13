@@ -38,6 +38,7 @@ fun BattleRequestScreen(
     navController: NavController,
     teamId: Long,
     leaderId: Long,
+    classId: Long,
     viewModel: BattleRequestViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -142,6 +143,7 @@ fun BattleRequestScreen(
                         Screen.CardSelection.createRoute(
                             teamId = teamId,
                             targetTeamId = targetOpponent.teamId,
+                            classId = classId,
                             matchId = null,
                             isResponse = false,
                             targetTeamName = targetOpponent.teamName
