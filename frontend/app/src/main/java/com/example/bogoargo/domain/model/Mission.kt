@@ -23,3 +23,9 @@ enum class MissionType {
     QUIZ,       // 퀴즈 미션
     SCAN        // QR/바코드 스캔 미션
 }
+
+// 미션 지점 가능 여부 확인 결과
+data class MissionPossibleCheckResult(
+    val isSuccess: Boolean,
+    val message: String
+)

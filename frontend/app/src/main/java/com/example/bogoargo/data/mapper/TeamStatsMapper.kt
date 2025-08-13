@@ -9,7 +9,6 @@ fun TeamStatsResponseDto.toDomainModel(): TeamCardStats {
         teamName = teamName,
         wins = wins,
         losses = losses,
-        totalScore = totalPoints,
-        rank = rank
+        totalScore = totalPoints
     )
 }

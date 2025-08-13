@@ -6,7 +6,6 @@ import com.example.bogoargo.domain.model.Class
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.use_case.classroom.GetStudentClassListUseCase
 import com.example.bogoargo.domain.use_case.classroom.ApplyClassUseCase
-import com.example.bogoargo.data.event.TokenExpiredEvent
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,8 +24,7 @@ data class HomeUiState(
 @HiltViewModel
 class StudentHomeViewModel @Inject constructor(
     private val getStudentClassListUseCase: GetStudentClassListUseCase,
-    private val applyClassUseCase: ApplyClassUseCase,
-    private val tokenExpiredEvent: TokenExpiredEvent
+    private val applyClassUseCase: ApplyClassUseCase
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -92,8 +90,4 @@ class StudentHomeViewModel @Inject constructor(
         }
     }
     
-    // 디버그용 - 토큰 만료 이벤트 강제 발생
-    fun triggerTokenExpiredForTesting() {
-        tokenExpiredEvent.notifyTokenExpired()
-    }
 }

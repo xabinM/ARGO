@@ -77,8 +77,12 @@ fun BattleDetailDialog(
                                 text = "vs ${battle.opponentTeamName}",
                                 style = NatureTypography.titleMedium
                             )
+                            val formattedDate = battle.endedAt
+                                ?.replace("T", " ")
+                                ?.substringBefore(".")
+                                ?.take(16) ?: ""
                             Text(
-                                text = "대전일: ${battle.endedAt}",
+                                text = "대전일: $formattedDate",
                                 style = NatureTypography.bodyMedium
                             )
                             Text(

@@ -27,7 +27,7 @@ enum class CardDisplayMode {
 @Composable
 fun CardGridComponent(
     cards: List<GameCard>,
-    selectedCardId: Long? = null,
+    selectedCardId: Long? = null, // teamCardId를 전달받음
     displayMode: CardDisplayMode = CardDisplayMode.VIEW_ONLY,
     onCardClick: ((GameCard) -> Unit)? = null,
     onCardLongClick: ((GameCard) -> Unit)? = null,
@@ -42,7 +42,7 @@ fun CardGridComponent(
         items(cards) { card ->
             CardItem(
                 card = card,
-                isSelected = selectedCardId == card.cardId,
+                isSelected = selectedCardId == card.teamCardId,
                 displayMode = displayMode,
                 onClick = { onCardClick?.invoke(card) },
                 onLongClick = { onCardLongClick?.invoke(card) }

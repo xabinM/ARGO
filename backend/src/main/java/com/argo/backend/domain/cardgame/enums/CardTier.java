@@ -9,10 +9,10 @@ import java.util.Random;
 
 @Getter
 public enum CardTier {
-    COMMON(1.0, 60),
+    COMMON(1.0, 25),
     EPIC(1.2, 25),
-    RARE(1.5, 10),
-    LEGENDARY(2.0, 5);
+    RARE(1.5, 25),
+    LEGENDARY(2.0, 25);
 
     private final double weight;
     private final int probability;

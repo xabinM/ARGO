@@ -16,12 +16,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.bogoargo.domain.model.AR3DObject
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureTypography
 
 /**
  * AR 화면에서 현재 표시 중인 객체의 정보를 보여주는 컴포넌트
@@ -41,15 +42,10 @@ fun ARObjectInfo(
         modifier = modifier
     ) {
         arObject?.let { obj ->
-            Card(
+            NatureComponents.NatureCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color.Black.copy(alpha = 0.85f)
-                ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                    .padding(horizontal = 16.dp)
             ) {
                 Row(
                     modifier = Modifier
@@ -62,7 +58,7 @@ fun ARObjectInfo(
                         modifier = Modifier
                             .size(80.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(Color.Gray.copy(alpha = 0.3f)),
+                            .background(NatureColors.lightBeige.copy(alpha = 0.3f)),
                         contentAlignment = Alignment.Center
                     ) {
                         if (obj.thumbnailPath != null) {
@@ -78,7 +74,7 @@ fun ARObjectInfo(
                                 imageVector = Icons.Default.Star,
                                 contentDescription = null,
                                 modifier = Modifier.size(40.dp),
-                                tint = Color.White.copy(alpha = 0.7f)
+                                tint = NatureColors.softOrange
                             )
                         }
                     }
@@ -92,9 +88,8 @@ fun ARObjectInfo(
                         // 객체 이름
                         Text(
                             text = obj.displayName,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.White,
-                            fontWeight = FontWeight.Bold
+                            style = NatureTypography.titleMedium,
+                            color = NatureColors.earthBrown
                         )
                         
                         Spacer(modifier = Modifier.height(4.dp))
@@ -103,8 +98,8 @@ fun ARObjectInfo(
                         obj.category?.let { category ->
                             Text(
                                 text = category,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.White.copy(alpha = 0.7f)
+                                style = NatureTypography.bodySmall,
+                                color = NatureColors.earthBrown.copy(alpha = 0.7f)
                             )
                         }
                         
@@ -118,23 +113,21 @@ fun ARObjectInfo(
                                 imageVector = Icons.Default.LocationOn,
                                 contentDescription = null,
                                 modifier = Modifier.size(16.dp),
-                                tint = if (isInteractable) Color.Green else Color.White.copy(alpha = 0.7f)
+                                tint = if (isInteractable) NatureColors.leafGreen else NatureColors.earthBrown.copy(alpha = 0.7f)
                             )
                             Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "${String.format("%.1f", distance)}m",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = if (isInteractable) Color.Green else Color.White.copy(alpha = 0.7f),
-                                fontWeight = if (isInteractable) FontWeight.Bold else FontWeight.Normal
+                                style = NatureTypography.bodyMedium,
+                                color = if (isInteractable) NatureColors.leafGreen else NatureColors.earthBrown.copy(alpha = 0.7f)
                             )
                             
                             if (isInteractable) {
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "터치 가능!",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.Green,
-                                    fontWeight = FontWeight.Bold
+                                    text = "✨ 터치 가능!",
+                                    style = NatureTypography.bodySmall,
+                                    color = NatureColors.leafGreen
                                 )
                             }
                         }
@@ -145,13 +138,13 @@ fun ARObjectInfo(
                 // 설명이 있는 경우 추가 표시
                 obj.description?.let { desc ->
                     HorizontalDivider(
-                        color = Color.White.copy(alpha = 0.2f),
+                        color = NatureColors.earthBrown.copy(alpha = 0.2f),
                         modifier = Modifier.padding(horizontal = 16.dp)
                     )
                     Text(
                         text = desc,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.White.copy(alpha = 0.7f),
+                        style = NatureTypography.bodySmall,
+                        color = NatureColors.earthBrown.copy(alpha = 0.7f),
                         modifier = Modifier.padding(16.dp)
                     )
                 }

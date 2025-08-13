@@ -119,7 +119,7 @@ class CardSelectionViewModel @Inject constructor(
     // 대전 신청에 응답 (PUT /api/battles/{matchId}/respond)
     fun respondToBattle(
         matchId: Long,
-        action: String, // "accept" or "reject" 
+        action: String, // "ACCEPT" or "REJECT" 
         selectedCardTeamCardId: Long?,
         battleStance: BattleStance?
     ) {
@@ -139,7 +139,7 @@ class CardSelectionViewModel @Inject constructor(
                 is DataResult.Error -> {
                     _uiState.value = _uiState.value.copy(
                         isBattleLoading = false,
-                        battleErrorMessage = "대전 ${if (action == "accept") "수락" else "거절"}에 실패했습니다: ${result.exception.message}"
+                        battleErrorMessage = "대전 ${if (action == "ACCEPT") "수락" else "거절"}에 실패했습니다: ${result.exception.message}"
                     )
                 }
             }

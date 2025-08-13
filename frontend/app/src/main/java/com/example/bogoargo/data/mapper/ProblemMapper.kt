@@ -13,6 +13,8 @@ fun ProblemDataQuizDto.toDomainModel(): QuizProblem {
         dtype = this.dtype,
         question = this.question,
         choices = this.choices,
+        correctIndex = 0, // TODO: DTO에서 정답 인덱스 받아오기
+        explanation = "", // TODO: DTO에서 설명 받아오기
         formattedQuestion = "Q. ${this.question}"
     )
 }
@@ -25,7 +27,7 @@ fun ProblemDataSelfieDto.toDomainModel(): SelfieProblem {
         guideline = this.guideline,
         pose = this.pose,
         poseHint = this.poseHint,
-        displayImageUrl = ""
+        displayImageUrl = "" // 기본값 사용
     )
 }
 

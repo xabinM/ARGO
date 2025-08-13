@@ -21,7 +21,7 @@ fun tryCreateTerrainAnchor(
     longitude: Double,
     onDebugInfoUpdate: (ARDebugInfo) -> Unit,
     onAnchorTypeChange: (String, ModelNode?) -> Unit,
-    onObjectInfoUpdate: ((AR3DObject) -> Unit)? = null
+    onObjectInfoUpdate: ((AR3DObject, Float) -> Unit)? = null
 ): Boolean {
     try {
         val earth = session.earth
@@ -52,8 +52,8 @@ fun tryCreateTerrainAnchor(
         val modelPath = arObject.modelPath
         Log.i("ARScreen", "Selected mission object for Terrain Anchor: ${arObject.displayName}")
         
-        // 객체 정보 업데이트 콜백 호출
-        onObjectInfoUpdate?.invoke(arObject)
+        // 객체 정보 업데이트 콜백 호출 (초기 거리는 미정)
+        onObjectInfoUpdate?.invoke(arObject, Float.MAX_VALUE)
         
         // 모델 인스턴스 먼저 생성
         val modelInstance = arSceneView.modelLoader.createModelInstance(modelPath)
@@ -163,7 +163,7 @@ fun tryCreatePlaneAnchor(
     session: Session,
     onDebugInfoUpdate: (ARDebugInfo) -> Unit,
     onAnchorTypeChange: (String, ModelNode?) -> Unit,
-    onObjectInfoUpdate: ((AR3DObject) -> Unit)? = null
+    onObjectInfoUpdate: ((AR3DObject, Float) -> Unit)? = null
 ): Boolean {
     try {
         // 모든 감지된 평면 가져오기
@@ -198,8 +198,8 @@ fun tryCreatePlaneAnchor(
         val modelPath = arObject.modelPath
         Log.i("ARScreen", "Selected mission object for Plane Anchor: ${arObject.displayName}")
         
-        // 객체 정보 업데이트 콜백 호출
-        onObjectInfoUpdate?.invoke(arObject)
+        // 객체 정보 업데이트 콜백 호출 (초기 거리는 미정)
+        onObjectInfoUpdate?.invoke(arObject, Float.MAX_VALUE)
         
         // 평면 중심에 Anchor 생성
         val planePose = nearestPlane.centerPose
@@ -352,7 +352,7 @@ fun createFallbackNode(
     arSceneView: ARSceneView, 
     reason: String,
     onAnchorTypeChange: (String, ModelNode?) -> Unit,
-    onObjectInfoUpdate: ((AR3DObject) -> Unit)? = null
+    onObjectInfoUpdate: ((AR3DObject, Float) -> Unit)? = null
 ) {
     try {
         Log.i("ARScreen", "Creating fallback node - reason: $reason")
@@ -371,8 +371,8 @@ fun createFallbackNode(
         Log.i("ARScreen", "Placement Type: ${fallbackObject.placementType}")
         
         
-        // 객체 정보 업데이트 콜백 호출
-        onObjectInfoUpdate?.invoke(fallbackObject)
+        // 객체 정보 업데이트 콜백 호출 (초기 거리는 미정)
+        onObjectInfoUpdate?.invoke(fallbackObject, Float.MAX_VALUE)
         
         // 파일 존재 여부 확인 로깅
         Log.i("ARScreen", "=== FILE EXISTENCE CHECK ===")
@@ -572,7 +572,7 @@ fun smoothUpdatePosition(modelNode: ModelNode, targetPosition: Position) {
 fun createPrimitiveNode(
     arSceneView: ARSceneView,
     onAnchorTypeChange: ((String, ModelNode?) -> Unit)? = null,
-    onObjectInfoUpdate: ((AR3DObject) -> Unit)? = null
+    onObjectInfoUpdate: ((AR3DObject, Float) -> Unit)? = null
 ) {
     try {
         Log.i("ARScreen", "Creating primitive fallback node")
@@ -608,8 +608,8 @@ fun createPrimitiveNode(
                 // 상태 업데이트 콜백 호출 (평면 추적을 위해)
                 onAnchorTypeChange?.invoke("PRIMITIVE_FALLBACK", royalSealNode)
                 
-                // 객체 정보 업데이트 콜백 호출 (UI 정보 업데이트를 위해)
-                onObjectInfoUpdate?.invoke(royalSealObject)
+                // 객체 정보 업데이트 콜백 호출 (UI 정보 업데이트를 위해, 초기 거리는 미정)
+                onObjectInfoUpdate?.invoke(royalSealObject, Float.MAX_VALUE)
             } else {
                 Log.w("ARScreen", "Failed to create primitive fallback Royal Seal Box model instance")
             }
