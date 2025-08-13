@@ -14,17 +14,13 @@ public class CommonApiResponse<T> {
     private String message;
     private T data;
     
-        private CommonApiResponse(boolean success, String message) {
+    public CommonApiResponse(boolean success, String message) {
         this.success = success;
         this.message = message;
         this.data = null;
     }
-
-    public CommonApiResponse ok (T data,String message) {
-        return new CommonApiResponse(
-                this.success = true,
-                this.message = message,
-                this.data = data
-        );
+    
+    public static <T> CommonApiResponse<T> success(String message, T data) {
+        return new CommonApiResponse<>(true,message, data);
     }
 }

@@ -257,14 +257,6 @@ public class ClassService {
         ClassRoom classRoom = classRoomRepository.findByIdWithLocationAndTeacher(classId)
                 .orElseThrow(ClassNotFoundException::new);
         
-        // 권한 검증 (선생 또는 참여 학생)
-        boolean isTeacher = classRoom.getTeacher().getUserId().equals(userId);
-        boolean isStudent = classStudentRepository.isStudentInClass(userId, classId);
-        
-        if (!isTeacher && !isStudent) {
-            throw new UnauthorizedClassAccessException();
-        }
-        
         // Teacher 버전 기준으로 통일 (모든 정보 제공)
         ClassInfoDetailDto classInfo = ClassInfoDetailDto.fromTeacher(classRoom);
         

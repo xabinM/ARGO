@@ -46,7 +46,7 @@ public class CardController {
         
         CardInfoResponse response = cardService.getCardInfo(cardId, userId);
         
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "카드 정보 조회 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success("카드 정보 조회 성공", response));
     }
     
     /**
@@ -60,7 +60,7 @@ public class CardController {
         
         TeamCardCollectionResponse response = teamCardService.getTeamCardCollection(teamId, userId);
         
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "팀 카드 컬렉션 조회 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success("팀 카드 컬렉션 조회 성공", response));
     }
     
     /**
@@ -74,7 +74,7 @@ public class CardController {
         
         List<BattleOpponentDto> response = battleService.getBattleOpponents(teamId, userId);
         
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "대전 가능한 팀 목록 조회 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success("대전 가능한 팀 목록 조회 성공", response));
     }
     
     /**
@@ -88,7 +88,7 @@ public class CardController {
         
         BattleResponse response = battleService.createBattle(request, userId);
         
-        return ResponseEntity.ok(new CommonApiResponse<>(true, response.message(), response));
+        return ResponseEntity.ok(CommonApiResponse.success(response.message(), response));
     }
     
     /**
@@ -103,7 +103,7 @@ public class CardController {
         
         BattleResponse response = battleService.respondToBattle(matchId, request, userId);
         
-        return ResponseEntity.ok(new CommonApiResponse<>(true, response.message(), response));
+        return ResponseEntity.ok(CommonApiResponse.success(response.message(), response));
     }
     
     /**
@@ -117,7 +117,7 @@ public class CardController {
         
         BattleResponse response = battleService.cancelBattle(matchId, userId);
         
-        return ResponseEntity.ok(new CommonApiResponse<>(true, response.message(), response));
+        return ResponseEntity.ok(CommonApiResponse.success(response.message(), response));
     }
     
     /**
@@ -134,7 +134,7 @@ public class CardController {
         Pageable pageable = PageRequest.of(page, size);
         BattleHistoryResponse response = battleHistoryService.getBattleHistory(teamId, userId, pageable);
         
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "대전 기록 조회 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success("대전 기록 조회 성공", response));
     }
     
     /**
@@ -148,7 +148,7 @@ public class CardController {
         
         BattleResponse response = battleService.viewBattleResult(matchId, userId);
         
-        return ResponseEntity.ok(new CommonApiResponse<>(true, response.message(), response));
+        return ResponseEntity.ok(CommonApiResponse.success(response.message(), response));
     }
     
     /**
@@ -162,6 +162,6 @@ public class CardController {
         
         TeamStatsDto response = teamStatsService.getTeamStats(teamId, userId);
         
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "팀 통계 조회 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success("팀 통계 조회 성공", response));
     }
 }

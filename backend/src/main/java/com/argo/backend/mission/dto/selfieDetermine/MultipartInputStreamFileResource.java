@@ -7,10 +7,12 @@ import java.io.InputStream;
 public class MultipartInputStreamFileResource extends InputStreamResource {
 
     private final String filename;
+    private final long contentLength;  // 추가
 
-    public MultipartInputStreamFileResource(InputStream inputStream, String filename) {
+    public MultipartInputStreamFileResource(InputStream inputStream, String filename, long contentLength) {
         super(inputStream);
         this.filename = filename;
+        this.contentLength = contentLength;  // 추가
     }
 
     @Override
@@ -20,6 +22,6 @@ public class MultipartInputStreamFileResource extends InputStreamResource {
 
     @Override
     public long contentLength() {
-        return -1; // 알 수 없거나 무시할 때
+        return this.contentLength;  // ← -1 대신 실제 크기 반환
     }
 }
