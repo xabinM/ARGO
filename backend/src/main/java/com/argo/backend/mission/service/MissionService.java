@@ -8,11 +8,11 @@ import com.argo.backend.domain.cardgame.repository.TeamCardRepository;
 import com.argo.backend.domain.mission.entity.MissionSession;
 import com.argo.backend.domain.mission.enums.MissionSessionStatus;
 import com.argo.backend.domain.ploblem.entity.Problem;
-import com.argo.backend.domain.ploblem.entity.SelfieProblem;
 import com.argo.backend.domain.ploblem.repository.SelfieProblemRepository;
 import com.argo.backend.domain.spot.entity.Spot;
 import com.argo.backend.domain.team.entity.Team;
 import com.argo.backend.domain.team.repository.TeamRepository;
+import com.argo.backend.global.enums.ResponseMessage;
 import com.argo.backend.mission.dto.SubmitMission.MissionSubmitDto;
 import com.argo.backend.mission.dto.common.ProblemDetail;
 import com.argo.backend.mission.dto.missionCreate.MissionCreateDto;
@@ -176,7 +176,7 @@ public class MissionService {
             return dto;
         }
 
-        dto = new MissionPossibleCheckDto(false, "이미 미션을 진행한 곳입니다.");
+        dto = new MissionPossibleCheckDto(false, ResponseMessage.ALREADY_PROGRESSED_MISSION.getMessage());
 
         return dto;
     }
