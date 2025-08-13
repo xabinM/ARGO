@@ -71,12 +71,15 @@ fun SelectHomeScreen(
                         .padding(bottom = 32.dp)
                 ) {
                     Column(
-                        modifier = Modifier.padding(24.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
                             text = "${currentUser?.name ?: "사용자"}님, 환영합니다!",
-                            style = NatureTypography.titleLarge
+                            style = NatureTypography.titleLarge,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                         
                         Spacer(modifier = Modifier.height(8.dp))
@@ -85,7 +88,8 @@ fun SelectHomeScreen(
                             text = "홈 화면을 선택해주세요",
                             style = NatureTypography.bodyMedium.copy(
                                 color = NatureColors.earthBrown.copy(alpha = 0.8f)
-                            )
+                            ),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
                     }
                 }

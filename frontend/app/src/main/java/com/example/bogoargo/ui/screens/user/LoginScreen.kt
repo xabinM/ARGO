@@ -64,9 +64,12 @@ fun LoginScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 24.dp)
+                    .wrapContentHeight()
             ) {
                 Column(
-                    modifier = Modifier.padding(24.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     NatureComponents.ProfileAvatar(
@@ -79,7 +82,8 @@ fun LoginScreen(
                     
                     Text(
                         text = "로그인",
-                        style = NatureTypography.titleLarge
+                        style = NatureTypography.titleLarge,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                     
                     Spacer(modifier = Modifier.height(8.dp))
@@ -88,7 +92,8 @@ fun LoginScreen(
                         text = "게임과 함께하는 즐거운 학습",
                         style = NatureTypography.bodyMedium.copy(
                             color = NatureColors.earthBrown.copy(alpha = 0.8f)
-                        )
+                        ),
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
                     )
                 }
             }

@@ -35,7 +35,7 @@ fun StudentHomeScreen(
             NatureComponents.NatureTopAppBar(
                 title = "내 반들",
                 emoji = "🎒",
-                onNavigationClick = null
+                onNavigationClick = { navController.popBackStack() }
             )
         }
     ) { paddingValues ->
