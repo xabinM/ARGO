@@ -11,6 +11,7 @@ import com.example.bogoargo.data.response.ClassListResponse
 import com.example.bogoargo.data.response.ClassMemberResponse
 import com.example.bogoargo.data.response.StudentClassDetailResponse
 import com.example.bogoargo.data.response.applyClassResponse
+import com.example.bogoargo.domain.model.MissionSpotsResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -104,11 +105,9 @@ interface ClassApiService {
         @Path("classId") classId: Long
     ): Response<ClassLeaveResponse>
 
-
-
-
-
-
-
-
+    // GPS 정보(Spots) 조회
+    @GET("api/teacher/classes/{classId}/spots")
+    suspend fun getSpots(
+        @Path("classId") classId: Long
+    ): Response<MissionSpotsResponse>
 }

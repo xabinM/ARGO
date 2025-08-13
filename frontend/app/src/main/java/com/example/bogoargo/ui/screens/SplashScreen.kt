@@ -29,16 +29,10 @@ fun SplashScreen(
             val user = loginViewModel.getLoggedInUser()
             
             if (user != null) {
-                // 로컬 세션이 유효하면 바로 홈으로 이동
+                // 로컬 세션이 유효하면 SelectHomeScreen으로 이동
                 // 토큰 만료 등의 문제는 실제 API 호출 시점에 TokenManagementInterceptor가 처리
-                if (user.role == UserRole.ROLE_TEACHER) {
-                    navController.navigate("teacherHome") {
-                        popUpTo("splash") { inclusive = true }
-                    }
-                } else {
-                    navController.navigate("studentHome") {
-                        popUpTo("splash") { inclusive = true }
-                    }
+                navController.navigate("selectHome") {
+                    popUpTo("splash") { inclusive = true }
                 }
             } else {
                 // 사용자 정보 없으면 데이터 삭제 후 로그인으로 이동

@@ -2,7 +2,12 @@ package com.example.bogoargo.domain.model
 
 data class MissionSpot(
     val spotId: Long,
-    val spotName: String,
+    val name: String,
+    val description: String,
+    val coordinates: SpotCoordinates
+)
+
+data class SpotCoordinates(
     val latitude: Double,
     val longitude: Double
 )
