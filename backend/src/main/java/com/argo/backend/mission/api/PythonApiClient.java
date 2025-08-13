@@ -204,7 +204,7 @@ public class PythonApiClient {
             // 인원수 추가
             StringBody cntBody = new StringBody(teamMemberCnt.toString(),
                     org.apache.http.entity.ContentType.TEXT_PLAIN);
-            builder.addPart("teamMemberCnt", cntBody);
+            builder.addPart("people_count", cntBody);
 
             // 풀네임 써야 import 충돌 해결
             org.apache.http.HttpEntity multipartEntity = builder.build();
