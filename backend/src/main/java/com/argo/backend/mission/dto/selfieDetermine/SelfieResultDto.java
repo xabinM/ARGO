@@ -12,5 +12,6 @@ import lombok.NoArgsConstructor;
 public class SelfieResultDto {
 
     private boolean success;
+
     private String result;
 }

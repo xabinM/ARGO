@@ -100,10 +100,11 @@ public class ProblemController {
     }
 
     @PreAuthorize("hasRole('STUDENT')")
-    @PostMapping(value = "/selfie/determine", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> determineSelfiePose(@RequestParam("image") MultipartFile imageFile,
+    @PostMapping(value = "/selfie/determine/team/{teamId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<?> determineSelfiePose(@PathVariable Long teamId,
+                                                 @RequestParam("image") MultipartFile imageFile,
                                                  @RequestParam("pose") PhotoPose pose) throws IOException {
-        SelfieResultDto result = problemService.determineSelfie(new SelfieRequestDto(imageFile, pose));
+        SelfieResultDto result = problemService.determineSelfie(new SelfieRequestDto(teamId, imageFile, pose));
 
         return ResponseEntity.ok(new SelfieResultResponse(true, result));
     }

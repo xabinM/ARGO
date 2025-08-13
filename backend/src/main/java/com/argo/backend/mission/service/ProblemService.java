@@ -5,6 +5,10 @@ import com.argo.backend.domain.ploblem.enums.ProblemType;
 import com.argo.backend.domain.ploblem.entity.QuizProblem;
 import com.argo.backend.domain.ploblem.entity.SelfieProblem;
 import com.argo.backend.domain.spot.entity.Spot;
+import com.argo.backend.domain.team.entity.Team;
+import com.argo.backend.domain.team.repository.TeamRepository;
+import com.argo.backend.domain.user.entity.UserTeam;
+import com.argo.backend.domain.user.repository.UserTeamRepository;
 import com.argo.backend.mission.api.PythonApiClient;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateTransDto;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterRequest;
@@ -20,6 +24,7 @@ import com.argo.backend.domain.ploblem.repository.ProblemRepository;
 import com.argo.backend.domain.ploblem.repository.QuizProblemRepository;
 import com.argo.backend.domain.ploblem.repository.SelfieProblemRepository;
 import com.argo.backend.domain.spot.repository.SpotRepository;
+import com.argo.backend.mission.exception.TeamNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,13 +41,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProblemService {
 
-    private static final String PYTHON_API_URL = "http://localhost:5000/api/generate";
-
     private final ProblemRepository problemRepository;
     private final PythonApiClient pythonApiClient;
     private final SpotRepository spotRepository;
-    private final QuizProblemRepository quizProblemRepository;
-    private final SelfieProblemRepository selfieProblemRepository;
+    private final UserTeamRepository userTeamRepository;
+    private final TeamRepository teamRepository;
 
     @Transactional
     public void registerQuizProblem(Long spotId, ProblemRegisterRequest request) {
@@ -67,7 +70,7 @@ public class ProblemService {
         Spot spot = spotRepository.findById(request.getSpotId())
                 .orElseThrow(SpotNotFoundException::new);
 
-        log.info("🎯 퀴즈 생성 요청: spotId={}, spotName={}, grade={}, count={}", 
+        log.info("🎯 퀴즈 생성 요청: spotId={}, spotName={}, grade={}, count={}",
                 request.getSpotId(), spot.getName(), request.getGrade(), request.getProblemCnt());
 
         // 🔥 Apache HttpClient 방식으로 변경 (422 에러 해결)
@@ -118,7 +121,7 @@ public class ProblemService {
     public Map<String, Object> testQuizGeneration(String spotName, int grade, int problemCnt) {
         try {
             log.info("🧪 Apache 퀴즈 생성 테스트: spotName={}, grade={}, count={}", spotName, grade, problemCnt);
-            
+
             // 🔥 Apache HttpClient 방식 먼저 시도
             Map<String, Object> quizResult;
             try {
@@ -129,21 +132,21 @@ public class ProblemService {
                 quizResult = pythonApiClient.requestProblemAsMap(spotName, grade, problemCnt);
                 log.info("✅ RestTemplate 방식 성공");
             }
-            
+
             // problems 필드 확인
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> problems = (List<Map<String, Object>>) quizResult.get("problems");
-            
+
             log.info("📝 생성된 문제 수: {}", problems.size());
-            
+
             for (int i = 0; i < problems.size(); i++) {
                 Map<String, Object> problem = problems.get(i);
-                log.info("문제 {}: {}", i+1, problem.get("question"));
+                log.info("문제 {}: {}", i + 1, problem.get("question"));
                 log.info("정답: {}번", problem.get("correctIndex"));
             }
-            
+
             return quizResult;
-            
+
         } catch (Exception e) {
             log.error("❌ 퀴즈 생성 실패: {}", e.getMessage());
             throw e;
@@ -156,15 +159,15 @@ public class ProblemService {
     public Map<String, Object> testQuizGenerationDirect(String spotName, int grade, int problemCnt) {
         try {
             log.info("🧪 Apache 직접 테스트: spotName={}, grade={}, count={}", spotName, grade, problemCnt);
-            
+
             // Apache HttpClient 직접 호출 (DB 우회)
             Map<String, Object> result = pythonApiClient.requestProblemAsMapWithApache(
-                spotName, grade, problemCnt
+                    spotName, grade, problemCnt
             );
-            
+
             log.info("✅ 직접 테스트 성공");
             return result;
-            
+
         } catch (Exception e) {
             log.error("❌ 직접 테스트 실패: {}", e.getMessage());
             throw e;
@@ -178,10 +181,10 @@ public class ProblemService {
 
     // 🔥 핵심 수정: Repository 문제 해결을 위한 대안 방법
     public List<ProblemDetail> findProblemsBySpotIdAndType(Long spotId, ProblemType type) {
-        
+
         // 🔥 기존에 잘 작동하는 ProblemRepository 사용
         List<Problem> allProblems = problemRepository.findAllBySpotId(spotId);
-        
+
         return switch (type) {
             case QUIZ -> allProblems.stream()
                     .filter(p -> p instanceof QuizProblem)  // QuizProblem만 필터링
@@ -196,7 +199,13 @@ public class ProblemService {
     }
 
     public SelfieResultDto determineSelfie(SelfieRequestDto request) throws IOException {
+        Team team = teamRepository.findById(request.getTeamId()).orElseThrow(TeamNotFoundException::new);
+
+        List<UserTeam> userTeams = userTeamRepository.findAllByTeam(team);
+
+        Integer teamMemberCnt = userTeams.size();
+
         log.info("🎯 포즈 분석 시작");
-        return pythonApiClient.requestDeterMineSelfie(request);
+        return pythonApiClient.requestDeterMineSelfie(teamMemberCnt, request.getMultipartFile(), request.getPose());
     }
 }
