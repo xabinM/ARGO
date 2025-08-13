@@ -92,6 +92,39 @@ public class ProblemService {
         return new ProblemGenerateTransDto(request.getGrade(), spot.getName(), dto);
     }
 
+    /**
+     * 🧪 퀴즈 생성 테스트 메서드
+     */
+    public Map<String, Object> testQuizGeneration(String spotName, int grade, int problemCnt) {
+        try {
+            log.info("🧪 퀴즈 생성 테스트: spotName={}, grade={}, count={}", spotName, grade, problemCnt);
+            
+            Map<String, Object> quizResult = pythonApiClient.requestProblemAsMap(
+                spotName, grade, problemCnt
+            );
+            
+            log.info("✅ 퀴즈 생성 성공");
+            
+            // problems 필드 확인
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> problems = (List<Map<String, Object>>) quizResult.get("problems");
+            
+            log.info("📝 생성된 문제 수: {}", problems.size());
+            
+            for (int i = 0; i < problems.size(); i++) {
+                Map<String, Object> problem = problems.get(i);
+                log.info("문제 {}: {}", i+1, problem.get("question"));
+                log.info("정답: {}번", problem.get("answer"));
+            }
+            
+            return quizResult;
+            
+        } catch (Exception e) {
+            log.error("❌ 퀴즈 생성 실패: {}", e.getMessage());
+            throw e;
+        }
+    }
+
     public List<ProblemDetail> getProblemsBySpotId(Long spotId) {
         List<Problem> problems = problemRepository.findAllBySpotId(spotId);
         return ProblemDetail.from(problems);
@@ -111,17 +144,6 @@ public class ProblemService {
 
     public SelfieResultDto determineSelfie(SelfieRequestDto request) throws IOException {
         log.info("🎯 포즈 분석 시작");
-
-        // 디버깅 코드 주석처리
-        // try {
-        //     Map<String, Object> debugResult = pythonApiClient.debugPoseRequest(request);
-        //     log.info("🔍 디버깅 결과: {}", debugResult);
-        // } catch (Exception e) {
-        //     log.warn("⚠️ 디버깅 호출 실패: {}", e.getMessage());
-        // }
-
-        // 🔥 한 번만 호출!
-        log.info("🎯 실제 포즈 분석 호출 시작");
         return pythonApiClient.requestDeterMineSelfie(request);
     }
 }

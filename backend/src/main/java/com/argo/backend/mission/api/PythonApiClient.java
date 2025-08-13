@@ -16,6 +16,17 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 
+// Apache HttpClient imports (import 충돌 해결)
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.ByteArrayBody;
+import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.util.EntityUtils;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -37,7 +48,7 @@ public class PythonApiClient {
     }
 
     /**
-     * 퀴즈 생성 요청 - Map 방식으로 수정
+     * 퀴즈 생성 요청 - Map 방식
      */
     public Map<String, Object> requestProblemAsMap(String spotName, int grade, int problemCnt) {
         log.info("📝 퀴즈 생성 요청: spotName={}, grade={}, problemCnt={}", spotName, grade, problemCnt);
@@ -45,7 +56,6 @@ public class PythonApiClient {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(new MediaType("application", "json", StandardCharsets.UTF_8));
 
-        // FastAPI 요청 형식
         ProblemGenerateRequestToAI request = new ProblemGenerateRequestToAI(spotName, grade, problemCnt);
         HttpEntity<ProblemGenerateRequestToAI> entity = new HttpEntity<>(request, headers);
 
@@ -88,10 +98,92 @@ public class PythonApiClient {
     }
 
     /**
-     * 🔥 핵심 수정: 셀피 포즈 분석 요청 (기존 구조 유지하며 수정)
+     * 🔥 Apache HttpClient를 사용한 포즈 분석 (Python requests와 동일한 방식)
      */
     public SelfieResultDto requestDeterMineSelfie(SelfieRequestDto request) throws IOException {
-        log.info("🎯 포즈 분석 요청 시작: pose={}", request.getPose());
+        log.info("🎯 Apache HttpClient로 포즈 분석 시작: pose={}", request.getPose());
+        
+        try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
+            HttpPost httpPost = new HttpPost(pythonApiBaseUrl + "/pose/full");
+            
+            MultipartFile multipartFile = request.getMultipartFile();
+            if (multipartFile == null || multipartFile.isEmpty()) {
+                throw new PythonApiException("업로드할 파일이 없습니다");
+            }
+
+            byte[] fileBytes = multipartFile.getBytes();
+            
+            // Content-Type null 체크 및 기본값 설정
+            String contentType = multipartFile.getContentType();
+            if (contentType == null) {
+                contentType = "image/jpeg"; // 기본값
+            }
+            
+            log.info("📁 파일 정보:");
+            log.info("  - 파일명: {}", multipartFile.getOriginalFilename());
+            log.info("  - Content-Type: {}", contentType);
+            log.info("  - 파일 크기: {} bytes", fileBytes.length);
+            
+            // 멀티파트 엔티티 생성 (Python requests와 동일한 방식)
+            MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+            
+            // 파일 파트 추가
+            ByteArrayBody fileBody = new ByteArrayBody(fileBytes, 
+                org.apache.http.entity.ContentType.create(contentType),
+                multipartFile.getOriginalFilename());
+            builder.addPart("file", fileBody);
+            
+            // 텍스트 파트 추가
+            StringBody poseBody = new StringBody(request.getPose().name().toLowerCase(), 
+                org.apache.http.entity.ContentType.TEXT_PLAIN);
+            builder.addPart("pose_select", poseBody);
+            
+            // 🔥 풀네임 사용으로 import 충돌 해결
+            org.apache.http.HttpEntity multipartEntity = builder.build();
+            httpPost.setEntity(multipartEntity);
+            
+            // 헤더 설정
+            httpPost.setHeader("Accept", "application/json");
+            
+            log.info("📤 Apache HttpClient 요청 전송");
+            log.info("  - URL: {}/pose/full", pythonApiBaseUrl);
+            log.info("  - 포즈: {}", request.getPose().name().toLowerCase());
+            
+            try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
+                int statusCode = response.getStatusLine().getStatusCode();
+                String responseBody = EntityUtils.toString(response.getEntity());
+                
+                log.info("📥 Apache HttpClient 응답:");
+                log.info("  - 상태 코드: {}", statusCode);
+                log.info("  - 응답 길이: {} bytes", responseBody.length());
+                
+                if (statusCode == 200) {
+                    ObjectMapper mapper = new ObjectMapper();
+                    SelfieResultDto result = mapper.readValue(responseBody, SelfieResultDto.class);
+                    
+                    log.info("✅ 포즈 분석 성공: {}", result.getResult());
+                    return result;
+                } else {
+                    log.error("❌ HTTP 에러: {}", responseBody);
+                    throw new PythonApiException("HTTP " + statusCode + ": " + responseBody);
+                }
+            }
+            
+        } catch (IOException e) {
+            log.error("❌ 파일 처리 실패: {}", e.getMessage());
+            throw new PythonApiException("파일 처리 실패: " + e.getMessage(), e);
+            
+        } catch (Exception e) {
+            log.error("❌ Apache HttpClient 실패: {}", e.getMessage());
+            throw new PythonApiException("Apache HttpClient 실패: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 🔄 Fallback: Spring RestTemplate 방식 (백업용)
+     */
+    public SelfieResultDto requestDeterMineSelfieWithRestTemplate(SelfieRequestDto request) throws IOException {
+        log.info("🎯 RestTemplate로 포즈 분석 시작: pose={}", request.getPose());
 
         try {
             MultipartFile multipartFile = request.getMultipartFile();
@@ -100,53 +192,38 @@ public class PythonApiClient {
             }
 
             byte[] fileBytes = multipartFile.getBytes();
-            log.info("📁 파일 정보:");
-            log.info("  - 파일명: {}", multipartFile.getOriginalFilename());
-            log.info("  - Content-Type: {}", multipartFile.getContentType());
-            log.info("  - 파일 크기: {} bytes", fileBytes.length);
 
-            // === 🔥 핵심 수정: MultipartBodyBuilder 사용 ===
-            MultiValueMap<String, HttpEntity<?>> multipartBody = new LinkedMultiValueMap<>();
+            // 멀티파트 바디 생성
+            MultiValueMap<String, org.springframework.http.HttpEntity<?>> multipartBody = new LinkedMultiValueMap<>();
 
-            // 1. 파일 파트 생성 (Python requests와 동일한 방식)
+            // 파일 파트
             HttpHeaders fileHeaders = new HttpHeaders();
             fileHeaders.setContentType(MediaType.parseMediaType(multipartFile.getContentType()));
             fileHeaders.setContentDispositionFormData("file", multipartFile.getOriginalFilename());
-            HttpEntity<byte[]> fileEntity = new HttpEntity<>(fileBytes, fileHeaders);
+            org.springframework.http.HttpEntity<byte[]> fileEntity = new org.springframework.http.HttpEntity<>(fileBytes, fileHeaders);
             multipartBody.add("file", fileEntity);
 
-            // 2. 텍스트 파트 생성
+            // 텍스트 파트
             HttpHeaders textHeaders = new HttpHeaders();
             textHeaders.setContentDispositionFormData("pose_select", null);
-            HttpEntity<String> textEntity = new HttpEntity<>(request.getPose().name().toLowerCase(), textHeaders);
+            org.springframework.http.HttpEntity<String> textEntity = new org.springframework.http.HttpEntity<>(request.getPose().name().toLowerCase(), textHeaders);
             multipartBody.add("pose_select", textEntity);
 
-            // === 헤더 설정 ===
+            // 요청 헤더
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
             headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
-            HttpEntity<MultiValueMap<String, HttpEntity<?>>> requestEntity =
-                    new HttpEntity<>(multipartBody, headers);
+            org.springframework.http.HttpEntity<MultiValueMap<String, org.springframework.http.HttpEntity<?>>> requestEntity =
+                    new org.springframework.http.HttpEntity<>(multipartBody, headers);
 
-            // === 요청 로깅 ===
-            log.info("📤 수정된 멀티파트 요청:");
-            log.info("  - URL: {}/pose/full", pythonApiBaseUrl);
-            log.info("  - 파트 수: {}", multipartBody.size());
-
-            // === FastAPI 호출 ===
-            log.info("📡 FastAPI 포즈 분석 호출...");
+            log.info("📤 RestTemplate 요청 전송");
 
             ResponseEntity<SelfieResultDto> response = restTemplate.postForEntity(
                     pythonApiBaseUrl + "/pose/full",
                     requestEntity,
                     SelfieResultDto.class
             );
-
-            // === 응답 검증 ===
-            log.info("📥 응답:");
-            log.info("  - 상태 코드: {}", response.getStatusCode());
-            log.info("  - 성공: {}", response.getStatusCode().is2xxSuccessful());
 
             if (!response.getStatusCode().is2xxSuccessful()) {
                 throw new PythonApiException("FastAPI 응답 실패: " + response.getStatusCode());
@@ -157,12 +234,12 @@ public class PythonApiClient {
                 throw new PythonApiException("응답 바디가 null입니다");
             }
 
-            log.info("✅ 포즈 분석 성공: {}", result.getResult());
+            log.info("✅ RestTemplate 포즈 분석 성공: {}", result.getResult());
             return result;
 
         } catch (Exception e) {
-            log.error("❌ 포즈 분석 실패: {}", e.getMessage());
-            throw new PythonApiException("포즈 분석 실패: " + e.getMessage(), e);
+            log.error("❌ RestTemplate 포즈 분석 실패: {}", e.getMessage());
+            throw new PythonApiException("RestTemplate 포즈 분석 실패: " + e.getMessage(), e);
         }
     }
 
@@ -228,12 +305,10 @@ public class PythonApiClient {
         try {
             log.info("🔍 디버깅 요청 시작");
             
-            // 헤더 설정
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.MULTIPART_FORM_DATA);
             headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
-            // 파일 처리
             byte[] fileBytes = request.getMultipartFile().getBytes();
             ByteArrayResource fileResource = new ByteArrayResource(fileBytes) {
                 @Override
@@ -242,14 +317,12 @@ public class PythonApiClient {
                 }
             };
 
-            // 멀티파트 바디
             MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
             body.add("file", fileResource);
             body.add("pose_select", request.getPose().name().toLowerCase());
 
-            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+            org.springframework.http.HttpEntity<MultiValueMap<String, Object>> requestEntity = new org.springframework.http.HttpEntity<>(body, headers);
 
-            // 디버깅 엔드포인트 호출
             ResponseEntity<Map> response = restTemplate.postForEntity(
                     pythonApiBaseUrl + "/pose/debug",
                     requestEntity,
