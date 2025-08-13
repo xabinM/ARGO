@@ -54,7 +54,7 @@ class ClassMemberManagementViewModel @Inject constructor(
         }
     }
 
-    fun loadClassMembers(classId: Long, status: String = "assigned", page: Int = 1, size: Int = 50) {
+    fun loadClassMembers(classId: Long, status: String = "assigned", page: Int = 1, size: Int = 100) {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
             
