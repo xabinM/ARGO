@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.bogoargo.domain.model.*
+import com.example.bogoargo.navigation.Screen
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureShapes
@@ -34,6 +35,7 @@ import com.example.bogoargo.data.mapper.TeamCardCollection
 fun CardCollectionScreen(
     navController: NavController,
     teamId: Long,
+    classId: Long,
     viewModel: CardCollectionViewModel = hiltViewModel()
 ) {
     var showCardDetail by remember { mutableStateOf(false) }
@@ -109,8 +111,7 @@ fun CardCollectionScreen(
                 if (!uiState.isLoading && teamCardCollection?.cards?.isEmpty() == true && uiState.errorMessage == null) {
                     EmptyCardCollectionCard(
                         onStartMission = {
-                            // TODO: 미션 화면으로 이동하는 네비게이션 추가
-                            // navController.navigate(Screen.Game.createRoute())
+                            navController.navigate(Screen.StudentClassDetail.createRoute(classId))
                         }
                     )
                 }

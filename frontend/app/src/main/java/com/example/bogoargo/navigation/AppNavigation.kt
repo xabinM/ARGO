@@ -77,26 +77,27 @@ sealed class Screen(val route: String) {
             "mission/$spotId?classId=$classId&teamId=$teamId"
     }
 
-    data object CardGame : Screen("cardGame/{teamId}/{leaderId}") {
-        fun createRoute(teamId: Long, leaderId: Long) = "cardGame/$teamId/$leaderId"
+    data object CardGame : Screen("cardGame/{teamId}/{leaderId}/{classId}") {
+        fun createRoute(teamId: Long, leaderId: Long, classId: Long) = "cardGame/$teamId/$leaderId/$classId"
     }
 
-    data object CardCollection : Screen("cardCollection/{teamId}") {
-        fun createRoute(teamId: Long) = "cardCollection/$teamId"
+    data object CardCollection : Screen("cardCollection/{teamId}/{classId}") {
+        fun createRoute(teamId: Long, classId: Long) = "cardCollection/$teamId/$classId"
     }
 
     data object BattleRequest : Screen("battleRequest/{teamId}/{leaderId}") {
         fun createRoute(teamId: Long, leaderId: Long) = "battleRequest/$teamId/$leaderId"
     }
 
-    data object CardSelection : Screen("cardSelection/{teamId}/{targetTeamId}?matchId={matchId}&isResponse={isResponse}&targetTeamName={targetTeamName}") {
+    data object CardSelection : Screen("cardSelection/{teamId}/{targetTeamId}/{classId}?matchId={matchId}&isResponse={isResponse}&targetTeamName={targetTeamName}") {
         fun createRoute(
             teamId: Long, 
             targetTeamId: Long,
+            classId: Long,
             matchId: Long? = null,
             isResponse: Boolean = false,
             targetTeamName: String = ""
-        ) = "cardSelection/$teamId/$targetTeamId?matchId=${matchId ?: -1}&isResponse=$isResponse&targetTeamName=$targetTeamName"
+        ) = "cardSelection/$teamId/$targetTeamId/$classId?matchId=${matchId ?: -1}&isResponse=$isResponse&targetTeamName=$targetTeamName"
     }
 
     data object BattleResult : Screen("battleResult/{myCardId}/{myCardRarity}/{myCardStance}/{opponentCardId}/{opponentCardRarity}/{opponentCardStance}/{isWin}/{myTeamName}/{opponentTeamName}") {
@@ -297,25 +298,33 @@ fun AppNavigation(
             route = Screen.CardGame.route,
             arguments = listOf(
                 navArgument("teamId") { type = NavType.LongType },
-                navArgument("leaderId") { type = NavType.LongType }
+                navArgument("leaderId") { type = NavType.LongType },
+                navArgument("classId") { type = NavType.LongType }
             )
         ) { backStackEntry ->
             val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
             val leaderId = backStackEntry.arguments?.getLong("leaderId") ?: 0L
+            val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
             CardGameScreen(
                 navController = navController,
                 teamId = teamId,
-                leaderId = leaderId
+                leaderId = leaderId,
+                classId = classId
             )
         }
         composable(
             route = Screen.CardCollection.route,
-            arguments = listOf(navArgument("teamId") { type = NavType.LongType })
+            arguments = listOf(
+                navArgument("teamId") { type = NavType.LongType },
+                navArgument("classId") { type = NavType.LongType }
+            )
         ) { backStackEntry ->
             val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
+            val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
             CardCollectionScreen(
                 navController = navController,
-                teamId = teamId
+                teamId = teamId,
+                classId = classId
             )
         }
         composable(
@@ -338,6 +347,7 @@ fun AppNavigation(
             arguments = listOf(
                 navArgument("teamId") { type = NavType.LongType },
                 navArgument("targetTeamId") { type = NavType.LongType },
+                navArgument("classId") { type = NavType.LongType },
                 navArgument("matchId") { 
                     type = NavType.LongType
                     defaultValue = -1L
@@ -354,6 +364,7 @@ fun AppNavigation(
         ) { backStackEntry ->
             val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
             val targetTeamId = backStackEntry.arguments?.getLong("targetTeamId") ?: 0L
+            val classId = backStackEntry.arguments?.getLong("classId") ?: 0L
             val matchId = backStackEntry.arguments?.getLong("matchId")?.let { 
                 if (it == -1L) null else it 
             }
@@ -365,6 +376,7 @@ fun AppNavigation(
                 params = com.example.bogoargo.ui.screens.cardgame.CardSelectionParams(
                     teamId = teamId,
                     targetTeamId = targetTeamId,
+                    classId = classId,
                     matchId = matchId,
                     isResponse = isResponse,
                     targetTeamName = targetTeamName

@@ -42,6 +42,7 @@ fun CardGameScreen(
     navController: NavController,
     teamId: Long,
     leaderId: Long,
+    classId: Long,
     viewModel: CardGameViewModel = hiltViewModel()
 ) {
     val isTeamLeader = viewModel.isTeamLeader(leaderId)
@@ -167,7 +168,7 @@ fun CardGameScreen(
                     ActionButtonsRow(
                         isTeamLeader = isTeamLeader,
                         onViewCards = {
-                            navController.navigate(Screen.CardCollection.createRoute(teamId))
+                            navController.navigate(Screen.CardCollection.createRoute(teamId, classId))
                         },
                         onRequestBattle = {
                             navController.navigate(Screen.BattleRequest.createRoute(teamId, leaderId))
