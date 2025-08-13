@@ -206,7 +206,7 @@ public class PythonApiClient {
                 org.apache.http.entity.ContentType.TEXT_PLAIN);
             builder.addPart("pose_select", poseBody);
             
-            // 🔥 풀네임 사용으로 import 충돌 해결
+            // 풀네임 써야 import 충돌 해결
             org.apache.http.HttpEntity multipartEntity = builder.build();
             httpPost.setEntity(multipartEntity);
             
