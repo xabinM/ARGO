@@ -34,6 +34,9 @@ public enum ResponseMessage {
     CARD_NOT_EXIST("카드가 존재하지 않습니다."),
     ALREADY_COMPLETED_MISSION("해당 스팟에서 이미 미션 진행을 하였습니다."),
 
+    // spotMission
+    ALREADY_PROGRESSED_MISSION("이미 미션을 진행한 곳입니다."),
+
     // problem
     SUCCESS_GENERATE_PROBLEM("문제가 성공적으로 생성되었습니다."),
     SUCCESS_REGISTER_PROBLEM("문제가 성공적으로 등록되었습니다."),
