@@ -89,8 +89,14 @@ sealed class Screen(val route: String) {
         fun createRoute(teamId: Long, leaderId: Long) = "battleRequest/$teamId/$leaderId"
     }
 
-    data object CardSelection : Screen("cardSelection/{teamId}/{targetTeamId}") {
-        fun createRoute(teamId: Long, targetTeamId: Long) = "cardSelection/$teamId/$targetTeamId"
+    data object CardSelection : Screen("cardSelection/{teamId}/{targetTeamId}?matchId={matchId}&isResponse={isResponse}&targetTeamName={targetTeamName}") {
+        fun createRoute(
+            teamId: Long, 
+            targetTeamId: Long,
+            matchId: Long? = null,
+            isResponse: Boolean = false,
+            targetTeamName: String = ""
+        ) = "cardSelection/$teamId/$targetTeamId?matchId=${matchId ?: -1}&isResponse=$isResponse&targetTeamName=$targetTeamName"
     }
 
     data object BattleResult : Screen("battleResult/{myCardId}/{myCardRarity}/{myCardStance}/{opponentCardId}/{opponentCardRarity}/{opponentCardStance}/{isWin}/{myTeamName}/{opponentTeamName}") {
@@ -331,18 +337,37 @@ fun AppNavigation(
             route = Screen.CardSelection.route,
             arguments = listOf(
                 navArgument("teamId") { type = NavType.LongType },
-                navArgument("targetTeamId") { type = NavType.LongType }
+                navArgument("targetTeamId") { type = NavType.LongType },
+                navArgument("matchId") { 
+                    type = NavType.LongType
+                    defaultValue = -1L
+                },
+                navArgument("isResponse") { 
+                    type = NavType.BoolType
+                    defaultValue = false
+                },
+                navArgument("targetTeamName") { 
+                    type = NavType.StringType
+                    defaultValue = ""
+                }
             )
         ) { backStackEntry ->
             val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
             val targetTeamId = backStackEntry.arguments?.getLong("targetTeamId") ?: 0L
+            val matchId = backStackEntry.arguments?.getLong("matchId")?.let { 
+                if (it == -1L) null else it 
+            }
+            val isResponse = backStackEntry.arguments?.getBoolean("isResponse") ?: false
+            val targetTeamName = backStackEntry.arguments?.getString("targetTeamName") ?: ""
+            
             CardSelectionScreen(
                 navController = navController,
                 params = com.example.bogoargo.ui.screens.cardgame.CardSelectionParams(
                     teamId = teamId,
                     targetTeamId = targetTeamId,
-                    matchId = null,
-                    isResponse = false
+                    matchId = matchId,
+                    isResponse = isResponse,
+                    targetTeamName = targetTeamName
                 )
             )
         }

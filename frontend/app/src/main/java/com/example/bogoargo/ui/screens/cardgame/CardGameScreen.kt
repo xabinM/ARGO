@@ -31,6 +31,7 @@ import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
 import com.example.bogoargo.ui.theme.NatureElevation
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.bogoargo.ui.viewmodels.cardgame.CardGameViewModel
 import com.example.bogoargo.ui.components.BattleDetailDialog
@@ -174,20 +175,25 @@ fun CardGameScreen(
                     )
                 }
 
-                // API 실패 또는 빈 데이터일 때만 버튼 표시
-                if (uiState.errorMessage != null || (!uiState.isLoading && battleHistory.isEmpty())) {
+                // 빈 데이터일 때 안내 메시지 표시
+                if (!uiState.isLoading && battleHistory.isEmpty() && uiState.errorMessage == null) {
                     item {
-                        TestDataButtonsRow(
-                            teamId = teamId,
-                            isLoading = uiState.isLoading,
-                            hasError = uiState.errorMessage != null,
-                            onLoadRealData = {
+                        EmptyBattleStateCard(
+                            onRequestBattle = {
+                                navController.navigate(Screen.BattleRequest.createRoute(teamId, leaderId))
+                            }
+                        )
+                    }
+                }
+                
+                // API 오류 시 재시도 카드 표시
+                if (uiState.errorMessage != null) {
+                    item {
+                        ErrorStateCard(
+                            errorMessage = uiState.errorMessage,
+                            onRetry = {
                                 viewModel.clearErrorMessage()
                                 viewModel.loadBattleHistory(teamId)
-                            },
-                            onLoadDummyData = {
-                                viewModel.clearErrorMessage()
-                                viewModel.loadDummyBattleHistory(teamId)
                             }
                         )
                     }
@@ -232,7 +238,19 @@ fun CardGameScreen(
                             showRejectDialog = true
                         },
                         onAcceptBattle = { matchId ->
-                            navController.navigate(Screen.CardSelection.createRoute(teamId, matchId))
+                            // 대전 수락 시 해당 배틀 정보 찾기
+                            val battle = battleHistory.find { it.matchId == matchId }
+                            battle?.let {
+                                navController.navigate(
+                                    Screen.CardSelection.createRoute(
+                                        teamId = teamId,
+                                        targetTeamId = if (it.isMyChallenge) it.challengedTeamId else it.challengerTeamId,
+                                        matchId = matchId,
+                                        isResponse = true,
+                                        targetTeamName = it.opponentTeamName
+                                    )
+                                )
+                            }
                         },
                         onViewResult = { matchId ->
                             // viewBattleResult API를 호출하고 성공시에만 네비게이션
@@ -833,102 +851,105 @@ fun BattleHistoryItem(
 }
 
 @Composable
-fun TestDataButtonsRow(
-    teamId: Long,
-    isLoading: Boolean,
-    hasError: Boolean,
-    onLoadRealData: () -> Unit,
-    onLoadDummyData: () -> Unit
+fun EmptyBattleStateCard(
+    onRequestBattle: () -> Unit
 ) {
-    val cardColor = if (hasError) {
-        NatureColors.sunnyYellow.copy(alpha = 0.2f) // 에러 시 더 강조된 색상
-    } else {
-        NatureColors.sunnyYellow.copy(alpha = 0.1f)
-    }
-    
-    val titleText = if (hasError) {
-        "⚠️ API 오류 발생"
-    } else {
-        "📭 데이터 없음"
-    }
-    
-    val descriptionText = if (hasError) {
-        "API 요청에 실패했습니다. 재시도하거나 테스트용 더미 데이터를 사용해보세요."
-    } else {
-        "대전 기록이 없습니다. 실제 데이터를 다시 불러오거나 테스트용 더미 데이터를 사용해보세요."
-    }
-    
     NatureComponents.NatureCard(
         modifier = Modifier.fillMaxWidth(),
         shape = NatureShapes.medium,
-        containerColor = cardColor,
+        containerColor = NatureColors.lightBeige.copy(alpha = 0.5f),
+        elevation = NatureElevation.small
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "🎮",
+                style = MaterialTheme.typography.displayMedium
+            )
+            
+            Text(
+                text = "아직 대전 기록이 없어요!",
+                style = NatureTypography.titleLarge,
+                color = NatureColors.forestGreen,
+                textAlign = TextAlign.Center
+            )
+            
+            Text(
+                text = "다른 팀과 카드 대전을 시작해보세요.\n승리하면 점수를 얻을 수 있어요!",
+                style = NatureTypography.bodyMedium,
+                color = Color.Gray.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center
+            )
+            
+            NatureComponents.NatureButton(
+                onClick = onRequestBattle,
+                modifier = Modifier.fillMaxWidth(),
+                backgroundColor = NatureColors.leafGreen,
+                contentColor = Color.White
+            ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("대전 신청하기")
+                    Text("⚔️")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ErrorStateCard(
+    errorMessage: String?,
+    onRetry: () -> Unit
+) {
+    NatureComponents.NatureCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = NatureShapes.medium,
+        containerColor = Color(0xFFFFEBEE),
         elevation = NatureElevation.small
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = titleText,
-                style = NatureTypography.titleMedium,
-                color = NatureColors.earthBrown
+                text = "⚠️",
+                style = MaterialTheme.typography.displaySmall
             )
             
             Text(
-                text = descriptionText,
-                style = NatureTypography.bodyMedium,
-                color = Color.Gray.copy(alpha = 0.8f)
+                text = "데이터를 불러올 수 없습니다",
+                style = NatureTypography.titleMedium,
+                color = Color(0xFFF44336)
             )
             
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // 재요청 버튼
-                NatureComponents.NatureButton(
-                    onClick = onLoadRealData,
-                    enabled = !isLoading,
-                    modifier = Modifier.weight(1f),
-                    backgroundColor = NatureColors.leafGreen,
-                    contentColor = Color.White
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(16.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    Text(
-                        text = if (isLoading) "로딩중..." else if (hasError) "재요청" else "다시 불러오기",
-                        style = NatureTypography.labelLarge
-                    )
-                }
-                
-                // 테스트용 더미 데이터 버튼
-                NatureComponents.NatureButton(
-                    onClick = onLoadDummyData,
-                    enabled = !isLoading,
-                    modifier = Modifier.weight(1f),
-                    backgroundColor = NatureColors.sunnyYellow,
-                    contentColor = NatureColors.earthBrown
-                ) {
-                    Text(
-                        text = "테스트용 더미 데이터",
-                        style = NatureTypography.labelLarge
-                    )
-                }
+            if (errorMessage != null) {
+                Text(
+                    text = errorMessage,
+                    style = NatureTypography.bodySmall,
+                    color = Color.Gray,
+                    textAlign = TextAlign.Center
+                )
             }
             
-            Text(
-                text = "팀 ID: $teamId",
-                style = NatureTypography.labelSmall,
-                color = Color.Gray.copy(alpha = 0.6f)
-            )
+            NatureComponents.NatureButton(
+                onClick = onRetry,
+                modifier = Modifier.fillMaxWidth(),
+                backgroundColor = NatureColors.leafGreen,
+                contentColor = Color.White
+            ) {
+                Text("다시 시도")
+            }
         }
     }
 }
+
 
 @Composable
 fun ResultDialog(

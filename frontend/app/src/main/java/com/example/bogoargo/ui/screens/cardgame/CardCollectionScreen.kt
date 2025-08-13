@@ -10,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -104,12 +105,24 @@ fun CardCollectionScreen(
                     }
                 }
                 
-                // 오류나 빈 데이터일 때 테스트 버튼 표시
-                if (uiState.errorMessage != null || (!uiState.isLoading && (teamCardCollection?.cards?.isEmpty() == true))) {
-                    TestDataButtonsRow(
-                        onRetryClick = { viewModel.loadTeamCardCollection(teamId) },
-                        onDummyDataClick = { viewModel.loadDummyTeamCardCollection(teamId) },
-                        errorMessage = uiState.errorMessage
+                // 빈 카드 컬렉션일 때 미션 안내 카드 표시
+                if (!uiState.isLoading && teamCardCollection?.cards?.isEmpty() == true && uiState.errorMessage == null) {
+                    EmptyCardCollectionCard(
+                        onStartMission = {
+                            // TODO: 미션 화면으로 이동하는 네비게이션 추가
+                            // navController.navigate(Screen.Game.createRoute())
+                        }
+                    )
+                }
+                
+                // API 오류 시 재시도 카드 표시
+                if (uiState.errorMessage != null) {
+                    ErrorCollectionStateCard(
+                        errorMessage = uiState.errorMessage,
+                        onRetry = {
+                            viewModel.clearErrorMessage()
+                            viewModel.loadTeamCardCollection(teamId)
+                        }
                     )
                 }
                 
@@ -263,64 +276,103 @@ fun CollectionStats(cards: List<GameCard>) {
 
 
 @Composable
-fun TestDataButtonsRow(
-    onRetryClick: () -> Unit,
-    onDummyDataClick: () -> Unit,
-    errorMessage: String?
+fun EmptyCardCollectionCard(
+    onStartMission: () -> Unit
 ) {
     NatureComponents.NatureCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        shape = NatureShapes.medium,
+        shape = NatureShapes.large,
         containerColor = NatureColors.whiteTransparent,
-        elevation = NatureElevation.small
+        elevation = NatureElevation.medium
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            if (errorMessage != null) {
+            Text(
+                text = "🃏",
+                style = MaterialTheme.typography.displayMedium
+            )
+            
+            Text(
+                text = "아직 카드가 없어요!",
+                style = NatureTypography.titleLarge,
+                color = NatureColors.forestGreen,
+                textAlign = TextAlign.Center
+            )
+            
+            Text(
+                text = "미션을 수행하여 카드를 수집해보세요.\n다양한 카드를 모아서 대전에서 승리하세요!",
+                style = NatureTypography.bodyMedium,
+                color = NatureColors.earthBrown.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center
+            )
+            
+            NatureComponents.NatureButton(
+                onClick = onStartMission,
+                modifier = Modifier.fillMaxWidth(),
+                backgroundColor = NatureColors.leafGreen
+            ) {
                 Text(
-                    text = "⚠️ $errorMessage",
-                    style = NatureTypography.bodyMedium,
-                    color = Color.Red.copy(alpha = 0.8f)
+                    text = "🎯 미션 시작하기",
+                    style = NatureTypography.labelLarge
                 )
-            } else {
+            }
+        }
+    }
+}
+
+@Composable
+fun ErrorCollectionStateCard(
+    errorMessage: String?,
+    onRetry: () -> Unit
+) {
+    NatureComponents.NatureCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        shape = NatureShapes.large,
+        containerColor = NatureColors.whiteTransparent,
+        elevation = NatureElevation.medium
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "⚠️",
+                style = MaterialTheme.typography.displayMedium
+            )
+            
+            Text(
+                text = "카드 컬렉션을 불러올 수 없어요",
+                style = NatureTypography.titleLarge,
+                color = Color.Red.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center
+            )
+            
+            errorMessage?.let {
                 Text(
-                    text = "💡 DB에 카드 컬렉션 데이터가 없습니다.",
+                    text = it,
                     style = NatureTypography.bodyMedium,
-                    color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                    color = NatureColors.earthBrown.copy(alpha = 0.7f),
+                    textAlign = TextAlign.Center
                 )
             }
             
-            Row(
+            NatureComponents.NatureButton(
+                onClick = onRetry,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                backgroundColor = NatureColors.forestGreen
             ) {
-                NatureComponents.NatureButton(
-                    onClick = onRetryClick,
-                    modifier = Modifier.weight(1f),
-                    backgroundColor = NatureColors.forestGreen,
-                    contentColor = Color.White
-                ) {
-                    Text(
-                        text = "🔄 API 재요청",
-                        style = NatureTypography.labelLarge
-                    )
-                }
-                
-                NatureComponents.NatureButton(
-                    onClick = onDummyDataClick,
-                    modifier = Modifier.weight(1f),
-                    backgroundColor = NatureColors.sunnyYellow,
-                    contentColor = NatureColors.earthBrown
-                ) {
-                    Text(
-                        text = "🧪 테스트 데이터",
-                        style = NatureTypography.labelLarge
-                    )
-                }
+                Text(
+                    text = "🔄 다시 시도",
+                    style = NatureTypography.labelLarge
+                )
             }
         }
     }

@@ -38,7 +38,8 @@ data class CardSelectionParams(
     val teamId: Long,
     val targetTeamId: Long,
     val matchId: Long? = null, // 대전 응답 시에만 필요
-    val isResponse: Boolean = false // true = 응답, false = 신규 신청
+    val isResponse: Boolean = false, // true = 응답, false = 신규 신청
+    val targetTeamName: String = "" // 대상 팀 이름
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -73,13 +74,7 @@ fun CardSelectionScreen(
     }
 
     val targetTeamName = remember {
-        when (params.targetTeamId) {
-            2L -> "불사조 팀 🔥"
-            3L -> "그리핀 팀 🦅"
-            4L -> "유니콘 팀 🦄"
-            5L -> "드래곤 팀 🐉"
-            else -> "상대팀"
-        }
+        params.targetTeamName.ifEmpty { "상대팀" }
     }
 
     // 필터링된 카드 리스트 (레어도 필터 + 활성 카드만)
@@ -242,7 +237,7 @@ fun CardSelectionScreen(
                             // 대전 응답
                             viewModel.respondToBattle(
                                 matchId = params.matchId,
-                                action = "accept",
+                                action = "ACCEPT",
                                 selectedCardTeamCardId = teamCardId,
                                 battleStance = selectedStance!!
                             )
@@ -289,7 +284,7 @@ fun CardSelectionScreen(
                         if (params.isResponse && params.matchId != null) {
                             viewModel.respondToBattle(
                                 matchId = params.matchId,
-                                action = "accept", 
+                                action = "ACCEPT", 
                                 selectedCardTeamCardId = teamCardId,
                                 battleStance = selectedStance!!
                             )

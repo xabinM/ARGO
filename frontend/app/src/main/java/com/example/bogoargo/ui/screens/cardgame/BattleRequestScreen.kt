@@ -139,7 +139,13 @@ fun BattleRequestScreen(
                     showBattleRequestModal = false
                     selectedTeam = null
                     navController.navigate(
-                        Screen.CardSelection.createRoute(teamId, targetOpponent.teamId)
+                        Screen.CardSelection.createRoute(
+                            teamId = teamId,
+                            targetTeamId = targetOpponent.teamId,
+                            matchId = null,
+                            isResponse = false,
+                            targetTeamName = targetOpponent.teamName
+                        )
                     )
                 }
             )

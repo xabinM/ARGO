@@ -137,8 +137,8 @@ fun GameScreen(
                     NatureComponents.NatureButton(
                         onClick = { 
                             if (isGameStarted) {
-                                // 게임 종료 후 홈으로 이동
-                                navController.navigate("home") {
+                                // 게임 종료 후 학급 상세로 이동
+                                navController.navigate("studentClassDetail/$classId") {
                                     popUpTo("game") { inclusive = true }
                                 }
                             } else {
