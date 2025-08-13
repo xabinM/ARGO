@@ -1,5 +1,7 @@
 package com.argo.backend.mission.service;
 
+import com.argo.backend.domain.cardgame.entity.Card;
+import com.argo.backend.domain.cardgame.entity.TeamCard;
 import com.argo.backend.domain.cardgame.repository.CardRepository;
 import com.argo.backend.domain.cardgame.repository.TeamCardRepository;
 import com.argo.backend.domain.mission.entity.MissionSession;
@@ -12,7 +14,9 @@ import com.argo.backend.domain.spot.entity.Spot;
 import com.argo.backend.domain.spot.repository.SpotRepository;
 import com.argo.backend.domain.team.entity.Team;
 import com.argo.backend.domain.team.repository.TeamRepository;
+import com.argo.backend.mission.dto.SubmitMission.MissionSubmitDto;
 import com.argo.backend.mission.dto.missionCreate.MissionCreateDto;
+import com.argo.backend.mission.exception.CardNotExistException;
 import com.argo.backend.mission.exception.InvalidMissionSessionException;
 import com.argo.backend.mission.exception.MissionAlreadyCompletedException;
 import com.argo.backend.mission.exception.ProblemNotFoundException;
@@ -30,8 +34,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class MissionServiceTest {
@@ -108,4 +111,85 @@ class MissionServiceTest {
                 .isInstanceOf(MissionAlreadyCompletedException.class);
     }
 
+    // ===== submitMission 테스트 =====
+
+    @Test
+    void submitMission_시작안된미션이면_예외발생() {
+        Long missionId = 1L;
+        MissionSession missionSession = mock(MissionSession.class);
+
+        when(missionSessionRepository.findById(missionId)).thenReturn(Optional.of(missionSession));
+        when(missionSession.isStatusStarted()).thenReturn(false);
+
+        assertThatThrownBy(() -> missionService.submitMission(missionId, true))
+                .isInstanceOf(InvalidMissionSessionException.class);
+    }
+
+    @Test
+    void submitMission_성공케이스() {
+        Long missionId = 1L;
+        MissionSession missionSession = mock(MissionSession.class);
+        Spot spot = mock(Spot.class);
+        spot.setId(10L);
+        Card card = mock(Card.class);
+
+        when(missionSessionRepository.findById(missionId)).thenReturn(Optional.of(missionSession));
+        when(missionSession.isStatusStarted()).thenReturn(true);
+        when(missionSession.getSpot()).thenReturn(spot);
+        when(cardRepository.findAllBySpotId(spot.getId())).thenReturn(List.of(card));
+
+        MissionSubmitDto dto = missionService.submitMission(missionId, true);
+
+        assertThat(dto.successful()).isTrue();
+        verify(teamCardRepository, times(1)).save(any(TeamCard.class));
+    }
+
+    @Test
+    void submitMission_카드없으면_nullSpot카드조회() {
+        Long missionId = 1L;
+        MissionSession missionSession = mock(MissionSession.class);
+        Spot spot = mock(Spot.class);
+        spot.setId(10L);
+        Card card = mock(Card.class);
+
+        when(missionSessionRepository.findById(missionId)).thenReturn(Optional.of(missionSession));
+        when(missionSession.isStatusStarted()).thenReturn(true);
+        when(missionSession.getSpot()).thenReturn(spot);
+        when(cardRepository.findAllBySpotId(spot.getId())).thenReturn(Collections.emptyList());
+        when(cardRepository.findAllBySpotIsNull()).thenReturn(List.of(card));
+
+        MissionSubmitDto dto = missionService.submitMission(missionId, true);
+
+        assertThat(dto.successful()).isTrue();
+    }
+
+    @Test
+    void submitMission_카드전혀없으면_예외() {
+        Long missionId = 1L;
+        MissionSession missionSession = mock(MissionSession.class);
+        Spot spot = mock(Spot.class);
+        spot.setId(10L);
+
+        when(missionSessionRepository.findById(missionId)).thenReturn(Optional.of(missionSession));
+        when(missionSession.isStatusStarted()).thenReturn(true);
+        when(missionSession.getSpot()).thenReturn(spot);
+        when(cardRepository.findAllBySpotId(spot.getId())).thenReturn(Collections.emptyList());
+        when(cardRepository.findAllBySpotIsNull()).thenReturn(Collections.emptyList());
+
+        assertThatThrownBy(() -> missionService.submitMission(missionId, true))
+                .isInstanceOf(CardNotExistException.class);
+    }
+
+    @Test
+    void submitMission_실패케이스() {
+        Long missionId = 1L;
+        MissionSession missionSession = mock(MissionSession.class);
+
+        when(missionSessionRepository.findById(missionId)).thenReturn(Optional.of(missionSession));
+        when(missionSession.isStatusStarted()).thenReturn(true);
+
+        MissionSubmitDto dto = missionService.submitMission(missionId, false);
+
+        assertThat(dto.successful()).isFalse();
+    }
 }
