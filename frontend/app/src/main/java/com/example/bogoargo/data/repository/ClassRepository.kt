@@ -13,6 +13,7 @@ import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.StudentClassDetail
 import com.example.bogoargo.domain.repository.IClassRepository
 import com.example.bogoargo.data.dto.response.MessageResponseDto
+import com.example.bogoargo.data.response.ClassDetailResponse
 import com.example.bogoargo.data.response.ClassMemberResponse
 import retrofit2.HttpException
 import java.io.IOException
@@ -410,6 +411,35 @@ class ClassRepositoryImpl @Inject constructor(
                 val domainModel = classDetailResponse?.toClassDetailDomainModel()
                 if (domainModel != null) {
                     DataResult.Success(domainModel)
+                } else {
+                    DataResult.Error(DataException.NotFoundError)
+                }
+            } else {
+                DataResult.Error(DataException.ServerError)
+            }
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.AuthenticationError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun getCompleteClassDetail(classId: Long): DataResult<ClassDetailResponse> {
+        return try {
+            val response = classApiService.getClassDetail(classId)
+            if (response.isSuccessful) {
+                val classDetailResponse = response.body()
+                if (classDetailResponse != null) {
+                    DataResult.Success(classDetailResponse)
                 } else {
                     DataResult.Error(DataException.NotFoundError)
                 }

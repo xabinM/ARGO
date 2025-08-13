@@ -9,6 +9,7 @@ data class Team(
     val maxMembers: Int,
     val currentMembers: Int,
     val createdAt: LocalDate,
+    val totalPoints: Int? = 0
 )
 
 data class TeamMember(

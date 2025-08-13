@@ -22,6 +22,7 @@ import com.example.bogoargo.domain.use_case.classroom.CreateClassUseCase
 import com.example.bogoargo.domain.use_case.classroom.DeleteClassUseCase
 import com.example.bogoargo.domain.use_case.classroom.GetApplicationListUseCase
 import com.example.bogoargo.domain.use_case.classroom.GetClassDetailUseCase
+import com.example.bogoargo.domain.use_case.classroom.GetCompleteClassDetailUseCase
 import com.example.bogoargo.domain.use_case.classroom.GetClassMemberListUseCase
 import com.example.bogoargo.domain.use_case.classroom.GetClassesUseCase
 import com.example.bogoargo.domain.use_case.classroom.GetStudentClassListUseCase
@@ -136,6 +137,12 @@ object UseCaseModule {
     @Singleton
     fun provideGetClassDetailUseCase(classRepository: IClassRepository): GetClassDetailUseCase {
         return GetClassDetailUseCase(classRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetCompleteClassDetailUseCase(classRepository: IClassRepository): GetCompleteClassDetailUseCase {
+        return GetCompleteClassDetailUseCase(classRepository)
     }
 
     @Provides

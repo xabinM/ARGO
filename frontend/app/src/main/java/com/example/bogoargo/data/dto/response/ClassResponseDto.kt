@@ -79,14 +79,17 @@ data class ClassCreateResponse(
 data class ClassDetailResponse(
     val success: Boolean,
     val message: String,
-    val data: ClassInfo?
+    val data: ClassInfo?,
+    val students: List<StudentDto>?,
+    val teams: List<TeamDetailDto>?,
+    val statistics: StatisticsDto?
 )
 
 // 참여 신청 학생 목록 응답 DTO
 data class InviteStudentListResponse(
     val success: Boolean,
     val message: String,
-    val data: List<UserDataDto>? //TODO: 어플리케이션 목록으로 변경 필요
+    val data: List<UserDataDto>?
 )
 
 // 신청 상태 응답 DTO

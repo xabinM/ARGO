@@ -4,6 +4,7 @@ import com.example.bogoargo.domain.model.Application
 import com.example.bogoargo.domain.model.Class
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.data.dto.response.MessageResponseDto
+import com.example.bogoargo.data.response.ClassDetailResponse
 import com.example.bogoargo.data.response.ClassMemberResponse
 import com.example.bogoargo.domain.model.StudentClassDetail
 
@@ -29,6 +30,9 @@ interface IClassRepository {
 
     // Student class detail
     suspend fun getStudentClassDetail(classId: Long, include: String? = null): DataResult<StudentClassDetail>
+    
+    // Get complete class detail response (includes teams, students, etc.)
+    suspend fun getCompleteClassDetail(classId: Long): DataResult<ClassDetailResponse>
 
     // Application related methods
     suspend fun getApplicationList(classId: Long): DataResult<List<Application>>

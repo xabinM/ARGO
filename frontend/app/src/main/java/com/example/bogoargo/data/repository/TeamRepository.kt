@@ -1,6 +1,7 @@
 package com.example.bogoargo.data.repository
 
 import com.example.bogoargo.data.api.TeamApiService
+import com.example.bogoargo.data.dto.TeamCreateRequest
 import com.example.bogoargo.data.dto.response.TeamAssignResponse
 import com.example.bogoargo.data.mapper.toDomainModel
 import com.example.bogoargo.domain.model.DataException
@@ -16,9 +17,13 @@ class TeamRepositoryImpl @Inject constructor(
     private val teamApiService: TeamApiService
 ) : ITeamRepository {
     
-    override suspend fun createTeam(classId: Long): DataResult<Team> {
+    override suspend fun createTeam(classId: Long, teamName: String, maxMembers: Int): DataResult<Team> {
         return try {
-            val response = teamApiService.createTeam(classId)
+            val teamCreateRequest = TeamCreateRequest(
+                teamName = teamName,
+                maxMembers = maxMembers
+            )
+            val response = teamApiService.createTeam(classId, teamCreateRequest)
             if (response.isSuccessful) {
                 val teamCreateResponse = response.body()
                 if (teamCreateResponse?.success == true && teamCreateResponse.data != null) {

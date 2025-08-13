@@ -8,7 +8,11 @@ import javax.inject.Inject
 class CreateTeamUseCase @Inject constructor(
     private val teamRepository: ITeamRepository
 ) {
-    suspend operator fun invoke(classId: Long): DataResult<Team> {
-        return teamRepository.createTeam(classId)
+    suspend operator fun invoke(
+        classId: Long,
+        teamName: String,
+        maxMembers: Int
+    ): DataResult<Team> {
+        return teamRepository.createTeam(classId, teamName, maxMembers)
     }
 }
