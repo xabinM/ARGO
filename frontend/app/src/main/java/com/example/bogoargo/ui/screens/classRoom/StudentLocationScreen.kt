@@ -72,15 +72,15 @@ fun StudentLocationScreen(
                             modifier = Modifier.padding(20.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Text(
-                                text = "📍 학생 위치 정보",
-                                style = NatureTypography.titleMedium.copy(
-                                    color = NatureColors.forestGreen
-                                )
-                            )
+//                            Text(
+//                                text = "📍 학생 위치 정보",
+//                                style = NatureTypography.titleMedium.copy(
+//                                    color = NatureColors.forestGreen
+//                                )
+//                            )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "클래스 ID: ${uiState.classId}",
+                                text = "반 이름: ${uiState.className}",
                                 style = NatureTypography.bodyMedium.copy(
                                     color = NatureColors.earthBrown
                                 )

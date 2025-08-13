@@ -21,7 +21,7 @@ data class StudentLocationInfo(
 data class StudentCoordinatesResponseDto(
     val success: Boolean,
     val message: String,
-    val coordinatesDtos: List<UserCoordinatesDto>
+    val coordinates: List<UserCoordinatesDto>
 )
 
 data class UserCoordinatesDto(

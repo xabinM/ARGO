@@ -35,7 +35,7 @@ fun StudentLocationInfo.toDomainModel(): StudentLocation {
 }
 
 fun StudentCoordinatesResponseDto.toDomainModel(): List<UserCoordinates> {
-    return this.coordinatesDtos.map { it.toDomainModel() }
+    return this.coordinates.map { it.toDomainModel() }
 }
 
 fun UserCoordinatesDto.toDomainModel(): UserCoordinates {

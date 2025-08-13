@@ -84,7 +84,7 @@ class LocationRepositoryImpl @Inject constructor(
             if (response.isSuccessful) {
                 val coordinatesResponse = response.body()
                 if (coordinatesResponse != null && coordinatesResponse.success) {
-                    Log.d(TAG, "Successfully retrieved ${coordinatesResponse.coordinatesDtos.size} coordinates for class $classId")
+                    Log.d(TAG, "Successfully retrieved ${coordinatesResponse.coordinates.size} coordinates for class $classId")
                     Result.success(coordinatesResponse.toDomainModel())
                 } else {
                     val errorMessage = coordinatesResponse?.message ?: "Empty response for class $classId coordinates"
