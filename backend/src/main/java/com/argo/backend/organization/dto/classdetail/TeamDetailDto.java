@@ -4,6 +4,7 @@ import com.argo.backend.domain.team.entity.Team;
 import lombok.Getter;
 
 import java.util.List;
+import java.util.Optional;
 
 @Getter
 public class TeamDetailDto {
@@ -30,7 +31,9 @@ public class TeamDetailDto {
                 team.getTeamId(),
                 team.getTeamName(),
                 members.size(),
-                0,
+                Optional.ofNullable(team.getGameResult())
+                .map(gameResult -> gameResult.getTotalPoints())
+                .orElse(0),
                 members,
                 team.getLeader().getUserId()
         );
