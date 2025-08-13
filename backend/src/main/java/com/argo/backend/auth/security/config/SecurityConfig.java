@@ -23,7 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 @RequiredArgsConstructor
 @EnableWebSecurity
-//@EnableMethodSecurity 테스트용 임시 주석 처리
+@EnableMethodSecurity
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
@@ -34,16 +34,9 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                // H2 콘솔을 위한 frameOptions 설정 추가
-                .headers(headers -> headers
-                        .frameOptions(frameOptions -> frameOptions.sameOrigin())
-                )
                 .authorizeHttpRequests(auth -> auth
-                        // 🔥 테스트용: 모든 요청 허용
-                        .anyRequest().permitAll()
                         
                         // 원래 설정 (테스트 후 복구용)
-                        /*
                         .requestMatchers(
                                 "/api/users/signup",
                                 "/api/users/login",
@@ -56,10 +49,8 @@ public class SecurityConfig {
                         ).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/problem/generate").permitAll()
                         .anyRequest().authenticated()
-                        */
-                );
-                // JWT 필터도 테스트용으로 주석 처리 (이미 주석처리됨)
-                //.addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, entryPoint), UsernamePasswordAuthenticationFilter.class)
+                )
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, entryPoint), UsernamePasswordAuthenticationFilter.class)
 
         return http.build();
     }
