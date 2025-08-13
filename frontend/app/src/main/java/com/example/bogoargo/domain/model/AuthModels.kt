@@ -20,6 +20,6 @@ data class RefreshTokenRequest(
 )
 
 data class RefreshTokenResponse(
-    val accessToken: String,
-    val refreshToken: String
+    val success: Boolean,
+    val tokens: TokenInfo
 )

@@ -297,32 +297,6 @@ fun StudentHomeScreen(
                         }
                     }
                     
-                    // 디버그용 토큰 만료 테스트 버튼
-                    item {
-                        NatureComponents.NatureCard(
-                            containerColor = NatureColors.earthBrown.copy(alpha = 0.1f)
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = "🔧 개발자 도구",
-                                    style = NatureTypography.titleSmall,
-                                    color = NatureColors.earthBrown
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                NatureComponents.NatureButton(
-                                    onClick = { viewModel.triggerTokenExpiredForTesting() },
-                                    text = "토큰 만료 테스트",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    backgroundColor = NatureColors.earthBrown.copy(alpha = 0.7f)
-                                )
-                            }
-                        }
-                    }
 
                 }
             }

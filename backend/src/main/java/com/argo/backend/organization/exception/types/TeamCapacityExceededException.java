@@ -1,9 +1,11 @@
 package com.argo.backend.organization.exception.types;
 
-import static com.argo.backend.organization.exception.OrganizationErrorMessage.TEAM_CAPACITY_EXCEEDED;
+import com.argo.backend.organization.exception.OrganizationBusinessException;
+import com.argo.backend.organization.exception.OrganizationErrorMessage;
+import org.springframework.http.HttpStatus;
 
-public class TeamCapacityExceededException extends RuntimeException {
+public class TeamCapacityExceededException extends OrganizationBusinessException {
     public TeamCapacityExceededException() {
-        super(TEAM_CAPACITY_EXCEEDED.getMessage());
+        super(OrganizationErrorMessage.TEAM_CAPACITY_EXCEEDED, HttpStatus.BAD_REQUEST);
     }
 }

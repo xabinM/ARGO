@@ -14,11 +14,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
+import com.argo.backend.organization.message.ResponseMessage;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/teacher/classes")
 @Validated
+@PreAuthorize("hasRole('TEACHER')")
 public class TeacherTeamController {
 
     private final TeamService teamService;
@@ -30,10 +33,9 @@ public class TeacherTeamController {
             @AuthenticationPrincipal Long teacherId
     ) {
         TeamCreateResponse response = teamService.createTeam(classId, request, teacherId);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "팀 생성 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.TEAM_CREATE_SUCCESS, response));
     }
 
-    // 클리어
     @PostMapping("/{classId}/teams/{teamId}/assign")
     public ResponseEntity<CommonApiResponse<TeamAssignResponse>> assignStudentsToTeam(
             @PathVariable Long classId,
@@ -42,17 +44,16 @@ public class TeacherTeamController {
             @AuthenticationPrincipal Long teacherId
     ) {
         TeamAssignResponse response = teamService.assignStudentsToTeam(classId, teamId, request, teacherId);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "학생 팀 배정 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.TEAM_ASSIGN_SUCCESS, response));
     }
 
-    // 클리어
     @PostMapping("/{classId}/teams/assign")
     public ResponseEntity<CommonApiResponse<TeamAutoAssignResponse>> autoAssignStudentsToTeams(
             @PathVariable Long classId,
             @AuthenticationPrincipal Long teacherId
     ) {
         TeamAutoAssignResponse response = teamService.autoAssignStudentsToTeams(classId, teacherId);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "학생 자동 배정 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.TEAM_AUTO_ASSIGN_SUCCESS, response));
     }
 
     @DeleteMapping("/{classId}/teams/{teamId}")
@@ -62,6 +63,6 @@ public class TeacherTeamController {
             @AuthenticationPrincipal Long teacherId
     ) {
         TeamDeleteResponse response = teamService.deleteTeam(classId, teamId, teacherId);
-        return ResponseEntity.ok(new CommonApiResponse<>(true, "팀 삭제 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.TEAM_DELETE_SUCCESS, response));
     }
 }

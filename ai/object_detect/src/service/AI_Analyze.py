@@ -102,9 +102,19 @@ class AI_Analyze: #이미지, YOLO 추론 결과, 포즈 추론 결과
 
         return filtered_poses
 
-    def print_keypoints(self, pose_select):
-        if not self.poses_info:
-            return []
+    def print_keypoints(self, pose_select, people_count):
+        
+        detected_count = len(self.poses_info) if self.poses_info else 0
+        required_count = max(1, int(people_count * 0.8))
+
+        if not detected_count:
+            return False, "인식된 사람이 없습니다"
+        elif not required_count:
+            return False, "팀원이 없습니다"
+        elif detected_count < required_count:
+            return False, f"인식된 사람이 {required_count - detected_count}명 부족합니다"
+
+        result_count = 0
         all_result = []
         for person_idx in range(len(self.poses_info)):
             #정보
@@ -122,16 +132,22 @@ class AI_Analyze: #이미지, YOLO 추론 결과, 포즈 추론 결과
                 result, reason = self.check_heart_pose(person_idx)
             else:
                 result, reason = False, "Unknown pose"
+
             if result:
-                return result
-            all_result.append(reason)
+                result_count += 1
+            else:
+                all_result.append(reason)
+
+        if result_count >= required_count:
+            return True, "success"
+            
         freq_dict = {}
         for reason in all_result:
             freq_dict[reason] = freq_dict.get(reason, 0) + 1
 
         # 최대 빈도 사유 추출
         most_common_reason = max(freq_dict, key=freq_dict.get)
-        return most_common_reason
+        return False, most_common_reason
             
     def check_sitting_pose(self, person_idx=0):
         """

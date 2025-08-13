@@ -10,6 +10,6 @@ import java.util.List;
 public class RequestUsersCoordinatesResponse {
 
     private boolean success;
-    private List<UserCoordinatesDto> coordinatesDtos;
+    private List<UserCoordinatesDto> coordinates;
     private String message;
 }

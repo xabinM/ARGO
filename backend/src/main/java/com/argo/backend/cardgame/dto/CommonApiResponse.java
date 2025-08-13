@@ -19,4 +19,8 @@ public class CommonApiResponse<T> {
         this.message = message;
         this.data = null;
     }
+    
+    public static <T> CommonApiResponse<T> success(String message, T data) {
+        return new CommonApiResponse<>(true,message, data);
+    }
 }

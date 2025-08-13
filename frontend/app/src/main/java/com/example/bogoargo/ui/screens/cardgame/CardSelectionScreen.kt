@@ -20,6 +20,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.bogoargo.domain.model.*
+import com.example.bogoargo.navigation.Screen
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureShapes
@@ -37,8 +38,10 @@ import com.example.bogoargo.ui.viewmodels.cardgame.CardSelectionViewModel
 data class CardSelectionParams(
     val teamId: Long,
     val targetTeamId: Long,
+    val classId: Long,
     val matchId: Long? = null, // 대전 응답 시에만 필요
-    val isResponse: Boolean = false // true = 응답, false = 신규 신청
+    val isResponse: Boolean = false, // true = 응답, false = 신규 신청
+    val targetTeamName: String = "" // 대상 팀 이름
 )
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -73,13 +76,7 @@ fun CardSelectionScreen(
     }
 
     val targetTeamName = remember {
-        when (params.targetTeamId) {
-            2L -> "불사조 팀 🔥"
-            3L -> "그리핀 팀 🦅"
-            4L -> "유니콘 팀 🦄"
-            5L -> "드래곤 팀 🐉"
-            else -> "상대팀"
-        }
+        params.targetTeamName.ifEmpty { "상대팀" }
     }
 
     // 필터링된 카드 리스트 (레어도 필터 + 활성 카드만)
@@ -185,10 +182,10 @@ fun CardSelectionScreen(
                 
                 // 오류 상태 또는 데이터 없음
                 if (uiState.errorMessage != null || availableCards.isEmpty()) {
-                    ErrorStateCard(
-                        errorMessage = uiState.errorMessage,
-                        onRetry = { viewModel.loadTeamCardCollection(params.teamId) },
-                        onUseDummy = { viewModel.loadDummyTeamCardCollection(params.teamId) }
+                    EmptyCardSelectionCard(
+                        onStartMission = {
+                            navController.navigate(Screen.StudentClassDetail.createRoute(params.classId))
+                        }
                     )
                     return@Column
                 }
@@ -211,8 +208,8 @@ fun CardSelectionScreen(
                     displayMode = CardDisplayMode.SINGLE_SELECT,
                     onCardClick = { card ->
                         // 활성 카드만 선택 가능
-                        if (card.isActive) {
-                            selectedCard = if (selectedCard == card.cardId) null else card.cardId
+                        if (card.isActive && card.teamCardId != null) {
+                            selectedCard = if (selectedCard == card.teamCardId) null else card.teamCardId
                         }
                     },
                     onCardLongClick = {
@@ -228,21 +225,21 @@ fun CardSelectionScreen(
 
         if (showConfirmDialog) {
             BattleConfirmDialog(
-                selectedCards = listOfNotNull(availableCards.find { it.cardId == selectedCard }),
+                selectedCards = listOfNotNull(availableCards.find { it.teamCardId == selectedCard }),
                 selectedStance = selectedStance!!,
                 targetTeamName = targetTeamName,
                 onDismiss = { showConfirmDialog = false },
                 onConfirm = {
                     showConfirmDialog = false
                     
-                    // 선택된 카드의 teamCardId 찾기
-                    val selectedGameCard = availableCards.find { it.cardId == selectedCard }
+                    // 선택된 카드의 teamCardId 사용
+                    val selectedGameCard = availableCards.find { it.teamCardId == selectedCard }
                     selectedGameCard?.teamCardId?.let { teamCardId ->
                         if (params.isResponse && params.matchId != null) {
                             // 대전 응답
                             viewModel.respondToBattle(
                                 matchId = params.matchId,
-                                action = "accept",
+                                action = "ACCEPT",
                                 selectedCardTeamCardId = teamCardId,
                                 battleStance = selectedStance!!
                             )
@@ -284,12 +281,12 @@ fun CardSelectionScreen(
             onRetry = if (uiState.battleErrorMessage != null) {
                 {
                     // 재시도 로직
-                    val selectedGameCard = availableCards.find { it.cardId == selectedCard }
+                    val selectedGameCard = availableCards.find { it.teamCardId == selectedCard }
                     selectedGameCard?.teamCardId?.let { teamCardId ->
                         if (params.isResponse && params.matchId != null) {
                             viewModel.respondToBattle(
                                 matchId = params.matchId,
-                                action = "accept", 
+                                action = "ACCEPT", 
                                 selectedCardTeamCardId = teamCardId,
                                 battleStance = selectedStance!!
                             )
@@ -582,55 +579,49 @@ fun BattleConfirmDialog(
 }
 
 @Composable
-private fun ErrorStateCard(
-    errorMessage: String?,
-    onRetry: () -> Unit,
-    onUseDummy: () -> Unit
+private fun EmptyCardSelectionCard(
+    onStartMission: () -> Unit
 ) {
-    Card(
+    NatureComponents.NatureCard(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = NatureColors.whiteTransparent),
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        shape = NatureShapes.large,
+        containerColor = NatureColors.whiteTransparent,
+        elevation = NatureElevation.medium
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "❌ 데이터를 불러올 수 없습니다",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFFF44336)
-                )
+                text = "⚔️",
+                style = MaterialTheme.typography.displayMedium
             )
-            if (errorMessage != null) {
-                Text(
-                    text = errorMessage,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        color = Color.Gray
-                    ),
-                    textAlign = TextAlign.Center
-                )
-            }
             
-            Row(
+            Text(
+                text = "대전할 카드가 없어요!",
+                style = NatureTypography.titleLarge,
+                color = NatureColors.forestGreen,
+                textAlign = TextAlign.Center
+            )
+            
+            Text(
+                text = "미션을 수행하여 카드를 수집해보세요.\n카드가 있어야 대전을 신청할 수 있어요!",
+                style = NatureTypography.bodyMedium,
+                color = NatureColors.earthBrown.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center
+            )
+            
+            NatureComponents.NatureButton(
+                onClick = onStartMission,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                backgroundColor = NatureColors.leafGreen
             ) {
-                NatureComponents.NatureOutlinedButton(
-                    onClick = onRetry,
-                    text = "재시도",
-                    modifier = Modifier.weight(1f)
-                )
-                NatureComponents.NatureButton(
-                    onClick = onUseDummy,
-                    text = "테스트 데이터",
-                    modifier = Modifier.weight(1f),
-                    backgroundColor = NatureColors.leafGreen
+                Text(
+                    text = "🎯 미션 하러 가기",
+                    style = NatureTypography.labelLarge
                 )
             }
         }

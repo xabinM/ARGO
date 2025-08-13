@@ -139,9 +139,16 @@ object NetworkModule {
 
     @Provides
     @Singleton
+    fun provideMissionApiService(retrofit: Retrofit): MissionApiService {
+        return retrofit.create(MissionApiService::class.java)
+    }
+
+    @Provides
+    @Singleton
     fun provideProblemApiService(retrofit: Retrofit): ProblemApiService {
         return retrofit.create(ProblemApiService::class.java)
     }
+
 
     @Provides
     @Singleton

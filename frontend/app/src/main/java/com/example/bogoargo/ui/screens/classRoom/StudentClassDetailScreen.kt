@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.bogoargo.navigation.Screen
 import com.example.bogoargo.ui.viewmodels.user.StudentClassDetailViewModel
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
@@ -392,7 +393,7 @@ fun StudentClassDetailScreen(
                                                         // classId와 teamId를 파라미터로 전달
                                                         val teamId = uiState.myTeam!!.teamId
                                                         val leaderId = uiState.myTeam!!.leaderId
-                                                        navController.navigate("cardGame/$teamId/$leaderId?classId=$classId") 
+                                                        navController.navigate(Screen.CardGame.createRoute(teamId, leaderId, classId)) 
                                                     },
                                                     colors = ButtonDefaults.buttonColors(
                                                         containerColor = NatureColors.earthBrown.copy(alpha = 0.8f)

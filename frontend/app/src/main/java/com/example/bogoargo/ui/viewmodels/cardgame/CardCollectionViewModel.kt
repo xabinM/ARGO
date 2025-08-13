@@ -59,58 +59,9 @@ class CardCollectionViewModel @Inject constructor(
         }
     }
     
-    // 테스트용 더미 데이터 로드
-    fun loadDummyTeamCardCollection(teamId: Long) {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            
-            // 더미 데이터 생성 (백엔드 응답 구조에 맞춤)
-            val dummyCollection = createDummyTeamCardCollection(teamId)
-            
-            _uiState.value = _uiState.value.copy(
-                isLoading = false,
-                teamCardCollection = dummyCollection
-            )
-        }
-    }
+    // 삭제됨: 더미 데이터 로드 함수 제거
     
-    private fun createDummyTeamCardCollection(teamId: Long): TeamCardCollection {
-        val dummyCards = listOf(
-            // 정상 카드들
-            GameCard.create(1L, CardTier.LEGENDARY, 101L, false, false), // 불사조 (정상)
-            GameCard.create(2L, CardTier.EPIC, 102L, false, false),      // 그림자 늑대 (정상)
-            GameCard.create(3L, CardTier.RARE, 103L, false, false),      // 치유의 요정 (정상)
-            GameCard.create(4L, CardTier.EPIC, 104L, false, false),      // 바위 골렘 (정상)
-            GameCard.create(5L, CardTier.RARE, 105L, false, false),      // 번개 마법사 (정상)
-            GameCard.create(6L, CardTier.COMMON, 106L, false, false),    // 숲의 수호자 (정상)
-            
-            // 사용 중인 카드들 (대전에 참여중)
-            GameCard.create(7L, CardTier.LEGENDARY, 107L, false, true),  // 얼음 용 (사용중)
-            GameCard.create(8L, CardTier.RARE, 108L, false, true),       // 기사 (사용중)
-            GameCard.create(1L, CardTier.COMMON, 109L, false, true),     // 불사조 (일반, 사용중)
-            
-            // 제거된 카드들
-            GameCard.create(2L, CardTier.RARE, 110L, true, false),       // 그림자 늑대 (레어, 제거됨)
-            GameCard.create(3L, CardTier.EPIC, 111L, true, false),       // 치유의 요정 (에픽, 제거됨)
-            
-            // 추가 정상 카드들
-            GameCard.create(4L, CardTier.LEGENDARY, 112L, false, false), // 바위 골렘 (전설, 정상)
-            GameCard.create(5L, CardTier.COMMON, 113L, false, false),    // 번개 마법사 (일반, 정상)
-            GameCard.create(6L, CardTier.RARE, 114L, false, false),      // 숲의 수호자 (레어, 정상)
-            GameCard.create(7L, CardTier.EPIC, 115L, false, false),      // 얼음 용 (에픽, 정상)
-            GameCard.create(8L, CardTier.LEGENDARY, 116L, false, false), // 기사 (전설, 정상)
-        )
-        
-        // 등급별 통계 계산
-        val tierStats = dummyCards.groupBy { it.rarity.name }.mapValues { it.value.size }
-        
-        return TeamCardCollection(
-            teamId = teamId,
-            cards = dummyCards,
-            totalCount = dummyCards.size,
-            tierStats = tierStats
-        )
-    }
+    // 삭제됨: 더미 데이터 생성 함수 제거
     
     // 오류 메시지 클리어
     fun clearErrorMessage() {

@@ -7,8 +7,5 @@ data class TeamStatsResponseDto(
     val wins: Int,
     val losses: Int,
     val draws: Int,
-    val totalPoints: Int,
-    val averageScore: Double,
-    val rank: Int,
-    val winRate: Double
+    val totalPoints: Int
 )

@@ -364,46 +364,68 @@ class DiversityEnhancedPromptGenerator:
         )
 
         duplicate_prevention = f"""
-🚫 **중복 방지 (매우 중요!):**
-다음과 유사한 문제는 절대 만들지 마세요:
-{previous_questions if previous_questions else "- (아직 이전 문제 없음)"}
+    🚫 **중복 방지 (매우 중요!):**
+    다음과 유사한 문제는 절대 만들지 마세요:
+    {previous_questions if previous_questions else "- (아직 이전 문제 없음)"}
 
-반드시 완전히 다른 관점에서 문제를 만드세요!
-"""
+    반드시 완전히 다른 관점에서 문제를 만드세요!
+    """
+
+        # 🔥 객관적 사실 기반 문제 강제
+        objective_requirements = f"""
+    📏 **객관적 사실 기반 필수 조건:**
+    - 감정이나 기분을 묻는 문제 절대 금지 ("어떤 기분", "어떻게 느꼈을까" 등)
+    - 개인적 의견을 묻는 문제 금지 ("어떻게 생각하나요", "당신이라면" 등)
+    - 반드시 역사적 사실, 건축적 특징, 구체적 정보만 질문
+    - 정답이 명확하고 검증 가능한 객관적 사실만 다룰 것
+
+    ✅ **좋은 예시:**
+    - "{spot_name}은 언제 지어졌나요?"
+    - "{spot_name}의 주요 기능은 무엇이었나요?"
+    - "{spot_name}에서 볼 수 있는 건축 특징은?"
+
+    ❌ **절대 금지 예시:**
+    - "어떤 기분이 들었을까요?"
+    - "어떻게 생각하나요?"
+    - "당신이라면 어떻게 했을까요?"
+    """
 
         specific_instruction = f"""
-🎯 **이번 문제 필수 조건:**
-- 문제 유형: {question_type['type']} ({question_type['focus']})
-- 핵심 키워드: {', '.join(diverse_keywords)}
-- 관점: {question_type['focus']}에 초점을 맞춘 문제
+    🎯 **이번 문제 필수 조건:**
+    - 문제 유형: {question_type['type']} ({question_type['focus']})
+    - 핵심 키워드: {', '.join(diverse_keywords)}
+    - 관점: {question_type['focus']}에 초점을 맞춘 **객관적 사실** 문제
 
-✅ **반드시 지킬 것:**
-- {vocab_level}만 사용
-- {sentence_style}으로 구성  
-- 현장에서 직접 확인 가능한 내용
-- 정답이 명확하고 객관적인 사실
-"""
+    ✅ **반드시 지킬 것:**
+    - {vocab_level}만 사용
+    - {sentence_style}으로 구성  
+    - 현장에서 직접 확인 가능한 구체적 사실
+    - 정답이 명확하고 객관적인 역사적/건축적 정보
+    - 교과서에 나올 법한 교육적 내용
+    """
 
         return f"""당신은 초등학교 현장학습 전문 교육자입니다. {grade}학년용 삼지선다 퀴즈를 만드세요.
 
-📍 **장소 정보:**
-- 위치: {location}
-- 장소: {spot_name}  
-- 설명: {description}
+    📍 **장소 정보:**
+    - 위치: {location}
+    - 장소: {spot_name}  
+    - 설명: {description}
 
-{duplicate_prevention}
+    {duplicate_prevention}
 
-{specific_instruction}
+    {objective_requirements}
 
-📋 **정확한 출력 형식:**
-문제: [질문]
-1) [선택지1]
-2) [선택지2] 
-3) [선택지3]
-정답: [1, 2, 3 중 숫자만]
-해설: [한 문장으로 간단명료하게]
+    {specific_instruction}
 
-위 조건을 모두 지켜서 {question_type['type']} 관점의 완전히 새로운 문제를 만들어주세요."""
+    📋 **정확한 출력 형식:**
+    문제: [객관적 사실 질문]
+    1) [구체적 사실 선택지1]
+    2) [구체적 사실 선택지2] 
+    3) [구체적 사실 선택지3]
+    정답: [1, 2, 3 중 숫자만]
+    해설: [역사적/건축적 사실 근거로 한 문장 설명]
+
+    위 조건을 모두 지켜서 {question_type['type']} 관점의 **객관적이고 교육적인** 문제를 만들어주세요."""
 
     def register_question(self, question: str):
         """생성된 문제 등록"""

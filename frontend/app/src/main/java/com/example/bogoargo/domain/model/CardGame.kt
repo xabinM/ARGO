@@ -5,8 +5,7 @@ data class TeamCardStats(
     val teamName: String,
     val wins: Int,
     val losses: Int,
-    val totalScore: Int,
-    val rank: Int
+    val totalScore: Int
 )
 
 data class GameCard(
@@ -62,8 +61,8 @@ data class GameCard(
             val cardInfo = getCardInfo(cardId)
             val rarityMultiplier = when (rarity) {
                 CardTier.COMMON -> 1.0
-                CardTier.RARE -> 1.3
-                CardTier.EPIC -> 1.6
+                CardTier.RARE -> 1.2
+                CardTier.EPIC -> 1.5
                 CardTier.LEGENDARY -> 2.0
             }
             
@@ -79,7 +78,7 @@ data class GameCard(
                 isLocked = isLocked
             )
         }
-        
+
         private fun getCardInfo(cardId: Long): CardInfo {
             return when (cardId) {
                 1L -> CardInfo("불사조", 45, 35, "재생의 힘을 가진 전설적인 새")
@@ -111,10 +110,10 @@ data class GameCard(
 }
 
 enum class CardTier(val displayName: String, val color: String) {
-    COMMON("일반", "#8E8E93"),
-    RARE("레어", "#007AFF"),
-    EPIC("에픽", "#AF52DE"),
-    LEGENDARY("전설", "#FF9500");
+    COMMON("일반", "#CD7F32"),     // 브론즈(동색)
+    RARE("레어", "#C0C0C0"),       // 실버(은색)
+    EPIC("에픽", "#FFD700"),       // 골드(금색)
+    LEGENDARY("전설", "#4FC3F7");  // 다이아몬드(밝은 파란색)
     
     companion object {
         fun fromString(tier: String): CardTier {
@@ -265,10 +264,39 @@ data class BattleHistory(
         get() = when {
             status != BattleStatus.COMPLETED -> 0
             !hasViewedResult -> 0 // 아직 확인하지 않았으면 0
-            actualResult == true -> 150 // 승리 시 150점
-            actualResult == false -> -30 // 패배 시 -30점
-            else -> 0 // 무승부
+            myCard == null || opponentCard == null -> 0 // 카드 정보가 없으면 0
+            else -> calculateScore(
+                myStance = myCard.battleStance,
+                opponentStance = opponentCard.battleStance,
+                isMyWin = actualResult == true,
+                isDraw = actualResult == null
+            )
         }
+    
+    // 점수 계산 로직 (최신 버전)
+    private fun calculateScore(
+        myStance: BattleStance,
+        opponentStance: BattleStance,
+        isMyWin: Boolean,
+        isDraw: Boolean
+    ): Int {
+        return when {
+            // 방 vs 방 특수 조건
+            myStance == BattleStance.DEFENSE && opponentStance == BattleStance.DEFENSE -> 50
+            // 공격 선택 시
+            myStance == BattleStance.ATTACK -> when {
+                isMyWin -> 100
+                isDraw -> 100  // 비김 = 카드제거 + 100점
+                else -> 0      // 짐 = 카드제거
+            }
+            // 방어 선택 시
+            myStance == BattleStance.DEFENSE -> when {
+                isMyWin -> 50
+                else -> 0      // 비김/짐 = pass
+            }
+            else -> 0
+        }
+    }
     
     // UI에 표시할 상태 정보
     val displayStatus: String

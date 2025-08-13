@@ -7,6 +7,7 @@ import com.argo.backend.auth.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
@@ -34,14 +35,22 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/users/signup", "/api/users/login", "/api/users/reissue").permitAll()
+                        
+                        // 원래 설정 (테스트 후 복구용)
+                        .requestMatchers(
+                                "/api/users/signup",
+                                "/api/users/login",
+                                "/api/users/reissue",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/api/problem/**",
+                                "/h2-console/**",
+                                "/swagger-ui.html"
+                        ).permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/problem/generate").permitAll()
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, entryPoint), UsernamePasswordAuthenticationFilter.class)
-                .exceptionHandling(exceptionHandling -> exceptionHandling
-                        .accessDeniedHandler(new CustomAccessDeniedHandler())
-                );
-        ;
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, entryPoint), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

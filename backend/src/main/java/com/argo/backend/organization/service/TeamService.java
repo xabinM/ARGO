@@ -50,10 +50,6 @@ public class TeamService {
 
     @Transactional
     public TeamCreateResponse createTeam(Long classId, TeamCreateRequest request, Long teacherId) {
-        
-        Teacher teacher = teacherRepository.findById(teacherId)
-                .orElseThrow(InsufficientPermissionException::new);
-
         ClassRoom classRoom = validateClassAccess(classId, teacherId);
 
         validateTeamNameUniqueness(request.getTeamName(), classRoom);
@@ -74,23 +70,6 @@ public class TeamService {
                 0, // 초기 멤버 수는 0
                 savedTeam.getCreatedAt()
         );
-    }
-
-    private ClassRoom validateClassAccess(Long classId, Long teacherId) {
-        ClassRoom classRoom = classRoomRepository.findById(classId)
-                .orElseThrow(ClassNotFoundException::new);
-
-        if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
-            throw new UnauthorizedClassAccessException();
-        }
-
-        return classRoom;
-    }
-
-    private void validateTeamNameUniqueness(String teamName, ClassRoom classRoom) {
-        if (teamRepository.existsByTeamNameAndClassRoom(teamName, classRoom)) {
-            throw new DuplicateTeamNameException();
-        }
     }
 
     @Transactional
@@ -118,57 +97,7 @@ public class TeamService {
         
         return TeamAssignResponse.of(teamInfo, assignedStudents);
     }
-    
-    private Team validateTeamAccess(Long teamId, ClassRoom classRoom) {
-        Team team = teamRepository.findByTeamIdAndClassRoom(teamId, classRoom);
-        if (team == null) {
-            throw new TeamNotFoundException();
-        }
-        return team;
-    }
-    
-    private List<User> findAndValidateStudents(Long classId, List<Long> studentIds) {
-        List<Object[]> studentResults = classStudentRepository.findApprovedStudentsByIdsAndClassIdWithTeam(studentIds, classId);
-        List<User> students = studentResults.stream()
-                .map(result -> (User) result[0])
-                .toList();
-        
-        // 존재 검증
-        if (students.size() != studentIds.size()) {
-            throw new StudentNotFoundException();
-        }
-        
-        // 팀 배정 상태 검증 (UserTeam 기반, N+1 문제 해결: 배치 조회)
-        List<Long> assignedStudentIds = userTeamRepository.findAssignedStudentIdsByStudentIdsAndClassId(studentIds, classId);
-        if (!assignedStudentIds.isEmpty()) {
-            throw new StudentAlreadyAssignedException();
-        }
-        
-        return students;
-    }
-    
-    private void validateTeamCapacity(Team team, int newStudentCount) {
-        if (team.getMaxMembers() != null) {
-            long currentMembers = classStudentRepository.countByTeamId(team.getTeamId());
-            if (currentMembers + newStudentCount > team.getMaxMembers()) {
-                throw new TeamCapacityExceededException();
-            }
-        }
-    }
-    
-    private List<AssignedStudentDto> assignStudentsToTeam(Team team, List<User> students, LocalDateTime assignedAt, Long classId) {
-        // N+1 문제 해결: 이미 findAndValidateStudents()에서 중복 검증 완료했으므로 직접 배정
-        return students.stream()
-                .map(student -> {
-                    // UserTeam 생성으로 팀 배정 (중복 체크 생략 - 이미 검증됨)
-                    UserTeam userTeam = UserTeam.create(student, team);
-                    userTeamRepository.save(userTeam);
-                    student.getUserTeams().add(userTeam);
-                    return AssignedStudentDto.from(student, assignedAt);
-                })
-                .toList();
-    }
-    
+
     @Transactional
     public TeamAutoAssignResponse autoAssignStudentsToTeams(Long classId, Long teacherId) {
         ClassRoom classRoom = validateClassAccess(classId, teacherId);
@@ -230,19 +159,7 @@ public class TeamService {
                 unassignedStudents.stream().map(u -> com.argo.backend.organization.dto.teamautoassign.UnassignedStudentDto.of(u, "모든 팀이 가득 참")).toList()
         );
     }
-    
-    private List<TeamAssignmentDto> createTeamAssignments(List<Team> teams) {
-        return teams.stream()
-                .map(team -> {
-                    List<User> members = team.getActiveMembers(); // 이미 FETCH JOIN으로 로딩됨 (쿼리 없음)
-                    return members.isEmpty() ? null : TeamAssignmentDto.of(team,
-                            members.stream().map(AssignedStudentInfoDto::from).toList(),
-                            TeamStatusDto.of(team, members.size()));
-                })
-                .filter(dto -> dto != null)
-                .toList();
-    }
-    
+
     @Transactional
     public TeamDeleteResponse deleteTeam(Long classId, Long teamId, Long teacherId) {
         ClassRoom classRoom = validateTeamAccess(classId, teamId, teacherId);
@@ -270,22 +187,103 @@ public class TeamService {
         return TeamDeleteResponse.of(deletedTeam, unassignedStudents, status);
     }
     
-    private ClassRoom validateTeamAccess(Long classId, Long teamId, Long teacherId) {
+
+
+    private ClassRoom validateClassAccess(Long classId, Long teacherId) {
         ClassRoom classRoom = classRoomRepository.findById(classId)
                 .orElseThrow(ClassNotFoundException::new);
-        
+
         if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
             throw new UnauthorizedClassAccessException();
         }
-        
+
+        return classRoom;
+    }
+
+    private void validateTeamNameUniqueness(String teamName, ClassRoom classRoom) {
+        if (teamRepository.existsByTeamNameAndClassRoom(teamName, classRoom)) {
+            throw new DuplicateTeamNameException();
+        }
+    }
+
+    private Team validateTeamAccess(Long teamId, ClassRoom classRoom) {
         Team team = teamRepository.findByTeamIdAndClassRoom(teamId, classRoom);
         if (team == null) {
             throw new TeamNotFoundException();
         }
-        
+        return team;
+    }
+
+    private List<User> findAndValidateStudents(Long classId, List<Long> studentIds) {
+        List<Object[]> studentResults = classStudentRepository.findApprovedStudentsByIdsAndClassIdWithTeam(studentIds, classId);
+        List<User> students = studentResults.stream()
+                .map(result -> (User) result[0])
+                .toList();
+
+        // 존재 검증
+        if (students.size() != studentIds.size()) {
+            throw new StudentNotFoundException();
+        }
+
+        // 팀 배정 상태 검증 (UserTeam 기반, N+1 문제 해결: 배치 조회)
+        List<Long> assignedStudentIds = userTeamRepository.findAssignedStudentIdsByStudentIdsAndClassId(studentIds, classId);
+        if (!assignedStudentIds.isEmpty()) {
+            throw new StudentAlreadyAssignedException();
+        }
+
+        return students;
+    }
+
+    private void validateTeamCapacity(Team team, int newStudentCount) {
+        if (team.getMaxMembers() != null) {
+            long currentMembers = classStudentRepository.countByTeamId(team.getTeamId());
+            if (currentMembers + newStudentCount > team.getMaxMembers()) {
+                throw new TeamCapacityExceededException();
+            }
+        }
+    }
+
+    private List<AssignedStudentDto> assignStudentsToTeam(Team team, List<User> students, LocalDateTime assignedAt, Long classId) {
+        // N+1 문제 해결: 이미 findAndValidateStudents()에서 중복 검증 완료했으므로 직접 배정
+        return students.stream()
+                .map(student -> {
+                    // UserTeam 생성으로 팀 배정 (중복 체크 생략 - 이미 검증됨)
+                    UserTeam userTeam = UserTeam.create(student, team);
+                    userTeamRepository.save(userTeam);
+                    student.getUserTeams().add(userTeam);
+                    return AssignedStudentDto.from(student, assignedAt);
+                })
+                .toList();
+    }
+
+    private List<TeamAssignmentDto> createTeamAssignments(List<Team> teams) {
+        return teams.stream()
+                .map(team -> {
+                    List<User> members = team.getActiveMembers(); // 이미 FETCH JOIN으로 로딩됨 (쿼리 없음)
+                    return members.isEmpty() ? null : TeamAssignmentDto.of(team,
+                            members.stream().map(AssignedStudentInfoDto::from).toList(),
+                            TeamStatusDto.of(team, members.size()));
+                })
+                .filter(dto -> dto != null)
+                .toList();
+    }
+
+    private ClassRoom validateTeamAccess(Long classId, Long teamId, Long teacherId) {
+        ClassRoom classRoom = classRoomRepository.findById(classId)
+                .orElseThrow(ClassNotFoundException::new);
+
+        if (!classRoom.getTeacher().getUserId().equals(teacherId)) {
+            throw new UnauthorizedClassAccessException();
+        }
+
+        Team team = teamRepository.findByTeamIdAndClassRoom(teamId, classRoom);
+        if (team == null) {
+            throw new TeamNotFoundException();
+        }
+
         return classRoom;
     }
-    
+
     private ClassTeamStatusDto buildClassTeamStatus(Long classId) {
         List<Object[]> results = classStudentRepository.findApprovedStudentsWithTeamAndJoinDateByClassId(classId);
         int totalStudents = results.size();
@@ -293,7 +291,8 @@ public class TeamService {
                 .filter(result -> result[2] != null) // Team 객체가 null이 아니면 배정됨
                 .count();
         int totalTeams = teamRepository.findTeamsByClassId(classId).size();
-        
+
         return ClassTeamStatusDto.of(totalTeams, totalStudents, assignedStudents, totalStudents - assignedStudents);
     }
+
 }

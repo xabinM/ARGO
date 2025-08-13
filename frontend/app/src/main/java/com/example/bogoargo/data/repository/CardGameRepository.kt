@@ -143,7 +143,7 @@ class CardGameRepositoryImpl @Inject constructor(
         battleStance: BattleStance?
     ): DataResult<BattleResult> {
         return try {
-            val selectedCard = if (action == "accept" && selectedCardTeamCardId != null && battleStance != null) {
+            val selectedCard = if (action == "ACCEPT" && selectedCardTeamCardId != null && battleStance != null) {
                 SelectedCardDto(
                     teamCardId = selectedCardTeamCardId,
                     battleStance = battleStance.name

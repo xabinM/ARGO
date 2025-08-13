@@ -1,9 +1,11 @@
 package com.argo.backend.organization.exception.types;
 
-import static com.argo.backend.organization.exception.OrganizationErrorMessage.APPLICATION_NOT_FOUND;
+import com.argo.backend.organization.exception.OrganizationBusinessException;
+import com.argo.backend.organization.exception.OrganizationErrorMessage;
+import org.springframework.http.HttpStatus;
 
-public class ApplicationNotFoundException extends RuntimeException {
+public class ApplicationNotFoundException extends OrganizationBusinessException {
     public ApplicationNotFoundException() {
-        super(APPLICATION_NOT_FOUND.getMessage());
+        super(OrganizationErrorMessage.APPLICATION_NOT_FOUND, HttpStatus.NOT_FOUND);
     }
 }

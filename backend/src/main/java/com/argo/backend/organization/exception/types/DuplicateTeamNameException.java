@@ -1,9 +1,11 @@
 package com.argo.backend.organization.exception.types;
 
-import static com.argo.backend.organization.exception.OrganizationErrorMessage.DUPLICATE_TEAM_NAME;
+import com.argo.backend.organization.exception.OrganizationBusinessException;
+import com.argo.backend.organization.exception.OrganizationErrorMessage;
+import org.springframework.http.HttpStatus;
 
-public class DuplicateTeamNameException extends RuntimeException {
+public class DuplicateTeamNameException extends OrganizationBusinessException {
     public DuplicateTeamNameException() {
-        super(DUPLICATE_TEAM_NAME.getMessage());
+        super(OrganizationErrorMessage.DUPLICATE_TEAM_NAME, HttpStatus.CONFLICT);
     }
 }

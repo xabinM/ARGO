@@ -20,7 +20,7 @@ fun setupARScene(
     onDebugInfoUpdate: (ARDebugInfo) -> Unit,
     onModelNodeUpdate: (ModelNode?) -> Unit,
     onObjectClick: ((ModelNode, Float) -> Boolean)? = null, // 객체 클릭 핸들러 (거리 포함)
-    onObjectInfoUpdate: ((AR3DObject) -> Unit)? = null // 객체 정보 업데이트 콜백 추가
+    onObjectInfoUpdate: ((AR3DObject, Float) -> Unit)? = null // 객체 정보 및 거리 업데이트 콜백 추가
 ) {
     Log.d("ARScreen", "Setting up AR scene for mission spot $spotId at GPS($latitude, $longitude)")
     
@@ -169,6 +169,12 @@ fun setupARScene(
                 onDebugInfoUpdate(debugInfo)
             }
             
+            // 현재 AR 객체가 있고 거리가 계산되었다면 UI에 업데이트
+            val arObject = currentARObject
+            if (arObject != null && distance != Float.MAX_VALUE) {
+                onObjectInfoUpdate?.invoke(arObject, distance)
+            }
+            
             // 90프레임 후에 Terrain Anchor 시도
             if (waitFrameCount >= 90 && !hasTriedTerrainAnchor) {
                 hasTriedTerrainAnchor = true
@@ -182,9 +188,9 @@ fun setupARScene(
                             hasAnyAnchorSucceeded = true // 앵커 성공 플래그 설정
                         }
                     },
-                    onObjectInfoUpdate = { arObject ->
+                    onObjectInfoUpdate = { arObject, distance ->
                         currentARObject = arObject
-                        onObjectInfoUpdate?.invoke(arObject)
+                        onObjectInfoUpdate?.invoke(arObject, distance)
                     }
                 )
                 if (terrainAnchorSuccess) {
@@ -200,9 +206,9 @@ fun setupARScene(
                                 hasAnyAnchorSucceeded = true // 앵커 성공 플래그 설정
                             }
                         },
-                        onObjectInfoUpdate = { arObject ->
+                        onObjectInfoUpdate = { arObject, distance ->
                         currentARObject = arObject
-                        onObjectInfoUpdate?.invoke(arObject)
+                        onObjectInfoUpdate?.invoke(arObject, distance)
                     }
                     )
                     if (planeAnchorSuccess) {
@@ -230,9 +236,9 @@ fun setupARScene(
                             updateAnchorState(anchorType, modelNode)
                         }
                     },
-                    onObjectInfoUpdate = { arObject ->
+                    onObjectInfoUpdate = { arObject, distance ->
                         currentARObject = arObject
-                        onObjectInfoUpdate?.invoke(arObject)
+                        onObjectInfoUpdate?.invoke(arObject, distance)
                     }
                 )
             }
@@ -242,9 +248,10 @@ fun setupARScene(
                 when (currentAnchorType) {
                     // Fallback에서 Plane Anchor로 업그레이드 시도
                     "FALLBACK_FIXED", "PRIMITIVE_FALLBACK" -> {
-                        if (waitFrameCount > 120 && currentARObject != null) {
+                        val arObject = currentARObject
+                        if (waitFrameCount > 120 && arObject != null) {
                             val upgraded = tryUpgradeToPlaneAnchor(
-                                arSceneView, session, localModelNode!!, currentARObject!!, onDebugInfoUpdate
+                                arSceneView, session, localModelNode!!, arObject, onDebugInfoUpdate
                             ) { anchorType, modelNode ->
                                 if (anchorType == "PLANE_ADJUSTED" && modelNode != null) {
                                     updateAnchorState(anchorType, modelNode)
@@ -260,9 +267,10 @@ fun setupARScene(
                     // 평면 기반 앵커의 지속적인 품질 모니터링
                     "PLANE_ANCHOR", "PLANE_ADJUSTED" -> {
                         // 30프레임(약 1초)마다 평면 품질 확인
-                        if (frameCount % 30 == 0L && currentARObject != null) {
+                        val arObject = currentARObject
+                        if (frameCount % 30 == 0L && arObject != null) {
                             val dynamicallyAdjusted = tryDynamicPlaneAdjustment(
-                                arSceneView, session, localModelNode!!, currentARObject!!, onDebugInfoUpdate
+                                arSceneView, session, localModelNode!!, arObject, onDebugInfoUpdate
                             ) { anchorType, modelNode ->
                                 if (anchorType == "PLANE_DYNAMICALLY_ADJUSTED" && modelNode != null) {
                                     updateAnchorState("PLANE_ADJUSTED", modelNode)
