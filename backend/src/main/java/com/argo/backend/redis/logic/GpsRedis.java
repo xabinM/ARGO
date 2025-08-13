@@ -21,7 +21,7 @@ public class GpsRedis {
     private final RedisKeyFactory redisKeyFactory;
 
     // todo 유저 좌표 정보 현재는 테스트 때문에 300초이지만 이후 폴링 방식 시간에 따라 변경 해야함.
-    private static final Duration USER_COORDINATES_TTL = Duration.ofSeconds(300);
+    private static final Duration USER_COORDINATES_TTL = Duration.ofSeconds(1800);
     private static final Duration USER_CLASS_IDS_TTL = Duration.ofHours(1);
 
 
