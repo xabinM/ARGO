@@ -104,6 +104,7 @@ public class BattleService {
             
             match.setChallengedCard(challengedCard);
             match.setChallengedStrategy(request.selectedCard().battleStance());
+            match.setStartedAt(LocalDateTime.now());
             match.setStatus(MatchStatus.COMPLETED);
 
             processBattleResult(match);
