@@ -31,7 +31,9 @@ public class TeamDetailDto {
                 team.getTeamId(),
                 team.getTeamName(),
                 members.size(),
-                0,
+                Optional.ofNullable(team.getGameResult())
+                .map(gameResult -> gameResult.getTotalPoints())
+                .orElse(0),
                 members,
                 Optional.ofNullable(team.getLeader())
                         .map(leader -> leader.getUserId())
