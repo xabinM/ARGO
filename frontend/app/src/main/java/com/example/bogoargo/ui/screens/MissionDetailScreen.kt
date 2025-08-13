@@ -65,8 +65,7 @@ fun MissionDetailScreen(
                             submitResult = uiState.submitResult,
                             isMissionSuccessful = uiState.isMissionSuccessful ?: false,
                             onNavigateBack = onNavigateBack,
-                            onNavigateToGame = onNavigateToGame,
-                            onRetryMission = { viewModel.retryMission() }
+                            onNavigateToGame = onNavigateToGame
                         )
                     }
                     uiState.problemDetail != null -> {

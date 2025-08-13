@@ -33,8 +33,7 @@ fun MissionCompletedSection(
     submitResult: MissionSubmitResult?,
     isMissionSuccessful: Boolean,
     onNavigateBack: () -> Unit,
-    onNavigateToGame: () -> Unit,
-    onRetryMission: () -> Unit
+    onNavigateToGame: () -> Unit
 ) {
     NatureComponents.NatureCard(
         modifier = Modifier.fillMaxWidth()
@@ -110,13 +109,15 @@ fun MissionCompletedSection(
                             animationSpec = tween(durationMillis = 500),
                             label = "card_alpha"
                         )
-                        
                         // 빛나는 효과 애니메이션
                         val glowAlpha by infiniteTransition.animateFloat(
-                            initialValue = 0.3f,
-                            targetValue = 0.7f,
+                            initialValue = 0.5f, // 변경: 0.3f -> 0.5f
+                            targetValue = 1.0f, // 변경: 0.7f -> 1.0f
                             animationSpec = infiniteRepeatable(
-                                animation = tween(1500),
+                                animation = tween(
+                                    durationMillis = 1000, // 변경: 1500 -> 1000
+                                    easing = FastOutSlowInEasing // 추가
+                                ),
                                 repeatMode = RepeatMode.Reverse
                             ),
                             label = "glow_alpha"
@@ -154,8 +155,8 @@ fun MissionCompletedSection(
                                     Box(
                                         modifier = Modifier
                                             .fillMaxSize()
-                                            .scale(1.2f)
-                                            .blur(radius = 20.dp)
+                                            .scale(1.2f) // 예시: 1.2f -> 1.3f
+                                            .blur(radius = 15.dp) // 예시: 20.dp -> 25.dp
                                             .background(
                                                 brush = Brush.radialGradient(
                                                     colors = listOf(
@@ -167,7 +168,8 @@ fun MissionCompletedSection(
                                             )
                                     )
                                 }
-                                
+
+
                                 // 게임 카드 컴포넌트
                                 GameCardComponent(
                                     card = gameCard,
@@ -234,7 +236,7 @@ fun MissionCompletedSection(
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 Text(
-                    text = "아쉽게도 이번 미션은 실패했어요.\n다시 도전해보세요! 💪",
+                    text = "아쉽게도 이번 미션은 실패했어요.\n다른 미션을 찾아보세요! 🎯",
                     style = NatureTypography.bodyMedium,
                     color = NatureColors.earthBrown.copy(alpha = 0.8f),
                     textAlign = TextAlign.Center
@@ -252,24 +254,12 @@ fun MissionCompletedSection(
                     backgroundColor = NatureColors.forestGreen
                 )
             } else {
-                Row(
+                NatureComponents.NatureButton(
+                    onClick = onNavigateToGame,
+                    text = "나가기",
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    NatureComponents.NatureButton(
-                        onClick = onNavigateToGame,
-                        text = "나가기",
-                        modifier = Modifier.weight(1f),
-                        backgroundColor = NatureColors.earthBrown.copy(alpha = 0.7f)
-                    )
-                    
-                    NatureComponents.NatureButton(
-                        onClick = onRetryMission,
-                        text = "💪 다시 도전",
-                        modifier = Modifier.weight(1f),
-                        backgroundColor = NatureColors.forestGreen
-                    )
-                }
+                    backgroundColor = NatureColors.earthBrown.copy(alpha = 0.7f)
+                )
             }
         }
     }

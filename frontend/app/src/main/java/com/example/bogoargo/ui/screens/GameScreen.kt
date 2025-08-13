@@ -7,6 +7,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import com.example.bogoargo.ui.theme.NatureColors
@@ -75,6 +77,7 @@ fun GameScreen(
     var hasMovedToUserLocation by remember { mutableStateOf(false) }
     var showMissionBlockedDialog by remember { mutableStateOf(false) }
     var blockedMissionMessage by remember { mutableStateOf("") }
+    var checkingMissionId by remember { mutableStateOf<Long?>(null) }
     
     // 권한 확인 및 위치 추적 시작
     LaunchedEffect(isGameStarted) {
@@ -289,23 +292,32 @@ fun GameScreen(
                     missions = uiState.nearbyMissionSpots,
                     classId = classId,
                     teamId = teamId,
-                    isCheckingPossibility = uiState.isCheckingMissionPossibility,
+                    checkingMissionId = checkingMissionId,
                     onMissionSelect = { spot ->
+                        // 미션 체크 시작
+                        checkingMissionId = spot.spotId
+                        
                         // 미션 가능 여부 확인 후 처리
                         viewModel.checkMissionPossibility(teamId, spot.spotId) { isSuccess, message ->
+                            checkingMissionId = null
                             if (isSuccess) {
                                 // 미션 진행 가능 - AR 화면으로 이동
                                 showMissionList = false
                                 navController.navigate("ar/${spot.spotId}/${spot.coordinates.latitude}/${spot.coordinates.longitude}?classId=$classId&teamId=$teamId")
                             } else {
-                                // 미션 진행 불가 - 경고 다이얼로그 표시
+                                // 미션 진행 불가이고 메시지가 있을 때만 경고 다이얼로그 표시
                                 showMissionList = false
-                                blockedMissionMessage = message
-                                showMissionBlockedDialog = true
+                                if (message.isNotBlank()) {
+                                    blockedMissionMessage = message
+                                    showMissionBlockedDialog = true
+                                }
                             }
                         }
                     },
-                    onDismiss = { showMissionList = false }
+                    onDismiss = { 
+                        checkingMissionId = null
+                        showMissionList = false 
+                    }
                 )
             }
 
@@ -555,7 +567,7 @@ fun MissionListDialog(
     missions: List<MissionSpot>,
     classId: Long,
     teamId: Long,
-    isCheckingPossibility: Boolean = false,
+    checkingMissionId: Long? = null,
     onMissionSelect: (MissionSpot) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -590,17 +602,23 @@ fun MissionListDialog(
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
                 
-                missions.forEach { mission ->
-                    MissionListItem(
-                        mission = mission,
-                        isCheckingPossibility = isCheckingPossibility,
-                        onClick = {
-                            if (!isCheckingPossibility) {
-                                onMissionSelect(mission)
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 400.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(missions) { mission ->
+                        MissionListItem(
+                            mission = mission,
+                            isCheckingPossibility = checkingMissionId == mission.spotId,
+                            onClick = {
+                                if (checkingMissionId == null) {
+                                    onMissionSelect(mission)
+                                }
                             }
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                        )
+                    }
                 }
             }
         },
@@ -655,12 +673,6 @@ fun MissionListItem(
                         color = NatureColors.forestGreen
                     )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "미션 ID: ${mission.spotId}",
-                    style = NatureTypography.bodySmall,
-                    color = NatureColors.earthBrown
-                )
             }
             
             Column(
@@ -693,7 +705,7 @@ fun MissionBlockedDialog(
     message: String,
     onDismiss: () -> Unit
 ) {
-    androidx.compose.material3.AlertDialog(
+    AlertDialog(
         onDismissRequest = onDismiss,
         title = {
             Row(
