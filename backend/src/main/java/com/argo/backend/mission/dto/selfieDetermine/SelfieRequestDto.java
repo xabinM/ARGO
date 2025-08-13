@@ -9,6 +9,7 @@ import org.springframework.web.multipart.MultipartFile;
 @AllArgsConstructor
 public class SelfieRequestDto {
 
+    private Long teamId;
     private MultipartFile multipartFile;
     private PhotoPose pose;
 }

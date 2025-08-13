@@ -5,6 +5,8 @@ import com.argo.backend.domain.ploblem.enums.ProblemType;
 import com.argo.backend.domain.ploblem.entity.QuizProblem;
 import com.argo.backend.domain.ploblem.entity.SelfieProblem;
 import com.argo.backend.domain.spot.entity.Spot;
+import com.argo.backend.domain.user.entity.UserTeam;
+import com.argo.backend.domain.user.repository.UserTeamRepository;
 import com.argo.backend.mission.api.PythonApiClient;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateTransDto;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterRequest;
@@ -43,6 +45,7 @@ public class ProblemService {
     private final SpotRepository spotRepository;
     private final QuizProblemRepository quizProblemRepository;
     private final SelfieProblemRepository selfieProblemRepository;
+    private final UserTeamRepository userTeamRepository;
 
     @Transactional
     public void registerQuizProblem(Long spotId, ProblemRegisterRequest request) {
@@ -196,7 +199,11 @@ public class ProblemService {
     }
 
     public SelfieResultDto determineSelfie(SelfieRequestDto request) throws IOException {
+        List<UserTeam> userTeams = userTeamRepository.findAllByTeamId(request.getTeamId());
+
+        Integer teamMemberCnt = userTeams.size();
+
         log.info("🎯 포즈 분석 시작");
-        return pythonApiClient.requestDeterMineSelfie(request);
+        return pythonApiClient.requestDeterMineSelfie(teamMemberCnt, request.getMultipartFile(), request.getPose());
     }
 }

@@ -1,5 +1,6 @@
 package com.argo.backend.mission.api;
 
+import com.argo.backend.domain.ploblem.enums.PhotoPose;
 import com.argo.backend.mission.dto.selfieDetermine.SelfieRequestDto;
 import com.argo.backend.mission.dto.selfieDetermine.SelfieResultDto;
 import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestToAI;
@@ -168,13 +169,12 @@ public class PythonApiClient {
     /**
      * 🔥 Apache HttpClient를 사용한 포즈 분석 (Python requests와 동일한 방식)
      */
-    public SelfieResultDto requestDeterMineSelfie(SelfieRequestDto request) throws IOException {
-        log.info("🎯 Apache HttpClient로 포즈 분석 시작: pose={}", request.getPose());
+    public SelfieResultDto requestDeterMineSelfie(Integer teamMemberCnt, MultipartFile multipartFile, PhotoPose pose) throws IOException {
+        log.info("🎯 Apache HttpClient로 포즈 분석 시작: pose={}", pose);
         
         try (CloseableHttpClient httpClient = HttpClients.createDefault()) {
             HttpPost httpPost = new HttpPost(pythonApiBaseUrl + "/pose/full");
-            
-            MultipartFile multipartFile = request.getMultipartFile();
+
             if (multipartFile == null || multipartFile.isEmpty()) {
                 throw new PythonApiException("업로드할 파일이 없습니다");
             }
@@ -202,9 +202,14 @@ public class PythonApiClient {
             builder.addPart("file", fileBody);
             
             // 텍스트 파트 추가
-            StringBody poseBody = new StringBody(request.getPose().name().toLowerCase(), 
+            StringBody poseBody = new StringBody(pose.name().toLowerCase(),
                 org.apache.http.entity.ContentType.TEXT_PLAIN);
             builder.addPart("pose_select", poseBody);
+
+            // 인원수 추가
+            StringBody cntBody = new StringBody(teamMemberCnt.toString(),
+                    org.apache.http.entity.ContentType.TEXT_PLAIN);
+            builder.addPart("teamMemberCnt", cntBody);
             
             // 풀네임 써야 import 충돌 해결
             org.apache.http.HttpEntity multipartEntity = builder.build();
@@ -215,7 +220,7 @@ public class PythonApiClient {
             
             log.info("📤 Apache HttpClient 요청 전송");
             log.info("  - URL: {}/pose/full", pythonApiBaseUrl);
-            log.info("  - 포즈: {}", request.getPose().name().toLowerCase());
+            log.info("  - 포즈: {}", pose.name().toLowerCase());
             
             try (CloseableHttpResponse response = httpClient.execute(httpPost)) {
                 int statusCode = response.getStatusLine().getStatusCode();

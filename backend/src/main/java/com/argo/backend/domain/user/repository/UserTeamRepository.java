@@ -107,4 +107,6 @@ public interface UserTeamRepository extends JpaRepository<UserTeam, Long> {
            "AND ut.isActive = true")
     List<Long> findAssignedStudentIdsByStudentIdsAndClassId(@Param("studentIds") List<Long> studentIds, 
                                                            @Param("classId") Long classId);
+
+    List<UserTeam> findAllByTeamId(Long teamId);
 }
