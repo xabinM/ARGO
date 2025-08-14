@@ -1,5 +1,6 @@
 package com.example.bogoargo.ui.screens.cardgame
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -10,6 +11,7 @@ import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Group
+import androidx.compose.material.icons.filled.Help
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Style
@@ -56,6 +58,9 @@ fun CardGameScreen(
     var showCancelDialog by remember { mutableStateOf(false) }
     var showRejectDialog by remember { mutableStateOf(false) }
     var selectedMatchId by remember { mutableStateOf<Long?>(null) }
+    
+    // 튜토리얼 Dialog 상태
+    var showTutorial by remember { mutableStateOf(false) }
     
     // 결과 Dialog 상태
     var showCancelResultDialog by remember { mutableStateOf(false) }
@@ -135,7 +140,16 @@ fun CardGameScreen(
             NatureComponents.NatureTopAppBar(
                 title = "카드 배틀",
                 emoji = "🃏",
-                onNavigationClick = { navController.popBackStack() }
+                onNavigationClick = { navController.popBackStack() },
+                actions = {
+                    IconButton(onClick = { showTutorial = true }) {
+                        Icon(
+                            imageVector = Icons.Default.Help,
+                            contentDescription = "도움말",
+                            tint = NatureColors.earthBrown
+                        )
+                    }
+                }
             )
         }
     ) { paddingValues ->
@@ -359,6 +373,238 @@ fun CardGameScreen(
                     rejectResultMessage = ""
                 }
             )
+        }
+        
+        // 튜토리얼 Dialog
+        if (showTutorial) {
+            CardGameTutorialDialog(
+                onDismiss = { showTutorial = false }
+            )
+        }
+    }
+}
+
+@Composable
+fun CardGameTutorialDialog(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "🃏 카드 배틀 가이드",
+                    style = NatureTypography.titleLarge,
+                    color = NatureColors.forestGreen
+                )
+            }
+        },
+        text = {
+            LazyColumn(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item {
+                    TutorialStep(
+                        stepNumber = "1",
+                        title = "카드 보기",
+                        description = "내 팀의 카드를 확인하고 공격력/방어력을 파악하세요"
+                    )
+                }
+                item {
+                    TutorialStep(
+                        stepNumber = "2", 
+                        title = "배틀 신청",
+                        description = "다른 팀에게 1대1 카드 배틀을 신청할 수 있습니다"
+                    )
+                }
+                item {
+                    TutorialStep(
+                        stepNumber = "3",
+                        title = "포지션 선택",
+                        description = "공격 포지션 또는 방어 포지션을 선택하세요"
+                    )
+                }
+                item {
+                    Text(
+                        text = "⚔️ 공격 포지션",
+                        style = NatureTypography.titleSmall,
+                        color = NatureColors.earthBrown,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 16.dp, top = 8.dp)
+                    )
+                }
+                item {
+                    BattleRuleCard(
+                        title = "승리",
+                        description = "100점 획득",
+                        color = NatureColors.leafGreen
+                    )
+                }
+                item {
+                    BattleRuleCard(
+                        title = "무승부",
+                        description = "본인 카드 제거 + 50점",
+                        color = NatureColors.sunnyYellow
+                    )
+                }
+                item {
+                    BattleRuleCard(
+                        title = "패배",
+                        description = "본인 카드 제거",
+                        color = NatureColors.earthBrown
+                    )
+                }
+                item {
+                    Text(
+                        text = "🛡️ 방어 포지션",
+                        style = NatureTypography.titleSmall,
+                        color = NatureColors.earthBrown,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 16.dp, top = 12.dp)
+                    )
+                }
+                item {
+                    BattleRuleCard(
+                        title = "승리",
+                        description = "50점 획득",
+                        color = NatureColors.leafGreen
+                    )
+                }
+                item {
+                    BattleRuleCard(
+                        title = "무승부 (상대: 공격)",
+                        description = "카드 유지",
+                        color = NatureColors.sunnyYellow
+                    )
+                }
+                item {
+                    BattleRuleCard(
+                        title = "무승부 (상대: 방어)",
+                        description = "양쪽 카드 제거",
+                        color = NatureColors.sunnyYellow
+                    )
+                }
+                item {
+                    BattleRuleCard(
+                        title = "패배",
+                        description = "카드 유지",
+                        color = NatureColors.earthBrown
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            NatureComponents.NatureButton(
+                onClick = onDismiss,
+                text = "확인",
+                backgroundColor = NatureColors.leafGreen
+            )
+        },
+        containerColor = NatureColors.whiteTransparent90,
+        modifier = Modifier.padding(16.dp)
+    )
+}
+
+@Composable
+private fun TutorialStep(
+    stepNumber: String,
+    title: String,
+    description: String
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 단계 번호
+        NatureComponents.NatureCard(
+            containerColor = NatureColors.leafGreen,
+            shape = androidx.compose.foundation.shape.CircleShape,
+            modifier = Modifier.size(24.dp)
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stepNumber,
+                    style = NatureTypography.labelSmall,
+                    color = androidx.compose.ui.graphics.Color.White,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+        
+        Spacer(modifier = Modifier.width(12.dp))
+        
+        // 내용
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = title,
+                style = NatureTypography.titleSmall,
+                color = NatureColors.forestGreen,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = description,
+                style = NatureTypography.bodySmall,
+                color = NatureColors.earthBrown
+            )
+        }
+    }
+}
+
+@Composable
+private fun BattleRuleCard(
+    title: String,
+    description: String,
+    color: androidx.compose.ui.graphics.Color
+) {
+    NatureComponents.NatureCard(
+        containerColor = color.copy(alpha = 0.1f),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // 원형 인디케이터
+            Box(
+                modifier = Modifier
+                    .size(8.dp)
+                    .background(
+                        color = color,
+                        shape = androidx.compose.foundation.shape.CircleShape
+                    )
+            )
+            
+            Spacer(modifier = Modifier.width(8.dp))
+            
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = title,
+                    style = NatureTypography.bodyMedium,
+                    color = color,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = description,
+                    style = NatureTypography.bodySmall,
+                    color = NatureColors.earthBrown.copy(alpha = 0.8f)
+                )
+            }
         }
     }
 }

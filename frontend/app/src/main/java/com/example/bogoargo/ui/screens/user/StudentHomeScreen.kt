@@ -50,18 +50,7 @@ fun StudentHomeScreen(
             NatureComponents.NatureTopAppBar(
                 title = "내 반들",
                 emoji = "🎒",
-                onNavigationClick = null,
-                actions = {
-                    IconButton(
-                        onClick = { logoutViewModel.logout() }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ExitToApp,
-                            contentDescription = "로그아웃",
-                            tint = NatureColors.earthBrown
-                        )
-                    }
-                },
+                onNavigationClick = { navController.popBackStack() }
             )
         }
     ) { paddingValues ->

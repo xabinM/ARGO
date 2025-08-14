@@ -22,18 +22,6 @@ object AR3DObjectRepository {
             placementType = PlacementType.FALLBACK_ONLY
         ),
         
-        // GLB 형식 객체들
-        AR3DObject(
-            id = "bodhisattva_statue",
-            displayName = "금동 반가사유상",
-            modelPath = "models/bodhisattva_statue.glb",
-            thumbnailPath = "images/objects/bodhisattva_statue_thumb.png",
-            scale = 0.6f,
-            category = "문화재",
-            description = "한국의 대표적인 불교 조각상인 금동 반가사유상입니다. 국보급 문화재를 AR로 체험해보세요.",
-            placementType = PlacementType.MISSION_ONLY
-        ),
-        
         // 나전경함 (고려시대 보물)
         AR3DObject(
             id = "mother_of_pearl_sutra_case",
