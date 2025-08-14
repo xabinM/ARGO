@@ -1,7 +1,7 @@
 stages:
   - build_backend
   - deploy_backend
-  - deploy_ai_job
+  - deploy_ai
 
 variables:
   JAVA_VERSION: "17"
