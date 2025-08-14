@@ -19,9 +19,9 @@ build_backend_job:
       - "$JAR_PATH/*.jar"
     expire_in: 1 day
   only:
-    - develop
+    - master
   tags:
-    - develop
+    - master
 
 deploy_backend_job:
   stage: deploy_backend
@@ -78,7 +78,7 @@ deploy_backend_job:
   #     fi
 
   only:
-    - develop
+    - master
   tags:
-    - develop
+    - master
 
