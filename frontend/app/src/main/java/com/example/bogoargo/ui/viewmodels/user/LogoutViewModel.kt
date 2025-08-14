@@ -7,6 +7,7 @@ import com.example.bogoargo.domain.use_case.auth.LogoutUseCase
 import androidx.work.WorkManager
 import com.example.bogoargo.domain.repository.IAuthRepository
 import com.example.bogoargo.domain.repository.IUserRepository
+import com.example.bogoargo.data.repository.FCMPushSender
 import com.example.bogoargo.worker.LocationWorker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -26,7 +27,8 @@ class LogoutViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val userRepository: IUserRepository,
     private val authRepository: IAuthRepository,
-    private val logoutUseCase: LogoutUseCase
+    private val logoutUseCase: LogoutUseCase,
+    private val pushSender: FCMPushSender
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LogoutUiState())
@@ -41,6 +43,7 @@ class LogoutViewModel @Inject constructor(
                 
                 // WorkManager 위치 추적 중단
                 stopLocationTracking()
+                pushSender.unregisterToken()
 
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,

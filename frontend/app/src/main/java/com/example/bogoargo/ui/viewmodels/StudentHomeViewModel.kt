@@ -16,7 +16,7 @@ import javax.inject.Inject
 
 data class HomeUiState(
     val isLoading: Boolean = false,
-    val welcomeMessage: String = "Welcome to BogoArgo",
+    val welcomeMessage: String = "🎒 와! 오늘은 신나는 현장체험학습 날이야!🌟",
     val classes: List<Class> = emptyList(),
     val errorMessage: String? = null
 )
