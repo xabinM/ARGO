@@ -2,7 +2,7 @@ version: "3.8"
 
 services:
   ai-model:
-    build: ./app
+    build: ./
     container_name: ai-model
     restart: always
     volumes:
