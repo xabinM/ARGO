@@ -38,7 +38,7 @@ fun StudentClassDetailScreen(
     Scaffold(
         topBar = {
             NatureComponents.NatureTopAppBar(
-                title = "우리반",
+                title = "오늘의 활동",
                 emoji = "🎒",
                 onNavigationClick = { navController.popBackStack() }
             )
@@ -92,7 +92,7 @@ fun StudentClassDetailScreen(
                         val classDetail = uiState.classDetail!!.classInfo
                         val statistics = uiState.classDetail!!.statistics
                         
-                        // 반 기본 정보
+                        // 활동 기본 정보
                         item {
                             NatureComponents.NatureCard(
                                 elevation = NatureElevation.large
@@ -106,7 +106,7 @@ fun StudentClassDetailScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        // 왼쪽: 반 이름과 장소
+                                        // 왼쪽: 활동 이름과 장소
                                         Column(
                                             modifier = Modifier.weight(1f)
                                         ) {
@@ -295,12 +295,12 @@ fun StudentClassDetailScreen(
                                                 horizontalAlignment = Alignment.CenterHorizontally
                                             ) {
                                                 Text(
-                                                    text = "🗺️ Argo Game",
+                                                    text = "🗺️ 미션을 찾아라!",
                                                     style = NatureTypography.titleMedium
                                                 )
                                                 Spacer(modifier = Modifier.height(4.dp))
                                                 Text(
-                                                    text = "지도를 활용한 위치 기반 게임",
+                                                    text = "지도를 보고 미션을 수행해 보세요!",
                                                     style = NatureTypography.bodySmall.copy(
                                                         color = NatureColors.earthBrown.copy(alpha = 0.7f)
                                                     ),
@@ -336,12 +336,12 @@ fun StudentClassDetailScreen(
                                                 horizontalAlignment = Alignment.CenterHorizontally
                                             ) {
                                                 Text(
-                                                    text = "🃏 카드 배틀",
+                                                    text = "🃏 우당탕탕 카드 대전!",
                                                     style = NatureTypography.titleMedium
                                                 )
                                                 Spacer(modifier = Modifier.height(4.dp))
                                                 Text(
-                                                    text = "팀 대 팀 전략 카드 게임 (개발용)",
+                                                    text = "획득한 카드로 팀 간 대전을 해 보세요",
                                                     style = NatureTypography.bodySmall.copy(
                                                         color = NatureColors.earthBrown.copy(alpha = 0.7f)
                                                     ),

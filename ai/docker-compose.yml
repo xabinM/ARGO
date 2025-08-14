@@ -1,0 +1,15 @@
+version: "3.8"
+
+services:
+  ai-model:
+    build: .
+    container_name: ai-model
+    restart: always
+    volumes:
+      - ./model:/app/model
+      - ./data:/app/data
+    ports:
+      - "${RAPID_SERVER_PORT}:8000"
+    environment:
+      - GMS_API_KEY=${GMS_API_KEY}
+      - GMS_BASE_URL=${GMS_BASE_URL}
