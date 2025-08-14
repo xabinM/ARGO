@@ -9,6 +9,7 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.bogoargo.data.storage.SecureStorage
+import com.example.bogoargo.data.repository.FCMPushSender
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.User
 import com.example.bogoargo.domain.model.UserRole
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import com.google.firebase.messaging.FirebaseMessaging
 
 data class LoginUiState(
     val isLoading: Boolean = false,
@@ -41,7 +43,8 @@ class LoginViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val loginUseCase: LoginUseCase,
     private val saveTokensUseCase: SaveTokensUseCase,
-    private val secureStorage: SecureStorage
+    private val secureStorage: SecureStorage,
+    private val pushSender: FCMPushSender
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -61,13 +64,14 @@ class LoginViewModel @Inject constructor(
     fun login() {
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            
             when (val result = loginUseCase(_uiState.value.username, _uiState.value.password)) {
                 is DataResult.Success -> {
                     // 사용자 정보는 이미 UserRepository에서 저장됨 (중복 저장 제거)
 
                     // WorkManager로 주기적 위치 추적 시작
                     startLocationTracking()
+
+                    login_fcm_loading()
 
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -125,5 +129,19 @@ class LoginViewModel @Inject constructor(
                 ExistingPeriodicWorkPolicy.REPLACE,
                 locationWorkRequest
             )
+    }
+
+    private fun login_fcm_loading() {
+        val cached = secureStorage.getFcmToken()
+        if (!cached.isNullOrBlank()) {
+            pushSender.sendCurrentToken()
+            return
+        }
+
+        FirebaseMessaging.getInstance().token
+            .addOnSuccessListener { token ->
+                secureStorage.saveFcmToken(token)
+                pushSender.sendCurrentToken()
+            }
     }
 }

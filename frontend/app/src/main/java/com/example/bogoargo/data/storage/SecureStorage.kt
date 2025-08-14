@@ -34,6 +34,8 @@ class SecureStorage @Inject constructor(
         private const val USER_ID_KEY = "user_id"
         private const val USER_NAME_KEY = "user_name"
         private const val USER_ROLE_KEY = "user_role"
+
+        private const val USER_FCM_TOKEN_KEY = "user_fcm_token"
     }
     
     // StateFlow for reactive updates
@@ -178,5 +180,19 @@ class SecureStorage @Inject constructor(
         
         // 토큰과 사용자 정보가 모두 있고, userId가 유효한 값인지 확인
         return hasTokens && user != null && user.userId != null && user.userId > 0
+    }
+
+    fun saveFcmToken(token: String?) {
+        sharedPreferences.edit().apply {
+            if (token == null) remove(USER_FCM_TOKEN_KEY) else putString(USER_FCM_TOKEN_KEY, token)
+        }.apply()
+    }
+
+    fun getFcmToken(): String? {
+        return sharedPreferences.getString(USER_FCM_TOKEN_KEY, null)
+    }
+
+    fun clearFcmToken() {
+        sharedPreferences.edit().remove(USER_FCM_TOKEN_KEY).apply()
     }
 }
