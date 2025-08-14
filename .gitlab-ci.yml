@@ -1,6 +1,7 @@
 stages:
   - build_backend
   - deploy_backend
+  - deploy_ai_job
 
 variables:
   JAVA_VERSION: "17"
@@ -81,4 +82,33 @@ deploy_backend_job:
     - master
   tags:
     - master
+
+deploy_ai_job:
+  stage: deploy_ai
+  image: ubuntu:latest
+  before_script:
+    - apt update && apt install -y openssh-client curl --no-install-recommends
+    - eval "$(ssh-agent -s)"
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa_ci
+    - chmod 600 ~/.ssh/id_rsa_ci
+    - ssh-add ~/.ssh/id_rsa_ci
+    - |
+      echo "Host *" > ~/.ssh/config
+      echo "    StrictHostKeyChecking no" >> ~/.ssh/config
+      echo "    UserKnownHostsFile /dev/null" >> ~/.ssh/config
+  script:
+    - scp -r ./ai "$SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/ai-service"
+    - ssh -T "$SERVER_USER@$SERVER_HOST" <<EOF
+        set -e
+        cd /home/$SERVER_USER/ai-service
+        docker-compose down || true
+        docker-compose up -d --build
+      EOF
+  only:
+    - master
+  tags:
+    - master
+
 
