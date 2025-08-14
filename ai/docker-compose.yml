@@ -2,12 +2,12 @@ version: "3.8"
 
 services:
   ai-model:
-    build: ./
+    build: .
     container_name: ai-model
     restart: always
     volumes:
-      - ${MODEL_DIR}:/app/models
-      - ./app/data:/app/data
+      - ${MODEL_DIR}:/app/model
+      - ./data:/app/data
     ports:
       - "${RAPID_SERVER_PORT}:8000"
     environment:
