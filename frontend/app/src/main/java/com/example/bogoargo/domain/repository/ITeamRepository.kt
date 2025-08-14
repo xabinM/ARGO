@@ -6,7 +6,7 @@ import com.example.bogoargo.domain.model.Team
 import com.example.bogoargo.domain.model.User
 
 interface ITeamRepository {
-    suspend fun createTeam(classId: Long): DataResult<Team>
+    suspend fun createTeam(classId: Long, teamName: String, maxMembers: Int): DataResult<Team>
     suspend fun getTeams(): DataResult<List<Team>>
     suspend fun getTeamById(teamId: Long): DataResult<Team>
     suspend fun updateTeam(teamId: Long): DataResult<Team>

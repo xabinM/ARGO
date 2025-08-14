@@ -133,23 +133,7 @@ fun GameScreen(
             NatureComponents.NatureTopAppBar(
                 title = "Argo 체험학습",
                 emoji = "🎓",
-                actions = {
-                    NatureComponents.NatureButton(
-                        onClick = { 
-                            if (isGameStarted) {
-                                // 게임 종료 후 학급 상세로 이동
-                                navController.navigate("studentClassDetail/$classId") {
-                                    popUpTo("game") { inclusive = true }
-                                }
-                            } else {
-                                // 게임 시작 로직
-                                isGameStarted = true
-                            }
-                        },
-                        text = if (isGameStarted) "홈으로" else "게임 시작",
-                        backgroundColor = NatureColors.leafGreen
-                    )
-                }
+                onNavigationClick = { navController.popBackStack() }
             )
         }
     ) { paddingValues ->
@@ -213,9 +197,7 @@ fun GameScreen(
             // 게임 UI 오버레이
             if (isGameStarted) {
                 GameOverlay(
-                    modifier = Modifier.align(Alignment.TopCenter),
-                    missionSpots = uiState.missionSpots,
-                    completedCount = 0
+                    modifier = Modifier.align(Alignment.TopCenter)
                 )
                 
                 // 근처 미션 AR 버튼들 (포켓몬GO 스타일)
@@ -334,48 +316,30 @@ fun GameScreen(
 
 @Composable
 fun GameOverlay(
-    modifier: Modifier = Modifier,
-    missionSpots: List<MissionSpot>,
-    completedCount: Int
+    modifier: Modifier = Modifier
 ) {
     NatureComponents.NatureCard(
         modifier = modifier.padding(16.dp),
         containerColor = NatureColors.whiteTransparent,
         elevation = NatureElevation.medium
     ) {
-        Row(
+        Column(
             modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = "현장체험학습 진행중 🎓",
-                    style = NatureTypography.titleMedium,
-                    color = NatureColors.forestGreen
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "진행률: $completedCount/${missionSpots.size} 완료",
-                    style = NatureTypography.bodyMedium
-                )
-            }
-            
-            Column(
-                horizontalAlignment = Alignment.End
-            ) {
-                Text(
-                    text = "점수: ${completedCount * 100} 🎆",
-                    style = NatureTypography.titleMedium,
-                    color = NatureColors.sunnyYellow
-                )
-                Text(
-                    text = "🎯 가까운 미션 찾기",
-                    style = NatureTypography.bodySmall,
-                    color = NatureColors.leafGreen
-                )
-            }
+            Text(
+                text = "📍 지도에서 미션 지점을 찾아보세요",
+                style = NatureTypography.titleMedium,
+                color = NatureColors.forestGreen,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "가까이 다가가면 미션을 시작할 수 있습니다",
+                style = NatureTypography.bodyMedium,
+                color = NatureColors.earthBrown,
+                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            )
         }
     }
 }

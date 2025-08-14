@@ -21,6 +21,7 @@ fun ClassDataDto.toDomainModel(): Class {
         maxStudents = this.maxStudents ?: 0,
         studentCount = this.students?.size ?: 0,
         teamCount = this.teams?.size ?:0,
+        grade = this.grade ?: 1,
         status = when (this.status?.uppercase()) {
             "ACTIVE" -> Class.ClassStatus.ACTIVE
             "ENDED" -> Class.ClassStatus.ENDED
@@ -52,6 +53,7 @@ fun ClassInfoDto.toDomainModel(): Class {
         maxStudents = this.maxStudents,
         studentCount = this.studentCount,
         teamCount = this.teamCount,
+        grade = 1, // ClassInfoDto에 grade 필드가 없으므로 기본값 사용
         status = when (this.status.uppercase()) {
             "ACTIVE" -> Class.ClassStatus.ACTIVE
             "ENDED" -> Class.ClassStatus.ENDED

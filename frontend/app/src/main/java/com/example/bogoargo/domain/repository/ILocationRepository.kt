@@ -1,7 +1,8 @@
 package com.example.bogoargo.domain.repository
 
-import com.example.bogoargo.data.dto.response.StudentsLocationResponse
 import com.example.bogoargo.domain.model.Location
+import com.example.bogoargo.domain.model.StudentLocationData
+import com.example.bogoargo.domain.model.UserCoordinates
 
 
 interface ILocationRepository {
@@ -12,5 +13,8 @@ interface ILocationRepository {
     ): Result<Unit>
     suspend fun getStudentLocationsByClass(
         classId: Long
-    ): Result<StudentsLocationResponse>
+    ): Result<StudentLocationData>
+    suspend fun getCoordinatesByClass(
+        classId: Long
+    ): Result<List<UserCoordinates>>
 }

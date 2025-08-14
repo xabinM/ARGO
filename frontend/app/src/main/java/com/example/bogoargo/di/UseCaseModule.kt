@@ -10,14 +10,20 @@ import com.example.bogoargo.domain.repository.ISettingsRepository
 import com.example.bogoargo.domain.repository.ITeamRepository
 import com.example.bogoargo.domain.repository.IUserRepository
 import com.example.bogoargo.domain.repository.ICardGameRepository
+import com.example.bogoargo.domain.repository.IProblemRepository
+import com.example.bogoargo.domain.repository.ISpotRepository
 import com.example.bogoargo.domain.use_case.auth.LoginUseCase
 import com.example.bogoargo.domain.use_case.auth.LogoutUseCase
 import com.example.bogoargo.domain.use_case.auth.RefreshTokenUseCase
 import com.example.bogoargo.domain.use_case.auth.SaveTokensUseCase
 import com.example.bogoargo.domain.use_case.classroom.ApplyClassUseCase
+import com.example.bogoargo.domain.use_case.classroom.ApproveApplicationUseCase
 import com.example.bogoargo.domain.use_case.classroom.CreateClassUseCase
 import com.example.bogoargo.domain.use_case.classroom.DeleteClassUseCase
+import com.example.bogoargo.domain.use_case.classroom.GetApplicationListUseCase
 import com.example.bogoargo.domain.use_case.classroom.GetClassDetailUseCase
+import com.example.bogoargo.domain.use_case.classroom.GetCompleteClassDetailUseCase
+import com.example.bogoargo.domain.use_case.classroom.GetClassMemberListUseCase
 import com.example.bogoargo.domain.use_case.classroom.GetClassesUseCase
 import com.example.bogoargo.domain.use_case.classroom.GetStudentClassListUseCase
 import com.example.bogoargo.domain.use_case.classroom.GetTeacherClassListUseCase
@@ -43,6 +49,9 @@ import com.example.bogoargo.domain.use_case.cardgame.GetBattleOpponentsUseCase
 import com.example.bogoargo.domain.use_case.cardgame.CancelBattleUseCase
 import com.example.bogoargo.domain.use_case.cardgame.ViewBattleResultUseCase
 import com.example.bogoargo.domain.use_case.cardgame.GetTeamStatsUseCase
+import com.example.bogoargo.domain.use_case.problem.GenerateProblemUseCase
+import com.example.bogoargo.domain.use_case.problem.RegisterProblemUseCase
+import com.example.bogoargo.domain.use_case.spot.GetSpotListUseCase
 import com.example.bogoargo.data.repository.MissionRepositoryImpl
 import dagger.Module
 import dagger.Provides
@@ -132,6 +141,12 @@ object UseCaseModule {
 
     @Provides
     @Singleton
+    fun provideGetCompleteClassDetailUseCase(classRepository: IClassRepository): GetCompleteClassDetailUseCase {
+        return GetCompleteClassDetailUseCase(classRepository)
+    }
+
+    @Provides
+    @Singleton
     fun provideDeleteClassUseCase(classRepository: IClassRepository): DeleteClassUseCase {
         return DeleteClassUseCase(classRepository)
     }
@@ -164,6 +179,24 @@ object UseCaseModule {
     @Singleton
     fun provideGetStudentClassListUseCase(classRepository: IClassRepository): GetStudentClassListUseCase {
         return GetStudentClassListUseCase(classRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetApplicationListUseCase(classRepository: IClassRepository): GetApplicationListUseCase {
+        return GetApplicationListUseCase(classRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideApproveApplicationUseCase(classRepository: IClassRepository): ApproveApplicationUseCase {
+        return ApproveApplicationUseCase(classRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetClassMemberListUseCase(classRepository: IClassRepository): GetClassMemberListUseCase {
+        return GetClassMemberListUseCase(classRepository)
     }
     
     // Mission Use Cases
@@ -259,5 +292,25 @@ object UseCaseModule {
     @Singleton
     fun provideGetTeamStatsUseCase(cardGameRepository: ICardGameRepository): GetTeamStatsUseCase {
         return GetTeamStatsUseCase(cardGameRepository)
+    }
+
+    // Problem Use Cases
+    @Provides
+    @Singleton
+    fun provideGenerateProblemUseCase(problemRepository: IProblemRepository): GenerateProblemUseCase {
+        return GenerateProblemUseCase(problemRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideRegisterProblemUseCase(problemRepository: IProblemRepository): RegisterProblemUseCase {
+        return RegisterProblemUseCase(problemRepository)
+    }
+
+    // Spot Use Cases
+    @Provides
+    @Singleton
+    fun provideGetSpotListUseCase(spotRepository: ISpotRepository): GetSpotListUseCase {
+        return GetSpotListUseCase(spotRepository)
     }
 }

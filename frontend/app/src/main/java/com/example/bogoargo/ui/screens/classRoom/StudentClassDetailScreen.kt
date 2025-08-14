@@ -29,6 +29,7 @@ fun StudentClassDetailScreen(
     viewModel: StudentClassDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showClassDetails by remember { mutableStateOf(false) }
     
     LaunchedEffect(classId) {
         viewModel.loadClassDetail(classId)
@@ -97,74 +98,99 @@ fun StudentClassDetailScreen(
                                 elevation = NatureElevation.large
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(24.dp)
+                                    modifier = Modifier.padding(20.dp)
                                 ) {
-                                    // 반 이름 & 선생님
-                                    Text(
-                                        text = classDetail.className,
-                                        style = NatureTypography.titleLarge.copy(fontSize = 22.sp),
-                                        modifier = Modifier.padding(bottom = 8.dp)
-                                    )
-                                    Text(
-                                        text = "담당: ${classDetail.teacherName} 선생님",
-                                        style = NatureTypography.bodyMedium.copy(
-                                            color = NatureColors.earthBrown.copy(alpha = 0.8f)
-                                        ),
-                                        modifier = Modifier.padding(bottom = 12.dp)
-                                    )
-                                    
-                                    // 장소
+                                    // 기본 정보 (항상 표시)
                                     Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(bottom = 8.dp)
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text(text = "📍", fontSize = 16.sp)
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = classDetail.location,
-                                            style = NatureTypography.bodyMedium
-                                        )
-                                    }
-                                    
-                                    // 활동 날짜
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(bottom = 8.dp)
-                                    ) {
-                                        Text(text = "📅", fontSize = 16.sp)
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = classDetail.activityDate.toString(),
-                                            style = NatureTypography.bodyMedium
-                                        )
-                                    }
-                                    
-                                    // 참여자 수
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(bottom = 12.dp)
-                                    ) {
-                                        Text(text = "👥", fontSize = 16.sp)
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = "${statistics.totalStudents}명의 친구들이 ${statistics.totalTeams}개 팀으로 나누어져 있어요",
-                                            style = NatureTypography.bodyMedium
-                                        )
-                                    }
-                                    
-                                    // 설명
-                                    if (classDetail.description.isNotEmpty()) {
-                                        NatureComponents.NatureCard(
-                                            containerColor = NatureColors.sunnyYellow.copy(alpha = 0.1f),
-                                            shape = NatureShapes.medium
+                                        // 왼쪽: 반 이름과 장소
+                                        Column(
+                                            modifier = Modifier.weight(1f)
                                         ) {
                                             Text(
-                                                text = classDetail.description,
-                                                style = NatureTypography.bodyMedium.copy(
-                                                    lineHeight = 20.sp
-                                                ),
-                                                modifier = Modifier.padding(16.dp)
+                                                text = classDetail.className,
+                                                style = NatureTypography.titleLarge.copy(fontSize = 22.sp),
+                                                modifier = Modifier.padding(bottom = 4.dp)
                                             )
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(text = "📍", fontSize = 14.sp)
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    text = classDetail.location,
+                                                    style = NatureTypography.bodyMedium.copy(
+                                                        color = NatureColors.earthBrown.copy(alpha = 0.8f)
+                                                    )
+                                                )
+                                            }
+                                        }
+                                        
+                                        // 오른쪽: 상세보기/접기 버튼
+                                        NatureComponents.NatureButton(
+                                            onClick = { showClassDetails = !showClassDetails },
+                                            text = if (showClassDetails) "접기" else "상세보기",
+                                            backgroundColor = NatureColors.earthBrown.copy(alpha = 0.1f),
+                                            contentColor = NatureColors.earthBrown
+                                        )
+                                    }
+                                    
+                                    // 상세 정보 (토글)
+                                    if (showClassDetails) {
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        
+                                        // 선생님
+                                        Text(
+                                            text = "담당: ${classDetail.teacherName} 선생님",
+                                            style = NatureTypography.bodyMedium.copy(
+                                                color = NatureColors.earthBrown.copy(alpha = 0.8f)
+                                            ),
+                                            modifier = Modifier.padding(bottom = 8.dp)
+                                        )
+                                        
+                                        // 활동 날짜
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(bottom = 8.dp)
+                                        ) {
+                                            Text(text = "📅", fontSize = 16.sp)
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = classDetail.activityDate.toString(),
+                                                style = NatureTypography.bodyMedium
+                                            )
+                                        }
+                                        
+                                        // 참여자 수
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(bottom = 12.dp)
+                                        ) {
+                                            Text(text = "👥", fontSize = 16.sp)
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = "${statistics.totalStudents}명의 친구들이 ${statistics.totalTeams}개 팀으로 나누어져 있어요",
+                                                style = NatureTypography.bodyMedium
+                                            )
+                                        }
+                                        
+                                        // 설명
+                                        if (classDetail.description.isNotEmpty()) {
+                                            NatureComponents.NatureCard(
+                                                containerColor = NatureColors.sunnyYellow.copy(alpha = 0.1f),
+                                                shape = NatureShapes.medium
+                                            ) {
+                                                Text(
+                                                    text = classDetail.description,
+                                                    style = NatureTypography.bodyMedium.copy(
+                                                        lineHeight = 20.sp
+                                                    ),
+                                                    modifier = Modifier.padding(16.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -177,29 +203,32 @@ fun StudentClassDetailScreen(
                                 NatureComponents.NatureCard(
                                     containerColor = NatureColors.leafGreen.copy(alpha = 0.1f)
                                 ) {
-                                    Column(
-                                        modifier = Modifier.padding(20.dp)
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
+                                        val myTeam = uiState.myTeam!!
+                                        
+                                        // 왼쪽: 아이콘과 제목
                                         Text(
                                             text = "🏆 내 팀",
                                             style = NatureTypography.titleMedium.copy(
                                                 color = NatureColors.forestGreen
-                                            ),
-                                            modifier = Modifier.padding(bottom = 12.dp)
+                                            )
                                         )
                                         
-                                        val myTeam = uiState.myTeam!!
-                                        
-                                        // 팀 이름
+                                        // 중앙: 팀 이름
                                         Text(
                                             text = myTeam.teamName,
                                             style = NatureTypography.bodyLarge.copy(
                                                 color = NatureColors.earthBrown
-                                            ),
-                                            modifier = Modifier.padding(bottom = 8.dp)
+                                            )
                                         )
                                         
-                                        // 팀원 수
+                                        // 오른쪽: 팀원 수
                                         Text(
                                             text = "팀원 ${myTeam.memberCount}명",
                                             style = NatureTypography.bodyMedium.copy(
@@ -232,75 +261,6 @@ fun StudentClassDetailScreen(
                                             ),
                                             textAlign = TextAlign.Center
                                         )
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // 모든 팀 정보
-                        if (uiState.classDetail!!.teams.isNotEmpty()) {
-                            item {
-                                NatureComponents.NatureCard {
-                                    Column(
-                                        modifier = Modifier.padding(20.dp)
-                                    ) {
-                                        Text(
-                                            text = "🌟 모든 팀",
-                                            style = NatureTypography.titleMedium.copy(
-                                                color = NatureColors.forestGreen
-                                            ),
-                                            modifier = Modifier.padding(bottom = 16.dp)
-                                        )
-                                        
-                                        Column(
-                                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                                        ) {
-                                            uiState.classDetail!!.teams.forEach { team ->
-                                                NatureComponents.NatureCard(
-                                                    containerColor = if (team.teamId == uiState.myTeam?.teamId) {
-                                                        NatureColors.leafGreen.copy(alpha = 0.1f)
-                                                    } else {
-                                                        NatureColors.earthBrown.copy(alpha = 0.05f)
-                                                    }
-                                                ) {
-                                                    Column(
-                                                        modifier = Modifier.padding(12.dp)
-                                                    ) {
-                                                        Row(
-                                                            modifier = Modifier.fillMaxWidth(),
-                                                            horizontalArrangement = Arrangement.SpaceBetween,
-                                                            verticalAlignment = Alignment.CenterVertically
-                                                        ) {
-                                                            Text(
-                                                                text = team.teamName + if (team.teamId == uiState.myTeam?.teamId) " (내 팀)" else "",
-                                                                style = NatureTypography.bodyMedium.copy(
-                                                                    color = if (team.teamId == uiState.myTeam?.teamId) {
-                                                                        NatureColors.forestGreen
-                                                                    } else {
-                                                                        NatureColors.earthBrown
-                                                                    }
-                                                                )
-                                                            )
-                                                            Text(
-                                                                text = "${team.totalScore}점",
-                                                                style = NatureTypography.bodySmall.copy(
-                                                                    color = NatureColors.forestGreen
-                                                                )
-                                                            )
-                                                        }
-                                                        if (team.members.isNotEmpty()) {
-                                                            Text(
-                                                                text = team.members.joinToString(", ") { it.studentName },
-                                                                style = NatureTypography.bodySmall.copy(
-                                                                    color = NatureColors.earthBrown.copy(alpha = 0.7f)
-                                                                ),
-                                                                modifier = Modifier.padding(top = 4.dp)
-                                                            )
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
                                     }
                                 }
                             }
@@ -435,6 +395,75 @@ fun StudentClassDetailScreen(
                                             ),
                                             textAlign = TextAlign.Center
                                         )
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 모든 팀 정보
+                        if (uiState.classDetail!!.teams.isNotEmpty()) {
+                            item {
+                                NatureComponents.NatureCard {
+                                    Column(
+                                        modifier = Modifier.padding(20.dp)
+                                    ) {
+                                        Text(
+                                            text = "🌟 모든 팀",
+                                            style = NatureTypography.titleMedium.copy(
+                                                color = NatureColors.forestGreen
+                                            ),
+                                            modifier = Modifier.padding(bottom = 16.dp)
+                                        )
+                                        
+                                        Column(
+                                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                                        ) {
+                                            uiState.classDetail!!.teams.forEach { team ->
+                                                NatureComponents.NatureCard(
+                                                    containerColor = if (team.teamId == uiState.myTeam?.teamId) {
+                                                        NatureColors.leafGreen.copy(alpha = 0.1f)
+                                                    } else {
+                                                        NatureColors.earthBrown.copy(alpha = 0.05f)
+                                                    }
+                                                ) {
+                                                    Column(
+                                                        modifier = Modifier.padding(12.dp)
+                                                    ) {
+                                                        Row(
+                                                            modifier = Modifier.fillMaxWidth(),
+                                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                                            verticalAlignment = Alignment.CenterVertically
+                                                        ) {
+                                                            Text(
+                                                                text = team.teamName + if (team.teamId == uiState.myTeam?.teamId) " (내 팀)" else "",
+                                                                style = NatureTypography.bodyMedium.copy(
+                                                                    color = if (team.teamId == uiState.myTeam?.teamId) {
+                                                                        NatureColors.forestGreen
+                                                                    } else {
+                                                                        NatureColors.earthBrown
+                                                                    }
+                                                                )
+                                                            )
+                                                            Text(
+                                                                text = "${team.totalScore}점",
+                                                                style = NatureTypography.bodySmall.copy(
+                                                                    color = NatureColors.forestGreen
+                                                                )
+                                                            )
+                                                        }
+                                                        if (team.members.isNotEmpty()) {
+                                                            Text(
+                                                                text = team.members.joinToString(", ") { it.studentName },
+                                                                style = NatureTypography.bodySmall.copy(
+                                                                    color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                                                                ),
+                                                                modifier = Modifier.padding(top = 4.dp)
+                                                            )
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }

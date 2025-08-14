@@ -1,8 +1,6 @@
 package com.example.bogoargo.ui.screens
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -14,6 +12,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.ui.viewmodels.SettingsViewModel
+import com.example.bogoargo.ui.theme.NatureComponents
+import com.example.bogoargo.ui.theme.NatureColors
+import com.example.bogoargo.ui.theme.NatureShapes
+import com.example.bogoargo.ui.theme.NatureTypography
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,102 +27,126 @@ fun SettingsScreen(
     
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Settings") },
-                navigationIcon = {
-                    IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
-                        )
-                    }
-                }
+            NatureComponents.NatureTopAppBar(
+                title = "설정",
+                emoji = "⚙️",
+                onNavigationClick = { /* 뒤로가기 비활성화 */ }
             )
         }
     ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(16.dp)
-        ) {
-            Text(
-                text = "Settings",
-                style = MaterialTheme.typography.headlineMedium,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            
-            Spacer(modifier = Modifier.height(32.dp))
-            
-            Card(
-                modifier = Modifier.fillMaxWidth()
+        NatureComponents.NatureBackground {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(20.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Row(
+                // 사용자 프로필 섹션
+                NatureComponents.NatureCard(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .padding(bottom = 24.dp)
                 ) {
-                    Text("Enable Notifications")
-                    Switch(
-                        checked = uiState.settings.notificationsEnabled,
-                        onCheckedChange = { viewModel.updateNotifications(it) }
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        NatureComponents.ProfileAvatar(
+                            emoji = "👤",
+                            backgroundColor = NatureColors.leafGreen,
+                            size = 64.dp
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Text(
+                            text = "사용자 설정",
+                            style = NatureTypography.titleLarge,
+                            color = NatureColors.forestGreen,
+                            textAlign = TextAlign.Center
+                        )
+                        
+                        Spacer(modifier = Modifier.height(8.dp))
+                        
+                        Text(
+                            text = "앱 환경을 관리해보세요",
+                            style = NatureTypography.bodyMedium.copy(
+                                color = NatureColors.earthBrown.copy(alpha = 0.8f)
+                            ),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
+                
+                // 앱 정보 섹션
+                NatureComponents.NatureCard(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(24.dp)
+                    ) {
+                        Text(
+                            text = "📱 앱 정보",
+                            style = NatureTypography.titleMedium,
+                            color = NatureColors.forestGreen
+                        )
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "버전 정보",
+                                style = NatureTypography.bodyMedium,
+                                color = NatureColors.earthBrown
+                            )
+                            Text(
+                                text = uiState.version,
+                                style = NatureTypography.bodyMedium.copy(
+                                    color = NatureColors.forestGreen
+                                )
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "앱 이름",
+                                style = NatureTypography.bodyMedium,
+                                color = NatureColors.earthBrown
+                            )
+                            Text(
+                                text = "Argo 체험학습",
+                                style = NatureTypography.bodyMedium.copy(
+                                    color = NatureColors.forestGreen
+                                )
+                            )
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.weight(1f))
+                
+                // 로그아웃 섹션
+                NatureComponents.NatureButton(
+                    onClick = { viewModel.showLogoutDialog() },
+                    text = "🚪 로그아웃",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text("Dark Mode")
-                    Switch(
-                        checked = uiState.settings.darkModeEnabled,
-                        onCheckedChange = { viewModel.updateDarkMode(it) }
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(8.dp))
-            
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        text = "App Version",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = uiState.version,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-            }
-            
-            Spacer(modifier = Modifier.weight(1f))
-            
-            Button(
-                onClick = { viewModel.showLogoutDialog() },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.error
+                        .height(56.dp),
+                    backgroundColor = NatureColors.softOrange
                 )
-            ) {
-                Text("Logout")
             }
         }
     }
@@ -128,22 +154,42 @@ fun SettingsScreen(
     if (uiState.showLogoutDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.hideLogoutDialog() },
-            title = { Text("Logout") },
-            text = { Text("Are you sure you want to logout?") },
+            title = {
+                Text(
+                    text = "🚪 로그아웃",
+                    style = NatureTypography.titleMedium,
+                    color = NatureColors.forestGreen
+                )
+            },
+            text = {
+                Text(
+                    text = "정말 로그아웃하시겠습니까?\n다시 로그인해야 앱을 사용할 수 있습니다.",
+                    style = NatureTypography.bodyMedium,
+                    color = NatureColors.earthBrown
+                )
+            },
             confirmButton = {
-                TextButton(
-                    onClick = { viewModel.clearAllSettings() }
-                ) {
-                    Text("Logout")
-                }
+                NatureComponents.NatureButton(
+                    onClick = { viewModel.clearAllSettings() },
+                    text = "로그아웃",
+                    backgroundColor = NatureColors.softOrange
+                )
             },
             dismissButton = {
                 TextButton(
-                    onClick = { viewModel.hideLogoutDialog() }
+                    onClick = { viewModel.hideLogoutDialog() },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = NatureColors.earthBrown
+                    )
                 ) {
-                    Text("Cancel")
+                    Text(
+                        text = "취소",
+                        style = NatureTypography.bodyMedium
+                    )
                 }
-            }
+            },
+            containerColor = NatureColors.whiteTransparent90,
+            shape = NatureShapes.medium
         )
     }
 }

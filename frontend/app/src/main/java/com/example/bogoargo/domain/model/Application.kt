@@ -7,8 +7,10 @@ import java.time.LocalDateTime
 // 초대
 data class Application(
     val applicationId: Long,
-    val user: UserDataDto,
-    val classRoom: ClassDataDto,
+    val studentId: Long,
+    val studentName: String,
+    val classId: Long,
     val status: String,
-    val processedAt: LocalDateTime
+    val appliedAt: String,
+    val processedAt: String?
 )

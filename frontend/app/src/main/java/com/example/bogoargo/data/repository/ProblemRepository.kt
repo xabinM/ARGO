@@ -1,11 +1,13 @@
 package com.example.bogoargo.data.repository
 
 import com.example.bogoargo.data.api.ProblemApiService
-import com.example.bogoargo.data.dto.request.ProblemCreateRequest
+import com.example.bogoargo.data.dto.request.ProblemGenerateRequest
+import com.example.bogoargo.data.dto.request.ProblemRegisterRequest
 import com.example.bogoargo.data.dto.response.ProblemListSpotResponseDto
 import com.example.bogoargo.data.dto.response.ProblemListSpotTypeResponseDto
-import com.example.bogoargo.data.dto.response.ProblemMessageResponse
+import com.example.bogoargo.data.dto.response.ProblemResponseDto
 import com.example.bogoargo.domain.model.DataException
+import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.repository.IProblemRepository
 import retrofit2.HttpException
 import java.io.IOException
@@ -15,57 +17,82 @@ class ProblemRepositoryImpl @Inject constructor(
     private val problemApiService: ProblemApiService
 ) : IProblemRepository {
     
-    override suspend fun createProblem(problemCreateRequest: ProblemCreateRequest): ProblemMessageResponse {
+    override suspend fun generateProblem(problemGenerateRequest: ProblemGenerateRequest): DataResult<ProblemResponseDto> {
         return try {
-            problemApiService.createProblem(problemCreateRequest.spotId)
+            val response = problemApiService.generateProblem(problemGenerateRequest)
+            DataResult.Success(response)
         } catch (e: IOException) {
-            throw DataException.NetworkError
+            DataResult.Error(DataException.NetworkError)
         } catch (e: HttpException) {
-            throw when (e.code()) {
+            val exception = when (e.code()) {
                 401 -> DataException.AuthenticationError
                 403 -> DataException.UnauthorizedError
                 404 -> DataException.NotFoundError
                 else -> DataException.ServerError
             }
+            DataResult.Error(exception)
         } catch (e: Exception) {
-            throw DataException.UnknownError(e.message ?: "Unknown error")
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
         }
     }
 
-    override suspend fun getProblemBySpot(spotId: Long): ProblemListSpotResponseDto {
+    override suspend fun registerProblem(problemRegisterRequest: ProblemRegisterRequest): DataResult<ProblemResponseDto> {
         return try {
-            problemApiService.getProblemBySpot(spotId)
+            val response = problemApiService.registerProblem(problemRegisterRequest.spotId, problemRegisterRequest)
+            DataResult.Success(response)
         } catch (e: IOException) {
-            throw DataException.NetworkError
+            DataResult.Error(DataException.NetworkError)
         } catch (e: HttpException) {
-            throw when (e.code()) {
+            val exception = when (e.code()) {
                 401 -> DataException.AuthenticationError
                 403 -> DataException.UnauthorizedError
                 404 -> DataException.NotFoundError
                 else -> DataException.ServerError
             }
+            DataResult.Error(exception)
         } catch (e: Exception) {
-            throw DataException.UnknownError(e.message ?: "Unknown error")
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
+    }
+
+    override suspend fun getProblemBySpot(spotId: Long): DataResult<ProblemListSpotResponseDto> {
+        return try {
+            val response = problemApiService.getProblemBySpot(spotId)
+            DataResult.Success(response)
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: HttpException) {
+            val exception = when (e.code()) {
+                401 -> DataException.AuthenticationError
+                403 -> DataException.UnauthorizedError
+                404 -> DataException.NotFoundError
+                else -> DataException.ServerError
+            }
+            DataResult.Error(exception)
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
         }
     }
 
     override suspend fun getProblemBySpotAndType(
         spotId: Long,
         type: String
-    ): ProblemListSpotTypeResponseDto {
+    ): DataResult<ProblemListSpotTypeResponseDto> {
         return try {
-            problemApiService.getProblemBySpotAndType(spotId, type)
+            val response = problemApiService.getProblemBySpotAndType(spotId, type)
+            DataResult.Success(response)
         } catch (e: IOException) {
-            throw DataException.NetworkError
+            DataResult.Error(DataException.NetworkError)
         } catch (e: HttpException) {
-            throw when (e.code()) {
+            val exception = when (e.code()) {
                 401 -> DataException.AuthenticationError
                 403 -> DataException.UnauthorizedError
                 404 -> DataException.NotFoundError
                 else -> DataException.ServerError
             }
+            DataResult.Error(exception)
         } catch (e: Exception) {
-            throw DataException.UnknownError(e.message ?: "Unknown error")
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
         }
     }
 }
