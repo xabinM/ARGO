@@ -16,24 +16,29 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.navigation.Screen
-import com.example.bogoargo.ui.viewmodels.classRoom.ClassDetailViewModel
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
 import com.example.bogoargo.ui.theme.NatureElevation
+import com.example.bogoargo.ui.viewmodels.classRoom.ClassDetailTeacherViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClassDetailScreen(
     navController: NavController,
     classId: Long,
-    viewModel: ClassDetailViewModel = hiltViewModel()
+    viewModel: ClassDetailTeacherViewModel = hiltViewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+    val classInfo by viewModel.classInfo.collectAsState()
+    val students by viewModel.students.collectAsState()
+    val teams by viewModel.teams.collectAsState()
+    val statistics by viewModel.statistics.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
     
     LaunchedEffect(classId) {
-        viewModel.loadClassDetail(classId)
+        viewModel.getClassDetail(classId)
     }
 
     Scaffold(
@@ -63,22 +68,22 @@ fun ClassDetailScreen(
                             modifier = Modifier.padding(24.dp)
                         ) {
                             when {
-                                uiState.isLoading -> {
+                                isLoading -> {
                                     NatureComponents.NatureLoadingIndicator(
                                         modifier = Modifier.height(200.dp)
                                     )
                                 }
-                                uiState.errorMessage != null -> {
+                                errorMessage != null -> {
                                     Text(
-                                        text = "⚠️ ${uiState.errorMessage}",
+                                        text = "⚠️ $errorMessage",
                                         style = NatureTypography.bodyMedium.copy(
                                             color = NatureColors.earthBrown
                                         ),
                                         modifier = Modifier.padding(16.dp)
                                     )
                                 }
-                                uiState.classDetail != null -> {
-                                    val classDetail = uiState.classDetail!!
+                                classInfo != null -> {
+                                    val classDetail = classInfo!!
                                     
                                     // 반 제목
                                     Text(
@@ -318,9 +323,9 @@ fun ClassDetailScreen(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             
-                            if (uiState.classDetail != null) {
+                            if (statistics != null) {
                                 Text(
-                                    text = "총 ${uiState.classDetail!!.teamCount}개의 팀이 있습니다",
+                                    text = "총 ${statistics!!.totalTeams}개의 팀이 있습니다",
                                     style = NatureTypography.bodyMedium.copy(
                                         color = NatureColors.earthBrown
                                     )

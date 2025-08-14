@@ -1,5 +1,9 @@
 package com.example.bogoargo.domain.model
 
+import com.example.bogoargo.data.response.ClassInfo
+import com.example.bogoargo.data.response.StatisticsDto
+import com.example.bogoargo.data.response.StudentDto
+import com.example.bogoargo.data.response.TeamDetailDto
 import java.time.LocalDate
 
 data class Class(
@@ -23,3 +27,10 @@ data class Class(
         ENDED,
     }
 }
+
+data class TeaCherClassDetail (
+    val data: Class?,
+    val students: List<StudentInfo>?,
+    val teams: List<TeamDetail>?,
+    val statistics: ClassStatistics?
+)

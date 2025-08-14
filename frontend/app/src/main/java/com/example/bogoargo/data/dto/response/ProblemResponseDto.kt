@@ -12,7 +12,7 @@ data class ProblemResponseDto (
     val message : String,
     val grade : Long,
     val spotName : String,
-    val problems: List<ProblemDataQuizDto>
+    val problems: ProblemQuizListResponseDto
 )
 
 // 공통 인터페이스
@@ -32,13 +32,13 @@ data class ProblemDataSelfieDto(
 
 // 객관식 문제 데이터 (ProblemData 구현)
 data class ProblemDataQuizDto(
-    override val id: Long,
-    override val dtype: String = "QUIZ",
+    //override val id: Long,
+    //override val dtype: String = "QUIZ",
     val question: String,
     val choices: List<String>,
     val correctIndex: Int,
     val explanation: String
-) : ProblemData
+)
 
 // spot + type별 문제 리스트
 data class ProblemListSpotTypeResponseDto(
@@ -48,4 +48,8 @@ data class ProblemListSpotTypeResponseDto(
 // spot별 문제 리스트
 data class ProblemListSpotResponseDto(
     val problems: List<ProblemData>?
+)
+
+data class ProblemQuizListResponseDto (
+    val problems: List<ProblemDataQuizDto>?
 )
