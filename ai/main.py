@@ -280,16 +280,19 @@ async def generate_problem(request: ProblemGenerateRequest):
         raise HTTPException(status_code=500, detail=f"퀴즈 생성 중 오류 발생: {str(e)}")
 
 
-# === 🔥 포즈 분석 엔드포인트 (Stream consumed 에러 완전 해결) ===
-
-
+# === 🔥 포즈 분석 엔드포인트 (people_count 인자 추가 수정) ===
 @app.post("/pose/full")
-async def pose_predict_full(file: UploadFile = File(...), pose_select: str = Form(...)):
-    """🎯 포즈 분석 - 정상 파라미터 방식으로 복원"""
+async def pose_predict_full(
+    file: UploadFile = File(...), 
+    pose_select: str = Form(...),
+    people_count: int = Form(default=1)  # 🔥 people_count 인자 추가
+):
+    """🎯 포즈 분석 - people_count 인자 추가하여 에러 해결"""
 
     logger.info(f"🎯 /pose/full 요청 받음")
     logger.info(f"📂 file: {file.filename if file else 'None'}")
     logger.info(f"📂 pose_select: {pose_select}")
+    logger.info(f"📂 people_count: {people_count}")  # 🔥 로그 추가
 
     try:
         if not file or not file.filename:
@@ -307,7 +310,7 @@ async def pose_predict_full(file: UploadFile = File(...), pose_select: str = For
             import numpy as np
             import cv2
             from service.AI_ObjectDetector import AI_ObjectDetector
-            from service.AI_Analyze import AI_Analyze
+            from AI_Analyze import AI_Analyze  # 🔥 import 경로 수정
 
             # 이미지 디코딩
             np_arr = np.frombuffer(file_content, np.uint8)
@@ -321,9 +324,9 @@ async def pose_predict_full(file: UploadFile = File(...), pose_select: str = For
 
             logger.info(f"📷 이미지 크기: {image.shape}")
 
-            # AI 모델 로드 및 추론
+            # AI 모델 로드 및 추론 
             logger.info("🤖 AI 모델 로드 중...")
-            ai_model = AI_ObjectDetector("model/yolov8m.pt")
+            ai_model = AI_ObjectDetector("object_detect/model/yolov8m.pt")  # 🔥 경로 수정
 
             logger.info("🔍 포즈 감지 중...")
             processed_image, results, poses_info = ai_model.Load_image(image)
@@ -347,26 +350,26 @@ async def pose_predict_full(file: UploadFile = File(...), pose_select: str = For
 
             logger.info(f"✅ 포즈 감지 성공: {len(poses_info)}명")
 
-            # AI_Analyze로 포즈 분석
-            logger.info(f"🎯 포즈 분석 시작: {pose_select}")
+            # 🔥 AI_Analyze로 포즈 분석 (people_count 인자 추가)
+            logger.info(f"🎯 포즈 분석 시작: {pose_select}, 예상 인원: {people_count}명")
             processor = AI_Analyze(processed_image, results, poses_info)
-            ai_result = processor.print_keypoints(pose_select=pose_select)
+            
+            # 🔥 people_count 인자를 추가하여 호출
+            success, message = processor.print_keypoints(pose_select, people_count)
 
-            logger.info(f"📊 AI 분석 결과: {ai_result}")
+            logger.info(f"📊 AI 분석 결과: success={success}, message={message}")
 
-            # 🔥 AI 결과를 JSON 형태로 변환
-            if isinstance(ai_result, str):
-                # 문자열 응답인 경우 JSON 객체로 래핑
-                if "성공" in ai_result or "올바른" in ai_result:
-                    return {"success": True, "result": ai_result}
-                else:
-                    return {"success": False, "result": ai_result}
-            elif isinstance(ai_result, dict):
-                # 이미 딕셔너리인 경우 그대로 반환
-                return ai_result
+            # 🔥 Spring Boot DTO 호환 형식으로 반환 (SelfieResultDto 맞춤)
+            if success:
+                return {
+                    "success": True,
+                    "result": "미션 성공!"
+                }
             else:
-                # 기타 타입인 경우 문자열로 변환
-                return {"success": True, "result": str(ai_result)}
+                return {
+                    "success": False,
+                    "result": message  # most_common_reason이 여기에 들어감
+                }
 
         except ImportError as e:
             logger.error(f"❌ AI 모듈 import 실패: {e}")
@@ -392,6 +395,16 @@ async def pose_predict_full(file: UploadFile = File(...), pose_select: str = For
             status_code=500,
             content={"success": False, "result": f"분석 실패: {str(e)}"},
         )
+
+
+# 🔥 추가: 간단한 포즈 테스트 엔드포인트
+@app.post("/pose/simple")
+async def pose_simple_test(
+    file: UploadFile = File(...),
+    pose_select: str = Form(default="sitting_pose")
+):
+    """🧪 간단한 포즈 테스트 (기본 1명)"""
+    return await pose_predict_full(file, pose_select, people_count=1)
 
 
 @app.post("/pose/debug")
@@ -493,6 +506,7 @@ async def root():
         "endpoints": {
             "quiz_generation": "/generate-problem",
             "pose_analysis": "/pose/full",
+            "pose_simple": "/pose/simple",  # 🔥 추가
             "pose_test": "/pose/test",
             "health": "/health",
         },
@@ -504,7 +518,8 @@ if __name__ == "__main__":
     print("🚀 ARGO AI 통합 서버 시작")
     print("📡 엔드포인트:")
     print("   - /generate-problem : 퀴즈 생성 (Spring Boot 호환)")
-    print("   - /pose/full : 포즈 분석")
+    print("   - /pose/full : 포즈 분석 (people_count 인자 추가)")
+    print("   - /pose/simple : 간단한 포즈 테스트 (1명 기본)")
     print("   - /health : 헬스체크")
 
     # 🔥 uvicorn 설정 변경 - 멀티파트 처리 강화

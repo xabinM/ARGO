@@ -12,6 +12,7 @@ data class Class(
     val maxStudents: Int,
     val studentCount: Int,
     val teamCount: Int,
+    val grade: Int? = 1,
     val status: ClassStatus,
     val inviteCode: String,
     val createdAt: LocalDate,

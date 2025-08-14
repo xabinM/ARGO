@@ -1,5 +1,6 @@
 package com.example.bogoargo.data.api
 
+import com.example.bogoargo.data.dto.TeamCreateRequest
 import com.example.bogoargo.data.dto.response.TeamAssignResponse
 import com.example.bogoargo.data.dto.response.TeamCreateResponse
 import com.example.bogoargo.data.dto.response.TeamDeleteResponse
@@ -14,7 +15,8 @@ interface TeamApiService {
     // 팀 생성 (교사 기능)
     @POST("api/teacher/classes/{classId}/teams")
     suspend fun createTeam(
-        @Path("classId") classId: Long
+        @Path("classId") classId: Long,
+        @Body teamCreateRequest: TeamCreateRequest
     ): Response<TeamCreateResponse>
 
     // 팀 배정 (교사 기능)

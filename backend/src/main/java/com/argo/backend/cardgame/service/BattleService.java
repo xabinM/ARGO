@@ -27,6 +27,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -103,15 +104,18 @@ public class BattleService {
             
             match.setChallengedCard(challengedCard);
             match.setChallengedStrategy(request.selectedCard().battleStance());
+            match.setStartedAt(LocalDateTime.now());
             match.setStatus(MatchStatus.COMPLETED);
 
             processBattleResult(match);
+            cardGameMatchRepository.save(match);
 
             // 여기 FCM 알릶 보내야함 //
+
             return BattleResponse.success("대전 수락이 완료되었습니다");
         } else {
             match.setStatus(MatchStatus.CANCELLED);
-            
+            cardGameMatchRepository.save(match);
             // 신청자 카드 잠금 해제
             if (match.getChallengerCard() != null) {
                 match.getChallengerCard().setIsLocked(false);
@@ -151,13 +155,15 @@ public class BattleService {
             challengerPower, challengedPower, 
             challengerStrategy, challengedStrategy
         );
-        
+
         // 점수 및 카드 상태 업데이트
         applyBattleResult(match, result);
         
         // 매치 상태 완료로 변경
         match.setStatus(MatchStatus.COMPLETED);
-        
+        match.setEndedAt(LocalDateTime.now());
+
+
         // 카드 잠금 해제
         if (challengerCard != null) {
             challengerCard.setIsLocked(false);
@@ -201,7 +207,6 @@ public class BattleService {
             throw new CardValidationException("완료된 대전만 결과를 확인할 수 있습니다");
         }
         
-        // N+1 문제 해결: Repository 메서드로 대체 (FETCH JOIN 사용)
         Long classId = match.getChallengerTeam().getClassRoom().getClassId();
         Optional<UserTeam> userTeamOpt = userTeamRepository.findActiveByUserIdAndClassId(userId, classId);
         Team userTeam = userTeamOpt.map(UserTeam::getTeam).orElse(null);
@@ -216,7 +221,7 @@ public class BattleService {
         
         // resultView 상태 업데이트 로직
         updateResultViewStatus(match, userTeamId);
-        
+        cardGameMatchRepository.save(match);
         return BattleResponse.success("대전 결과 확인이 처리되었습니다");
     }
     
@@ -307,31 +312,31 @@ public class BattleService {
         // 공격 vs 공격
         if (challengerStrategy == BattleStrategy.ATTACK && challengedStrategy == BattleStrategy.ATTACK) {
             if (isEqual) {
-                return new BattleResult(false, 100, 100, true, true, true); // 공=공: 무승부, 양쪽 +100점, 양쪽 카드제거
+                return new BattleResult(false, 50, 50, true, true, true); // 공=공: 무승부, 양쪽 +50점, 양쪽 카드제거
             } else if (challengerWins) {
-                return new BattleResult(true, 100, 0, false, false, false); // 공>공: 신청자 승리, +100점
+                return new BattleResult(true, 100, 0, false, true, false); // 공>공: 신청자 승리, +100점 , 패배자 카드제거
             } else {
-                return new BattleResult(false, 0, 100, false, false, false); // 공<공: 피신청자 승리, +100점
+                return new BattleResult(false, 0, 100, true, false, false); // 공<공: 피신청자 승리, +100점, 패배자 카드제거
             }
         }
         
         // 공격 vs 수비
         if (challengerStrategy == BattleStrategy.ATTACK && challengedStrategy == BattleStrategy.DEFENSE) {
             if (isEqual) {
-                return new BattleResult(false, 100, 0, true, false, true); // 공=수: 무승부, 공격자 카드제거+100점, 수비자 0점
+                return new BattleResult(false, 50, 0, true, false, true); // 공=수: 무승부, 공격자 카드제거+50점, 수비자 0점
             } else if (challengerWins) {
                 return new BattleResult(true, 100, 0, false, false, false); // 공>수: 신청자(공격) 승리, +100점
             } else {
-                return new BattleResult(false, 0, 50, false, false, false); // 공<수: 피신청자(수비) 승리, +50점
+                return new BattleResult(false, 0, 50, true, false, false); // 공<수: 피신청자(수비) 승리, +50점
             }
         }
         
         // 수비 vs 공격  
         if (challengerStrategy == BattleStrategy.DEFENSE && challengedStrategy == BattleStrategy.ATTACK) {
             if (isEqual) {
-                return new BattleResult(false, 0, 100, false, true, true); // 수=공: 무승부, 수비자 0점, 공격자 카드제거+100점
+                return new BattleResult(false, 0, 50, false, true, true); // 수=공: 무승부, 수비자 0점, 공격자 카드제거+50점
             } else if (challengerWins) {
-                return new BattleResult(true, 50, 0, false, false, false); // 수>공: 신청자(수비) 승리, +50점
+                return new BattleResult(true, 50, 0, false, true, false); // 수>공: 신청자(수비) 승리, +50점 / 공 카드 제거
             } else {
                 return new BattleResult(false, 0, 100, false, false, false); // 수<공: 피신청자(공격) 승리, +100점
             }
@@ -340,7 +345,7 @@ public class BattleService {
         // 수비 vs 수비
         if (challengerStrategy == BattleStrategy.DEFENSE && challengedStrategy == BattleStrategy.DEFENSE) {
             if (isEqual) {
-                return new BattleResult(false, 50, 50, true, true, true); // 수=수: 무승부, 양쪽 +50점, 양쪽 카드제거
+                return new BattleResult(false, 0, 0, true, true, true); // 수=수: 무승부, 양쪽 +0점, 양쪽 카드제거
             } else if (challengerWins) {
                 return new BattleResult(true, 50, 0, false, false, false); // 수>수: 신청자 승리, +50점
             } else {
@@ -383,9 +388,11 @@ public class BattleService {
         // 카드 제거 처리
         if (result.challengerLoseCard() && match.getChallengerCard() != null) {
             match.getChallengerCard().setIsLost(true);
+            teamCardRepository.save(match.getChallengerCard());
         }
         if (result.challengedLoseCard() && match.getChallengedCard() != null) {
             match.getChallengedCard().setIsLost(true);
+            teamCardRepository.save(match.getChallengedCard());
         }
         
         // 승부 결과 설정
@@ -396,13 +403,18 @@ public class BattleService {
             match.setDraw(true);
         } else if (result.challengerWins()) {
             match.setWinnerTeam(challengerTeam);
+            match.setWinnerCard(challengerCard);
             match.setLoserTeam(challengedTeam);
+            match.setLoserCard(challengedCard);
             match.setDraw(false);
         } else {
             match.setWinnerTeam(challengedTeam);
+            match.setWinnerCard(challengedCard);
             match.setLoserTeam(challengerTeam);
+            match.setLoserCard(challengerCard);
             match.setDraw(false);
         }
+
     }
     
     private void updateTeamScore(Team team, int score, boolean isWinner) {

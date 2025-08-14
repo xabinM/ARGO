@@ -2,6 +2,7 @@ package com.example.bogoargo.domain.use_case.team
 
 import com.example.bogoargo.data.dto.response.TeamAssignResponse
 import com.example.bogoargo.domain.model.DataResult
+import com.example.bogoargo.domain.model.Team
 import com.example.bogoargo.domain.model.User
 import com.example.bogoargo.domain.repository.ITeamRepository
 import javax.inject.Inject
@@ -19,5 +20,9 @@ class ManageTeamUseCase @Inject constructor(
 
     suspend fun deleteTeam(classId: Long, teamId: Long): DataResult<List<User>> {
         return teamRepository.deleteTeam(classId, teamId)
+    }
+    
+    suspend fun getTeams(): DataResult<List<Team>> {
+        return teamRepository.getTeams()
     }
 }

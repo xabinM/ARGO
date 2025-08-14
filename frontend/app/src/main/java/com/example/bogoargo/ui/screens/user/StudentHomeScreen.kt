@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -22,14 +24,27 @@ import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
 import com.example.bogoargo.ui.theme.NatureElevation
+import com.example.bogoargo.ui.viewmodels.user.LogoutUiState
+import com.example.bogoargo.ui.viewmodels.user.LogoutViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudentHomeScreen(
     navController: NavController,
-    viewModel: StudentHomeViewModel = hiltViewModel()
+    viewModel: StudentHomeViewModel = hiltViewModel(),
+    logoutViewModel: LogoutViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val logoutUiState by logoutViewModel.uiState.collectAsState()
+
+    LaunchedEffect(logoutUiState.isLoggedOut) {
+        if (logoutUiState.isLoggedOut) {
+            navController.navigate("login") {
+                popUpTo("teacherHome") { inclusive = true }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             NatureComponents.NatureTopAppBar(

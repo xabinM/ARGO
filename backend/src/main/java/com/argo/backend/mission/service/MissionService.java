@@ -136,6 +136,10 @@ public class MissionService {
         TeamCard teamCard = TeamCard.from(missionSession.getTeam(), card, tier);
         teamCardRepository.save(teamCard);
 
+        Team team = missionSession.getTeam();
+        team.initializeGameResult();
+        team.getGameResult().addWin(50);
+
         missionSession.alterMissionStatus();
 
         return MissionSubmitDto.success(card.getCardId(), tier);
