@@ -6,16 +6,10 @@ services:
     container_name: ai-model
     restart: always
     volumes:
-      - ${MODEL_DIR}:/app/model
+      - ./model:/app/model
       - ./data:/app/data
     ports:
       - "${RAPID_SERVER_PORT}:8000"
     environment:
       - GMS_API_KEY=${GMS_API_KEY}
       - GMS_BASE_URL=${GMS_BASE_URL}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - RAPID_SERVER_PORT=${RAPID_SERVER_PORT}
-      - LOG_LEVEL=${LOG_LEVEL}
-      - RAPID_DATA_FILE=/app/data/heritage_rapid_database.json
-      - DEBUG_MODE=${DEBUG_MODE}
-      - RELOAD_SERVER=${RELOAD_SERVER}
