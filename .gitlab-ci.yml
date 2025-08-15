@@ -28,7 +28,10 @@ deploy_backend_job:
   stage: deploy_backend
   image: ubuntu:latest
   before_script:
-    - apt update && apt install -y openssh-client curl ca-certificates --no-install-recommends
+    - apt update && apt install -y openssh-client curl ca-certificates python3-venv --no-install-recommends
+    - python3 -m venv ~/.venv/awscli
+    - source ~/.venv/awscli/bin/activate
+    - pip install awscli --upgrade
     - eval "$(ssh-agent -s)"
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
@@ -39,11 +42,14 @@ deploy_backend_job:
       echo "Host *" > ~/.ssh/config
       echo "    StrictHostKeyChecking no" >> ~/.ssh/config
       echo "    UserKnownHostsFile /dev/null" >> ~/.ssh/config
-
   script:
-    - JAR_SOURCE_PATH=$(find "$JAR_PATH" -name "*.jar" ! -name "*-plain.jar" | head -n 1)
-    - echo "Deploying $JAR_SOURCE_PATH to $SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
-    - scp "$JAR_SOURCE_PATH" "$SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
+    - source ~/.venv/awscli/bin/activate
+    - source build.env
+    - S3_DOWNLOAD_PATH="s3://$S3_BUCKET_NAME/backend/$BUILT_JAR_FILE_NAME"
+    - echo "Downloading $BUILT_JAR_FILE_NAME from $S3_DOWNLOAD_PATH"
+    - aws s3 cp "$S3_DOWNLOAD_PATH" "$BUILT_JAR_FILE_NAME"
+    - echo "Deploying $BUILT_JAR_FILE_NAME to $SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
+    - scp "$BUILT_JAR_FILE_NAME" "$SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
     - |
       ssh -T "$SERVER_USER@$SERVER_HOST" <<EOF
         set -e
