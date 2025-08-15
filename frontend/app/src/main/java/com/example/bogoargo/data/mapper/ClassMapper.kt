@@ -69,12 +69,3 @@ fun ClassInfoDto.toDomainModel(): Class {
     )
 }
 
-// TODO: 반 떠나기 후 결과 출력
-// ClassLeaveDataDto를 ClassLeaveInfo Model로 변환하는 확장 함수
-//fun ClassLeaveDataDto.toDomainModel(): ClassLeaveDataDto {
-//    return ClassLeaveDataDto(
-//        leftClass = this.leftClass.toDomainModel(), // ClassDataDto -> Class 변환
-//        teamInfo = this.teamInfo.toTeamDomainModel(), // TeamDataDto -> Team 변환
-//        studentInfo = this.studentInfo.toUserDomainModel() // UserDataDto -> User 변환
-//    )
-//}

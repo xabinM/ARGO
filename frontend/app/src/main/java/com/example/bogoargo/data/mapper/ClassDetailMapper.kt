@@ -96,3 +96,15 @@ fun StatisticsDto.toDomainModel(): ClassStatistics {
         totalTeams = totalTeams
     )
 }
+
+// TeacherClassDetailResponse -> TeaCherClassDetail 변환
+fun TeacherClassDetailResponse.toDomainModel(): TeaCherClassDetail? {
+    return this.data?.let { data ->
+        TeaCherClassDetail(
+            data = data.classInfo?.toDomainModel(),
+            students = data.students?.map { it.toDomainModel() },
+            teams = data.teams?.map { it.toDomainModel() },
+            statistics = data.statistics?.toDomainModel()
+        )
+    }
+}

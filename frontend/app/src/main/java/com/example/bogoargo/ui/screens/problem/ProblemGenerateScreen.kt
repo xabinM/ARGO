@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.bogoargo.data.dto.response.ProblemDataQuizDto
+import com.example.bogoargo.data.dto.response.ProblemData
 import com.example.bogoargo.domain.model.Spot
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureComponents

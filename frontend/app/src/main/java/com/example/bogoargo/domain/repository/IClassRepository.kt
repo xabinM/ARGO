@@ -7,6 +7,7 @@ import com.example.bogoargo.data.dto.response.MessageResponseDto
 import com.example.bogoargo.data.response.ClassDetailResponse
 import com.example.bogoargo.data.response.ClassMemberResponse
 import com.example.bogoargo.domain.model.StudentClassDetail
+import com.example.bogoargo.domain.model.TeaCherClassDetail
 
 interface IClassRepository {
     suspend fun createClass(
@@ -19,6 +20,7 @@ interface IClassRepository {
     ): DataResult<Class>
     suspend fun getClasses(): DataResult<List<Class>>
     suspend fun getClassById(classId: Long): DataResult<Class>
+    suspend fun getTeacherClassById(classId: Long): DataResult<TeaCherClassDetail?>
     suspend fun updateClass(classId: Long, className: String): DataResult<Class>
     suspend fun deleteClass(classId: Long): DataResult<Unit>
     suspend fun joinClass(inviteCode: String): DataResult<Unit>

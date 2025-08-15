@@ -15,6 +15,7 @@ import com.example.bogoargo.domain.repository.IClassRepository
 import com.example.bogoargo.data.dto.response.MessageResponseDto
 import com.example.bogoargo.data.response.ClassDetailResponse
 import com.example.bogoargo.data.response.ClassMemberResponse
+import com.example.bogoargo.domain.model.TeaCherClassDetail
 import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
@@ -125,6 +126,32 @@ class ClassRepositoryImpl @Inject constructor(
             DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
         }
     }
+
+    override suspend fun getTeacherClassById(classId: Long): DataResult<TeaCherClassDetail?> {
+        return try {
+            val response = classApiService.getTeacherClassDetail(classId)
+            val teacherClassDetail = response.body()
+            if (teacherClassDetail != null) {
+                DataResult.Success(teacherClassDetail.toDomainModel())
+            } else {
+                DataResult.Error(DataException.NotFoundError)
+            }
+        } catch (e: HttpException) {
+            DataResult.Error(
+                when (e.code()) {
+                    401 -> DataException.UnauthorizedError
+                    403 -> DataException.UnauthorizedError
+                    404 -> DataException.NotFoundError
+                    else -> DataException.ServerError
+                }
+            )
+        } catch (e: IOException) {
+            DataResult.Error(DataException.NetworkError)
+        } catch (e: Exception) {
+            DataResult.Error(DataException.UnknownError(e.message ?: "Unknown error"))
+        }
+    }
+
 
     override suspend fun updateClass(classId: Long, className: String): DataResult<Class> {
         return try {

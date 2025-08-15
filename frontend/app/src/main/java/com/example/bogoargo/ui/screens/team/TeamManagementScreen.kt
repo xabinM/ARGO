@@ -16,11 +16,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.bogoargo.ui.viewmodels.team.TeamManagementViewModel
+import com.example.bogoargo.ui.viewmodels.classRoom.ClassDetailTeacherViewModel
 import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
 import com.example.bogoargo.domain.model.Team
+import com.example.bogoargo.domain.model.TeamDetail
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.clickable
@@ -31,13 +33,18 @@ import androidx.compose.ui.unit.sp
 fun TeamManagementScreen(
     navController: NavController,
     classId: Long,
-    viewModel: TeamManagementViewModel = hiltViewModel()
+    teams: List<TeamDetail>? = null,
+    viewModel: TeamManagementViewModel = hiltViewModel(),
+    classDetailViewModel: ClassDetailTeacherViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val classTeams by classDetailViewModel.teams.collectAsState()
+    val isClassDetailLoading by classDetailViewModel.isLoading.collectAsState()
     var showCreateTeamDialog by remember { mutableStateOf(false) }
-    var selectedTeam by remember { mutableStateOf<Team?>(null) }
+    var selectedTeamDetail by remember { mutableStateOf<TeamDetail?>(null) }
     
     LaunchedEffect(classId) {
+        classDetailViewModel.getClassDetail(classId)
         viewModel.loadClassDetail(classId)
     }
     
@@ -260,8 +267,21 @@ fun TeamManagementScreen(
                             }
                         }
                         
+                        // ClassDetailTeacherViewModel에서 팀 데이터 사용
+                        val displayTeams = classTeams
+                        
                         when {
-                            uiState.teams.isEmpty() && !uiState.isLoading -> {
+                            isClassDetailLoading -> {
+                                Box(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    CircularProgressIndicator(
+                                        color = NatureColors.forestGreen
+                                    )
+                                }
+                            }
+                            displayTeams.isEmpty() -> {
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -289,11 +309,18 @@ fun TeamManagementScreen(
                                 }
                             }
                             else -> {
-                                uiState.teams.forEach { team ->
-                                    TeamListItem(
-                                        team = team,
-                                        onClick = { selectedTeam = team }
-                                    )
+                                LazyColumn(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    items(displayTeams) { teamDetail ->
+                                        TeamDetailListItem(
+                                            teamDetail = teamDetail,
+                                            onClick = { 
+                                                selectedTeamDetail = teamDetail
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -320,13 +347,13 @@ fun TeamManagementScreen(
     }
     
     // 팀 상세정보 다이얼로그
-    selectedTeam?.let { team ->
-        TeamDetailDialog(
-            team = team,
-            onDismiss = { selectedTeam = null },
+    selectedTeamDetail?.let { teamDetail ->
+        TeamDetailDetailDialog(
+            teamDetail = teamDetail,
+            onDismiss = { selectedTeamDetail = null },
             onDeleteTeam = { teamId ->
                 viewModel.deleteTeam(classId, teamId)
-                selectedTeam = null
+                selectedTeamDetail = null
             }
         )
     }
@@ -691,6 +718,210 @@ fun TeamDetailDialog(
         dismissButton = {
             TextButton(
                 onClick = { onDeleteTeam(team.id) },
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = NatureColors.softOrange
+                )
+            ) {
+                Text("팀 삭제")
+            }
+        }
+    )
+}
+
+@Composable
+fun TeamDetailListItem(
+    teamDetail: TeamDetail,
+    onClick: () -> Unit
+) {
+    NatureComponents.NatureCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        containerColor = NatureColors.leafGreen.copy(alpha = 0.1f)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                Text(
+                    text = "🏆 ${teamDetail.teamName}",
+                    style = NatureTypography.titleMedium.copy(
+                        color = NatureColors.forestGreen
+                    )
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "멤버: ${teamDetail.memberCount}명",
+                    style = NatureTypography.bodyMedium.copy(
+                        color = NatureColors.earthBrown
+                    )
+                )
+                if (teamDetail.totalScore > 0) {
+                    Text(
+                        text = "점수: ${teamDetail.totalScore}점",
+                        style = NatureTypography.bodySmall.copy(
+                            color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                        )
+                    )
+                }
+            }
+            
+            Text(
+                text = "👆",
+                fontSize = 20.sp
+            )
+        }
+    }
+}
+
+@Composable
+fun TeamDetailDetailDialog(
+    teamDetail: TeamDetail,
+    onDismiss: () -> Unit,
+    onDeleteTeam: (Long) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = NatureColors.whiteTransparent90,
+        title = {
+            Text(
+                text = "🏆 ${teamDetail.teamName}",
+                style = NatureTypography.titleMedium.copy(
+                    color = NatureColors.forestGreen
+                )
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "팀 ID:",
+                        style = NatureTypography.bodyMedium.copy(
+                            color = NatureColors.earthBrown
+                        )
+                    )
+                    Text(
+                        text = "${teamDetail.teamId}",
+                        style = NatureTypography.bodyMedium.copy(
+                            color = NatureColors.earthBrown
+                        )
+                    )
+                }
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "멤버 수:",
+                        style = NatureTypography.bodyMedium.copy(
+                            color = NatureColors.earthBrown
+                        )
+                    )
+                    Text(
+                        text = "${teamDetail.memberCount}명",
+                        style = NatureTypography.bodyMedium.copy(
+                            color = NatureColors.earthBrown
+                        )
+                    )
+                }
+                
+                if (teamDetail.totalScore > 0) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "팀 점수:",
+                            style = NatureTypography.bodyMedium.copy(
+                                color = NatureColors.earthBrown
+                            )
+                        )
+                        Text(
+                            text = "${teamDetail.totalScore}점",
+                            style = NatureTypography.bodyMedium.copy(
+                                color = NatureColors.forestGreen
+                            )
+                        )
+                    }
+                }
+                
+                if (teamDetail.leaderId > 0) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = "팀장 ID:",
+                            style = NatureTypography.bodyMedium.copy(
+                                color = NatureColors.earthBrown
+                            )
+                        )
+                        Text(
+                            text = "${teamDetail.leaderId}",
+                            style = NatureTypography.bodyMedium.copy(
+                                color = NatureColors.earthBrown
+                            )
+                        )
+                    }
+                }
+                
+                if (teamDetail.members.isNotEmpty()) {
+                    Divider(
+                        color = NatureColors.earthBrown.copy(alpha = 0.2f),
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                    
+                    Text(
+                        text = "👥 팀원 목록",
+                        style = NatureTypography.bodyMedium.copy(
+                            color = NatureColors.forestGreen
+                        )
+                    )
+                    
+                    teamDetail.members.forEach { member ->
+                        Text(
+                            text = "• ${member.studentName}",
+                            style = NatureTypography.bodySmall.copy(
+                                color = NatureColors.earthBrown.copy(alpha = 0.8f)
+                            ),
+                            modifier = Modifier.padding(start = 8.dp)
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "👥 아직 팀원이 없습니다",
+                        style = NatureTypography.bodySmall.copy(
+                            color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                        )
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = NatureColors.forestGreen
+                )
+            ) {
+                Text("확인")
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = { onDeleteTeam(teamDetail.teamId) },
                 colors = ButtonDefaults.textButtonColors(
                     contentColor = NatureColors.softOrange
                 )

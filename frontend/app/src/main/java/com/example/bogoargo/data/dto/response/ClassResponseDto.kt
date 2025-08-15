@@ -85,6 +85,19 @@ data class ClassDetailResponse(
     val statistics: StatisticsDto?
 )
 
+data class TeacherClassDetailResponse(
+    val success: Boolean,
+    val message: String,
+    val data: TeacherClassDetailDto?,
+)
+
+data class TeacherClassDetailDto(
+    val classInfo: ClassDataDto?,
+    val students: List<StudentDto>?,
+    val teams: List<TeamDetailDto>?,
+    val statistics: StatisticsDto?
+)
+
 // 참여 신청 학생 목록 응답 DTO
 data class InviteStudentListResponse(
     val success: Boolean,

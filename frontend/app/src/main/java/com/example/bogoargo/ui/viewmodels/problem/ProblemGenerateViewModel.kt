@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.bogoargo.data.dto.request.ProblemGenerateRequest
 import com.example.bogoargo.data.dto.request.ProblemRegisterRequest
 import com.example.bogoargo.data.dto.response.ProblemDataQuizDto
+import com.example.bogoargo.data.dto.response.ProblemData
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.Spot
 import com.example.bogoargo.domain.use_case.classroom.GetClassDetailUseCase
@@ -106,9 +107,11 @@ class ProblemGenerateViewModel @Inject constructor(
                 request.spotId, request.grade, request.problemCnt
             )) {
                 is DataResult.Success -> {
+                    val quizProblems = (result.data.problems.problems as? List<ProblemDataQuizDto>)
+                        ?: emptyList()
                     _uiState.value = _uiState.value.copy(
                         isGeneratingProblems = false,
-                        generatedProblems = result.data.problems,
+                        generatedProblems = quizProblems,
                         showProblemCards = true,
                         currentProblemIndex = 0,
                         registeredProblemsCount = 0
@@ -130,14 +133,17 @@ class ProblemGenerateViewModel @Inject constructor(
         val currentProblem = currentState.generatedProblems.getOrNull(currentState.currentProblemIndex) ?: return
         val selectedSpot = currentState.selectedSpot ?: return
 
+        // 이제 currentProblem이 직접 ProblemDataQuizDto 타입
+        val quizProblem = currentProblem
+
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRegisteringProblem = true)
 
             val request = ProblemRegisterRequest(
-                question = currentProblem.question,
-                choices = currentProblem.choices,
-                correctIndex = currentProblem.correctIndex,
-                explanation = currentProblem.explanation,
+                question = quizProblem.question,
+                choices = quizProblem.choices,
+                correctIndex = quizProblem.correctIndex,
+                explanation = quizProblem.explanation,
                 spotId = selectedSpot.spotId,
                 grade = currentState.grade.toLong()
             )

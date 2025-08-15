@@ -106,7 +106,7 @@ class TeamRepositoryImpl @Inject constructor(
 
     override suspend fun assignTeam(classId: Long, teamId: Long): DataResult<TeamAssignResponse> {
         return try {
-            val response = teamApiService.AssignTeam(classId, teamId)
+            val response = teamApiService.assignTeam(classId, teamId)
             if (response.isSuccessful) {
                 val assignResponse = response.body()
                 if (assignResponse?.success == true) {
@@ -135,7 +135,7 @@ class TeamRepositoryImpl @Inject constructor(
 
     override suspend fun assignTeamRandom(classId: Long): DataResult<TeamAssignResponse> {
         return try {
-            val response = teamApiService.AssignTeamRandom(classId)
+            val response = teamApiService.assignTeamRandom(classId)
             if (response.isSuccessful) {
                 val assignResponse = response.body()
                 if (assignResponse?.success == true) {

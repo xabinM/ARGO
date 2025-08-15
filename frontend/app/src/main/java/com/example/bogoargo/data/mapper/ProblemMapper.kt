@@ -7,17 +7,17 @@ import com.example.bogoargo.domain.model.QuizProblem
 import com.example.bogoargo.domain.model.SelfieProblem
 
 // ProblemDataQuizDto를 QuizProblem Model로 변환
-fun ProblemDataQuizDto.toDomainModel(): QuizProblem {
-    return QuizProblem(
-        id = this.id,
-        dtype = this.dtype,
-        question = this.question,
-        choices = this.choices,
-        correctIndex = 0, // TODO: DTO에서 정답 인덱스 받아오기
-        explanation = "", // TODO: DTO에서 설명 받아오기
-        formattedQuestion = "Q. ${this.question}"
-    )
-}
+//fun ProblemDataQuizDto.toDomainModel(): QuizProblem {
+//    return QuizProblem(
+//        id = ,
+//        dtype = "QUIZ",
+//        question = this.question,
+//        choices = this.choices,
+//        correctIndex = 0, // TODO: DTO에서 정답 인덱스 받아오기
+//        explanation = "", // TODO: DTO에서 설명 받아오기
+//        formattedQuestion = "Q. ${this.question}"
+//    )
+//}
 
 // ProblemDataSelfieDto를 SelfieProblem Model로 변환
 fun ProblemDataSelfieDto.toDomainModel(): SelfieProblem {
