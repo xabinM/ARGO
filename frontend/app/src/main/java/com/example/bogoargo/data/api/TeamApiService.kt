@@ -21,14 +21,14 @@ interface TeamApiService {
 
     // 팀 배정 (교사 기능)
     @POST("api/teacher/classes/{classId}/teams/{teamId}/assign")
-    suspend fun AssignTeam(
+    suspend fun assignTeam(
         @Path("classId") classId: Long,
         @Path("teamId") teamId: Long
     ): Response<TeamAssignResponse>
 
     // 팀 랜덤 배정 (교사 기능)
     @POST("api/teacher/classes/{classId}/teams/random-assign")
-    suspend fun AssignTeamRandom(
+    suspend fun assignTeamRandom(
         @Path("classId") classId: Long,
     ): Response<TeamAssignResponse>
 
