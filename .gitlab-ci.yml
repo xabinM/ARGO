@@ -38,20 +38,17 @@ deploy_backend_job:
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa_ci
     - chmod 600 ~/.ssh/id_rsa_ci
     - ssh-add ~/.ssh/id_rsa_ci
-    - |
-      echo "Host *" > ~/.ssh/config
-      echo "    StrictHostKeyChecking no" >> ~/.ssh/config
-      echo "    UserKnownHostsFile /dev/null" >> ~/.ssh/config
+    - echo "Host *" > ~/.ssh/config
+    - echo "    StrictHostKeyChecking no" >> ~/.ssh/config
+    - echo "    UserKnownHostsFile /dev/null" >> ~/.ssh/config
   script:
     - source ~/.venv/awscli/bin/activate
-    - source build.env
-    - S3_DOWNLOAD_PATH="s3://$S3_BUCKET_NAME/backend/$BUILT_JAR_FILE_NAME"
-    - echo "Downloading $BUILT_JAR_FILE_NAME from $S3_DOWNLOAD_PATH"
-    - aws s3 cp "$S3_DOWNLOAD_PATH" "$BUILT_JAR_FILE_NAME"
-    - echo "Deploying $BUILT_JAR_FILE_NAME to $SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
-    - scp "$BUILT_JAR_FILE_NAME" "$SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
-    - |
-      ssh -T "$SERVER_USER@$SERVER_HOST" <<EOF
+    - S3_UPLOAD_PATH="s3://$S3_BUCKET_NAME/backend/$JAR_NAME"
+    - echo "Uploading $JAR_NAME to $S3_UPLOAD_PATH"
+    - aws s3 cp "$JAR_PATH/$JAR_NAME" "$S3_UPLOAD_PATH"
+    - echo "Deploying $JAR_NAME to $SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
+    - scp "$JAR_PATH/$JAR_NAME" "$SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
+    - ssh -T "$SERVER_USER@$SERVER_HOST" <<EOF
         set -e
         echo 'Stopping old process...'
         sudo pkill -f 'bogoargo-backend.jar' || echo 'No process found.'
@@ -70,20 +67,6 @@ deploy_backend_job:
           > /tmp/bogoargo-backend.log 2>&1 < /dev/null &
         echo 'Launch command sent.'
       EOF
-
-  # after_script:
-  #   - rm -f ~/.ssh/id_rsa_ci
-  #   - |
-  #     if [ "$CI_JOB_STATUS" = "success" ]; then
-  #       curl -X POST -H 'Content-Type: application/json' \
-  #       -d '{"text":"✅ [배포 성공] bogoargo-backend.jar 배포 완료"}' \
-  #       https://meeting.ssafy.com/hooks/ueoewh89fpgnukobm333nie13a
-  #     else
-  #       curl -X POST -H 'Content-Type: application/json' \
-  #       -d '{"text":"❌ [배포 실패] 배포 도중 문제가 발생했습니다."}' \
-  #       https://meeting.ssafy.com/hooks/ueoewh89fpgnukobm333nie13a
-  #     fi
-
   only:
     - master
   tags:
@@ -93,28 +76,47 @@ deploy_ai_job:
   stage: deploy_ai
   image: ubuntu:latest
   before_script:
-    - apt update && apt install -y openssh-client curl --no-install-recommends
+    - apt update && apt install -y openssh-client curl python3-venv --no-install-recommends
+    - python3 -m venv ~/.venv/awscli
+    - source ~/.venv/awscli/bin/activate
+    - pip install awscli --upgrade
     - eval "$(ssh-agent -s)"
     - mkdir -p ~/.ssh
     - chmod 700 ~/.ssh
     - echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa_ci
     - chmod 600 ~/.ssh/id_rsa_ci
     - ssh-add ~/.ssh/id_rsa_ci
-    - |
-      echo "Host *" > ~/.ssh/config
-      echo "    StrictHostKeyChecking no" >> ~/.ssh/config
-      echo "    UserKnownHostsFile /dev/null" >> ~/.ssh/config
+    - echo "Host *" > ~/.ssh/config
+    - echo "    StrictHostKeyChecking no" >> ~/.ssh/config
+    - echo "    UserKnownHostsFile /dev/null" >> ~/.ssh/config
   script:
+    - |
+      cat > ./ai/.env << EOF
+      GMS_API_KEY=$GMS_API_KEY
+      GMS_BASE_URL=$GMS_BASE_URL
+      OPENAI_API_KEY=$OPENAI_API_KEY
+      ENVIRONMENT=production
+      DEBUG=false
+      EOF
     - scp -r ./ai "$SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/ai-service"
     - ssh -T "$SERVER_USER@$SERVER_HOST" <<EOF
         set -e
         cd /home/$SERVER_USER/ai-service
+        sudo ufw allow 8000 || true
         docker-compose down || true
+        echo "=== .env 파일 확인 ==="
+        cat .env || echo ".env 파일 없음"
+        GMS_API_KEY="$GMS_API_KEY" \
+        GMS_BASE_URL="$GMS_BASE_URL" \
+        OPENAI_API_KEY="$OPENAI_API_KEY" \
         docker-compose up -d --build
+        echo "=== 서비스 시작 확인 (30초 대기) ==="
+        sleep 30
+        docker-compose ps
+        curl -f http://localhost:8000/health || echo "건강성 체크 실패"
+        echo "AI 서비스 배포 완료"
       EOF
   only:
     - master
   tags:
     - master
-
-
