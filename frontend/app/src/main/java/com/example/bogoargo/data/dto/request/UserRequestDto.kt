@@ -12,7 +12,8 @@ data class UserSignUpRequest(
 // 로그인 요청 DTO
 data class UserLoginRequest(
     val username: String,
-    val password: String
+    val password: String,
+    val fcmToken: String?  // Firebase SDK가 자동 생성한 FCM 토큰
 )
 
 // 회원정보 변경 요청 DTO

@@ -12,6 +12,7 @@ import com.argo.backend.auth.dto.withdraw.WithdrawResponse;
 import com.argo.backend.auth.dto.withdraw.WithdrawalRequest;
 import com.argo.backend.auth.service.AuthService;
 import com.argo.backend.global.enums.ResponseMessage;
+import com.argo.backend.notification.service.FCMTokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final FCMTokenService fcmTokenService;
 
     @PostMapping("/signup")
     public ResponseEntity<?> signup(@RequestBody @Valid SignupRequest request) {
@@ -37,6 +39,12 @@ public class AuthController {
     public ResponseEntity<?> login(@RequestBody @Valid LoginRequest request) {
 
         LoginDto dto = authService.login(request);
+        
+        // 로그인 성공 시 FCM 토큰 저장
+        if (request.getFcmToken() != null && !request.getFcmToken().trim().isEmpty()) {
+            fcmTokenService.registerFcmToken(dto.getUserId(), request.getFcmToken());
+        }
+        
         return ResponseEntity.ok(new LoginResponse(true, dto.getUserId(), dto.getName(),
                 dto.getRole(), dto.getTokens(),
                 ResponseMessage.LOGIN_SUCCESS.getMessage())

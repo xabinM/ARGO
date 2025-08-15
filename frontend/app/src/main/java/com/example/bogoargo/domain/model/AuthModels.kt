@@ -1,8 +1,9 @@
 package com.example.bogoargo.domain.model
 
 data class LoginRequest(
-    val id: String,
-    val password: String
+    val username: String,
+    val password: String,
+    val fcmToken: String?
 )
 
 data class LoginResponse(

@@ -20,6 +20,7 @@ import com.argo.backend.domain.user.entity.User;
 import com.argo.backend.domain.user.entity.UserTeam;
 import com.argo.backend.domain.user.repository.UserRepository;
 import com.argo.backend.domain.user.repository.UserTeamRepository;
+import com.argo.backend.notification.service.FCMService;
 import com.argo.backend.organization.exception.types.TeamNotFoundException;
 import com.argo.backend.organization.exception.types.UnauthorizedClassAccessException;
 import com.argo.backend.organization.exception.types.UserNotFoundException;
@@ -42,6 +43,7 @@ public class BattleService {
     private final UserTeamRepository userTeamRepository;
     private final TeamCardRepository teamCardRepository;
     private final CardGameMatchRepository cardGameMatchRepository;
+    private final FCMService fcmService;
     
     public List<BattleOpponentDto> getBattleOpponents(Long teamId, Long userId) {
         User user = validateAndGetUser(userId);
@@ -81,7 +83,14 @@ public class BattleService {
         
         cardGameMatchRepository.save(match);
         
-        // 이 떄 FCM으로 요청 날려야함
+        // 상대 팀장에게 FCM 알림 전송
+        User challengedLeader = challengedTeam.getLeader();
+        if (challengedLeader != null && challengedLeader.getFcmToken() != null) {
+            fcmService.sendChallengeNotification(
+                challengedLeader.getFcmToken(), 
+                challengerTeam.getTeamName()
+            );
+        }
         
         return BattleResponse.success("대전 신청이 성공적으로 전송되었습니다");
     }
@@ -110,7 +119,15 @@ public class BattleService {
             processBattleResult(match);
             cardGameMatchRepository.save(match);
 
-            // 여기 FCM 알릶 보내야함 //
+            // 신청자 팀장에게 수락 알림 전송
+            User challengerLeader = match.getChallengerTeam().getLeader();
+            if (challengerLeader != null && challengerLeader.getFcmToken() != null) {
+                fcmService.sendChallengeAcceptedNotification(
+                    challengerLeader.getFcmToken(),
+                    match.getChallengedTeam().getTeamName()
+                );
+            }
+
 
             return BattleResponse.success("대전 수락이 완료되었습니다");
         } else {
@@ -119,6 +136,15 @@ public class BattleService {
             // 신청자 카드 잠금 해제
             if (match.getChallengerCard() != null) {
                 match.getChallengerCard().setIsLocked(false);
+            }
+            
+            // 신청자 팀장에게 거절 알림 전송
+            User challengerLeader = match.getChallengerTeam().getLeader();
+            if (challengerLeader != null && challengerLeader.getFcmToken() != null) {
+                fcmService.sendChallengeCancelledNotification(
+                    challengerLeader.getFcmToken(),
+                    match.getChallengedTeam().getTeamName()
+                );
             }
             
             return BattleResponse.success("대전을 거절하였습니다");

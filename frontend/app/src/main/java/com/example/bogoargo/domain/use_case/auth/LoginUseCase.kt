@@ -9,8 +9,8 @@ import javax.inject.Inject
 class LoginUseCase @Inject constructor(
     private val userRepository: IUserRepository
 ) {
-    suspend operator fun invoke(username: String, password: String): DataResult<User> {
-        val request = UserLoginRequest(username = username, password = password)
+    suspend operator fun invoke(username: String, password: String, fcmToken: String?): DataResult<User> {
+        val request = UserLoginRequest(username = username, password = password, fcmToken = fcmToken)
         return userRepository.login(request)
     }
 

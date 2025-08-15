@@ -17,24 +17,15 @@ import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.example.bogoargo.util.FcmCommandParser
-import com.example.bogoargo.data.repository.FCMPushSender
-import com.example.bogoargo.data.storage.SecureStorage
-import javax.inject.Inject
-import dagger.hilt.android.AndroidEntryPoint
 //fcm 수신 코드
-@AndroidEntryPoint
-class FcmNotificationService : FirebaseMessagingService() {
-
-    @Inject
-    lateinit var secureStorage: SecureStorage
-
-    @Inject
-    lateinit var pushSender: FCMPushSender
+class FcmNotificationService : FirebaseMessagingService() { // FirebaseMessagingService가 부모 클래스
 
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        secureStorage.saveFcmToken(token)
-        pushSender.sendCurrentToken()
+        Log.d(TAG, "FCM 토큰 갱신됨: $token")
+        // TODO: 로그인된 상태라면 갱신된 토큰을 서버에 전송
+        // 현재는 로그인 시에만 토큰을 전송하므로, 
+        // 토큰 갱신 시점에는 별도 처리 불필요
     }
 
     override fun onMessageReceived(msg: RemoteMessage) {

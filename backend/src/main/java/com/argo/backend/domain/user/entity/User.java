@@ -41,6 +41,9 @@ public class User extends BaseTimeEntity {
     @Column(nullable = false)
     private UserStatus status = UserStatus.ACTIVE;
 
+    @Column(length = 500)
+    private String fcmToken;
+
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserTeam> userTeams = new ArrayList<>();
 
@@ -93,5 +96,9 @@ public class User extends BaseTimeEntity {
         return userTeams.stream()
                 .anyMatch(ut -> ut.getIsActive() && 
                                ut.getTeam().getClassRoom().getClassId().equals(classId));
+    }
+
+    public void updateFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 }

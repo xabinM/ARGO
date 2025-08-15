@@ -1,1 +1,2 @@
 src/main/resources/application-secret.yml
+src/main/resources/firebase/*.json

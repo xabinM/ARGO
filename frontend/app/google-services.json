@@ -1,13 +1,13 @@
 {
   "project_info": {
-    "project_number": "582988527942",
-    "project_id": "fcm-server-22f37",
-    "storage_bucket": "fcm-server-22f37.firebasestorage.app"
+    "project_number": "343566451797",
+    "project_id": "argo-80fe8",
+    "storage_bucket": "argo-80fe8.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:582988527942:android:b92f4ddc256e88b6284d47",
+        "mobilesdk_app_id": "1:343566451797:android:e494b9088830f17e3b40dc",
         "android_client_info": {
           "package_name": "com.example.bogoargo"
         }
@@ -15,7 +15,26 @@
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDJNfHlbHRYbYuRGjE6Iz8DemhODB16WZE"
+          "current_key": "AIzaSyAO6IcsLPEdrDVksFlZ6xFuBDedMcGCf-U"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:343566451797:android:27212d5d8697f2713b40dc",
+        "android_client_info": {
+          "package_name": "com.ssafy.argo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAO6IcsLPEdrDVksFlZ6xFuBDedMcGCf-U"
         }
       ],
       "services": {
