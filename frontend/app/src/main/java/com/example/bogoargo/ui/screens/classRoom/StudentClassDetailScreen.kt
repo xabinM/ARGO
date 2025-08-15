@@ -29,6 +29,7 @@ fun StudentClassDetailScreen(
     viewModel: StudentClassDetailViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    var showClassDetails by remember { mutableStateOf(false) }
     
     LaunchedEffect(classId) {
         viewModel.loadClassDetail(classId)
@@ -37,7 +38,7 @@ fun StudentClassDetailScreen(
     Scaffold(
         topBar = {
             NatureComponents.NatureTopAppBar(
-                title = "우리반",
+                title = "오늘의 활동",
                 emoji = "🎒",
                 onNavigationClick = { navController.popBackStack() }
             )
@@ -91,80 +92,105 @@ fun StudentClassDetailScreen(
                         val classDetail = uiState.classDetail!!.classInfo
                         val statistics = uiState.classDetail!!.statistics
                         
-                        // 반 기본 정보
+                        // 활동 기본 정보
                         item {
                             NatureComponents.NatureCard(
                                 elevation = NatureElevation.large
                             ) {
                                 Column(
-                                    modifier = Modifier.padding(24.dp)
+                                    modifier = Modifier.padding(20.dp)
                                 ) {
-                                    // 반 이름 & 선생님
-                                    Text(
-                                        text = classDetail.className,
-                                        style = NatureTypography.titleLarge.copy(fontSize = 22.sp),
-                                        modifier = Modifier.padding(bottom = 8.dp)
-                                    )
-                                    Text(
-                                        text = "담당: ${classDetail.teacherName} 선생님",
-                                        style = NatureTypography.bodyMedium.copy(
-                                            color = NatureColors.earthBrown.copy(alpha = 0.8f)
-                                        ),
-                                        modifier = Modifier.padding(bottom = 12.dp)
-                                    )
-                                    
-                                    // 장소
+                                    // 기본 정보 (항상 표시)
                                     Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(bottom = 8.dp)
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Text(text = "📍", fontSize = 16.sp)
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = classDetail.location,
-                                            style = NatureTypography.bodyMedium
-                                        )
-                                    }
-                                    
-                                    // 활동 날짜
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(bottom = 8.dp)
-                                    ) {
-                                        Text(text = "📅", fontSize = 16.sp)
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = classDetail.activityDate.toString(),
-                                            style = NatureTypography.bodyMedium
-                                        )
-                                    }
-                                    
-                                    // 참여자 수
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(bottom = 12.dp)
-                                    ) {
-                                        Text(text = "👥", fontSize = 16.sp)
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(
-                                            text = "${statistics.totalStudents}명의 친구들이 ${statistics.totalTeams}개 팀으로 나누어져 있어요",
-                                            style = NatureTypography.bodyMedium
-                                        )
-                                    }
-                                    
-                                    // 설명
-                                    if (classDetail.description.isNotEmpty()) {
-                                        NatureComponents.NatureCard(
-                                            containerColor = NatureColors.sunnyYellow.copy(alpha = 0.1f),
-                                            shape = NatureShapes.medium
+                                        // 왼쪽: 활동 이름과 장소
+                                        Column(
+                                            modifier = Modifier.weight(1f)
                                         ) {
                                             Text(
-                                                text = classDetail.description,
-                                                style = NatureTypography.bodyMedium.copy(
-                                                    lineHeight = 20.sp
-                                                ),
-                                                modifier = Modifier.padding(16.dp)
+                                                text = classDetail.className,
+                                                style = NatureTypography.titleLarge.copy(fontSize = 22.sp),
+                                                modifier = Modifier.padding(bottom = 4.dp)
                                             )
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Text(text = "📍", fontSize = 14.sp)
+                                                Spacer(modifier = Modifier.width(6.dp))
+                                                Text(
+                                                    text = classDetail.location,
+                                                    style = NatureTypography.bodyMedium.copy(
+                                                        color = NatureColors.earthBrown.copy(alpha = 0.8f)
+                                                    )
+                                                )
+                                            }
+                                        }
+                                        
+                                        // 오른쪽: 상세보기/접기 버튼
+                                        NatureComponents.NatureButton(
+                                            onClick = { showClassDetails = !showClassDetails },
+                                            text = if (showClassDetails) "접기" else "상세보기",
+                                            backgroundColor = NatureColors.earthBrown.copy(alpha = 0.1f),
+                                            contentColor = NatureColors.earthBrown
+                                        )
+                                    }
+                                    
+                                    // 상세 정보 (토글)
+                                    if (showClassDetails) {
+                                        Spacer(modifier = Modifier.height(16.dp))
+                                        
+                                        // 선생님
+                                        Text(
+                                            text = "담당: ${classDetail.teacherName} 선생님",
+                                            style = NatureTypography.bodyMedium.copy(
+                                                color = NatureColors.earthBrown.copy(alpha = 0.8f)
+                                            ),
+                                            modifier = Modifier.padding(bottom = 8.dp)
+                                        )
+                                        
+                                        // 활동 날짜
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(bottom = 8.dp)
+                                        ) {
+                                            Text(text = "📅", fontSize = 16.sp)
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = classDetail.activityDate.toString(),
+                                                style = NatureTypography.bodyMedium
+                                            )
+                                        }
+                                        
+                                        // 참여자 수
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(bottom = 12.dp)
+                                        ) {
+                                            Text(text = "👥", fontSize = 16.sp)
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(
+                                                text = "${statistics.totalStudents}명의 친구들이 ${statistics.totalTeams}개 팀으로 나누어져 있어요",
+                                                style = NatureTypography.bodyMedium
+                                            )
+                                        }
+                                        
+                                        // 설명
+                                        if (classDetail.description.isNotEmpty()) {
+                                            NatureComponents.NatureCard(
+                                                containerColor = NatureColors.sunnyYellow.copy(alpha = 0.1f),
+                                                shape = NatureShapes.medium
+                                            ) {
+                                                Text(
+                                                    text = classDetail.description,
+                                                    style = NatureTypography.bodyMedium.copy(
+                                                        lineHeight = 20.sp
+                                                    ),
+                                                    modifier = Modifier.padding(16.dp)
+                                                )
+                                            }
                                         }
                                     }
                                 }
@@ -177,29 +203,32 @@ fun StudentClassDetailScreen(
                                 NatureComponents.NatureCard(
                                     containerColor = NatureColors.leafGreen.copy(alpha = 0.1f)
                                 ) {
-                                    Column(
-                                        modifier = Modifier.padding(20.dp)
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
+                                        val myTeam = uiState.myTeam!!
+                                        
+                                        // 왼쪽: 아이콘과 제목
                                         Text(
                                             text = "🏆 내 팀",
                                             style = NatureTypography.titleMedium.copy(
                                                 color = NatureColors.forestGreen
-                                            ),
-                                            modifier = Modifier.padding(bottom = 12.dp)
+                                            )
                                         )
                                         
-                                        val myTeam = uiState.myTeam!!
-                                        
-                                        // 팀 이름
+                                        // 중앙: 팀 이름
                                         Text(
                                             text = myTeam.teamName,
                                             style = NatureTypography.bodyLarge.copy(
                                                 color = NatureColors.earthBrown
-                                            ),
-                                            modifier = Modifier.padding(bottom = 8.dp)
+                                            )
                                         )
                                         
-                                        // 팀원 수
+                                        // 오른쪽: 팀원 수
                                         Text(
                                             text = "팀원 ${myTeam.memberCount}명",
                                             style = NatureTypography.bodyMedium.copy(
@@ -227,6 +256,140 @@ fun StudentClassDetailScreen(
                                         )
                                         Text(
                                             text = "선생님이 곧 팀을 만들어 주실 거예요!",
+                                            style = NatureTypography.bodySmall.copy(
+                                                color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                                            ),
+                                            textAlign = TextAlign.Center
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        
+                        // 게임 옵션들
+                        if (uiState.myTeam != null) {
+                            item {
+                                NatureComponents.NatureCard(
+                                    containerColor = NatureColors.sunnyYellow.copy(alpha = 0.1f)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(20.dp)
+                                    ) {
+                                        Text(
+                                            text = "🎮 게임 선택",
+                                            style = NatureTypography.titleMedium.copy(
+                                                color = NatureColors.forestGreen
+                                            ),
+                                            modifier = Modifier.padding(bottom = 16.dp)
+                                        )
+                                        
+                                        // 메인 게임 버튼
+                                        NatureComponents.NatureCard(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(bottom = 12.dp),
+                                            containerColor = NatureColors.leafGreen.copy(alpha = 0.1f)
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(16.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                Text(
+                                                    text = "🗺️ 미션을 찾아라!",
+                                                    style = NatureTypography.titleMedium
+                                                )
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = "지도를 보고 미션을 수행해 보세요!",
+                                                    style = NatureTypography.bodySmall.copy(
+                                                        color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                                                    ),
+                                                    textAlign = TextAlign.Center
+                                                )
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                                Button(
+                                                    onClick = { 
+                                                        // classId와 teamId를 파라미터로 전달
+                                                        val teamId = uiState.myTeam?.teamId ?: 0L
+                                                        navController.navigate("game?classId=$classId&teamId=$teamId") 
+                                                    },
+                                                    colors = ButtonDefaults.buttonColors(
+                                                        containerColor = NatureColors.leafGreen
+                                                    ),
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Text(
+                                                        text = "게임 시작",
+                                                        color = NatureColors.earthBrown
+                                                    )
+                                                }
+                                            }
+                                        }
+                                        
+                                        // 카드게임 버튼
+                                        NatureComponents.NatureCard(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            containerColor = NatureColors.earthBrown.copy(alpha = 0.1f)
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(16.dp),
+                                                horizontalAlignment = Alignment.CenterHorizontally
+                                            ) {
+                                                Text(
+                                                    text = "🃏 우당탕탕 카드 대전!",
+                                                    style = NatureTypography.titleMedium
+                                                )
+                                                Spacer(modifier = Modifier.height(4.dp))
+                                                Text(
+                                                    text = "획득한 카드로 팀 간 대전을 해 보세요",
+                                                    style = NatureTypography.bodySmall.copy(
+                                                        color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                                                    ),
+                                                    textAlign = TextAlign.Center
+                                                )
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                                Button(
+                                                    onClick = { 
+                                                        // classId와 teamId를 파라미터로 전달
+                                                        val teamId = uiState.myTeam!!.teamId
+                                                        val leaderId = uiState.myTeam!!.leaderId
+                                                        navController.navigate(Screen.CardGame.createRoute(teamId, leaderId, classId)) 
+                                                    },
+                                                    colors = ButtonDefaults.buttonColors(
+                                                        containerColor = NatureColors.earthBrown.copy(alpha = 0.8f)
+                                                    ),
+                                                    modifier = Modifier.fillMaxWidth()
+                                                ) {
+                                                    Text(
+                                                        text = "카드게임 시작",
+                                                        color = MaterialTheme.colorScheme.onPrimary
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            item {
+                                NatureComponents.NatureCard(
+                                    containerColor = NatureColors.earthBrown.copy(alpha = 0.1f)
+                                ) {
+                                    Column(
+                                        modifier = Modifier.padding(20.dp),
+                                        horizontalAlignment = Alignment.CenterHorizontally
+                                    ) {
+                                        Text(text = "⏳", fontSize = 28.sp)
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Text(
+                                            text = "팀이 배정되면 게임을 시작할 수 있어요!",
+                                            style = NatureTypography.bodyMedium.copy(
+                                                color = NatureColors.earthBrown
+                                            ),
+                                            textAlign = TextAlign.Center
+                                        )
+                                        Text(
+                                            text = "선생님이 곧 팀을 만들어 주실 거예요.",
                                             style = NatureTypography.bodySmall.copy(
                                                 color = NatureColors.earthBrown.copy(alpha = 0.7f)
                                             ),
@@ -301,140 +464,6 @@ fun StudentClassDetailScreen(
                                                 }
                                             }
                                         }
-                                    }
-                                }
-                            }
-                        }
-                        
-                        // 게임 옵션들
-                        if (uiState.myTeam != null) {
-                            item {
-                                NatureComponents.NatureCard(
-                                    containerColor = NatureColors.sunnyYellow.copy(alpha = 0.1f)
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(20.dp)
-                                    ) {
-                                        Text(
-                                            text = "🎮 게임 선택",
-                                            style = NatureTypography.titleMedium.copy(
-                                                color = NatureColors.forestGreen
-                                            ),
-                                            modifier = Modifier.padding(bottom = 16.dp)
-                                        )
-                                        
-                                        // 메인 게임 버튼
-                                        NatureComponents.NatureCard(
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .padding(bottom = 12.dp),
-                                            containerColor = NatureColors.leafGreen.copy(alpha = 0.1f)
-                                        ) {
-                                            Column(
-                                                modifier = Modifier.padding(16.dp),
-                                                horizontalAlignment = Alignment.CenterHorizontally
-                                            ) {
-                                                Text(
-                                                    text = "🗺️ Argo Game",
-                                                    style = NatureTypography.titleMedium
-                                                )
-                                                Spacer(modifier = Modifier.height(4.dp))
-                                                Text(
-                                                    text = "지도를 활용한 위치 기반 게임",
-                                                    style = NatureTypography.bodySmall.copy(
-                                                        color = NatureColors.earthBrown.copy(alpha = 0.7f)
-                                                    ),
-                                                    textAlign = TextAlign.Center
-                                                )
-                                                Spacer(modifier = Modifier.height(8.dp))
-                                                Button(
-                                                    onClick = { 
-                                                        // classId와 teamId를 파라미터로 전달
-                                                        val teamId = uiState.myTeam?.teamId ?: 0L
-                                                        navController.navigate("game?classId=$classId&teamId=$teamId") 
-                                                    },
-                                                    colors = ButtonDefaults.buttonColors(
-                                                        containerColor = NatureColors.leafGreen
-                                                    ),
-                                                    modifier = Modifier.fillMaxWidth()
-                                                ) {
-                                                    Text(
-                                                        text = "게임 시작",
-                                                        color = NatureColors.earthBrown
-                                                    )
-                                                }
-                                            }
-                                        }
-                                        
-                                        // 카드게임 버튼
-                                        NatureComponents.NatureCard(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            containerColor = NatureColors.earthBrown.copy(alpha = 0.1f)
-                                        ) {
-                                            Column(
-                                                modifier = Modifier.padding(16.dp),
-                                                horizontalAlignment = Alignment.CenterHorizontally
-                                            ) {
-                                                Text(
-                                                    text = "🃏 카드 배틀",
-                                                    style = NatureTypography.titleMedium
-                                                )
-                                                Spacer(modifier = Modifier.height(4.dp))
-                                                Text(
-                                                    text = "팀 대 팀 전략 카드 게임 (개발용)",
-                                                    style = NatureTypography.bodySmall.copy(
-                                                        color = NatureColors.earthBrown.copy(alpha = 0.7f)
-                                                    ),
-                                                    textAlign = TextAlign.Center
-                                                )
-                                                Spacer(modifier = Modifier.height(8.dp))
-                                                Button(
-                                                    onClick = { 
-                                                        // classId와 teamId를 파라미터로 전달
-                                                        val teamId = uiState.myTeam!!.teamId
-                                                        val leaderId = uiState.myTeam!!.leaderId
-                                                        navController.navigate(Screen.CardGame.createRoute(teamId, leaderId, classId)) 
-                                                    },
-                                                    colors = ButtonDefaults.buttonColors(
-                                                        containerColor = NatureColors.earthBrown.copy(alpha = 0.8f)
-                                                    ),
-                                                    modifier = Modifier.fillMaxWidth()
-                                                ) {
-                                                    Text(
-                                                        text = "카드게임 시작",
-                                                        color = MaterialTheme.colorScheme.onPrimary
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        } else {
-                            item {
-                                NatureComponents.NatureCard(
-                                    containerColor = NatureColors.earthBrown.copy(alpha = 0.1f)
-                                ) {
-                                    Column(
-                                        modifier = Modifier.padding(20.dp),
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Text(text = "⏳", fontSize = 28.sp)
-                                        Spacer(modifier = Modifier.height(8.dp))
-                                        Text(
-                                            text = "팀이 배정되면 게임을 시작할 수 있어요!",
-                                            style = NatureTypography.bodyMedium.copy(
-                                                color = NatureColors.earthBrown
-                                            ),
-                                            textAlign = TextAlign.Center
-                                        )
-                                        Text(
-                                            text = "선생님이 곧 팀을 만들어 주실 거예요.",
-                                            style = NatureTypography.bodySmall.copy(
-                                                color = NatureColors.earthBrown.copy(alpha = 0.7f)
-                                            ),
-                                            textAlign = TextAlign.Center
-                                        )
                                     }
                                 }
                             }

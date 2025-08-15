@@ -222,26 +222,43 @@ def convert_to_quiz_problem_spring_compatible(
 # === 퀴즈 생성 엔드포인트 ===
 @app.post("/generate-problem", response_model=ProblemGenerateResponse)
 async def generate_problem(request: ProblemGenerateRequest):
-    """퀴즈 문제 생성"""
-
-    logger.info(
-        f"📝 퀴즈 생성 요청: {request.spotName}, {request.grade}학년, {request.problemCnt}개"
-    )
+    """퀴즈 문제 생성 - 디버깅 강화 버전"""
+    
+    logger.info(f"🔍 퀴즈 생성 요청: {request.spotName}, {request.grade}학년, {request.problemCnt}개")
+    
+    # 🔥 시스템 상태 상세 로깅
+    logger.info(f"📊 시스템 상태:")
+    logger.info(f"   quiz_service 존재: {quiz_service is not None}")
+    logger.info(f"   quiz_service_ready: {system_status.get('quiz_service_ready', False)}")
+    if quiz_service:
+        logger.info(f"   quiz_service.is_ready: {quiz_service.is_ready}")
+        logger.info(f"   quiz_service.is_llm_available: {quiz_service.is_llm_available}")
 
     try:
         generated_problems = []
 
         if quiz_service and system_status["quiz_service_ready"]:
-            # 퀴즈 서비스 사용
+            logger.info("✅ 퀴즈 서비스 사용 시도")
             try:
                 problems = await quiz_service.generate_problems_by_name(
                     spot_name=request.spotName,
                     count=request.problemCnt,
                     grade=request.grade,
                 )
-
-                for problem in problems:
-                    # 🔥 Spring Boot 호환 변환 함수 사용
+                
+                logger.info(f"✅ 퀴즈 서비스에서 {len(problems)}개 문제 반환")
+                
+                for i, problem in enumerate(problems):
+                    # 🔥 각 문제의 generation_method 로깅
+                    method = getattr(problem, 'generation_method', 'unknown')
+                    quality = getattr(problem, 'quality_score', 0.0)
+                    logger.info(f"   문제 {i+1}: method={method}, quality={quality}")
+                    
+                    # 🔥 fallback 패턴 검출
+                    question = getattr(problem, 'question', '')
+                    if any(pattern in question for pattern in ["문제 1번입니다", "문제 2번입니다", "정답", "오답"]):
+                        logger.warning(f"🚨 Fallback 패턴 감지: {question}")
+                    
                     quiz_compatible = convert_to_quiz_problem_spring_compatible(
                         problem, request.grade, request.spotName
                     )
@@ -251,24 +268,76 @@ async def generate_problem(request: ProblemGenerateRequest):
 
             except Exception as e:
                 logger.error(f"❌ 퀴즈 서비스 실패: {e}")
+                logger.error(f"❌ 에러 타입: {type(e).__name__}")
+                logger.error(f"❌ 에러 상세: {str(e)}")
+                # 🔥 여기서 main.py fallback으로 이동하는 것 같음
                 raise HTTPException(status_code=500, detail=f"퀴즈 생성 실패: {str(e)}")
         else:
-            # Fallback: 기본 문제 생성
-            logger.warning("⚠️ 퀴즈 서비스 비활성화 - Fallback 사용")
+            # 🔥 왜 여기로 오는지 상세 로깅
+            logger.warning("⚠️ 퀴즈 서비스 비활성화 상태")
+            logger.warning(f"   quiz_service is None: {quiz_service is None}")
+            logger.warning(f"   quiz_service_ready: {system_status.get('quiz_service_ready', 'KEY_NOT_FOUND')}")
+            
+            # 🔥 스팟별 맞춤 fallback 데이터
+            spot_fallback_data = {
+                "경복궁": {
+                    "keywords": ["조선시대", "궁궐", "정전"],
+                    "location": "서울",
+                    "period": "조선시대"
+                },
+                "근정전": {
+                    "keywords": ["정치", "임금", "신하"],
+                    "location": "경복궁",
+                    "period": "조선시대"
+                },
+                "창덕궁": {
+                    "keywords": ["유네스코", "후원", "자연"],
+                    "location": "서울",
+                    "period": "조선시대"
+                }
+            }
+            
+            # 스팟 정보 확인
+            spot_data = spot_fallback_data.get(request.spotName, {
+                "keywords": ["역사", "문화", "교육"],
+                "location": "서울",
+                "period": "역사적"
+            })
 
             for i in range(request.problemCnt):
-                # 🔥 Spring Boot 호환 형식으로 변경
-                fallback_quiz = QuizProblemSpringCompatible(
-                    question=f"{request.spotName}에 관한 문제 {i+1}번입니다.",
-                    choices=["정답", "오답 1", "오답 2"],  # 🔥 배열 형태
-                    correctIndex=0,  # 🔥 0-based index
-                    explanation=f"{request.spotName}에 대한 설명입니다.",
-                    grade=request.grade,
-                    spotName=request.spotName,
-                )
-                generated_problems.append(fallback_quiz)
+                # 🔥 문제 번호별로 다른 유형 생성
+                if i == 0:  # 첫 번째 문제: 위치/장소
+                    quiz = QuizProblemSpringCompatible(
+                        question=f"{request.spotName}은 어디에 있나요?",
+                        choices=[spot_data["location"], "부산", "제주도"],
+                        correctIndex=0,
+                        explanation=f"{request.spotName}은 {spot_data['location']}에 있는 {spot_data['period']} 유적입니다.",
+                        grade=request.grade,
+                        spotName=request.spotName,
+                    )
+                elif i == 1:  # 두 번째 문제: 특징/기능
+                    primary_keyword = spot_data["keywords"][0] if spot_data["keywords"] else "문화재"
+                    quiz = QuizProblemSpringCompatible(
+                        question=f"{request.spotName}에서 볼 수 있는 것은 무엇인가요?",
+                        choices=[primary_keyword, "현대 건물", "놀이기구"],
+                        correctIndex=0,
+                        explanation=f"{request.spotName}에서는 {primary_keyword}을(를) 볼 수 있습니다.",
+                        grade=request.grade,
+                        spotName=request.spotName,
+                    )
+                else:  # 세 번째 문제: 교육적 가치
+                    quiz = QuizProblemSpringCompatible(
+                        question=f"{request.spotName}이 중요한 이유는 무엇인가요?",
+                        choices=["우리나라 역사를 알 수 있어서", "크기가 커서", "돈을 벌 수 있어서"],
+                        correctIndex=0,
+                        explanation=f"{request.spotName}은 우리나라의 소중한 역사와 문화를 보여주는 곳입니다.",
+                        grade=request.grade,
+                        spotName=request.spotName,
+                    )
+                
+                generated_problems.append(quiz)
 
-            logger.info(f"🔄 Fallback으로 {len(generated_problems)}개 생성 완료")
+            logger.info(f"🔄 개선된 Fallback으로 {len(generated_problems)}개 생성 완료")
 
         return ProblemGenerateResponse(problems=generated_problems)
 
@@ -324,7 +393,7 @@ async def pose_predict_full(
 
             logger.info(f"📷 이미지 크기: {image.shape}")
 
-            # AI 모델 로드 및 추론 
+            # AI 모델 로드 및 추론  
             logger.info("🤖 AI 모델 로드 중...")
             ai_model = AI_ObjectDetector("object_detect/model/yolov8m.pt")  # 🔥 경로 수정
 

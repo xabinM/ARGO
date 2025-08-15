@@ -48,20 +48,9 @@ fun StudentHomeScreen(
     Scaffold(
         topBar = {
             NatureComponents.NatureTopAppBar(
-                title = "내 반들",
+                title = "내 활동들",
                 emoji = "🎒",
-                onNavigationClick = null,
-                actions = {
-                    IconButton(
-                        onClick = { logoutViewModel.logout() }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ExitToApp,
-                            contentDescription = "로그아웃",
-                            tint = NatureColors.earthBrown
-                        )
-                    }
-                },
+                onNavigationClick = { navController.popBackStack() }
             )
         }
     ) { paddingValues ->
@@ -93,7 +82,7 @@ fun StudentHomeScreen(
                     }
 
 
-                    // 반 신청 기능 (항상 표시)
+                    // 활동 신청 기능 (항상 표시)
                     item {
                         var inviteCode by remember { mutableStateOf("") }
                         
@@ -105,7 +94,7 @@ fun StudentHomeScreen(
                                 verticalArrangement = Arrangement.spacedBy(16.dp)
                             ) {
                                 Text(
-                                    text = "🎓 새 반 참여하기",
+                                    text = "🎓 새 활동 참여하기",
                                     style = NatureTypography.titleMedium,
                                     color = NatureColors.earthBrown
                                 )
@@ -142,7 +131,7 @@ fun StudentHomeScreen(
                                             viewModel.applyToClass(inviteCode.trim())
                                         }
                                     },
-                                    text = "🌱 반 참여하기",
+                                    text = "🌱 활동 참여하기",
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(56.dp),
@@ -153,7 +142,7 @@ fun StudentHomeScreen(
                         }
                     }
 
-                    // 반 목록이 비어있을 때 안내 메시지
+                    // 활동 목록이 비어있을 때 안내 메시지
                     if (uiState.classes.isEmpty()) {
                         item {
                             NatureComponents.NatureCard(
@@ -171,14 +160,14 @@ fun StudentHomeScreen(
                                     )
                                     Spacer(modifier = Modifier.height(16.dp))
                                     Text(
-                                        text = "아직 참여한 반이 없어요",
+                                        text = "아직 참여한 활동이 없어요",
                                         style = NatureTypography.titleLarge,
                                         color = NatureColors.earthBrown,
                                         textAlign = TextAlign.Center
                                     )
                                     Spacer(modifier = Modifier.height(8.dp))
                                     Text(
-                                        text = "위의 반 참여하기로\n새로운 반에 참여해보세요!",
+                                        text = "위의 활동 참여하기로\n새로운 활동에 참여해보세요!",
                                         style = NatureTypography.bodyMedium,
                                         color = NatureColors.earthBrown.copy(alpha = 0.8f),
                                         textAlign = TextAlign.Center
@@ -188,11 +177,11 @@ fun StudentHomeScreen(
                         }
                     }
 
-                    // 참여한 반 목록
+                    // 참여한 활동 목록
                     if (uiState.classes.isNotEmpty()) {
                         item {
                             Text(
-                                text = "🌟 내가 참여한 반",
+                                text = "🌟 내가 참여한 활동",
                                 style = NatureTypography.titleMedium,
                                 color = NatureColors.forestGreen,
                                 modifier = Modifier.padding(bottom = 8.dp)
