@@ -2,5 +2,7 @@
 <network-security-config>
     <domain-config cleartextTrafficPermitted="true">
         <domain includeSubdomains="true">i13a301.p.ssafy.io</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain> <!-- 에뮬레이터 localhost -->
+        <domain includeSubdomains="true">localhost</domain>
     </domain-config>
 </network-security-config>

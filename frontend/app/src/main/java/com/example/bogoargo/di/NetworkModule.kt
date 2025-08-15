@@ -18,7 +18,8 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    private const val BASE_URL = "http://i13a301.p.ssafy.io"
+//    private const val BASE_URL = "http://10.0.2.2:8080/" // 에뮬레이터용 localhost
+    private const val BASE_URL = "http://i13a301.p.ssafy.io/"
 
     @Provides
     @Singleton
@@ -155,9 +156,4 @@ object NetworkModule {
         return retrofit.create(SpotApiService::class.java)
     }
 
-    @Provides
-    @Singleton
-    fun provideFCMPushApi(retrofit: Retrofit): FCMPushApi {
-        return retrofit.create(FCMPushApi::class.java)
-    }
 }

@@ -1,6 +1,7 @@
 package com.example.bogoargo.ui.viewmodels.user
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.work.Constraints
@@ -9,7 +10,6 @@ import androidx.work.NetworkType
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.example.bogoargo.data.storage.SecureStorage
-import com.example.bogoargo.data.repository.FCMPushSender
 import com.example.bogoargo.domain.model.DataResult
 import com.example.bogoargo.domain.model.User
 import com.example.bogoargo.domain.model.UserRole
@@ -43,8 +43,7 @@ class LoginViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val loginUseCase: LoginUseCase,
     private val saveTokensUseCase: SaveTokensUseCase,
-    private val secureStorage: SecureStorage,
-    private val pushSender: FCMPushSender
+    private val secureStorage: SecureStorage
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LoginUiState())
@@ -62,16 +61,29 @@ class LoginViewModel @Inject constructor(
     }
 
     fun login() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-            when (val result = loginUseCase(_uiState.value.username, _uiState.value.password)) {
+        _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+        
+        // FCM 토큰 생성 후 로그인
+        FirebaseMessaging.getInstance().token // 즉시 토큰 요청
+            .addOnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    Log.e("LoginViewModel", "FCM 토큰 생성 실패", task.exception)
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "FCM 토큰 생성에 실패했습니다. 네트워크를 확인해주세요."
+                    )
+                    return@addOnCompleteListener
+                }
+                
+                val fcmToken = task.result
+                
+                viewModelScope.launch {
+                    when (val result = loginUseCase(_uiState.value.username, _uiState.value.password, fcmToken)) {
                 is DataResult.Success -> {
                     // 사용자 정보는 이미 UserRepository에서 저장됨 (중복 저장 제거)
 
                     // WorkManager로 주기적 위치 추적 시작
                     startLocationTracking()
-
-                    login_fcm_loading()
 
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -88,11 +100,12 @@ class LoginViewModel @Inject constructor(
                         errorMessage = result.exception.message
                     )
                 }
-                is DataResult.Loading -> {
-                    // 이미 로딩 상태 설정됨
+                        is DataResult.Loading -> {
+                            // 이미 로딩 상태 설정됨
+                        }
+                    }
                 }
             }
-        }
     }
 
     fun clearErrorMessage() {
@@ -131,17 +144,4 @@ class LoginViewModel @Inject constructor(
             )
     }
 
-    private fun login_fcm_loading() {
-        val cached = secureStorage.getFcmToken()
-        if (!cached.isNullOrBlank()) {
-            pushSender.sendCurrentToken()
-            return
-        }
-
-        FirebaseMessaging.getInstance().token
-            .addOnSuccessListener { token ->
-                secureStorage.saveFcmToken(token)
-                pushSender.sendCurrentToken()
-            }
-    }
 }
