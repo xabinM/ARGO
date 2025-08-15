@@ -129,7 +129,7 @@ class ClassRepositoryImpl @Inject constructor(
 
     override suspend fun getTeacherClassById(classId: Long): DataResult<TeaCherClassDetail?> {
         return try {
-            val response = classApiService.getClassDetail(classId)
+            val response = classApiService.getTeacherClassDetail(classId)
             val teacherClassDetail = response.body()
             if (teacherClassDetail != null) {
                 DataResult.Success(teacherClassDetail.toDomainModel())

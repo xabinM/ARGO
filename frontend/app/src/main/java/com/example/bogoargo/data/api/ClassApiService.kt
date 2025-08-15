@@ -13,6 +13,7 @@ import com.example.bogoargo.data.response.StudentClassDetailResponse
 import com.example.bogoargo.domain.model.MissionSpotsResponse
 import com.example.bogoargo.data.response.ApplyClassResponse
 import com.example.bogoargo.data.response.ClassMemberResponse
+import com.example.bogoargo.data.response.TeacherClassDetailResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -45,6 +46,11 @@ interface ClassApiService {
     suspend fun getClassDetail(
         @Path("classId") classId: Long
     ): Response<ClassDetailResponse>
+
+    @GET("api/teacher/classes/{classId}")
+    suspend fun getTeacherClassDetail(
+        @Path("classId") classId: Long
+    ): Response<TeacherClassDetailResponse>
 
     // 반 상세 정보 조회 (학생)
     @GET("api/student/classes/{classId}")

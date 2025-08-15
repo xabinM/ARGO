@@ -309,13 +309,18 @@ fun TeamManagementScreen(
                                 }
                             }
                             else -> {
-                                displayTeams.forEach { teamDetail ->
-                                    TeamDetailListItem(
-                                        teamDetail = teamDetail,
-                                        onClick = { 
-                                            selectedTeamDetail = teamDetail
-                                        }
-                                    )
+                                LazyColumn(
+                                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    items(displayTeams) { teamDetail ->
+                                        TeamDetailListItem(
+                                            teamDetail = teamDetail,
+                                            onClick = { 
+                                                selectedTeamDetail = teamDetail
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
