@@ -5,20 +5,26 @@ stages:
 
 variables:
   JAVA_VERSION: "17"
+  BACKEND_DIR: "backend"
   JAR_PATH: "$BACKEND_DIR/build/libs"
-  JAR_NAME: "bogoargo-backend.jar"
+  JAR_NAME: "backend-0.0.1-SNAPSHOT.jar"
+  DEPLOY_JAR_NAME: "bogoargo-backend.jar"
 
 build_backend_job:
   stage: build_backend
-  image: openjdk:$JAVA_VERSION-jdk-slim
+  image: openjdk:17-jdk-slim
+  before_script:
+    - apt-get update && apt-get install -y python3 python3-pip python3-venv
+    - python3 -m venv ~/.venv/awscli
+    - . ~/.venv/awscli/bin/activate
+    - pip install awscli
   script:
     - cd "$BACKEND_DIR"
     - chmod +x gradlew
     - ./gradlew clean build -x test
-  artifacts:
-    paths:
-      - "$JAR_PATH/*.jar"
-    expire_in: 1 day
+    - ls -la build/libs/
+    - . ~/.venv/awscli/bin/activate
+    - aws s3 cp "build/libs/$JAR_NAME" "s3://$S3_BUCKET_NAME/backend/$DEPLOY_JAR_NAME"
   only:
     - master
   tags:
@@ -43,18 +49,34 @@ deploy_backend_job:
     - echo "    UserKnownHostsFile /dev/null" >> ~/.ssh/config
   script:
     - source ~/.venv/awscli/bin/activate
-    - S3_UPLOAD_PATH="s3://$S3_BUCKET_NAME/backend/$JAR_NAME"
-    - echo "Uploading $JAR_NAME to $S3_UPLOAD_PATH"
-    - aws s3 cp "$JAR_PATH/$JAR_NAME" "$S3_UPLOAD_PATH"
-    - echo "Deploying $JAR_NAME to $SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
-    - scp "$JAR_PATH/$JAR_NAME" "$SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/$JAR_NAME"
-    - ssh -T "$SERVER_USER@$SERVER_HOST" <<EOF
+    - echo "Downloading JAR from S3"
+    - aws s3 cp "s3://$S3_BUCKET_NAME/backend/$DEPLOY_JAR_NAME" "./$DEPLOY_JAR_NAME"
+    - echo "Deploying $DEPLOY_JAR_NAME to $SERVER_HOST"
+    - scp "./$DEPLOY_JAR_NAME" "$SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/${DEPLOY_JAR_NAME}.new"
+    - |
+      ssh -T "$SERVER_USER@$SERVER_HOST" bash -s << ENDSSH
         set -e
-        echo 'Stopping old process...'
-        sudo pkill -f 'bogoargo-backend.jar' || echo 'No process found.'
-        sudo fuser -k 8080/tcp || echo 'No process using 8080.'
-        echo 'Starting new process...'
-        sudo setsid nohup java -jar "/home/ubuntu/bogoargo-backend.jar" \
+        
+        echo '=== Spring Server 재시작 시작 ==='
+        
+        echo '1. 현재 실행 중인 프로세스 확인'
+        ps aux | grep -v grep | grep "$DEPLOY_JAR_NAME" || echo "현재 실행 중인 프로세스 없음"
+        
+        echo '2. 기존 Spring 서버 종료'
+        sudo pkill -f "$DEPLOY_JAR_NAME" || echo "종료할 프로세스 없음"
+        sudo fuser -k 8080/tcp || echo "8080 포트 사용 프로세스 없음"
+        
+        sleep 3
+        
+        echo '3. 백업 및 새 JAR 파일 교체'
+        cd /home/$SERVER_USER
+        if [ -f "$DEPLOY_JAR_NAME" ]; then
+          mv "$DEPLOY_JAR_NAME" "${DEPLOY_JAR_NAME}.backup"
+        fi
+        mv "${DEPLOY_JAR_NAME}.new" "$DEPLOY_JAR_NAME"
+        
+        echo '4. 새 Spring 서버 시작'
+        sudo nohup java -jar "$DEPLOY_JAR_NAME" \
           --spring.datasource.username="${DB_USERNAME}" \
           --spring.datasource.password="${DB_PASSWORD}" \
           --spring.datasource.url="${DB_URL}" \
@@ -64,9 +86,50 @@ deploy_backend_job:
           --jwt.secret="${JWT_SECRET}" \
           --jwt.accessTokenExpirationMs="${JWT_ACCESS_TOKEN_EXPIRATION_MS}" \
           --jwt.refreshTokenExpirationMs="${JWT_REFRESH_TOKEN_EXPIRATION_MS}" \
-          > /tmp/bogoargo-backend.log 2>&1 < /dev/null &
-        echo 'Launch command sent.'
-      EOF
+          > /tmp/bogoargo-backend.log 2>&1 &
+        
+        echo '5. 서버 시작 확인 (최대 60초 대기)'
+        for i in {1..12}; do
+          sleep 5
+          if grep -q "Started BackendApplication" /tmp/bogoargo-backend.log 2>/dev/null; then
+            echo "✓ Spring Boot 애플리케이션 시작 완료!"
+            echo "✓ 로그 확인: Started BackendApplication"
+            ps aux | grep -v grep | grep "$DEPLOY_JAR_NAME"
+            echo "=== 배포 성공 ==="
+            exit 0
+          elif grep -q "Tomcat started on port 8080" /tmp/bogoargo-backend.log 2>/dev/null; then
+            echo "✓ Tomcat이 8080 포트에서 시작됨!"
+            echo "=== 배포 성공 ==="
+            exit 0
+          else
+            echo "대기 중... (\$i/12)"
+          fi
+        done
+        
+        echo '6. 시작 실패 - 로그 확인'
+        echo "=== 최근 로그 ==="
+        tail -n 50 /tmp/bogoargo-backend.log
+        
+        echo '7. 롤백 시도'
+        sudo pkill -f "$DEPLOY_JAR_NAME" || true
+        if [ -f "${DEPLOY_JAR_NAME}.backup" ]; then
+          mv "${DEPLOY_JAR_NAME}.backup" "$DEPLOY_JAR_NAME"
+          sudo nohup java -jar "$DEPLOY_JAR_NAME" \
+            --spring.datasource.username="${DB_USERNAME}" \
+            --spring.datasource.password="${DB_PASSWORD}" \
+            --spring.datasource.url="${DB_URL}" \
+            --spring.profiles.active=secret \
+            --spring.data.redis.host="${REDIS_HOST}" \
+            --spring.data.redis.port="${REDIS_PORT}" \
+            --jwt.secret="${JWT_SECRET}" \
+            --jwt.accessTokenExpirationMs="${JWT_ACCESS_TOKEN_EXPIRATION_MS}" \
+            --jwt.refreshTokenExpirationMs="${JWT_REFRESH_TOKEN_EXPIRATION_MS}" \
+            > /tmp/bogoargo-backend-rollback.log 2>&1 &
+          echo "이전 버전으로 롤백 시도 중..."
+        fi
+        
+        exit 1
+      ENDSSH
   only:
     - master
   tags:
@@ -90,32 +153,49 @@ deploy_ai_job:
     - echo "    StrictHostKeyChecking no" >> ~/.ssh/config
     - echo "    UserKnownHostsFile /dev/null" >> ~/.ssh/config
   script:
+    - tar -czf ai-service.tar.gz ./ai
+    - source ~/.venv/awscli/bin/activate
+    - aws s3 cp ai-service.tar.gz "s3://$S3_BUCKET_NAME/ai/ai-service.tar.gz"
+    - scp ai-service.tar.gz "$SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/"
     - |
-      cat > ./ai/.env << EOF
-      GMS_API_KEY=$GMS_API_KEY
-      GMS_BASE_URL=$GMS_BASE_URL
-      OPENAI_API_KEY=$OPENAI_API_KEY
-      ENVIRONMENT=production
-      DEBUG=false
-      EOF
-    - scp -r ./ai "$SERVER_USER@$SERVER_HOST:/home/$SERVER_USER/ai-service"
-    - ssh -T "$SERVER_USER@$SERVER_HOST" <<EOF
+      ssh -T "$SERVER_USER@$SERVER_HOST" bash -s << ENDSSH
         set -e
-        cd /home/$SERVER_USER/ai-service
+        cd /home/$SERVER_USER
+        rm -rf ai-service-backup
+        if [ -d ai-service ]; then
+          mv ai-service ai-service-backup
+        fi
+        tar -xzf ai-service.tar.gz
+        mv ai ai-service
+        cd ai-service
+        cat > .env << ENVFILE
+        GMS_API_KEY=${GMS_API_KEY}
+        GMS_BASE_URL=${GMS_BASE_URL}
+        OPENAI_API_KEY=${OPENAI_API_KEY}
+        ENVIRONMENT=production
+        DEBUG=false
+      ENVFILE
         sudo ufw allow 8000 || true
-        docker-compose down || true
-        echo "=== .env 파일 확인 ==="
-        cat .env || echo ".env 파일 없음"
-        GMS_API_KEY="$GMS_API_KEY" \
-        GMS_BASE_URL="$GMS_BASE_URL" \
-        OPENAI_API_KEY="$OPENAI_API_KEY" \
-        docker-compose up -d --build
-        echo "=== 서비스 시작 확인 (30초 대기) ==="
+        docker compose down || true
+        docker compose up -d --build
         sleep 30
-        docker-compose ps
-        curl -f http://localhost:8000/health || echo "건강성 체크 실패"
-        echo "AI 서비스 배포 완료"
-      EOF
+        docker compose ps
+        if curl -f http://localhost:8000/health; then
+          echo "AI service deployed successfully"
+          rm -rf ../ai-service-backup
+        else
+          echo "Health check failed, rolling back..."
+          docker compose down
+          if [ -d ../ai-service-backup ]; then
+            rm -rf ../ai-service
+            mv ../ai-service-backup ../ai-service
+            cd ../ai-service
+            docker compose up -d
+          fi
+          exit 1
+        fi
+        rm -f ../ai-service.tar.gz
+      ENDSSH
   only:
     - master
   tags:
