@@ -28,6 +28,7 @@ import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NotificationType
 import kotlinx.coroutines.flow.collectLatest
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,44 +60,15 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Top
         ) {
             Spacer(modifier = Modifier.height(40.dp))
-            // 헤더 카드
-            NatureComponents.NatureCard(
+            // 개선된 헤더 카드 (그라데이션 배경)
+            NatureComponents.HeaderCard(
+                title = "로그인",
+                subtitle = "게임과 함께하는 즐거운 학습",
+                emoji = "🌱",
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 24.dp)
-                    .wrapContentHeight()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    NatureComponents.ProfileAvatar(
-                        emoji = "🌱",
-                        backgroundColor = NatureColors.leafGreen,
-                        size = 80.dp
-                    )
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Text(
-                        text = "로그인",
-                        style = NatureTypography.titleLarge,
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Text(
-                        text = "게임과 함께하는 즐거운 학습",
-                        style = NatureTypography.bodyMedium.copy(
-                            color = NatureColors.earthBrown.copy(alpha = 0.8f)
-                        ),
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                    )
-                }
-            }
+            )
             
             // 로그인 폼 카드
             NatureComponents.NatureCard(
@@ -179,50 +151,26 @@ fun LoginScreen(
                             )
                         }
                     } else {
-                        NatureComponents.NatureButton(
+                        NatureComponents.ActionButton(
                             onClick = viewModel::login,
-                            text = "🌱 로그인",
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp),
-                            enabled = uiState.username.isNotEmpty() && uiState.password.isNotEmpty(),
-                            backgroundColor = NatureColors.forestGreen
+                            text = "로그인",
+                            emoji = "🌱",
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = uiState.username.isNotEmpty() && uiState.password.isNotEmpty()
                         )
                     }
                 }
             }
             
-            // 에러 메시지
+            // 에러 메시지 (개선된 알림 배너)
             uiState.errorMessage?.let { errorMessage ->
                 Spacer(modifier = Modifier.height(16.dp))
-                NatureComponents.NatureCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    containerColor = NatureColors.softOrange.copy(alpha = 0.3f)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "⚠️ $errorMessage",
-                            style = NatureTypography.bodyMedium.copy(
-                                color = NatureColors.earthBrown
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-                        TextButton(
-                            onClick = viewModel::clearErrorMessage,
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = NatureColors.earthBrown
-                            )
-                        ) {
-                            Text("닫기")
-                        }
-                    }
-                }
+                NatureComponents.NotificationBanner(
+                    message = errorMessage,
+                    emoji = "⚠️",
+                    type = NotificationType.ERROR,
+                    onDismiss = viewModel::clearErrorMessage
+                )
             }
             
             // 회원가입 링크

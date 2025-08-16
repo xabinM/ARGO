@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -24,26 +22,14 @@ import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
 import com.example.bogoargo.ui.theme.NatureElevation
-import com.example.bogoargo.ui.viewmodels.user.LogoutUiState
-import com.example.bogoargo.ui.viewmodels.user.LogoutViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StudentHomeScreen(
     navController: NavController,
-    viewModel: StudentHomeViewModel = hiltViewModel(),
-    logoutViewModel: LogoutViewModel = hiltViewModel()
+    viewModel: StudentHomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val logoutUiState by logoutViewModel.uiState.collectAsState()
-
-    LaunchedEffect(logoutUiState.isLoggedOut) {
-        if (logoutUiState.isLoggedOut) {
-            navController.navigate("login") {
-                popUpTo("teacherHome") { inclusive = true }
-            }
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -70,14 +56,15 @@ fun StudentHomeScreen(
                     contentPadding = PaddingValues(20.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // 환영 메시지
+                    // 환영 메시지 (헤더 카드로 개선)
                     item {
-                        Text(
-                            text = uiState.welcomeMessage,
-                            style = NatureTypography.titleLarge,
-                            textAlign = TextAlign.Center,
-                            color = NatureColors.earthBrown,
-                            modifier = Modifier.fillMaxWidth()
+                        NatureComponents.HeaderCard(
+                            title = "학생 활동 센터",
+                            subtitle = uiState.welcomeMessage,
+                            emoji = "🎒",
+                            modifier = Modifier.fillMaxWidth(),
+                            startColor = NatureColors.leafGreen,
+                            endColor = NatureColors.mint
                         )
                     }
 
@@ -125,18 +112,16 @@ fun StudentHomeScreen(
                                     )
                                 )
                                 
-                                NatureComponents.NatureButton(
+                                NatureComponents.ActionButton(
                                     onClick = {
                                         if (inviteCode.isNotBlank()) {
                                             viewModel.applyToClass(inviteCode.trim())
                                         }
                                     },
-                                    text = "🌱 활동 참여하기",
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(56.dp),
-                                    enabled = inviteCode.isNotBlank() && !uiState.isLoading,
-                                    backgroundColor = NatureColors.forestGreen
+                                    text = "활동 참여하기",
+                                    emoji = "🌱",
+                                    modifier = Modifier.fillMaxWidth(),
+                                    enabled = inviteCode.isNotBlank() && !uiState.isLoading
                                 )
                             }
                         }
@@ -212,17 +197,12 @@ fun StudentHomeScreen(
                                             color = NatureColors.earthBrown,
                                             modifier = Modifier.weight(1f)
                                         )
-                                        NatureComponents.NatureCard(
-                                            containerColor = NatureColors.forestGreen.copy(alpha = 0.1f),
-                                            shape = NatureShapes.small
-                                        ) {
-                                            Text(
-                                                text = "${classItem.currentStudents}/${classItem.maxStudents}명",
-                                                style = NatureTypography.labelSmall,
-                                                color = NatureColors.forestGreen,
-                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                                            )
-                                        }
+                                        NatureComponents.InfoChip(
+                                            text = "${classItem.currentStudents}/${classItem.maxStudents}명",
+                                            emoji = "👥",
+                                            backgroundColor = NatureColors.forestGreen.copy(alpha = 0.15f),
+                                            textColor = NatureColors.deepForestGreen
+                                        )
                                     }
                                     if (classItem.description.isNotEmpty()) {
                                         Spacer(modifier = Modifier.height(8.dp))
@@ -236,22 +216,25 @@ fun StudentHomeScreen(
                                     Spacer(modifier = Modifier.height(12.dp))
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        Text(
-                                            text = "📍 ${classItem.location}",
-                                            style = NatureTypography.labelMedium,
-                                            color = NatureColors.forestGreen
+                                        NatureComponents.InfoChip(
+                                            text = classItem.location,
+                                            emoji = "📍",
+                                            backgroundColor = NatureColors.skyBlue.copy(alpha = 0.2f),
+                                            textColor = NatureColors.earthBrown
                                         )
-                                        Text(
-                                            text = "📅 ${classItem.activityDate}",
-                                            style = NatureTypography.labelMedium,
-                                            color = NatureColors.forestGreen
+                                        NatureComponents.InfoChip(
+                                            text = classItem.activityDate.toString(),
+                                            emoji = "📅",
+                                            backgroundColor = NatureColors.lavender.copy(alpha = 0.2f),
+                                            textColor = NatureColors.earthBrown
                                         )
-                                        Text(
-                                            text = "🏆 ${classItem.teamCount}팀",
-                                            style = NatureTypography.labelMedium,
-                                            color = NatureColors.forestGreen
+                                        NatureComponents.InfoChip(
+                                            text = "${classItem.teamCount}팀",
+                                            emoji = "🏆",
+                                            backgroundColor = NatureColors.sunnyYellow.copy(alpha = 0.2f),
+                                            textColor = NatureColors.earthBrown
                                         )
                                     }
                                 }

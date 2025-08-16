@@ -21,6 +21,7 @@ import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NotificationType
 import com.example.bogoargo.domain.model.Team
 import com.example.bogoargo.domain.model.TeamDetail
 import androidx.compose.foundation.lazy.LazyColumn
@@ -106,35 +107,19 @@ fun TeamManagementScreen(
                 verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 if (uiState.errorMessage != null) {
-                    NatureComponents.NatureCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        containerColor = NatureColors.softOrange.copy(alpha = 0.3f)
-                    ) {
-                        Text(
-                            text = "⚠️ ${uiState.errorMessage}",
-                            modifier = Modifier.padding(16.dp),
-                            style = NatureTypography.bodyMedium.copy(color = NatureColors.earthBrown)
-                        )
-                    }
+                    NatureComponents.NotificationBanner(
+                        message = uiState.errorMessage!!,
+                        emoji = "⚠️",
+                        type = NotificationType.ERROR
+                    )
                 }
 
                 if (uiState.assignResponse != null) {
-                    NatureComponents.NatureCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        containerColor = NatureColors.leafGreen.copy(alpha = 0.2f)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp)
-                        ) {
-                            Text(
-                                text = "✅ 팀 배정 완료",
-                                style = NatureTypography.titleMedium.copy(
-                                    color = NatureColors.forestGreen
-                                )
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
-                    }
+                    NatureComponents.NotificationBanner(
+                        message = "팀 배정이 완료되었습니다",
+                        emoji = "✅",
+                        type = NotificationType.SUCCESS
+                    )
                 }
 
                 if (uiState.deletedStudents != null) {

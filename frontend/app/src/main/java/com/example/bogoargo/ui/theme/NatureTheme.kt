@@ -35,6 +35,26 @@ object NatureColors {
     val lightBeige = Color(0xFFF8F3E8)
     val whiteTransparent = Color.White.copy(alpha = 0.95f)
     val whiteTransparent90 = Color.White.copy(alpha = 0.9f)
+    
+    // 추가 색상 팔레트 - 더 풍부한 표현을 위해
+    val deepForestGreen = Color(0xFF558B2F)
+    val lightGreen = Color(0xFFC8E6C9)
+    val mint = Color(0xFFA7FFEB)
+    val coral = Color(0xFFFF8A80)
+    val lavender = Color(0xFFE1BEE7)
+    val skyBlue = Color(0xFFB3E5FC)
+    
+    // 상태별 색상
+    val success = leafGreen
+    val warning = sunnyYellow
+    val error = coral
+    val info = skyBlue
+    
+    // 그라데이션용 색상
+    val gradientStart = warmBeige
+    val gradientEnd = lightBeige
+    val primaryGradientStart = forestGreen
+    val primaryGradientEnd = leafGreen
 }
 
 /**
@@ -119,6 +139,13 @@ object NatureShapes {
     val button = RoundedCornerShape(12.dp)
     val statsCard = RoundedCornerShape(16.dp)
     val circle = CircleShape
+    
+    // 새로운 형태들
+    val pill = RoundedCornerShape(50.dp)
+    val bottomSheet = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp)
+    val topCard = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
+    val dialogBox = RoundedCornerShape(20.dp)
+    val chipShape = RoundedCornerShape(16.dp)
 }
 
 /**
@@ -710,6 +737,300 @@ object NatureComponents {
         }
     }
 
+    /**
+     * 그라데이션 배경 카드
+     */
+    @Composable
+    fun GradientCard(
+        modifier: Modifier = Modifier,
+        startColor: Color = NatureColors.primaryGradientStart,
+        endColor: Color = NatureColors.primaryGradientEnd,
+        shape: androidx.compose.foundation.shape.RoundedCornerShape = NatureShapes.card,
+        content: @Composable ColumnScope.() -> Unit
+    ) {
+        Card(
+            modifier = modifier,
+            shape = shape,
+            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+            elevation = CardDefaults.cardElevation(NatureElevation.medium)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = Brush.linearGradient(
+                            colors = listOf(startColor, endColor),
+                            start = androidx.compose.ui.geometry.Offset(0f, 0f),
+                            end = androidx.compose.ui.geometry.Offset(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY)
+                        )
+                    )
+            ) {
+                Column(content = content)
+            }
+        }
+    }
+
+    /**
+     * 개선된 정보 칩
+     */
+    @Composable
+    fun InfoChip(
+        text: String,
+        emoji: String = "",
+        backgroundColor: Color = NatureColors.lightGreen,
+        textColor: Color = NatureColors.deepForestGreen,
+        modifier: Modifier = Modifier
+    ) {
+        Card(
+            modifier = modifier,
+            shape = NatureShapes.chipShape,
+            colors = CardDefaults.cardColors(containerColor = backgroundColor),
+            elevation = CardDefaults.cardElevation(NatureElevation.small)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                if (emoji.isNotEmpty()) {
+                    Text(
+                        text = emoji,
+                        fontSize = 14.sp
+                    )
+                }
+                Text(
+                    text = text,
+                    style = NatureTypography.labelMedium.copy(color = textColor),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+        }
+    }
+
+    /**
+     * 향상된 액션 버튼 (그라데이션 배경)
+     */
+    @Composable
+    fun ActionButton(
+        onClick: () -> Unit,
+        text: String,
+        emoji: String = "",
+        modifier: Modifier = Modifier,
+        startColor: Color = NatureColors.primaryGradientStart,
+        endColor: Color = NatureColors.primaryGradientEnd,
+        contentColor: Color = Color.White,
+        enabled: Boolean = true
+    ) {
+        Button(
+            onClick = onClick,
+            modifier = modifier.height(56.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color.Transparent,
+                contentColor = contentColor
+            ),
+            shape = NatureShapes.button,
+            enabled = enabled,
+            contentPadding = PaddingValues(0.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        brush = if (enabled) {
+                            Brush.horizontalGradient(
+                                colors = listOf(startColor, endColor)
+                            )
+                        } else {
+                            Brush.horizontalGradient(
+                                colors = listOf(Color.Gray, Color.Gray)
+                            )
+                        },
+                        shape = NatureShapes.button
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (emoji.isNotEmpty()) {
+                        Text(
+                            text = emoji,
+                            fontSize = 20.sp
+                        )
+                    }
+                    Text(
+                        text = text,
+                        style = NatureTypography.labelLarge
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * 프로그레스 바 (자연 테마)
+     */
+    @Composable
+    fun NatureProgressBar(
+        progress: Float,
+        modifier: Modifier = Modifier,
+        backgroundColor: Color = NatureColors.lightGreen,
+        progressColor: Color = NatureColors.forestGreen,
+        label: String = ""
+    ) {
+        Column(modifier = modifier) {
+            if (label.isNotEmpty()) {
+                Text(
+                    text = label,
+                    style = NatureTypography.labelMedium.copy(color = NatureColors.earthBrown),
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(8.dp)
+                    .clip(NatureShapes.pill)
+                    .background(backgroundColor)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .fillMaxWidth(progress.coerceIn(0f, 1f))
+                        .background(
+                            brush = Brush.horizontalGradient(
+                                colors = listOf(progressColor, progressColor.copy(alpha = 0.8f))
+                            ),
+                            shape = NatureShapes.pill
+                        )
+                )
+            }
+        }
+    }
+
+    /**
+     * 알림 배너
+     */
+    @Composable
+    fun NotificationBanner(
+        message: String,
+        emoji: String = "ℹ️",
+        type: NotificationType = NotificationType.INFO,
+        onDismiss: (() -> Unit)? = null,
+        modifier: Modifier = Modifier
+    ) {
+        val backgroundColor = when (type) {
+            NotificationType.SUCCESS -> NatureColors.success.copy(alpha = 0.2f)
+            NotificationType.WARNING -> NatureColors.warning.copy(alpha = 0.2f)
+            NotificationType.ERROR -> NatureColors.error.copy(alpha = 0.2f)
+            NotificationType.INFO -> NatureColors.info.copy(alpha = 0.2f)
+        }
+        
+        val textColor = when (type) {
+            NotificationType.SUCCESS -> NatureColors.deepForestGreen
+            NotificationType.WARNING -> NatureColors.earthBrown
+            NotificationType.ERROR -> NatureColors.earthBrown
+            NotificationType.INFO -> NatureColors.earthBrown
+        }
+
+        Card(
+            modifier = modifier.fillMaxWidth(),
+            shape = NatureShapes.medium,
+            colors = CardDefaults.cardColors(containerColor = backgroundColor),
+            elevation = CardDefaults.cardElevation(NatureElevation.small)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = emoji,
+                        fontSize = 20.sp
+                    )
+                    Text(
+                        text = message,
+                        style = NatureTypography.bodyMedium.copy(color = textColor)
+                    )
+                }
+                if (onDismiss != null) {
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Text(
+                            text = "✕",
+                            style = NatureTypography.labelMedium.copy(color = textColor),
+                            fontSize = 16.sp
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 특별한 헤더 카드 (그라데이션 배경)
+     */
+    @Composable
+    fun HeaderCard(
+        title: String,
+        subtitle: String = "",
+        emoji: String = "🌱",
+        modifier: Modifier = Modifier,
+        startColor: Color = NatureColors.primaryGradientStart,
+        endColor: Color = NatureColors.primaryGradientEnd
+    ) {
+        GradientCard(
+            modifier = modifier,
+            startColor = startColor,
+            endColor = endColor,
+            shape = NatureShapes.large
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = emoji,
+                    fontSize = 48.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    text = title,
+                    style = NatureTypography.headlineMedium.copy(color = Color.White),
+                    textAlign = TextAlign.Center
+                )
+                if (subtitle.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = subtitle,
+                        style = NatureTypography.bodyMedium.copy(color = Color.White.copy(alpha = 0.9f)),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+    }
+
+}
+
+/**
+ * 알림 타입 열거형
+ */
+enum class NotificationType {
+    SUCCESS, WARNING, ERROR, INFO
 }
 
 /**

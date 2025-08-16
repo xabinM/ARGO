@@ -1,8 +1,9 @@
 package com.example.bogoargo.ui.screens.user
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,26 +26,14 @@ import com.example.bogoargo.ui.theme.NatureElevation
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
 import com.example.bogoargo.ui.viewmodels.user.TeacherHomeViewModel
-import com.example.bogoargo.ui.viewmodels.user.LogoutViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeacherHomeScreen(
     navController: NavController,
-    viewModel: TeacherHomeViewModel = hiltViewModel(),
-    logoutViewModel: LogoutViewModel = hiltViewModel()
+    viewModel: TeacherHomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val logoutUiState by logoutViewModel.uiState.collectAsState()
-    
-    // 로그아웃 성공 시 로그인 화면으로 이동
-    LaunchedEffect(logoutUiState.isLoggedOut) {
-        if (logoutUiState.isLoggedOut) {
-            navController.navigate("login") {
-                popUpTo("teacherHome") { inclusive = true }
-            }
-        }
-    }
     
     Scaffold(
         topBar = {
@@ -54,17 +43,6 @@ fun TeacherHomeScreen(
                         "🌳 선생님 홈",
                         style = NatureTypography.titleLarge
                     )
-                },
-                actions = {
-                    IconButton(
-                        onClick = { logoutViewModel.logout() }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ExitToApp,
-                            contentDescription = "로그아웃",
-                            tint = NatureColors.earthBrown
-                        )
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = NatureColors.warmBeige
@@ -77,49 +55,23 @@ fun TeacherHomeScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(paddingValues)
+                    .verticalScroll(rememberScrollState())
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 1. 상단 유저 정보 영역
-                NatureComponents.NatureCard(
+                // 1. 상단 유저 정보 영역 (그라데이션 헤더)
+                NatureComponents.HeaderCard(
+                    title = uiState.currentUser?.name?.let { "$it 님" } ?: "로딩중...",
+                    subtitle = "환영합니다! 오늘도 즐거운 수업 되세요",
+                    emoji = "👩‍🏫",
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 24.dp),
-                    elevation = NatureElevation.extraLarge,
-                    shape = NatureShapes.extraLarge
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // 프로필 아바타
-                        NatureComponents.ProfileAvatar(
-                            emoji = "👩‍🏫",
-                            backgroundColor = NatureColors.earthBrown,
-                            size = 80.dp
-                        )
+                    startColor = NatureColors.earthBrown,
+                    endColor = NatureColors.sunnyYellow
+                )
 
-                        Spacer(modifier = Modifier.width(20.dp))
-
-                        // 사용자 정보
-                        Column {
-                            NatureComponents.StatusBadge(
-                                text = "🌟 선생님",
-                                backgroundColor = NatureColors.sunnyYellow.copy(alpha = 0.3f),
-                                textColor = NatureColors.earthBrown
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = uiState.currentUser?.name?.let { "$it 님" } ?: "로딩중...",
-                                style = NatureTypography.titleLarge.copy(fontSize = 24.sp)
-                            )
-                        }
-                    }
-                }
-
-                // 2. 메인 메뉴 버튼들
+                // 2. 메인 메뉴 버튼들 (그라데이션 카드 버튼들)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -127,85 +79,73 @@ fun TeacherHomeScreen(
                     horizontalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     // 우리 반 관리 버튼
-                    NatureComponents.NatureCard(
+                    NatureComponents.GradientCard(
                         modifier = Modifier
                             .weight(1f)
-                            .height(120.dp),
-                        shape = NatureShapes.large,
-                        containerColor = NatureColors.leafGreen.copy(alpha = 0.2f)
-                    ) {
-                        Button(
-                            onClick = {
+                            .height(140.dp)
+                            .clickable {
                                 navController.navigate("classManagement")
                             },
-                            modifier = Modifier.fillMaxSize(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = NatureColors.earthBrown
-                            ),
-                            shape = NatureShapes.large
+                        startColor = NatureColors.leafGreen,
+                        endColor = NatureColors.lightGreen,
+                        shape = NatureShapes.large
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Text(
-                                    text = "🏫",
-                                    fontSize = 32.sp
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "우리 반 관리",
-                                    style = NatureTypography.bodyMedium,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
+                            Text(
+                                text = "🏫",
+                                fontSize = 40.sp
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "우리 반 관리",
+                                style = NatureTypography.titleMedium.copy(color = Color.White),
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
 
-                    // 프로그램 관리 버튼
-                    NatureComponents.NatureCard(
+                    // 미션 추가 생성 버튼
+                    NatureComponents.GradientCard(
                         modifier = Modifier
                             .weight(1f)
-                            .height(120.dp),
-                        shape = NatureShapes.large,
-                        containerColor = NatureColors.sunnyYellow.copy(alpha = 0.2f)
-                    ) {
-                        Button(
-                            onClick = {
+                            .height(140.dp)
+                            .clickable {
                                 navController.navigate("classSelectionForProblemScreen")
                             },
-                            modifier = Modifier.fillMaxSize(),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Transparent,
-                                contentColor = NatureColors.earthBrown
-                            ),
-                            shape = NatureShapes.large
+                        startColor = NatureColors.sunnyYellow,
+                        endColor = NatureColors.softOrange,
+                        shape = NatureShapes.large
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(20.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Text(
-                                    text = "🎒",
-                                    fontSize = 32.sp
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Text(
-                                    text = "미션 추가 생성",
-                                    style = NatureTypography.bodyMedium,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
+                            Text(
+                                text = "🎒",
+                                fontSize = 40.sp
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "미션 추가 생성",
+                                style = NatureTypography.titleMedium.copy(color = Color.White),
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
                 }
 
                 // 3. 사용자 상세 정보 영역
                 NatureComponents.NatureCard(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
+                    modifier = Modifier.fillMaxWidth(),
                     elevation = NatureElevation.large,
                     shape = NatureShapes.extraLarge
                 ) {
@@ -282,6 +222,9 @@ fun TeacherHomeScreen(
                         }
                     }
                 }
+                
+                // 하단 여백 추가
+                Spacer(modifier = Modifier.height(40.dp))
             }
         }
     }
