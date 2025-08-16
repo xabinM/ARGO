@@ -42,44 +42,17 @@ fun SettingsScreen(
                     .padding(20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 사용자 프로필 섹션
-                NatureComponents.NatureCard(
+                // 사용자 프로필 섹션 (헤더 카드로 개선)
+                NatureComponents.HeaderCard(
+                    title = "사용자 설정",
+                    subtitle = "앱 환경을 관리해보세요",
+                    emoji = "⚙️",
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 24.dp)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        NatureComponents.ProfileAvatar(
-                            emoji = "👤",
-                            backgroundColor = NatureColors.leafGreen,
-                            size = 64.dp
-                        )
-                        
-                        Spacer(modifier = Modifier.height(16.dp))
-                        
-                        Text(
-                            text = "사용자 설정",
-                            style = NatureTypography.titleLarge,
-                            color = NatureColors.forestGreen,
-                            textAlign = TextAlign.Center
-                        )
-                        
-                        Spacer(modifier = Modifier.height(8.dp))
-                        
-                        Text(
-                            text = "앱 환경을 관리해보세요",
-                            style = NatureTypography.bodyMedium.copy(
-                                color = NatureColors.earthBrown.copy(alpha = 0.8f)
-                            ),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
+                        .padding(bottom = 24.dp),
+                    startColor = NatureColors.sunnyYellow,
+                    endColor = NatureColors.softOrange
+                )
                 
                 // 앱 정보 섹션
                 NatureComponents.NatureCard(

@@ -24,6 +24,7 @@ import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NotificationType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -69,29 +70,19 @@ fun SignUpScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (uiState.errorMessage != null) {
-                    NatureComponents.NatureCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        containerColor = NatureColors.softOrange.copy(alpha = 0.3f)
-                    ) {
-                        Text(
-                            text = "⚠️ ${uiState.errorMessage}",
-                            modifier = Modifier.padding(16.dp),
-                            style = NatureTypography.bodyMedium.copy(color = NatureColors.earthBrown)
-                        )
-                    }
+                    NatureComponents.NotificationBanner(
+                        message = uiState.errorMessage!!,
+                        emoji = "⚠️",
+                        type = NotificationType.ERROR
+                    )
                 }
                 
                 if (uiState.signUpResponse != null) {
-                    NatureComponents.NatureCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        containerColor = NatureColors.leafGreen.copy(alpha = 0.2f)
-                    ) {
-                        Text(
-                            text = "✅ ${uiState.signUpResponse!!.message}",
-                            modifier = Modifier.padding(16.dp),
-                            style = NatureTypography.bodyMedium.copy(color = NatureColors.forestGreen)
-                        )
-                    }
+                    NatureComponents.NotificationBanner(
+                        message = uiState.signUpResponse!!.message,
+                        emoji = "✅",
+                        type = NotificationType.SUCCESS
+                    )
                 }
                 
                 // 회원가입 폼 카드
@@ -303,7 +294,7 @@ fun SignUpScreen(
                         )
                     }
                 } else {
-                    NatureComponents.NatureButton(
+                    NatureComponents.ActionButton(
                         onClick = {
                             viewModel.signUp(
                                 username = username,
@@ -313,17 +304,17 @@ fun SignUpScreen(
                                 agreeTerms = agreeTerms
                             )
                         },
-                        text = "🌱 회원가입 완료",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
+                        text = "회원가입 완료",
+                        emoji = "🌱",
+                        modifier = Modifier.fillMaxWidth(),
                         enabled = username.isNotEmpty() && 
                                  password.isNotEmpty() && 
                                  confirmPassword.isNotEmpty() &&
                                  name.isNotEmpty() &&
                                  password == confirmPassword &&
                                  agreeTerms,
-                        backgroundColor = NatureColors.leafGreen
+                        startColor = NatureColors.leafGreen,
+                        endColor = NatureColors.forestGreen
                     )
                 }
                 

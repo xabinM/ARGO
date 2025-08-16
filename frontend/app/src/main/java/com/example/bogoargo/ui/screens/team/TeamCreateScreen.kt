@@ -17,6 +17,7 @@ import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NotificationType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -55,16 +56,11 @@ fun TeamCreateScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (uiState.errorMessage != null) {
-                    NatureComponents.NatureCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        containerColor = NatureColors.softOrange.copy(alpha = 0.3f)
-                    ) {
-                        Text(
-                            text = "⚠️ ${uiState.errorMessage}",
-                            modifier = Modifier.padding(16.dp),
-                            style = NatureTypography.bodyMedium.copy(color = NatureColors.earthBrown)
-                        )
-                    }
+                    NatureComponents.NotificationBanner(
+                        message = uiState.errorMessage!!,
+                        emoji = "⚠️",
+                        type = NotificationType.ERROR
+                    )
                 }
                 
                 NatureComponents.NatureCard(
@@ -187,7 +183,7 @@ fun TeamCreateScreen(
                         )
                     }
                 } else {
-                    NatureComponents.NatureButton(
+                    NatureComponents.ActionButton(
                         onClick = {
                             // 유효성 검사
                             teamNameError = when {
@@ -209,9 +205,11 @@ fun TeamCreateScreen(
                                 viewModel.createTeam(classId, teamName, maxMembersInt!!)
                             }
                         },
-                        text = "🏆 팀 생성하기",
+                        text = "팀 생성하기",
+                        emoji = "🏆",
                         modifier = Modifier.fillMaxWidth(),
-                        backgroundColor = NatureColors.forestGreen,
+                        startColor = NatureColors.forestGreen,
+                        endColor = NatureColors.leafGreen,
                         enabled = true
                     )
                 }

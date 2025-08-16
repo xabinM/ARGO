@@ -206,25 +206,33 @@ fun ClassSelectionCard(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
-                        NatureComponents.StatusBadge(
-                            text = "📚 ${classInfo.grade}학년",
-                            backgroundColor = NatureColors.sunnyYellow.copy(alpha = 0.2f),
-                            textColor = NatureColors.earthBrown
-                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            NatureComponents.InfoChip(
+                                text = "${classInfo.grade}학년",
+                                emoji = "📚",
+                                backgroundColor = NatureColors.sunnyYellow.copy(alpha = 0.2f),
+                                textColor = NatureColors.earthBrown
+                            )
+                            
+                            NatureComponents.InfoChip(
+                                text = "${classInfo.studentCount}명",
+                                emoji = "👥",
+                                backgroundColor = NatureColors.leafGreen.copy(alpha = 0.2f),
+                                textColor = NatureColors.earthBrown
+                            )
+                        }
                         
-                        NatureComponents.StatusBadge(
-                            text = "📅 ${classInfo.activityDate}",
+                        NatureComponents.InfoChip(
+                            text = classInfo.activityDate.toString(),
+                            emoji = "📅",
                             backgroundColor = NatureColors.forestGreen.copy(alpha = 0.2f),
-                            textColor = NatureColors.forestGreen
-                        )
-
-                        NatureComponents.StatusBadge(
-                            text = "👥 ${classInfo.studentCount}명",
-                            backgroundColor = NatureColors.leafGreen.copy(alpha = 0.2f),
-                            textColor = NatureColors.leafGreen
+                            textColor = NatureColors.earthBrown
                         )
                     }
                 }

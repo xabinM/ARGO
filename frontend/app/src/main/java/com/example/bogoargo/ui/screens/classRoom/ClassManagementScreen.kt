@@ -24,6 +24,7 @@ import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NotificationType
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,16 +104,11 @@ fun ClassManagementScreen(
                 )
                 
                 if (uiState.errorMessage != null) {
-                    NatureComponents.NatureCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        containerColor = NatureColors.softOrange.copy(alpha = 0.3f)
-                    ) {
-                        Text(
-                            text = "⚠️ ${uiState.errorMessage}",
-                            modifier = Modifier.padding(16.dp),
-                            style = NatureTypography.bodyMedium.copy(color = NatureColors.earthBrown)
-                        )
-                    }
+                    NatureComponents.NotificationBanner(
+                        message = uiState.errorMessage!!,
+                        emoji = "⚠️",
+                        type = NotificationType.ERROR
+                    )
                 }
 
                 if (uiState.isLoading) {

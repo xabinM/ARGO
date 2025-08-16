@@ -55,6 +55,7 @@ import com.example.bogoargo.ui.theme.NatureComponents
 import com.example.bogoargo.ui.theme.NatureColors
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
+import com.example.bogoargo.ui.theme.NotificationType
 import java.time.LocalDate
 
 
@@ -100,16 +101,11 @@ fun ClassCreateScreen(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (uiState.errorMessage != null) {
-                    NatureComponents.NatureCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        containerColor = NatureColors.softOrange.copy(alpha = 0.3f)
-                    ) {
-                        Text(
-                            text = "⚠️ ${uiState.errorMessage}",
-                            modifier = Modifier.padding(16.dp),
-                            style = NatureTypography.bodyMedium.copy(color = NatureColors.earthBrown)
-                        )
-                    }
+                    NatureComponents.NotificationBanner(
+                        message = uiState.errorMessage!!,
+                        emoji = "⚠️",
+                        type = NotificationType.ERROR
+                    )
                 }
 
                 OutlinedTextField(
@@ -359,7 +355,7 @@ fun ClassCreateScreen(
                 if (uiState.isLoading) {
                     NatureComponents.NatureLoadingIndicator()
                 } else {
-                    NatureComponents.NatureButton(
+                    NatureComponents.ActionButton(
                         onClick = {
                             val maxStudentsInt = maxStudents.toIntOrNull()
                             val gradeInt = selectedGrade.replace("학년", "").toIntOrNull()
@@ -380,16 +376,16 @@ fun ClassCreateScreen(
                                 )
                             }
                         },
-                        text = "🏫 반 생성 완료",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
+                        text = "반 생성 완료",
+                        emoji = "🏫",
+                        modifier = Modifier.fillMaxWidth(),
                         enabled = className.isNotBlank() && 
                                  maxStudents.isNotBlank() &&
                                 selectedLocation.isNotBlank() &&
                                 selectedGrade.isNotBlank() &&
                                  activityDate.isNotBlank(),
-                        backgroundColor = NatureColors.leafGreen
+                        startColor = NatureColors.leafGreen,
+                        endColor = NatureColors.forestGreen
                     )
                 }
             }
