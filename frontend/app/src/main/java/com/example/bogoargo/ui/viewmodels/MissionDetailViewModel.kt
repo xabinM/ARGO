@@ -190,9 +190,11 @@ class MissionDetailViewModel @Inject constructor(
         )
     }
 
-    // TODO: 셀피 관련 메서드들 (백엔드 API 완성 후 구현)
     fun setCapturedImage(imageBase64: String) {
-        _uiState.value = _uiState.value.copy(capturedImageBase64 = imageBase64)
+        _uiState.value = _uiState.value.copy(
+            capturedImageBase64 = imageBase64,
+            selfieValidationResult = null
+        )
     }
 
     fun validateSelfie() {
