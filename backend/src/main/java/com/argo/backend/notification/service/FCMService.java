@@ -58,6 +58,9 @@ public class FCMService {
                             .setTitle(title)
                             .setBody(body)
                             .build())
+                    .setAndroidConfig(AndroidConfig.builder()
+                            .setPriority(AndroidConfig.Priority.HIGH) // 우선 순위를 HIGH로 설정
+                            .build())
                     .putAllData(data) // 앱에서 처리할 부분
                     .build();
 
