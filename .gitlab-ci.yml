@@ -161,9 +161,9 @@ deploy_ai_job:
       ssh -T "$SERVER_USER@$SERVER_HOST" bash -s << ENDSSH
         set -e
         cd /home/$SERVER_USER
-        rm -rf ai-service-backup
+        sudo rm -rf ai-service-backup
         if [ -d ai-service ]; then
-          mv ai-service ai-service-backup
+          sudo mv ai-service ai-service-backup
         fi
         tar -xzf ai-service.tar.gz
         mv ai ai-service
@@ -176,25 +176,25 @@ deploy_ai_job:
         DEBUG=false
       ENVFILE
         sudo ufw allow 8000 || true
-        docker compose down || true
-        docker compose up -d --build
+        sudo docker compose down || true
+        sudo docker compose up -d --build
         sleep 30
-        docker compose ps
+        sudo docker compose ps
         if curl -f http://localhost:8000/health; then
           echo "AI service deployed successfully"
-          rm -rf ../ai-service-backup
+          sudo rm -rf ../ai-service-backup
         else
           echo "Health check failed, rolling back..."
           docker compose down
           if [ -d ../ai-service-backup ]; then
-            rm -rf ../ai-service
-            mv ../ai-service-backup ../ai-service
+            sudo rm -rf ../ai-service
+            sudo mv ../ai-service-backup ../ai-service
             cd ../ai-service
-            docker compose up -d
+            sudo docker compose up -d
           fi
           exit 1
         fi
-        rm -f ../ai-service.tar.gz
+        sudo rm -f ../ai-service.tar.gz
       ENDSSH
   only:
     - master
