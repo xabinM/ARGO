@@ -13,6 +13,7 @@ import javax.inject.Inject
 
 data class MissionDetailUiState(
     val isLoading: Boolean = false,
+    val teamId: Long? = null,
     val missionCreateResult: MissionCreateResult? = null,
     val problemDetail: ProblemDetail? = null,
     val selectedAnswer: Int? = null,
@@ -48,7 +49,7 @@ class MissionDetailViewModel @Inject constructor(
 
     fun createMission(teamId: Long, spotId: Long) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, teamId = teamId)
             
             when (val result = createMissionUseCase(teamId, spotId)) {
                 is DataResult.Success -> {
@@ -195,13 +196,14 @@ class MissionDetailViewModel @Inject constructor(
     }
 
     fun validateSelfie() {
+        val teamId = _uiState.value.teamId ?: return
         val imageBase64 = _uiState.value.capturedImageBase64 ?: return
         val problemDetail = _uiState.value.problemDetail as? SelfieProblem ?: return
         
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSelfieValidating = true)
             
-            when (val result = validateSelfieUseCase(imageBase64, problemDetail.pose)) {
+            when (val result = validateSelfieUseCase(teamId, imageBase64, problemDetail.pose)) {
                 is DataResult.Success -> {
                     _uiState.value = _uiState.value.copy(
                         isSelfieValidating = false,

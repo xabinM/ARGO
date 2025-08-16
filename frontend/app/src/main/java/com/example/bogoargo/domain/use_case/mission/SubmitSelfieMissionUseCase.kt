@@ -17,7 +17,7 @@ class SubmitSelfieMissionUseCase @Inject constructor(
 class ValidateSelfieUseCase @Inject constructor(
     private val missionRepository: IMissionRepository
 ) {
-    suspend operator fun invoke(imageBase64: String, pose: String): DataResult<Boolean> {
-        return missionRepository.validateSelfie(imageBase64, pose)
+    suspend operator fun invoke(teamId: Long, imageBase64: String, pose: String): DataResult<Boolean> {
+        return missionRepository.validateSelfie(teamId, imageBase64, pose)
     }
 }

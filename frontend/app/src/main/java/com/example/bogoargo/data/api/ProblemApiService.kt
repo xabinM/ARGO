@@ -48,8 +48,9 @@ interface ProblemApiService {
 
     // 셀피 포즈 검증 요청 (학생 기능)
     @Multipart
-    @POST("api/problem/selfie/determine")
+    @POST("api/problem/selfie/determine/team/{teamId}")
     suspend fun determineSelfiePose(
+        @Path("teamId") teamId: Long,
         @Part image: MultipartBody.Part,
         @Part("pose") pose: RequestBody
     ): Response<SelfieResultResponseDto>

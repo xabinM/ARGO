@@ -188,7 +188,7 @@ class MissionRepositoryImpl @Inject constructor(
     }
 
     // 셀피 검증
-    override suspend fun validateSelfie(imageBase64: String, pose: String): DataResult<Boolean> {
+    override suspend fun validateSelfie(teamId: Long, imageBase64: String, pose: String): DataResult<Boolean> {
         return withContext(Dispatchers.IO) {
             try {
                 // Base64 문자열을 바이트 배열로 변환
@@ -202,7 +202,7 @@ class MissionRepositoryImpl @Inject constructor(
                 val posePart = pose.toRequestBody("text/plain".toMediaType())
                 
                 // API 호출
-                val response = problemApiService.determineSelfiePose(imagePart, posePart)
+                val response = problemApiService.determineSelfiePose(teamId, imagePart, posePart)
                 
                 if (response.isSuccessful) {
                     val body = response.body()
