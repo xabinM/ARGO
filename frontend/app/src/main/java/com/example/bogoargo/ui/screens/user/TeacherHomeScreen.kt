@@ -4,8 +4,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -28,26 +26,14 @@ import com.example.bogoargo.ui.theme.NatureElevation
 import com.example.bogoargo.ui.theme.NatureShapes
 import com.example.bogoargo.ui.theme.NatureTypography
 import com.example.bogoargo.ui.viewmodels.user.TeacherHomeViewModel
-import com.example.bogoargo.ui.viewmodels.user.LogoutViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TeacherHomeScreen(
     navController: NavController,
-    viewModel: TeacherHomeViewModel = hiltViewModel(),
-    logoutViewModel: LogoutViewModel = hiltViewModel()
+    viewModel: TeacherHomeViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val logoutUiState by logoutViewModel.uiState.collectAsState()
-    
-    // 로그아웃 성공 시 로그인 화면으로 이동
-    LaunchedEffect(logoutUiState.isLoggedOut) {
-        if (logoutUiState.isLoggedOut) {
-            navController.navigate("login") {
-                popUpTo("teacherHome") { inclusive = true }
-            }
-        }
-    }
     
     Scaffold(
         topBar = {
@@ -57,17 +43,6 @@ fun TeacherHomeScreen(
                         "🌳 선생님 홈",
                         style = NatureTypography.titleLarge
                     )
-                },
-                actions = {
-                    IconButton(
-                        onClick = { logoutViewModel.logout() }
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.ExitToApp,
-                            contentDescription = "로그아웃",
-                            tint = NatureColors.earthBrown
-                        )
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = NatureColors.warmBeige

@@ -27,7 +27,7 @@ interface TeamApiService {
     ): Response<TeamAssignResponse>
 
     // 팀 랜덤 배정 (교사 기능)
-    @POST("api/teacher/classes/{classId}/teams/random-assign")
+    @POST("api/teacher/classes/{classId}/teams/assign")
     suspend fun assignTeamRandom(
         @Path("classId") classId: Long,
     ): Response<TeamAssignResponse>

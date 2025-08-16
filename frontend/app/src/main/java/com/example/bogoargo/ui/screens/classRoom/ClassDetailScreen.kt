@@ -135,7 +135,7 @@ fun ClassDetailScreen(
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
                                         Text(
-                                            text = "${classDetail.studentCount}/${classDetail.maxStudents}명",
+                                            text = "${students.size}/${classDetail.maxStudents}명",
                                             style = NatureTypography.bodyMedium
                                         )
                                     }
@@ -305,38 +305,155 @@ fun ClassDetailScreen(
                     }
                 }
 
-                // 팀 정보 섹션
-                item {
-                    NatureComponents.NatureCard(
-                        modifier = Modifier.fillMaxWidth(),
-                        containerColor = NatureColors.leafGreen.copy(alpha = 0.1f)
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                // 팀 리스트 섹션
+                if (teams.isNotEmpty()) {
+                    item {
+                        NatureComponents.NatureCard {
+                            Column(
+                                modifier = Modifier.padding(20.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "🏆 팀 목록",
+                                        style = NatureTypography.titleMedium.copy(
+                                            color = NatureColors.forestGreen
+                                        )
+                                    )
+                                    NatureComponents.InfoChip(
+                                        text = "${teams.size}개 팀",
+                                        emoji = "👥",
+                                        backgroundColor = NatureColors.sunnyYellow.copy(alpha = 0.2f),
+                                        textColor = NatureColors.earthBrown
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    teams.forEach { team ->
+                                        NatureComponents.NatureCard(
+                                            containerColor = NatureColors.earthBrown.copy(alpha = 0.05f),
+                                            shape = NatureShapes.medium
+                                        ) {
+                                            Column(
+                                                modifier = Modifier.padding(16.dp)
+                                            ) {
+                                                Row(
+                                                    modifier = Modifier.fillMaxWidth(),
+                                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Text(
+                                                        text = team.teamName,
+                                                        style = NatureTypography.bodyLarge.copy(
+                                                            color = NatureColors.earthBrown
+                                                        )
+                                                    )
+                                                    Row(
+                                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                                    ) {
+                                                        NatureComponents.InfoChip(
+                                                            text = "${team.memberCount}명",
+                                                            emoji = "👥",
+                                                            backgroundColor = NatureColors.leafGreen.copy(alpha = 0.2f),
+                                                            textColor = NatureColors.earthBrown
+                                                        )
+                                                        NatureComponents.InfoChip(
+                                                            text = "${team.totalScore}점",
+                                                            emoji = "🏆",
+                                                            backgroundColor = NatureColors.sunnyYellow.copy(alpha = 0.2f),
+                                                            textColor = NatureColors.earthBrown
+                                                        )
+                                                    }
+                                                }
+                                                if (team.members.isNotEmpty()) {
+                                                    Spacer(modifier = Modifier.height(8.dp))
+                                                    Text(
+                                                        text = team.members.joinToString(", ") { it.studentName },
+                                                        style = NatureTypography.bodySmall.copy(
+                                                            color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                                                        )
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+//                                Button(
+//                                    onClick = {
+//                                        navController.navigate(Screen.TeamManagement.createRoute(classId))
+//                                    },
+//                                    colors = ButtonDefaults.buttonColors(
+//                                        containerColor = NatureColors.forestGreen
+//                                    ),
+//                                    shape = NatureShapes.button,
+//                                    modifier = Modifier.fillMaxWidth()
+//                                ) {
+//                                    Text(
+//                                        text = "🏆 팀 관리하기",
+//                                        style = NatureTypography.labelLarge.copy(color = Color.White)
+//                                    )
+//                                }
+                            }
+                        }
+                    }
+                } else if (statistics != null && statistics!!.totalTeams == 0) {
+                    item {
+                        NatureComponents.NatureCard(
+                            containerColor = NatureColors.earthBrown.copy(alpha = 0.1f)
                         ) {
-                            Text(
-                                text = "🏆 팀 정보",
-                                style = NatureTypography.titleMedium.copy(
-                                    color = NatureColors.forestGreen
-                                )
-                            )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            
-                            if (statistics != null) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
                                 Text(
-                                    text = "총 ${statistics!!.totalTeams}개의 팀이 있습니다",
-                                    style = NatureTypography.bodyMedium.copy(
+                                    text = "👥",
+                                    fontSize = 32.sp
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "아직 팀이 없습니다",
+                                    style = NatureTypography.titleMedium.copy(
                                         color = NatureColors.earthBrown
-                                    )
+                                    ),
+                                    textAlign = TextAlign.Center
                                 )
-                            } else {
+                                Spacer(modifier = Modifier.height(4.dp))
                                 Text(
-                                    text = "팀 정보를 불러오는 중...",
+                                    text = "팀 관리에서 새로운 팀을 만들어보세요!",
                                     style = NatureTypography.bodyMedium.copy(
-                                        color = NatureColors.earthBrown.copy(alpha = 0.6f)
-                                    )
+                                        color = NatureColors.earthBrown.copy(alpha = 0.7f)
+                                    ),
+                                    textAlign = TextAlign.Center
                                 )
+                                
+                                Spacer(modifier = Modifier.height(16.dp))
+                                
+                                Button(
+                                    onClick = {
+                                        navController.navigate(Screen.TeamManagement.createRoute(classId))
+                                    },
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = NatureColors.leafGreen
+                                    ),
+                                    shape = NatureShapes.button
+                                ) {
+                                    Text(
+                                        text = "🏆 팀 관리하기",
+                                        style = NatureTypography.labelLarge.copy(color = Color.White)
+                                    )
+                                }
                             }
                         }
                     }
