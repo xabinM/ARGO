@@ -26,6 +26,7 @@ fun SelectHomeScreen(
     modifier: Modifier = Modifier
 ) {
     var currentUser by remember { mutableStateOf(null as com.example.bogoargo.domain.model.User?) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
     
     // ViewModels
     val loginUseCase = hiltViewModel<com.example.bogoargo.ui.viewmodels.user.LoginViewModel>()
@@ -188,11 +189,63 @@ fun SelectHomeScreen(
                                 backgroundColor = NatureColors.leafGreen.copy(alpha = 0.8f)
                             )
 
+                            // 로그아웃 버튼
+                            NatureComponents.NatureButton(
+                                onClick = { 
+                                    showLogoutDialog = true
+                                },
+                                text = "🚪 로그아웃",
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .height(56.dp),
+                                backgroundColor = NatureColors.softOrange.copy(alpha = 0.8f)
+                            )
                         }
                     }
                 }
             }
         }
+    }
+    
+    // 로그아웃 확인 Dialog
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = {
+                Text(
+                    text = "🚪 로그아웃",
+                    style = NatureTypography.titleMedium
+                )
+            },
+            text = {
+                Text(
+                    text = "정말 로그아웃하시겠습니까?\n다시 로그인해야 앱을 사용할 수 있습니다.",
+                    style = NatureTypography.bodyMedium
+                )
+            },
+            confirmButton = {
+                NatureComponents.NatureButton(
+                    onClick = {
+                        showLogoutDialog = false
+                        viewModel.logout()
+                    },
+                    text = "로그아웃",
+                    backgroundColor = NatureColors.softOrange
+                )
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showLogoutDialog = false },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = NatureColors.earthBrown
+                    )
+                ) {
+                    Text("취소")
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = NatureShapes.medium
+        )
     }
 }
 
