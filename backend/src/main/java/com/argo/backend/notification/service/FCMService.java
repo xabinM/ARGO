@@ -21,7 +21,7 @@ public class FCMService {
         data.put("command", "challenge_received");
         data.put("challenge_team", challengerTeamName);
         
-        sendFcmMessage(targetFcmToken, "대결 요청", challengerTeamName + " 팀에서 대결을 신청했습니다.", data);
+        sendFcmMessage(targetFcmToken, "대전 요청", challengerTeamName + " 팀에서 대전을 신청했습니다.", data);
     }
 
     public void sendChallengeAcceptedNotification(String targetFcmToken, String accepterTeamName) {
@@ -34,7 +34,7 @@ public class FCMService {
         data.put("command", "challenge_accepted");
         data.put("challenge_team", accepterTeamName);
         
-        sendFcmMessage(targetFcmToken, "대결 수락", accepterTeamName + " 팀이 대결을 수락했습니다.", data);
+        sendFcmMessage(targetFcmToken, "대전 수락", accepterTeamName + " 팀이 대전을 수락했습니다.", data);
     }
 
     public void sendChallengeCancelledNotification(String targetFcmToken, String cancellerTeamName) {
@@ -47,7 +47,7 @@ public class FCMService {
         data.put("command", "challenge_cancelled");
         data.put("challenge_team", cancellerTeamName);
         
-        sendFcmMessage(targetFcmToken, "대결 거절", cancellerTeamName + " 팀이 대결을 거절했습니다.", data);
+        sendFcmMessage(targetFcmToken, "대전 거절", cancellerTeamName + " 팀이 대전을 거절했습니다.", data);
     }
 
     private void sendFcmMessage(String token, String title, String body, Map<String, String> data) {

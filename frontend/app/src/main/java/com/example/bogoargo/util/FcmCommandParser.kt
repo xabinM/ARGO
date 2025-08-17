@@ -6,9 +6,9 @@ object FcmKeys {
 }
 
 sealed class FcmCommand(val message: String, val teamName: String?) {
-    class ChallengeReceived(team: String)  : FcmCommand("대결 요청 받았습니다", team)
-    class ChallengeAccepted(team: String)  : FcmCommand("대결 수락 되었습니다", team)
-    class ChallengeCancelled(team: String) : FcmCommand("대결 취소 되었습니다", team)
+    class ChallengeReceived(team: String)  : FcmCommand("대전 요청 받았습니다", team)
+    class ChallengeAccepted(team: String)  : FcmCommand("대전 수락 되었습니다", team)
+    class ChallengeCancelled(team: String) : FcmCommand("대전 취소 되었습니다", team)
     object Unknown                         : FcmCommand("알 수 없는 명령", null)
 }
 
