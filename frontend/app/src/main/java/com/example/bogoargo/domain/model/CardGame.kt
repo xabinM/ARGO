@@ -81,11 +81,11 @@ data class GameCard(
 
         private fun getCardInfo(cardId: Long): CardInfo {
             return when (cardId) {
-                1L -> CardInfo("불사조", 45, 35, "재생의 힘을 가진 전설적인 새")
-                2L -> CardInfo("그림자 늑대", 40, 30, "어둠 속에서 빠르게 움직이는 늑대")
-                3L -> CardInfo("치유의 요정", 25, 50, "아군을 치유하는 신비한 요정")
-                4L -> CardInfo("바위 골렘", 35, 55, "견고한 방어력을 자랑하는 골렘")
-                5L -> CardInfo("번개 마법사", 50, 25, "강력한 번개 마법을 구사하는 마법사")
+                1L -> CardInfo("SSAFY 특급카드", 120, 120, "SSAFY의 특별한 힘이 담긴 카드")
+                2L -> CardInfo("김성준 컨설턴트님", 100, 100, "3반을 이끄는 컨설턴트")
+                3L -> CardInfo("배지해 실습코치님", 85, 50, "발표의 귀재")
+                4L -> CardInfo("이재홍 실습코치님", 60, 75, "모든 건 수치로 말한다")
+                5L -> CardInfo("신지훈 프로님", 90, 90, "출석과 설문의 수호자")
                 6L -> CardInfo("숲의 수호자", 40, 40, "자연의 힘을 다루는 수호자")
                 7L -> CardInfo("얼음 용", 55, 45, "차가운 얼음 브레스를 내뿜는 용")
                 8L -> CardInfo("기사", 45, 40, "정의로운 검술을 구사하는 기사")

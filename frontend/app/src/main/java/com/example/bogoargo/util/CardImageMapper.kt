@@ -11,7 +11,7 @@ object CardImageMapper {
         2L to R.drawable.monster_2, // 그림자 늑대
         3L to R.drawable.monster_3, // 치유의 요정
         4L to R.drawable.monster_4, // 바위 골렘
-        5L to R.drawable.monster_1, // 번개 마법사
+        5L to R.drawable.monster_5, // 번개 마법사
         6L to R.drawable.monster_2, // 숲의 수호자
         7L to R.drawable.monster_3, // 얼음 용
         8L to R.drawable.monster_4  // 기사
