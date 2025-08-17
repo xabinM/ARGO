@@ -194,6 +194,7 @@ fun CardGameScreen(
                 if (!uiState.isLoading && battleHistory.isEmpty() && uiState.errorMessage == null) {
                     item {
                         EmptyBattleStateCard(
+                            isTeamLeader = isTeamLeader,
                             onRequestBattle = {
                                 navController.navigate(Screen.BattleRequest.createRoute(teamId, leaderId, classId))
                             }
@@ -243,6 +244,7 @@ fun CardGameScreen(
                 items(battleHistory) { battle ->
                     BattleHistoryItem(
                         battle = battle,
+                        isTeamLeader = isTeamLeader,
                         isViewResultLoading = uiState.isViewResultLoading,
                         onCancelRequest = { matchId ->
                             selectedMatchId = matchId
@@ -610,6 +612,37 @@ private fun BattleRuleCard(
 }
 
 @Composable
+fun CardGameTeamLeaderOnlyDialog(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "🚫 팀장 전용 기능",
+                style = NatureTypography.titleMedium,
+                color = NatureColors.forestGreen
+            )
+        },
+        text = {
+            Text(
+                text = "카드 대전은 팀장만 진행할 수 있습니다.\n팀장과 함께 참여해 주세요.",
+                style = NatureTypography.bodyMedium,
+                color = NatureColors.earthBrown
+            )
+        },
+        confirmButton = {
+            NatureComponents.NatureButton(
+                onClick = onDismiss,
+                text = "확인",
+                backgroundColor = NatureColors.forestGreen
+            )
+        },
+        containerColor = NatureColors.whiteTransparent90
+    )
+}
+
+@Composable
 fun TeamStatsCard(teamStats: TeamCardStats) {
     NatureComponents.NatureCard(
         modifier = Modifier.fillMaxWidth(),
@@ -836,6 +869,7 @@ fun ConfirmRejectDialog(
 @Composable
 fun BattleHistoryItem(
     battle: BattleHistory,
+    isTeamLeader: Boolean,
     isViewResultLoading: Boolean,
     onCancelRequest: (Long) -> Unit,
     onRejectBattle: (Long) -> Unit,
@@ -843,6 +877,7 @@ fun BattleHistoryItem(
     onViewResult: (Long) -> Unit,
     onViewDetail: (BattleHistory) -> Unit
 ) {
+    var showTeamLeaderOnlyDialog by remember { mutableStateOf(false) }
     val backgroundColor = when (battle.status) {
         BattleStatus.COMPLETED -> {
             if (battle.hasViewedResult) {
@@ -931,9 +966,16 @@ fun BattleHistoryItem(
                 // 1. PENDING 상태 - 내가 신청한 경우: 취소 버튼
                 battle.canCancel -> {
                     NatureComponents.NatureButton(
-                        onClick = { onCancelRequest(battle.matchId) },
+                        onClick = { 
+                            if (isTeamLeader) {
+                                onCancelRequest(battle.matchId)
+                            } else {
+                                showTeamLeaderOnlyDialog = true
+                            }
+                        },
                         modifier = Modifier.fillMaxWidth(),
-                        backgroundColor = Color(0xFFF44336),
+                        enabled = isTeamLeader,
+                        backgroundColor = if (isTeamLeader) Color(0xFFF44336) else Color.Gray,
                         contentColor = Color.White
                     ) {
                         Icon(
@@ -942,7 +984,7 @@ fun BattleHistoryItem(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("신청 취소")
+                        Text(if (isTeamLeader) "신청 취소" else "팀장 전용")
                     }
                 }
                 
@@ -954,9 +996,16 @@ fun BattleHistoryItem(
                     ) {
                         // 왼쪽: 카드 선택 버튼 (긍정적 행동)
                         NatureComponents.NatureButton(
-                            onClick = { onAcceptBattle(battle.matchId) },
+                            onClick = { 
+                                if (isTeamLeader) {
+                                    onAcceptBattle(battle.matchId)
+                                } else {
+                                    showTeamLeaderOnlyDialog = true
+                                }
+                            },
                             modifier = Modifier.weight(1f),
-                            backgroundColor = NatureColors.leafGreen,
+                            enabled = isTeamLeader,
+                            backgroundColor = if (isTeamLeader) NatureColors.leafGreen else Color.Gray,
                             contentColor = Color.White
                         ) {
                             Icon(
@@ -965,14 +1014,21 @@ fun BattleHistoryItem(
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("카드 선택")
+                            Text(if (isTeamLeader) "카드 선택" else "팀장 전용")
                         }
                         
                         // 오른쪽: 대전 거절 버튼 (부정적 행동)
                         NatureComponents.NatureButton(
-                            onClick = { onRejectBattle(battle.matchId) },
+                            onClick = { 
+                                if (isTeamLeader) {
+                                    onRejectBattle(battle.matchId)
+                                } else {
+                                    showTeamLeaderOnlyDialog = true
+                                }
+                            },
                             modifier = Modifier.weight(1f),
-                            backgroundColor = Color(0xFFF44336),
+                            enabled = isTeamLeader,
+                            backgroundColor = if (isTeamLeader) Color(0xFFF44336) else Color.Gray,
                             contentColor = Color.White
                         ) {
                             Icon(
@@ -981,7 +1037,7 @@ fun BattleHistoryItem(
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("대전 거절")
+                            Text(if (isTeamLeader) "대전 거절" else "팀장 전용")
                         }
                     }
                 }
@@ -990,14 +1046,24 @@ fun BattleHistoryItem(
                 battle.canViewResult -> {
                     NatureComponents.NatureButton(
                         onClick = { 
-                            if (!isViewResultLoading) {
+                            if (isTeamLeader && !isViewResultLoading) {
                                 onViewResult(battle.matchId)
+                            } else if (!isTeamLeader) {
+                                showTeamLeaderOnlyDialog = true
                             }
                         },
                         modifier = Modifier.fillMaxWidth(),
-                        backgroundColor = if (isViewResultLoading) Color.Gray else NatureColors.sunnyYellow,
-                        contentColor = if (isViewResultLoading) Color.White else NatureColors.earthBrown,
-                        enabled = !isViewResultLoading
+                        backgroundColor = when {
+                            isViewResultLoading -> Color.Gray
+                            isTeamLeader -> NatureColors.sunnyYellow
+                            else -> Color.Gray
+                        },
+                        contentColor = when {
+                            isViewResultLoading -> Color.White
+                            isTeamLeader -> NatureColors.earthBrown
+                            else -> Color.White
+                        },
+                        enabled = isTeamLeader && !isViewResultLoading
                     ) {
                         if (isViewResultLoading) {
                             CircularProgressIndicator(
@@ -1014,7 +1080,7 @@ fun BattleHistoryItem(
                                 modifier = Modifier.size(16.dp)
                             )
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("결과 보기")
+                            Text(if (isTeamLeader) "결과 보기" else "팀장만 확인 가능")
                         }
                     }
                 }
@@ -1091,12 +1157,21 @@ fun BattleHistoryItem(
             }
         }
     }
+    
+    // 팀장 전용 기능 다이얼로그
+    if (showTeamLeaderOnlyDialog) {
+        CardGameTeamLeaderOnlyDialog(
+            onDismiss = { showTeamLeaderOnlyDialog = false }
+        )
+    }
 }
 
 @Composable
 fun EmptyBattleStateCard(
+    isTeamLeader: Boolean,
     onRequestBattle: () -> Unit
 ) {
+    var showTeamLeaderOnlyDialog by remember { mutableStateOf(false) }
     NatureComponents.NatureCard(
         modifier = Modifier.fillMaxWidth(),
         shape = NatureShapes.medium,
@@ -1128,20 +1203,34 @@ fun EmptyBattleStateCard(
             )
             
             NatureComponents.NatureButton(
-                onClick = onRequestBattle,
+                onClick = { 
+                    if (isTeamLeader) {
+                        onRequestBattle()
+                    } else {
+                        showTeamLeaderOnlyDialog = true
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
-                backgroundColor = NatureColors.leafGreen,
+                enabled = isTeamLeader,
+                backgroundColor = if (isTeamLeader) NatureColors.leafGreen else Color.Gray,
                 contentColor = Color.White
             ) {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("대전 신청하기")
+                    Text(if (isTeamLeader) "대전 신청하기" else "팀장만 대전 가능")
                     Text("⚔️")
                 }
             }
         }
+    }
+    
+    // 팀장 전용 기능 다이얼로그
+    if (showTeamLeaderOnlyDialog) {
+        CardGameTeamLeaderOnlyDialog(
+            onDismiss = { showTeamLeaderOnlyDialog = false }
+        )
     }
 }
 
@@ -1311,4 +1400,5 @@ fun TeamStatsErrorCard(
         }
     }
 }
+
 

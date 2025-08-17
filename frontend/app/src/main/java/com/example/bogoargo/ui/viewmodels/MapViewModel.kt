@@ -20,7 +20,8 @@ import javax.inject.Inject
 @HiltViewModel
 class MapViewModel @Inject constructor(
     private val missionRepository: MissionRepositoryImpl,
-    private val checkMissionPossibilityUseCase: CheckMissionPossibilityUseCase
+    private val checkMissionPossibilityUseCase: CheckMissionPossibilityUseCase,
+    private val secureStorage: com.example.bogoargo.data.storage.SecureStorage
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MapUiState())
@@ -50,6 +51,12 @@ class MapViewModel @Inject constructor(
                     )
                 }
         }
+    }
+    
+    fun checkIfUserIsTeamLeader(leaderId: Long) {
+        val currentUser = secureStorage.getUser()
+        val isLeader = currentUser?.userId == leaderId
+        _uiState.value = _uiState.value.copy(isTeamLeader = isLeader)
     }
 
     fun updateUserLocation(location: Location) {
@@ -155,5 +162,6 @@ data class MapUiState(
     val userLocation: Location? = null,
     val isLoading: Boolean = false,
     val isCheckingMissionPossibility: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val isTeamLeader: Boolean = false
 )

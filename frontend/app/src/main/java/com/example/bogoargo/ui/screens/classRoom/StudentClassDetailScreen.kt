@@ -309,9 +309,10 @@ fun StudentClassDetailScreen(
                                                 Spacer(modifier = Modifier.height(8.dp))
                                                 Button(
                                                     onClick = { 
-                                                        // classId와 teamId를 파라미터로 전달
-                                                        val teamId = uiState.myTeam?.teamId ?: 0L
-                                                        navController.navigate("game?classId=$classId&teamId=$teamId") 
+                                                        // classId와 teamId, leaderId를 파라미터로 전달
+                                                        val teamId = uiState.myTeam!!.teamId
+                                                        val leaderId = uiState.myTeam!!.leaderId
+                                                        navController.navigate(Screen.Game.createRoute(classId, teamId, leaderId)) 
                                                     },
                                                     colors = ButtonDefaults.buttonColors(
                                                         containerColor = NatureColors.leafGreen

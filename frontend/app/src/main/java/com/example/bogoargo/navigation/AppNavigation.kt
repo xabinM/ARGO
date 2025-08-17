@@ -42,9 +42,9 @@ sealed class Screen(val route: String) {
     data object SignUp : Screen("signUp")
     data object SelectHome : Screen("selectHome")
     data object StudentHome : Screen("studentHome")
-    data object Game : Screen("game?classId={classId}&teamId={teamId}") {
-        fun createRoute(classId: Long = 1L, teamId: Long = 0L) =
-            "game?classId=$classId&teamId=$teamId"
+    data object Game : Screen("game?classId={classId}&teamId={teamId}&leaderId={leaderId}") {
+        fun createRoute(classId: Long = 1L, teamId: Long = 0L, leaderId: Long = 0L) =
+            "game?classId=$classId&teamId=$teamId&leaderId=$leaderId"
     }
     data object Profile : Screen("profile")
     data object Settings : Screen("settings")
@@ -161,15 +161,21 @@ fun AppNavigation(
                 navArgument("teamId") {
                     type = NavType.LongType
                     defaultValue = 0L
+                },
+                navArgument("leaderId") {
+                    type = NavType.LongType
+                    defaultValue = 0L
                 }
             )
         ) { backStackEntry ->
             val classId = backStackEntry.arguments?.getLong("classId") ?: 1L
             val teamId = backStackEntry.arguments?.getLong("teamId") ?: 0L
+            val leaderId = backStackEntry.arguments?.getLong("leaderId") ?: 0L
             GameScreen(
                 navController = navController,
                 classId = classId,
-                teamId = teamId
+                teamId = teamId,
+                leaderId = leaderId
             )
         }
         composable(Screen.Profile.route) {

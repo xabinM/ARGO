@@ -12,6 +12,7 @@ sealed class DataException(override val message: String) : Exception(message) {
     data object AuthenticationError : DataException("인증에 실패했습니다")
     data object UnauthorizedError : DataException("권한이 없습니다")
     data object NotFoundError : DataException("요청한 데이터를 찾을 수 없습니다")
+    data object InvalidCredentialsError : DataException("아이디 또는 비밀번호가 일치하지 않습니다")
     data class ValidationError(val field: String) : DataException("$field 검증에 실패했습니다")
     data class UnknownError(val originalMessage: String) : DataException("알 수 없는 오류: $originalMessage")
 }

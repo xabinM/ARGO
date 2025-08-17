@@ -1,5 +1,9 @@
 package com.example.bogoargo.ui.screens.user
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -17,6 +21,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
@@ -38,8 +43,38 @@ fun LoginScreen(
     viewModel: LoginViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     var passwordVisible by remember { mutableStateOf(false) }
+    var showLocationPermissionDialog by remember { mutableStateOf(false) }
+    
+    // 위치 권한 요청 launcher
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+        val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
+        
+        if (fineLocationGranted || coarseLocationGranted) {
+            // 권한이 승인되면 다이얼로그 닫기
+            showLocationPermissionDialog = false
+        }
+    }
+    
+    // 화면 진입 시 위치 권한 체크
+    LaunchedEffect(Unit) {
+        val hasLocationPermission = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED || ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        
+        if (!hasLocationPermission) {
+            showLocationPermissionDialog = true
+        }
+    }
     
     // NavigationEvent 처리
     LaunchedEffect(Unit) {
@@ -203,7 +238,69 @@ fun LoginScreen(
             // 하단 여백
             Spacer(modifier = Modifier.height(40.dp))
         }
+        
+        // 위치 권한 요청 다이얼로그
+        if (showLocationPermissionDialog) {
+            LocationPermissionDialog(
+                onRequestPermission = {
+                    locationPermissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        )
+                    )
+                },
+                onDismiss = { showLocationPermissionDialog = false }
+            )
+        }
     }
+}
+
+@Composable
+fun LocationPermissionDialog(
+    onRequestPermission: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "📍 위치 권한 필요",
+                style = NatureTypography.titleMedium,
+                color = NatureColors.forestGreen
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "위치 기반 학습 게임을 위해 위치 권한이 필요합니다.",
+                    style = NatureTypography.bodyMedium,
+                    color = NatureColors.earthBrown
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "• 미션 지점 찾기\n• 팀원 위치 공유\n• 학습 진도 추적",
+                    style = NatureTypography.bodySmall,
+                    color = NatureColors.earthBrown.copy(alpha = 0.8f)
+                )
+            }
+        },
+        confirmButton = {
+            NatureComponents.NatureButton(
+                onClick = onRequestPermission,
+                text = "권한 허용",
+                backgroundColor = NatureColors.forestGreen
+            )
+        },
+        dismissButton = {
+            NatureComponents.NatureButton(
+                onClick = onDismiss,
+                text = "나중에",
+                backgroundColor = NatureColors.earthBrown.copy(alpha = 0.3f)
+            )
+        },
+        containerColor = NatureColors.whiteTransparent90
+    )
 }
 
 @Preview(showBackground = true)

@@ -81,16 +81,20 @@ class UserRepositoryImpl @Inject constructor(
                     DataResult.Error(DataException.AuthenticationError)
                 }
             } else {
-                DataResult.Error(DataException.ServerError)
+                DataResult.Error(
+                    when (response.code()) {
+                        404, 401 -> DataException.InvalidCredentialsError
+                        else -> DataException.ServerError
+                    }
+                )
             }
         } catch (e: IOException) {
             DataResult.Error(DataException.NetworkError)
         } catch (e: HttpException) {
             DataResult.Error(
                 when (e.code()) {
-                    401 -> DataException.AuthenticationError
+                    404, 401 -> DataException.InvalidCredentialsError
                     403 -> DataException.UnauthorizedError
-                    404 -> DataException.NotFoundError
                     else -> DataException.ServerError
                 }
             )

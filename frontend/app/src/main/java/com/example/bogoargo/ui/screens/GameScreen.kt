@@ -39,6 +39,7 @@ fun GameScreen(
     navController: NavHostController,
     classId: Long, // 기본 클래스 ID
     teamId: Long, // 팀 ID 추가
+    leaderId: Long, // 팀장 ID 추가
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -50,21 +51,6 @@ fun GameScreen(
     // 위치 추적을 위한 상태 관리
     var locationCallback by remember { mutableStateOf<LocationCallback?>(null) }
     var fusedLocationClient by remember { mutableStateOf<FusedLocationProviderClient?>(null) }
-    
-    // 위치 권한 요청
-    val locationPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-        val coarseLocationGranted = permissions[Manifest.permission.ACCESS_COARSE_LOCATION] ?: false
-        
-        if (fineLocationGranted || coarseLocationGranted) {
-            // 위치 권한이 승인되면 연속 위치 추적 시작
-            val (client, callback) = startContinuousLocationTracking(context, viewModel)
-            fusedLocationClient = client
-            locationCallback = callback
-        }
-    }
     
     // 기본 위치 (서울시청)
     val defaultLocation = LatLng(37.5665, 126.9780)
@@ -78,11 +64,13 @@ fun GameScreen(
     var showMissionBlockedDialog by remember { mutableStateOf(false) }
     var blockedMissionMessage by remember { mutableStateOf("") }
     var checkingMissionId by remember { mutableStateOf<Long?>(null) }
+    var showTeamLeaderOnlyDialog by remember { mutableStateOf(false) }
     
     // 권한 확인 및 위치 추적 시작
     LaunchedEffect(isGameStarted) {
         if (isGameStarted) {
             viewModel.loadMissionSpots(classId)
+            viewModel.checkIfUserIsTeamLeader(leaderId)
             
             val hasLocationPermission = ContextCompat.checkSelfPermission(
                 context,
@@ -93,13 +81,6 @@ fun GameScreen(
                 val (client, callback) = startContinuousLocationTracking(context, viewModel)
                 fusedLocationClient = client
                 locationCallback = callback
-            } else {
-                locationPermissionLauncher.launch(
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    )
-                )
             }
         }
     }
@@ -224,7 +205,11 @@ fun GameScreen(
                         // 근처 미션 선택 버튼
                         NatureComponents.NatureButton(
                             onClick = { 
-                                showMissionList = true
+                                if (uiState.isTeamLeader) {
+                                    showMissionList = true
+                                } else {
+                                    showTeamLeaderOnlyDialog = true
+                                }
                             },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -308,6 +293,13 @@ fun GameScreen(
                 MissionBlockedDialog(
                     message = blockedMissionMessage,
                     onDismiss = { showMissionBlockedDialog = false }
+                )
+            }
+
+            // 팀장 전용 기능 다이얼로그
+            if (showTeamLeaderOnlyDialog) {
+                TeamLeaderOnlyDialog(
+                    onDismiss = { showTeamLeaderOnlyDialog = false }
                 )
             }
         }
@@ -711,5 +703,36 @@ fun MissionBlockedDialog(
         },
         containerColor = NatureColors.whiteTransparent90,
         modifier = Modifier.padding(16.dp)
+    )
+}
+
+@Composable
+fun TeamLeaderOnlyDialog(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "🚫 팀장 전용 기능",
+                style = NatureTypography.titleMedium,
+                color = NatureColors.forestGreen
+            )
+        },
+        text = {
+            Text(
+                text = "미션은 팀장만 진행할 수 있습니다.\n팀장과 함께 이동하여 미션에 참여해 주세요.",
+                style = NatureTypography.bodyMedium,
+                color = NatureColors.earthBrown
+            )
+        },
+        confirmButton = {
+            NatureComponents.NatureButton(
+                onClick = onDismiss,
+                text = "확인",
+                backgroundColor = NatureColors.forestGreen
+            )
+        },
+        containerColor = NatureColors.whiteTransparent90
     )
 }
