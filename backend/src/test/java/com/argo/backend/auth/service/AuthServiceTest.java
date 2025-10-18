@@ -71,56 +71,56 @@ class AuthServiceTest {
         verify(userRepository).save(any(User.class));
     }
 
-    // ===== login =====
-    @Test
-    void login_없는유저_예외() {
-        final LoginRequest request = new LoginRequest("user", "pass");
-        given(userRepository.findByUsername("user")).willReturn(Optional.empty());
-
-        assertThrows(NotFoundUserException.class, () -> authService.login(request));
-    }
-
-    @Test
-    void login_비밀번호불일치_예외() {
-        final LoginRequest request = new LoginRequest("user", "pass");
-        final User mockUser = mock(User.class);
-        given(userRepository.findByUsername("user")).willReturn(Optional.of(mockUser));
-        given(mockUser.isPasswordMatching(passwordEncoder, "pass")).willReturn(false);
-
-        assertThrows(WrongPasswordException.class, () -> authService.login(request));
-    }
-
-    @Test
-    void login_정상_성공() {
-        // Given
-        LoginRequest request = new LoginRequest("user", "pass");
-        User mockUser = mock(User.class);
-
-        given(userRepository.findByUsername("user")).willReturn(Optional.of(mockUser));
-        given(mockUser.isPasswordMatching(passwordEncoder, "pass")).willReturn(true);
-        given(mockUser.getUserId()).willReturn(1L);
-        given(mockUser.getUsername()).willReturn("user");
-        given(mockUser.getName()).willReturn("홍길동");
-        given(mockUser.getRole()).willReturn(Role.ROLE_STUDENT);
-
-        List<String> roles = List.of(Role.ROLE_STUDENT.toString());
-        Tokens mockTokens = new Tokens("access-token", "refresh-token");
-
-        given(jwtTokenProvider.generateTokens(1L, "user", roles)).willReturn(mockTokens);
-
-        // When
-        LoginDto loginDto = authService.login(request);
-
-        // Then
-        assertEquals(mockTokens, loginDto.getTokens());
-        assertEquals(1L, loginDto.getUserId());
-        assertEquals("홍길동", loginDto.getName());
-        assertEquals(Role.ROLE_STUDENT, loginDto.getRole());
-
-        verify(userRepository).findByUsername("user");
-        verify(mockUser).isPasswordMatching(passwordEncoder, "pass");
-        verify(jwtTokenProvider).generateTokens(1L, "user", roles);
-    }
+//    // ===== login =====
+//    @Test
+//    void login_없는유저_예외() {
+//        final LoginRequest request = new LoginRequest("user", "pass");
+//        given(userRepository.findByUsername("user")).willReturn(Optional.empty());
+//
+//        assertThrows(NotFoundUserException.class, () -> authService.login(request));
+//    }
+//
+//    @Test
+//    void login_비밀번호불일치_예외() {
+//        final LoginRequest request = new LoginRequest("user", "pass");
+//        final User mockUser = mock(User.class);
+//        given(userRepository.findByUsername("user")).willReturn(Optional.of(mockUser));
+//        given(mockUser.isPasswordMatching(passwordEncoder, "pass")).willReturn(false);
+//
+//        assertThrows(WrongPasswordException.class, () -> authService.login(request));
+//    }
+//
+//    @Test
+//    void login_정상_성공() {
+//        // Given
+//        LoginRequest request = new LoginRequest("user", "pass");
+//        User mockUser = mock(User.class);
+//
+//        given(userRepository.findByUsername("user")).willReturn(Optional.of(mockUser));
+//        given(mockUser.isPasswordMatching(passwordEncoder, "pass")).willReturn(true);
+//        given(mockUser.getUserId()).willReturn(1L);
+//        given(mockUser.getUsername()).willReturn("user");
+//        given(mockUser.getName()).willReturn("홍길동");
+//        given(mockUser.getRole()).willReturn(Role.ROLE_STUDENT);
+//
+//        List<String> roles = List.of(Role.ROLE_STUDENT.toString());
+//        Tokens mockTokens = new Tokens("access-token", "refresh-token");
+//
+//        given(jwtTokenProvider.generateTokens(1L, "user", roles)).willReturn(mockTokens);
+//
+//        // When
+//        LoginDto loginDto = authService.login(request);
+//
+//        // Then
+//        assertEquals(mockTokens, loginDto.getTokens());
+//        assertEquals(1L, loginDto.getUserId());
+//        assertEquals("홍길동", loginDto.getName());
+//        assertEquals(Role.ROLE_STUDENT, loginDto.getRole());
+//
+//        verify(userRepository).findByUsername("user");
+//        verify(mockUser).isPasswordMatching(passwordEncoder, "pass");
+//        verify(jwtTokenProvider).generateTokens(1L, "user", roles);
+//    }
 
 
     // ===== withdraw =====

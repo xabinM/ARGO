@@ -17,7 +17,6 @@ import com.argo.backend.mission.dto.selfieDetermine.SelfieResultResponse;
 import com.argo.backend.mission.service.ProblemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,7 +27,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/problem")
@@ -59,21 +57,13 @@ public class ProblemController {
         );
     }
 
-    /**
-     * 🧪 퀴즈 생성 테스트용 엔드포인트
-     */
     @PostMapping("/test/quiz")
     public ResponseEntity<Map<String, Object>> testQuizGeneration() {
         try {
-            log.info("🧪 퀴즈 생성 테스트 시작");
-
             Map<String, Object> result = problemService.testQuizGeneration("경복궁", 3, 2);
-
-            log.info("✅ 테스트 완료: {}", result);
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {
-            log.error("❌ 퀴즈 생성 테스트 실패: {}", e.getMessage());
             return ResponseEntity.status(500).body(
                     Map.of("error", e.getMessage())
             );

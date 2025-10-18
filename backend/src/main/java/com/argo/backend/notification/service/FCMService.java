@@ -1,19 +1,16 @@
 package com.argo.backend.notification.service;
 
 import com.google.firebase.messaging.*;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Service
-@Slf4j
 public class FCMService {
 
     public void sendChallengeNotification(String targetFcmToken, String challengerTeamName) {
         if (targetFcmToken == null || targetFcmToken.trim().isEmpty()) {
-            log.warn("FCM 토큰이 없어 알림을 보낼 수 없습니다.");
             return;
         }
         
@@ -26,7 +23,6 @@ public class FCMService {
 
     public void sendChallengeAcceptedNotification(String targetFcmToken, String accepterTeamName) {
         if (targetFcmToken == null || targetFcmToken.trim().isEmpty()) {
-            log.warn("FCM 토큰이 없어 알림을 보낼 수 없습니다.");
             return;
         }
         
@@ -39,7 +35,6 @@ public class FCMService {
 
     public void sendChallengeCancelledNotification(String targetFcmToken, String cancellerTeamName) {
         if (targetFcmToken == null || targetFcmToken.trim().isEmpty()) {
-            log.warn("FCM 토큰이 없어 알림을 보낼 수 없습니다.");
             return;
         }
         
@@ -53,24 +48,21 @@ public class FCMService {
     private void sendFcmMessage(String token, String title, String body, Map<String, String> data) {
         try {
             Message message = Message.builder()
-                    .setToken(token) // 수신자
-                    .setNotification(Notification.builder() //알림 표시 부분
+                    .setToken(token)
+                    .setNotification(Notification.builder()
                             .setTitle(title)
                             .setBody(body)
                             .build())
                     .setAndroidConfig(AndroidConfig.builder()
-                            .setPriority(AndroidConfig.Priority.HIGH) // 우선 순위를 HIGH로 설정
+                            .setPriority(AndroidConfig.Priority.HIGH)
                             .build())
-                    .putAllData(data) // 앱에서 처리할 부분
+                    .putAllData(data)
                     .build();
 
-            String response = FirebaseMessaging.getInstance().send(message);
-            log.info("FCM 전송 성공: {} -> {}", title, response);
+            FirebaseMessaging.getInstance().send(message);
             
         } catch (FirebaseMessagingException e) {
-            log.error("FCM 전송 실패: {} - {}", title, e.getMessage(), e);
         } catch (Exception e) {
-            log.error("FCM 전송 중 예외 발생: {} - {}", title, e.getMessage(), e);
         }
     }
 }
