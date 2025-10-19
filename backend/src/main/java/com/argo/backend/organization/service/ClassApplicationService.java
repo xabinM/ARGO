@@ -31,17 +31,17 @@ public class ClassApplicationService {
     public ApplicationListResponse getApplicationList(Long classId, String status, Pageable pageable, Long teacherId) {
 
         ClassRoom classRoom = validateClassAccess(classId, teacherId);
-        
+
         Page<ClassApplication> applicationsPage = getApplicationsByStatus(classId, status, pageable);
-        
+
         ApplicationStatisticsDto statistics = createStatistics(classId);
-        
+
         ClassInfoDto classInfo = ClassInfoDto.from(classRoom, statistics.approvedCount());
         PaginationDto pagination = PaginationDto.from(applicationsPage);
         List<ApplicationDto> applications = applicationsPage.getContent().stream()
                 .map(ApplicationDto::from)
                 .toList();
-        
+
         return new ApplicationListResponse(classInfo, applications, statistics, pagination);
     }
 
@@ -49,9 +49,9 @@ public class ClassApplicationService {
     @Transactional
     public ApplicationProcessResponse processApplications(Long classId, ApplicationProcessRequest request, Long teacherId) {
         ClassRoom classRoom = validateClassAccess(classId, teacherId);
-        
+
         List<ClassApplication> applications = findAndValidateApplications(classId, request.getApplicationIds());
-        
+
         if ("approve".equals(request.getAction())) {
             return processApproval(classRoom, applications);
         } else {
@@ -101,25 +101,25 @@ public class ClassApplicationService {
 
     private List<ClassApplication> findAndValidateApplications(Long classId, List<Long> applicationIds) {
         List<ClassApplication> applications = classApplicationRepository.findByApplicationIdsAndClassId(applicationIds, classId);
-        
+
         // 존재 검증
         if (applications.size() != applicationIds.size()) {
             throw new ApplicationNotFoundException();
         }
-        
+
         // 상태 검증
         for (ClassApplication application : applications) {
             if (application.getStatus() != ApplicationStatus.PENDING) {
                 throw new ApplicationAlreadyProcessedException();
             }
         }
-        
+
         return applications;
     }
-    
+
     private ApplicationProcessResponse processApproval(ClassRoom classRoom, List<ClassApplication> applications) {
         validateClassCapacityForApproval(classRoom, applications.size());
-        
+
         LocalDateTime processedAt = LocalDateTime.now();
         List<ApplicationProcessResultDto> results = applications.stream()
                 .map(application -> {
@@ -138,10 +138,10 @@ public class ClassApplicationService {
                     return ApplicationProcessResultDto.from(application);
                 })
                 .toList();
-        
+
         return ApplicationProcessResponse.from(results);
     }
-    
+
     private ApplicationProcessResponse processRejection(List<ClassApplication> applications) {
         LocalDateTime processedAt = LocalDateTime.now();
         List<ApplicationProcessResultDto> results = applications.stream()
@@ -151,15 +151,15 @@ public class ClassApplicationService {
                     return ApplicationProcessResultDto.from(application);
                 })
                 .toList();
-        
+
         return ApplicationProcessResponse.from(results);
     }
-    
+
     private void validateClassCapacityForApproval(ClassRoom classRoom, int approvalCount) {
         ApplicationStatisticsDto statistics = createStatistics(classRoom.getClassId());
         long currentApproved = statistics.approvedCount();
         long maxStudents = classRoom.getMaxStudents();
-        
+
         if (currentApproved + approvalCount > maxStudents) {
             throw new ClassCapacityExceededException();
         }

@@ -3,6 +3,11 @@ package com.argo.backend.redis.logic;
 import com.argo.backend.gps.dto.UserCoordinatesRequest;
 import com.argo.backend.redis.common.RedisKeyFactory;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.geo.Point;
+import org.springframework.data.geo.Distance;
+import org.springframework.data.redis.connection.RedisGeoCommands;
+import org.springframework.data.geo.Circle;
+import org.springframework.data.geo.GeoResults;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -11,7 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+
 
 @Repository
 @RequiredArgsConstructor
@@ -20,35 +25,25 @@ public class GpsRedis {
     private final RedisTemplate<String, Object> redisTemplate;
     private final RedisKeyFactory redisKeyFactory;
 
-    // todo 유저 좌표 정보 현재는 테스트 때문에 300초이지만 이후 폴링 방식 시간에 따라 변경 해야함.
     private static final Duration USER_COORDINATES_TTL = Duration.ofSeconds(1800);
     private static final Duration USER_CLASS_IDS_TTL = Duration.ofHours(1);
 
-
+    // Sorted Set (Geo)을 사용하여 유저 좌표 저장
     public void saveUserCoordinates(Long userId, UserCoordinatesRequest userCoordinatesRequest) {
-        Map<String, String> coordinatesMap = new HashMap<>();
-        coordinatesMap.put("lat", userCoordinatesRequest.getLatitude().toString());
-        coordinatesMap.put("lng", userCoordinatesRequest.getLongitude().toString());
-        coordinatesMap.put("timestamp", String.valueOf(System.currentTimeMillis()));
+        List<Long> classIds = getUserClassIds(userId);
+        if (classIds == null || classIds.isEmpty()) {
+            return;
+        }
 
-        String key = redisKeyFactory.getUserCoordinatesKey(userId);
-        redisTemplate.opsForValue().set(key, coordinatesMap, USER_COORDINATES_TTL);
+        Point point = new Point(userCoordinatesRequest.getLongitude().doubleValue(), userCoordinatesRequest.getLatitude().doubleValue());
+
+        for (Long classId : classIds) {
+            String key = redisKeyFactory.getClassGeoKey(classId); // 새로운 키 팩토리 메소드
+            redisTemplate.opsForGeo().add(key, point, userId.toString());
+            redisTemplate.expire(key, USER_COORDINATES_TTL);
+        }
     }
 
-    public void addUserToClass(Long classId, Long userId) {
-        String key = redisKeyFactory.getClassUserCoordinatesKey(classId);
-        redisTemplate.opsForSet().add(key, userId);
-        redisTemplate.expire(key, USER_COORDINATES_TTL);
-    }
-
-    // 유저가 속한 클래스 목록에 클래스 추가 -> 이 방식은 기존 classIds와 추가된 classId 사이의 TTL 차이로 인해 특정 시점 문제 발생
-    public void addClassToUser(Long userId, Long classId) {
-        String key = redisKeyFactory.getUserClassIdsKey(userId);
-        redisTemplate.opsForSet().add(key, classId);
-        redisTemplate.expire(key, USER_CLASS_IDS_TTL);
-    }
-
-    // 3. 유저가 속한 class의 Id 저장
     public void setUserClassIds(Long userId, List<Long> classIds) {
         String key = redisKeyFactory.getUserClassIdsKey(userId);
         redisTemplate.delete(key);
@@ -60,7 +55,6 @@ public class GpsRedis {
         }
     }
 
-    // 4. 유저가 속한 class의 Id 목록 가져오기
     public List<Long> getUserClassIds(Long userId) {
         String key = redisKeyFactory.getUserClassIdsKey(userId);
         Set<Object> members = redisTemplate.opsForSet().members(key);
@@ -72,35 +66,33 @@ public class GpsRedis {
                 .toList();
     }
 
-    // 조회
+    // Sorted Set (Geo)을 사용하여 한 번의 쿼리로 모든 유저의 좌표를 가져옴
     public Map<Long, Map<String, String>> getUserCoordinatesByClassId(Long classId) {
-        String classKey = redisKeyFactory.getClassUserCoordinatesKey(classId);
-        Set<Object> userIds = redisTemplate.opsForSet().members(classKey);
+        String key = redisKeyFactory.getClassGeoKey(classId);
 
-        if (userIds == null) {
+        // GEORADIUS를 사용하여 모든 멤버를 가져옵니다. (중심점과 매우 큰 반경 사용)
+        // 이 방식은 모든 멤버와 좌표를 한 번에 가져오는 효과적인 방법입니다.
+        GeoResults<RedisGeoCommands.GeoLocation<Object>> results = redisTemplate.opsForGeo()
+                .radius(key, new Circle(new Point(0, 0), new Distance(Double.MAX_VALUE)));
+
+        if (results == null) {
             return Map.of();
         }
 
         Map<Long, Map<String, String>> result = new HashMap<>();
-        for (Object userIdObj : userIds) {
-            Long userId = Long.valueOf(userIdObj.toString());
-            String userKey = redisKeyFactory.getUserCoordinatesKey(userId);
-            Object locationObj = redisTemplate.opsForValue().get(userKey);
+        results.getContent().forEach(geoResult -> {
+            RedisGeoCommands.GeoLocation<Object> location = geoResult.getContent();
+            Long userId = Long.valueOf(location.getName().toString());
+            Point point = location.getPoint();
 
-            if (locationObj instanceof Map<?, ?> locationMap) {
+            Map<String, String> coordinatesMap = new HashMap<>();
+            coordinatesMap.put("lat", String.valueOf(point.getY()));
+            coordinatesMap.put("lng", String.valueOf(point.getX()));
+            coordinatesMap.put("timestamp", String.valueOf(System.currentTimeMillis())); // 실시간 조회이므로 현재시간
 
-                // 타입 캐스팅 처리
-                Map<String, String> castedMap = locationMap.entrySet().stream()
-                        .collect(Collectors.toMap(
-                                e -> e.getKey().toString(),
-                                e -> e.getValue().toString()
-                        ));
-
-                result.put(userId, castedMap);
-            }
-        }
+            result.put(userId, coordinatesMap);
+        });
 
         return result;
     }
-
 }

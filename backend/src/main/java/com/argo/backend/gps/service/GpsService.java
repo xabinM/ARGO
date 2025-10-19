@@ -6,14 +6,12 @@ import com.argo.backend.gps.dto.UserCoordinatesRequest;
 import com.argo.backend.gps.dto.UserCoordinatesDto;
 import com.argo.backend.redis.logic.GpsRedis;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class GpsService {
@@ -27,8 +25,7 @@ public class GpsService {
             return;
         }
 
-        gpsRedis.saveUserCoordinates(userId, request);
-
+        // 1. 유저가 속한 클래스 ID 목록을 먼저 Redis에 로드합니다.
         List<Long> classIds = gpsRedis.getUserClassIds(userId);
         if (classIds == null) {
             classIds = classApplicationRepository
@@ -39,9 +36,9 @@ public class GpsService {
             gpsRedis.setUserClassIds(userId, classIds);
         }
 
-        for (Long classId : classIds) {
-            gpsRedis.addUserToClass(classId, userId);
-        }
+        // 2. 클래스 ID가 Redis에 저장된 후, 좌표를 저장합니다.
+        // 이제 GpsRedis는 내부적으로 올바른 classIds를 사용하여 Geo 자료구조를 업데이트합니다.
+        gpsRedis.saveUserCoordinates(userId, request);
     }
 
     public List<UserCoordinatesDto> getUserCoordinatesByClass(Long classId) {
