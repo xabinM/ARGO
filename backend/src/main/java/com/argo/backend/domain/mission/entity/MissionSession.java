@@ -9,12 +9,14 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "mission_sessions")
+@Table(name = "mission_sessions", indexes = {
+        @Index(name = "idx_team_spot", columnList = "team_id, spot_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MissionSession extends CreatedAtEntity {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long sessionId;
