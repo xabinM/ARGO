@@ -2,10 +2,8 @@ spring:
   application:
     name: argo-backend
 
-
-
   profiles:
-     include: secret
+    include: secret
 
   datasource:
     url: jdbc:mysql://localhost:3306/mydb
@@ -19,6 +17,10 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          batch_size: 30 # JDBC Batch 처리 사이즈
+        order_inserts: true # INSERT 쿼리 최적화
+        order_updates: true # UPDATE 쿼리 최적화
 
   data:
     redis:
