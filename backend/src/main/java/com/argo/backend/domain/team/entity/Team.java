@@ -15,13 +15,18 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Entity
-@Table(name = "teams")
+@Table(name = "teams", indexes = {
+        @Index(name = "idx_classroom_team_name", columnList = "class_id, teamName")
+})
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Team extends CreatedAtEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long teamId;
+
+    @Version
+    private Long version; // For optimistic locking
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_id", nullable = false)
@@ -69,7 +74,7 @@ public class Team extends CreatedAtEntity {
     public void updateTeamLeader(User leader){
         this.leader = leader;
     }
-    
+
     // 현재 활성 멤버들 조회 헬퍼 메서드
     public List<User> getActiveMembers() {
         return userTeams.stream()
@@ -77,20 +82,20 @@ public class Team extends CreatedAtEntity {
                 .map(UserTeam::getUser)
                 .collect(Collectors.toList());
     }
-    
+
     // 현재 활성 멤버 수 조회 헬퍼 메서드
     public int getCurrentMemberCount() {
         return (int) userTeams.stream()
                 .filter(UserTeam::getIsActive)
                 .count();
     }
-    
+
     // 특정 유저가 이 팀의 활성 멤버인지 확인 헬퍼 메서드
     public boolean hasActiveMember(User user) {
         return userTeams.stream()
                 .anyMatch(ut -> ut.getIsActive() && ut.getUser().equals(user));
     }
-    
+
     // 팀에 빈 자리가 있는지 확인 헬퍼 메서드
     public boolean hasAvailableSlot() {
         return getCurrentMemberCount() < maxMembers;
