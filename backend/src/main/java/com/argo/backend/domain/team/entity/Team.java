@@ -26,7 +26,7 @@ public class Team extends CreatedAtEntity {
     private Long teamId;
 
     @Version
-    private Long version; // For optimistic locking
+    private Long version;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "class_id", nullable = false)

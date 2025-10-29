@@ -68,12 +68,10 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
             "ORDER BY t.createdAt ASC")
     List<Team> findTeamsByClassIdWithActiveMembersAndLeader(@Param("classId") Long classId);
 
-    // 동시성 제어: 미션 생성 시 팀 정보를 비관적 락으로 조회
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT t FROM Team t WHERE t.teamId = :teamId")
     Optional<Team> findByIdWithPessimisticLock(@Param("teamId") Long teamId);
 
-    // N+1 문제 해결: 팀 목록 조회 시, 각 팀의 카드 목록을 함께 조회
     @Query("SELECT DISTINCT t FROM Team t LEFT JOIN FETCH t.teamCards WHERE t.classRoom = :classRoom")
     List<Team> findByClassRoomWithCards(@Param("classRoom") ClassRoom classRoom);
 }

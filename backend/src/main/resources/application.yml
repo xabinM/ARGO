@@ -18,9 +18,9 @@ spring:
       hibernate:
         format_sql: true
         jdbc:
-          batch_size: 30 # JDBC Batch 처리 사이즈
-        order_inserts: true # INSERT 쿼리 최적화
-        order_updates: true # UPDATE 쿼리 최적화
+          batch_size: 30
+        order_inserts: true
+        order_updates: true
 
   data:
     redis:

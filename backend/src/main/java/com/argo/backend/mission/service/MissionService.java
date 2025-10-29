@@ -43,7 +43,6 @@ public class MissionService {
     @Transactional
     public MissionCreateDto createMission(Long teamId, Long spotId) {
         Spot spot = getSpotById(spotId);
-        // 비관적 락으로 Team 조회
         Team team = getTeamByIdWithPessimisticLock(teamId);
 
         MissionSession missionSession = getOrCreateMissionSession(team, spot);
@@ -62,14 +61,12 @@ public class MissionService {
                 .orElseThrow(TeamNotFoundException::new);
     }
 
-    // 비관적 락을 사용하여 Team을 조회하는 메소드
     private Team getTeamByIdWithPessimisticLock(Long teamId) {
         return teamRepository.findByIdWithPessimisticLock(teamId)
                 .orElseThrow(TeamNotFoundException::new);
     }
 
     private MissionSession getOrCreateMissionSession(Team team, Spot spot) {
-        // 이 로직은 이제 createMission 트랜잭션 내에서 비관적 락에 의해 보호됩니다.
         return missionSessionRepository.findByTeamAndSpot(team, spot)
                 .map(session -> {
                     if (session.getStatus() == MissionSessionStatus.COMPLETED) {
