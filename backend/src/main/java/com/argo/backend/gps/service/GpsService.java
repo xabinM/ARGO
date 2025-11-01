@@ -25,7 +25,6 @@ public class GpsService {
             return;
         }
 
-        // 1. 유저가 속한 클래스 ID 목록을 먼저 Redis에 로드합니다.
         List<Long> classIds = gpsRedis.getUserClassIds(userId);
         if (classIds == null) {
             classIds = classApplicationRepository
@@ -36,9 +35,7 @@ public class GpsService {
             gpsRedis.setUserClassIds(userId, classIds);
         }
 
-        // 2. 클래스 ID가 Redis에 저장된 후, 좌표를 저장합니다.
-        // 이제 GpsRedis는 내부적으로 올바른 classIds를 사용하여 Geo 자료구조를 업데이트합니다.
-        gpsRedis.saveUserCoordinates(userId, request);
+        gpsRedis.saveUserCoordinates(userId, request, classIds);
     }
 
     public List<UserCoordinatesDto> getUserCoordinatesByClass(Long classId) {

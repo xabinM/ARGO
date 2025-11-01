@@ -126,14 +126,9 @@ public class ClassApplicationService {
                     application.setStatus(ApplicationStatus.APPROVED);
                     application.setProcessedAt(processedAt);
 
-                    // ✅ Redis 갱신: 전체 목록 조회 후 덮어쓰기
+                    // 캐시 무효화
                     Long userId = application.getUser().getUserId();
-                    List<Long> classIds = classApplicationRepository
-                            .findAllByUser_UserIdAndStatus(userId, ApplicationStatus.APPROVED)
-                            .stream()
-                            .map(app -> app.getClassRoom().getClassId())
-                            .toList();
-                    gpsRedis.setUserClassIds(userId, classIds);
+                    gpsRedis.invalidateClassIdsPerUserId(userId);
 
                     return ApplicationProcessResultDto.from(application);
                 })

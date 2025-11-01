@@ -28,9 +28,7 @@ public class GpsRedis {
     private static final Duration USER_COORDINATES_TTL = Duration.ofSeconds(1800);
     private static final Duration USER_CLASS_IDS_TTL = Duration.ofHours(1);
 
-
-    public void saveUserCoordinates(Long userId, UserCoordinatesRequest userCoordinatesRequest) {
-        List<Long> classIds = getUserClassIds(userId);
+    public void saveUserCoordinates(Long userId, UserCoordinatesRequest userCoordinatesRequest, List<Long> classIds) {
         if (classIds == null || classIds.isEmpty()) {
             return;
         }
@@ -46,7 +44,6 @@ public class GpsRedis {
 
     public void setUserClassIds(Long userId, List<Long> classIds) {
         String key = redisKeyFactory.getUserClassIdsKey(userId);
-        redisTemplate.delete(key);
         if (classIds != null && !classIds.isEmpty()) {
             for (Long classId : classIds) {
                 redisTemplate.opsForSet().add(key, classId);
@@ -64,6 +61,11 @@ public class GpsRedis {
         return members.stream()
                 .map(obj -> Long.valueOf(obj.toString()))
                 .toList();
+    }
+
+    public void invalidateClassIdsPerUserId(Long userId) {
+        String key = redisKeyFactory.getUserClassIdsKey(userId);
+        redisTemplate.delete(key);
     }
 
 
