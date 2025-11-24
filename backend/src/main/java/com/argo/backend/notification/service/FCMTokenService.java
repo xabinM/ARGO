@@ -6,6 +6,7 @@ import com.argo.backend.organization.exception.types.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -17,7 +18,16 @@ public class FCMTokenService {
     public void registerFcmToken(Long userId, String fcmToken) {
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
+
+        if (!Objects.equals(user.getFcmToken(), fcmToken)) {
+            user.updateFcmToken(fcmToken);
+        }
+    }
+
+    public void unregisterFcmToken(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(UserNotFoundException::new);
         
-        user.updateFcmToken(fcmToken);
+        user.updateFcmToken(null);
     }
 }

@@ -40,7 +40,6 @@ public class AuthController {
 
         LoginDto dto = authService.login(request);
         
-        // 로그인 성공 시 FCM 토큰 저장
         if (request.getFcmToken() != null && !request.getFcmToken().trim().isEmpty()) {
             fcmTokenService.registerFcmToken(dto.getUserId(), request.getFcmToken());
         }
