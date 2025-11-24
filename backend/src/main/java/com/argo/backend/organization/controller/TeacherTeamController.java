@@ -1,10 +1,10 @@
 package com.argo.backend.organization.controller;
 
 import com.argo.backend.organization.dto.CommonApiResponse;
+import com.argo.backend.organization.dto.teamassign.TeamAssignResponse;
 import com.argo.backend.organization.dto.teamcreate.TeamCreateRequest;
 import com.argo.backend.organization.dto.teamcreate.TeamCreateResponse;
 import com.argo.backend.organization.dto.teamassign.TeamAssignRequest;
-import com.argo.backend.organization.dto.teamassign.TeamAssignResponse;
 import com.argo.backend.organization.dto.teamautoassign.TeamAutoAssignResponse;
 import com.argo.backend.organization.dto.teamdelete.TeamDeleteResponse;
 import com.argo.backend.organization.service.TeamService;
@@ -43,7 +43,7 @@ public class TeacherTeamController {
             @Valid @RequestBody TeamAssignRequest request,
             @AuthenticationPrincipal Long teacherId
     ) {
-        TeamAssignResponse response = teamService.assignStudentsToTeam(classId, teamId, request, teacherId);
+        com.argo.backend.organization.dto.teamassign.TeamAssignResponse response = teamService.assignStudentsToTeam(classId, teamId, request, teacherId);
         return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.TEAM_ASSIGN_SUCCESS, response));
     }
 

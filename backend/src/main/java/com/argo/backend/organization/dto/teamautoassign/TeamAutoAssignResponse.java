@@ -18,7 +18,7 @@ public class TeamAutoAssignResponse {
     private final int totalAssigned;
     private final LocalDateTime assignedAt;
     private final List<TeamAssignmentDto> teamAssignments;
-    private final List<UnassignedStudentDto> remainingUnassigned;
+    private final List<AutoAssignUnassignedStudentDto> remainingUnassigned;
     private final String message;
     
     public static TeamAutoAssignResponse of(
@@ -27,7 +27,7 @@ public class TeamAutoAssignResponse {
             int totalAssigned,
             LocalDateTime assignedAt,
             List<TeamAssignmentDto> teamAssignments,
-            List<UnassignedStudentDto> remainingUnassigned
+            List<AutoAssignUnassignedStudentDto> remainingUnassigned
     ) {
         return new TeamAutoAssignResponse(
                 classId,

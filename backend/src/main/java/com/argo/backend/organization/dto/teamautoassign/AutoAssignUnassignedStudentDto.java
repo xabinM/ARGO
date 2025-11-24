@@ -7,15 +7,15 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class UnassignedStudentDto {
+public class AutoAssignUnassignedStudentDto {
     
     private final Long studentId;
     private final String studentName;
     private final String studentNickname;
     private final String reason;
     
-    public static UnassignedStudentDto of(User user, String reason) {
-        return new UnassignedStudentDto(
+    public static AutoAssignUnassignedStudentDto of(User user, String reason) {
+        return new AutoAssignUnassignedStudentDto(
                 user.getUserId(),
                 user.getName(),
                 user.getUsername(),
