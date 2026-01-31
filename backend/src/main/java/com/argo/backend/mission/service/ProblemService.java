@@ -115,19 +115,6 @@ public class ProblemService {
         }
     }
 
-    public Map<String, Object> testQuizGenerationDirect(String spotName, int grade, int problemCnt) {
-        try {
-            Map<String, Object> result = pythonApiClient.requestProblemAsMapWithApache(
-                    spotName, grade, problemCnt
-            );
-
-            return result;
-
-        } catch (Exception e) {
-            throw e;
-        }
-    }
-
     public List<ProblemDetail> getProblemsBySpotId(Long spotId) {
         List<Problem> problems = problemRepository.findAllBySpotId(spotId);
         return ProblemDetail.from(problems);

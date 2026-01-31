@@ -46,7 +46,7 @@ public class BattleService {
     private final FCMService fcmService;
     
     public List<BattleOpponentDto> getBattleOpponents(Long teamId, Long userId) {
-        User user = validateAndGetUser(userId);
+
         Team currentTeam = validateTeamAccess(teamId, userId);
         
         // N+1 문제 해결: 팀과 리더를 한 번에 조회 (FETCH JOIN)
@@ -63,14 +63,13 @@ public class BattleService {
     
     @Transactional
     public BattleResponse createBattle(BattleRequestDto request, Long userId) {
-        User user = validateAndGetUser(userId);
-        
+
         Team challengerTeam = teamRepository.findById(request.challengerTeamId())
                 .orElseThrow(TeamNotFoundException::new);
         Team challengedTeam = teamRepository.findById(request.challengedTeamId())
                 .orElseThrow(TeamNotFoundException::new);
         
-        validateChallengerAccess(challengerTeam, userId);
+        validateChallengeAccess(challengerTeam, userId);
         
         TeamCard selectedCard = validateAndLockCard(request.selectedCard().teamCardId(), challengerTeam);
         
@@ -97,8 +96,7 @@ public class BattleService {
     
     @Transactional
     public BattleResponse respondToBattle(Long matchId, BattleResponseDto request, Long userId) {
-        User user = validateAndGetUser(userId);
-        
+
         CardGameMatch match = cardGameMatchRepository.findById(matchId)
                 .orElseThrow(() -> new CardNotFoundException("해당 대전을 찾을 수 없습니다"));
         
@@ -106,7 +104,7 @@ public class BattleService {
             throw new CardValidationException("이미 처리된 대전입니다");
         }
         
-        validateChallengedAccess(match.getChallengedTeam(), userId);
+        validateChallengeAccess(match.getChallengedTeam(), userId);
         
         if ("ACCEPT".equals(request.action())) {
             TeamCard challengedCard = validateAndLockCard(request.selectedCard().teamCardId(), match.getChallengedTeam());
@@ -151,9 +149,7 @@ public class BattleService {
         }
     }
     
-    private void validateChallengedAccess(Team challengedTeam, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(UserNotFoundException::new);
+    private void validateChallengeAccess(Team challengedTeam, Long userId) {
         
         // N+1 문제 해결: Repository 메서드로 대체 (FETCH JOIN 사용)
         Optional<UserTeam> userTeamOpt = userTeamRepository.findActiveByUserIdAndClassId(userId, challengedTeam.getClassRoom().getClassId());
@@ -191,18 +187,13 @@ public class BattleService {
 
 
         // 카드 잠금 해제
-        if (challengerCard != null) {
-            challengerCard.setIsLocked(false);
-        }
-        if (challengedCard != null) {
-            challengedCard.setIsLocked(false);
-        }
+        challengerCard.setIsLocked(false);
+        challengedCard.setIsLocked(false);
     }
     
     @Transactional
     public BattleResponse cancelBattle(Long matchId, Long userId) {
-        User user = validateAndGetUser(userId);
-        
+
         CardGameMatch match = cardGameMatchRepository.findById(matchId)
                 .orElseThrow(() -> new CardNotFoundException("해당 대전을 찾을 수 없습니다"));
         
@@ -210,7 +201,7 @@ public class BattleService {
             throw new CardValidationException("이미 처리된 대전은 취소할 수 없습니다");
         }
         
-        validateChallengerAccess(match.getChallengerTeam(), userId);
+        validateChallengeAccess(match.getChallengerTeam(), userId);
         
         match.setStatus(MatchStatus.CANCELLED);
         
@@ -224,8 +215,7 @@ public class BattleService {
     
     @Transactional
     public BattleResponse viewBattleResult(Long matchId, Long userId) {
-        User user = validateAndGetUser(userId);
-        
+
         CardGameMatch match = cardGameMatchRepository.findById(matchId)
                 .orElseThrow(() -> new CardNotFoundException("해당 대전을 찾을 수 없습니다"));
         
@@ -250,19 +240,7 @@ public class BattleService {
         cardGameMatchRepository.save(match);
         return BattleResponse.success("대전 결과 확인이 처리되었습니다");
     }
-    
-    private void validateChallengerAccess(Team challengerTeam, Long userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(UserNotFoundException::new);
-        
-        // N+1 문제 해결: Repository 메서드로 대체 (FETCH JOIN 사용)
-        Optional<UserTeam> userTeamOpt = userTeamRepository.findActiveByUserIdAndClassId(userId, challengerTeam.getClassRoom().getClassId());
-        Team userTeam = userTeamOpt.map(UserTeam::getTeam).orElse(null);
-        
-        if (userTeam == null || !userTeam.getTeamId().equals(challengerTeam.getTeamId())) {
-            throw new UnauthorizedClassAccessException();
-        }
-    }
+
     
     private TeamCard validateAndLockCard(Long teamCardId, Team challengerTeam) {
         TeamCard teamCard = teamCardRepository.findById(teamCardId)
