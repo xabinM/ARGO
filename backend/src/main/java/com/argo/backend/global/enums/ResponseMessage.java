@@ -52,6 +52,29 @@ public enum ResponseMessage {
     // gps
     SUCCESS_USER_COORDINATES_POST("유저 위치 정보 저장을 성공하였습니다."),
     SUCCESS_USERS_COORDINATES_RESPONSE("유저 위치 정보 리스트 반환에 성공하였습니다."),
+
+    // cardgame
+    CARD_INFO_SUCCESS("카드 정보 조회 성공"),
+    TEAM_CARD_COLLECTION_SUCCESS("팀 카드 컬렉션 조회 성공"),
+    BATTLE_OPPONENTS_SUCCESS("대전 가능한 팀 목록 조회 성공"),
+    BATTLE_HISTORY_SUCCESS("대전 기록 조회 성공"),
+    BATTLE_RESULT_VIEW_SUCCESS("대전 결과 확인 성공"),
+    BATTLE_REQUEST_SENT("대전 신청이 성공적으로 전송되었습니다."),
+    BATTLE_ACCEPTED("대전 수락이 완료되었습니다."),
+    BATTLE_REJECTED("대전을 거절하였습니다."),
+    BATTLE_CANCELLED("대전 신청이 취소되었습니다."),
+    BATTLE_RESULT_VIEWED("대전 결과 확인이 처리되었습니다."),
+    TEAM_STATS_SUCCESS("팀 통계 조회 성공"),
+
+    // cardgame exceptions
+    BATTLE_NOT_FOUND("해당 대전을 찾을 수 없습니다."),
+    ALREADY_PROCESSED_BATTLE("이미 처리된 대전입니다."),
+    TEAM_CARD_NOT_FOUND("해당 팀 카드를 찾을 수 없습니다."),
+    CARD_NOT_OWNED_BY_TEAM("해당 카드는 이 팀의 소유가 아닙니다."),
+    LOST_CARD_CANNOT_BE_USED("잃어버린 카드는 사용할 수 없습니다."),
+    LOCKED_CARD_CANNOT_BE_USED("이미 사용 중인 카드입니다."),
+    CANNOT_CANCEL_PROCESSED_BATTLE("이미 처리된 대전은 취소할 수 없습니다."),
+    ONLY_COMPLETED_BATTLE_CAN_BE_VIEWED("완료된 대전만 결과를 확인할 수 있습니다."),
     ;
 
     private final String message;
