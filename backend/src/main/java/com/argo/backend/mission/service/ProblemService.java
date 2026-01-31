@@ -59,6 +59,7 @@ public class ProblemService {
         problemRepository.save(quiz);
     }
 
+    @Transactional
     public ProblemGenerateTransDto generateProblem(ProblemGenerateRequestFromCli request) {
         Spot spot = spotRepository.findById(request.getSpotId())
                 .orElseThrow(SpotNotFoundException::new);
@@ -94,6 +95,8 @@ public class ProblemService {
             );
             quizProblems.add(quizProblem);
         }
+
+        problemRepository.saveAll(quizProblems);
 
         ProblemGenerateDto dto = new ProblemGenerateDto(quizProblems);
         return new ProblemGenerateTransDto(request.getGrade(), spot.getName(), dto);

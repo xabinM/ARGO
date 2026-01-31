@@ -25,6 +25,7 @@ public enum ResponseMessage {
     // mission
     SUCCESS_CREATE_MISSION("미션 생성에 성공하였습니다."),
     SUCCESS_SUBMIT_MISSION("미션 제출에 성공하였습니다."),
+    POSSIBLE_MISSION_SPOT("미션 수행이 가능한 장소입니다."),
 
     NOT_FOUND_MISSION_SESSION("해당 미션세션이 존재하지 않습니다."),
     INVALID_MISSION_SESSION("유효하지 않은 세션입니다."),

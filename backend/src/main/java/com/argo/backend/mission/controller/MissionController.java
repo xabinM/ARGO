@@ -3,10 +3,9 @@ package com.argo.backend.mission.controller;
 import com.argo.backend.global.enums.ResponseMessage;
 import com.argo.backend.mission.dto.SubmitMission.MissionSubmitDto;
 import com.argo.backend.mission.dto.SubmitMission.MissionSubmitResponse;
+import com.argo.backend.mission.dto.common.MissionResponse;
 import com.argo.backend.mission.dto.missionCreate.MissionCreateDto;
 import com.argo.backend.mission.dto.missionCreate.MissionCreateResponse;
-import com.argo.backend.mission.dto.missionPossibleCheck.MissionPossibleCheckDto;
-import com.argo.backend.mission.dto.missionPossibleCheck.MissionPossibleCheckResponse;
 import com.argo.backend.mission.dto.missionSubmit.MissionSubmitRequest;
 import com.argo.backend.mission.service.MissionService;
 import lombok.RequiredArgsConstructor;
@@ -46,10 +45,10 @@ public class MissionController {
     }
 
     @GetMapping("/checkPossible/team/{teamId}/spot/{spotId}")
-        public ResponseEntity<?> checkPossibleMissionSpot(@PathVariable Long teamId,
-                                                          @PathVariable Long spotId) {
-            MissionPossibleCheckDto dto = missionService.checkPossibleMissionSpot(teamId, spotId);
+    public ResponseEntity<?> checkPossibleMissionSpot(@PathVariable Long teamId,
+                                                      @PathVariable Long spotId) {
+        missionService.checkPossibleMissionSpot(teamId, spotId);
 
-            return ResponseEntity.ok(new MissionPossibleCheckResponse(dto.isSuccess(), dto.getMessage()));
+        return ResponseEntity.ok(new MissionResponse(true, ResponseMessage.POSSIBLE_MISSION_SPOT.getMessage()));
     }
 }

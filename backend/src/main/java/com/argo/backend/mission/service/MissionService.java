@@ -16,7 +16,6 @@ import com.argo.backend.global.enums.ResponseMessage;
 import com.argo.backend.mission.dto.SubmitMission.MissionSubmitDto;
 import com.argo.backend.mission.dto.common.ProblemDetail;
 import com.argo.backend.mission.dto.missionCreate.MissionCreateDto;
-import com.argo.backend.mission.dto.missionPossibleCheck.MissionPossibleCheckDto;
 import com.argo.backend.mission.exception.*;
 import com.argo.backend.domain.mission.repository.MissionSessionRepository;
 import com.argo.backend.domain.spot.repository.SpotRepository;
@@ -172,21 +171,14 @@ public class MissionService {
         return cards.get(0);
     }
 
-    public MissionPossibleCheckDto checkPossibleMissionSpot(Long teamId, Long spotId) {
+    public void checkPossibleMissionSpot(Long teamId, Long spotId) {
         Spot spot = getSpotById(spotId);
         Team team = getTeamById(teamId);
 
         Optional<MissionSession> missionSession = missionSessionRepository.findByTeamAndSpot(team, spot);
 
-        MissionPossibleCheckDto dto;
-        if (missionSession.isEmpty()) {
-            dto = new MissionPossibleCheckDto(true, null);
-
-            return dto;
+        if (missionSession.isPresent()) {
+            throw new AlreadyProgressedMissionException();
         }
-
-        dto = new MissionPossibleCheckDto(false, ResponseMessage.ALREADY_PROGRESSED_MISSION.getMessage());
-
-        return dto;
     }
 }
