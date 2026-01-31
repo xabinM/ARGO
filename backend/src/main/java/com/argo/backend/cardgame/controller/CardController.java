@@ -14,6 +14,7 @@ import com.argo.backend.cardgame.service.BattleService;
 import com.argo.backend.cardgame.service.CardService;
 import com.argo.backend.cardgame.service.TeamCardService;
 import com.argo.backend.cardgame.service.TeamStatsService;
+import com.argo.backend.global.enums.ResponseMessage;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -46,7 +47,7 @@ public class CardController {
         
         CardInfoResponse response = cardService.getCardInfo(cardId, userId);
         
-        return ResponseEntity.ok(CommonApiResponse.success("카드 정보 조회 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.CARD_INFO_SUCCESS.getMessage(), response));
     }
     
     /**
@@ -60,7 +61,7 @@ public class CardController {
         
         TeamCardCollectionResponse response = teamCardService.getTeamCardCollection(teamId, userId);
         
-        return ResponseEntity.ok(CommonApiResponse.success("팀 카드 컬렉션 조회 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.TEAM_CARD_COLLECTION_SUCCESS.getMessage(), response));
     }
     
     /**
@@ -74,7 +75,7 @@ public class CardController {
         
         List<BattleOpponentDto> response = battleService.getBattleOpponents(teamId, userId);
         
-        return ResponseEntity.ok(CommonApiResponse.success("대전 가능한 팀 목록 조회 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.BATTLE_OPPONENTS_SUCCESS.getMessage(), response));
     }
     
     /**
@@ -134,7 +135,7 @@ public class CardController {
         Pageable pageable = PageRequest.of(page, size);
         BattleHistoryResponse response = battleHistoryService.getBattleHistory(teamId, userId, pageable);
         
-        return ResponseEntity.ok(CommonApiResponse.success("대전 기록 조회 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.BATTLE_HISTORY_SUCCESS.getMessage(), response));
     }
     
     /**
@@ -162,6 +163,6 @@ public class CardController {
         
         TeamStatsDto response = teamStatsService.getTeamStats(teamId, userId);
         
-        return ResponseEntity.ok(CommonApiResponse.success("팀 통계 조회 성공", response));
+        return ResponseEntity.ok(CommonApiResponse.success(ResponseMessage.TEAM_STATS_SUCCESS.getMessage(), response));
     }
 }
