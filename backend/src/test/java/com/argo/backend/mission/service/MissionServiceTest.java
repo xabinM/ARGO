@@ -17,7 +17,7 @@ import com.argo.backend.domain.team.repository.TeamRepository;
 import com.argo.backend.global.enums.ResponseMessage;
 import com.argo.backend.mission.dto.SubmitMission.MissionSubmitDto;
 import com.argo.backend.mission.dto.missionCreate.MissionCreateDto;
-import com.argo.backend.mission.dto.missionPossibleCheck.MissionPossibleCheckDto;
+import com.argo.backend.mission.exception.AlreadyProgressedMissionException;
 import com.argo.backend.mission.exception.CardNotExistException;
 import com.argo.backend.mission.exception.InvalidMissionSessionException;
 import com.argo.backend.mission.exception.MissionAlreadyCompletedException;
@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThatCode;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -191,9 +192,12 @@ class MissionServiceTest {
     void submitMission_실패케이스() {
         final Long missionId = 1L;
         final MissionSession missionSession = mock(MissionSession.class);
+        final Team team = mock(Team.class); // Team 객체 모킹 추가
+        when(team.getGameResult()).thenReturn(mock(com.argo.backend.domain.cardgame.entity.GameResult.class)); // GameResult 모킹
 
         when(missionSessionRepository.findById(missionId)).thenReturn(Optional.of(missionSession));
         when(missionSession.isStatusStarted()).thenReturn(true);
+        when(missionSession.getTeam()).thenReturn(team); // missionSession에서 Team 반환하도록 설정
 
         final MissionSubmitDto dto = missionService.submitMission(missionId, false);
 
@@ -203,7 +207,7 @@ class MissionServiceTest {
     // ===== checkPossibleMissionSpot 테스트 =====
 
     @Test
-    void checkPossibleMissionSpot_미션없으면_true반환() {
+    void checkPossibleMissionSpot_미션없으면_예외없음() {
         final Long teamId = 1L;
         final Long spotId = 2L;
         final Spot spot = mock(Spot.class);
@@ -213,14 +217,12 @@ class MissionServiceTest {
         when(teamRepository.findById(teamId)).thenReturn(Optional.of(team));
         when(missionSessionRepository.findByTeamAndSpot(team, spot)).thenReturn(Optional.empty());
 
-        final MissionPossibleCheckDto dto = missionService.checkPossibleMissionSpot(teamId, spotId);
-
-        assertThat(dto.isSuccess()).isTrue();
-        assertThat(dto.getMessage()).isNull();
+        assertThatCode(() -> missionService.checkPossibleMissionSpot(teamId, spotId))
+                .doesNotThrowAnyException();
     }
 
     @Test
-    void checkPossibleMissionSpot_미션있으면_false반환() {
+    void checkPossibleMissionSpot_미션있으면_예외발생() {
         final Long teamId = 1L;
         final Long spotId = 2L;
         final Spot spot = mock(Spot.class);
@@ -231,9 +233,7 @@ class MissionServiceTest {
         when(teamRepository.findById(teamId)).thenReturn(Optional.of(team));
         when(missionSessionRepository.findByTeamAndSpot(team, spot)).thenReturn(Optional.of(session));
 
-        final MissionPossibleCheckDto dto = missionService.checkPossibleMissionSpot(teamId, spotId);
-
-        assertThat(dto.isSuccess()).isFalse();
-        assertThat(dto.getMessage()).isEqualTo(ResponseMessage.ALREADY_PROGRESSED_MISSION.getMessage());
+        assertThatThrownBy(() -> missionService.checkPossibleMissionSpot(teamId, spotId))
+                .isInstanceOf(AlreadyProgressedMissionException.class);
     }
 }
