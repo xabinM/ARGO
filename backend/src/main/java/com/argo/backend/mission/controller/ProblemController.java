@@ -58,16 +58,11 @@ public class ProblemController {
     }
 
     @PostMapping("/test/quiz")
-    public ResponseEntity<Map<String, Object>> testQuizGeneration() {
-        try {
-            Map<String, Object> result = problemService.testQuizGeneration("경복궁", 3, 2);
-            return ResponseEntity.ok(result);
-
-        } catch (Exception e) {
-            return ResponseEntity.status(500).body(
-                    Map.of("error", e.getMessage())
-            );
-        }
+    public ResponseEntity<Map<String, Object>> testQuizGeneration(@RequestParam String spotName,
+                                                                  @RequestParam int grade,
+                                                                  @RequestParam int problemCnt) {
+        Map<String, Object> result = problemService.testQuizGeneration(spotName, grade, problemCnt);
+        return ResponseEntity.ok(result);
     }
 
     @PreAuthorize("hasRole('TEACHER')")
@@ -91,7 +86,7 @@ public class ProblemController {
 
     @PreAuthorize("hasRole('STUDENT')")
     @PostMapping(value = "/selfie/determine/team/{teamId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<?> determineSelfiePose(@PathVariable Long teamId,
+    public ResponseEntity<?> determineSelfie(@PathVariable Long teamId,
                                                  @RequestParam("image") MultipartFile imageFile,
                                                  @RequestParam("pose") PhotoPose pose) throws IOException {
         SelfieResultDto result = problemService.determineSelfie(new SelfieRequestDto(teamId, imageFile, pose));

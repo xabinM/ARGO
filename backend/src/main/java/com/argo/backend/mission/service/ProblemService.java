@@ -23,6 +23,7 @@ import com.argo.backend.mission.exception.SpotNotFoundException;
 import com.argo.backend.domain.ploblem.repository.ProblemRepository;
 import com.argo.backend.domain.spot.repository.SpotRepository;
 import com.argo.backend.mission.exception.TeamNotFoundException;
+import com.argo.backend.mission.exception.problem.PythonServerNoResponseException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -107,14 +108,12 @@ public class ProblemService {
             Map<String, Object> quizResult;
             try {
                 quizResult = pythonApiClient.requestProblemAsMapWithApache(spotName, grade, problemCnt);
-            } catch (Exception e) {
+            } catch (PythonApiClient.PythonApiException e) {
                 quizResult = pythonApiClient.requestProblemAsMap(spotName, grade, problemCnt);
             }
-
             return quizResult;
-
-        } catch (Exception e) {
-            throw e;
+        } catch (PythonApiClient.PythonApiException e) {
+            throw new PythonServerNoResponseException();
         }
     }
 
