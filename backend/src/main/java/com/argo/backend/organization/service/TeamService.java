@@ -87,7 +87,7 @@ public class TeamService {
     }
 
     @Transactional
-    public TeamAutoAssignResponse AssignStudentsToTeams(Long classId, Long teacherId) {
+    public TeamAutoAssignResponse autoAssignStudentsToTeams(Long classId, Long teacherId) {
         ClassRoom classRoom = validateClassAccess(classId, teacherId);
         
         List<Team> teams = teamRepository.findTeamsByClassIdWithActiveMembersAndLeader(classRoom.getClassId());
