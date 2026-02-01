@@ -13,9 +13,7 @@ import org.springframework.stereotype.Repository;
 
 import java.time.Duration;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 
 @Repository
@@ -26,49 +24,19 @@ public class GpsRedis {
     private final RedisKeyFactory redisKeyFactory;
 
     private static final Duration USER_COORDINATES_TTL = Duration.ofSeconds(1800);
-    private static final Duration USER_CLASS_IDS_TTL = Duration.ofHours(1);
-    private static final Duration TRACKING_STATUS_TTL = Duration.ofHours(2);
+    private static final Duration TRACKING_STATUS_TTL = Duration.ofHours(2); // 2시간 후 자동 만료
 
-    public void saveUserCoordinates(Long userId, UserCoordinatesRequest userCoordinatesRequest, List<Long> classIds) {
-        if (classIds == null || classIds.isEmpty()) {
+    public void saveUserCoordinates(Long userId, UserCoordinatesRequest userCoordinatesRequest, Long classId) {
+        if (classId == null) {
             return;
         }
 
         Point point = new Point(userCoordinatesRequest.getLongitude().doubleValue(), userCoordinatesRequest.getLatitude().doubleValue());
-
-        for (Long classId : classIds) {
-            String key = redisKeyFactory.getClassGeoKey(classId);
-            redisTemplate.opsForGeo().add(key, point, userId.toString());
-            redisTemplate.expire(key, USER_COORDINATES_TTL);
-        }
+        String key = redisKeyFactory.getClassGeoKey(classId);
+        
+        redisTemplate.opsForGeo().add(key, point, userId.toString());
+        redisTemplate.expire(key, USER_COORDINATES_TTL);
     }
-
-    public void setUserClassIds(Long userId, List<Long> classIds) {
-        String key = redisKeyFactory.getUserClassIdsKey(userId);
-        if (classIds != null && !classIds.isEmpty()) {
-            for (Long classId : classIds) {
-                redisTemplate.opsForSet().add(key, classId);
-            }
-            redisTemplate.expire(key, USER_CLASS_IDS_TTL);
-        }
-    }
-
-    public List<Long> getUserClassIds(Long userId) {
-        String key = redisKeyFactory.getUserClassIdsKey(userId);
-        Set<Object> members = redisTemplate.opsForSet().members(key);
-        if (members == null || members.isEmpty()) {
-            return null;
-        }
-        return members.stream()
-                .map(obj -> Long.valueOf(obj.toString()))
-                .toList();
-    }
-
-    public void invalidateClassIdsPerUserId(Long userId) {
-        String key = redisKeyFactory.getUserClassIdsKey(userId);
-        redisTemplate.delete(key);
-    }
-
 
     public Map<Long, Map<String, String>> getUserCoordinatesByClassId(Long classId) {
         String key = redisKeyFactory.getClassGeoKey(classId);

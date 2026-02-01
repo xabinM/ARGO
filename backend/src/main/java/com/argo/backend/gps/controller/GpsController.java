@@ -24,8 +24,9 @@ public class GpsController {
 
     @PostMapping()
     public ResponseEntity<?> updateLocation(@AuthenticationPrincipal Long userId,
-                                            @RequestBody UserCoordinatesRequest coordinates) {
-        gpsService.saveUserCoordinates(userId, coordinates);
+                                            @RequestBody UserCoordinatesRequest coordinates,
+                                            @RequestBody Long classId) {
+        gpsService.saveUserCoordinates(userId, coordinates, classId);
         return ResponseEntity.ok(
                 new UpdateCoordinatesResponse(true,
                         ResponseMessage.SUCCESS_USER_COORDINATES_POST.getMessage())

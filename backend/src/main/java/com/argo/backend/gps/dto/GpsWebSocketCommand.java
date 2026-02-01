@@ -9,4 +9,5 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GpsWebSocketCommand {
     private String command;
+    private Long classId;
 }
