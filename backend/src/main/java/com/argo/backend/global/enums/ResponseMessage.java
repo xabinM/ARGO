@@ -75,6 +75,9 @@ public enum ResponseMessage {
     LOCKED_CARD_CANNOT_BE_USED("이미 사용 중인 카드입니다."),
     CANNOT_CANCEL_PROCESSED_BATTLE("이미 처리된 대전은 취소할 수 없습니다."),
     ONLY_COMPLETED_BATTLE_CAN_BE_VIEWED("완료된 대전만 결과를 확인할 수 있습니다."),
+
+    // Global Exception
+    DATA_INTEGRITY_VIOLATION("이미 처리된 요청이거나 중복된 데이터입니다."),
     ;
 
     private final String message;
