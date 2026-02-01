@@ -10,10 +10,7 @@ import com.argo.backend.domain.team.repository.TeamRepository;
 import com.argo.backend.domain.user.entity.UserTeam;
 import com.argo.backend.domain.user.repository.UserTeamRepository;
 import com.argo.backend.mission.api.PythonApiClient;
-import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateTransDto;
 import com.argo.backend.mission.dto.problemRegister.ProblemRegisterRequest;
-import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateRequestFromCli;
-import com.argo.backend.mission.dto.problemGenerate.ProblemGenerateDto;
 import com.argo.backend.mission.dto.common.ProblemDetail;
 import com.argo.backend.mission.dto.common.QuizProblemDetail;
 import com.argo.backend.mission.dto.common.SelfieProblemDetail;
@@ -24,12 +21,11 @@ import com.argo.backend.domain.ploblem.repository.ProblemRepository;
 import com.argo.backend.domain.spot.repository.SpotRepository;
 import com.argo.backend.mission.exception.TeamNotFoundException;
 import com.argo.backend.mission.exception.problem.PythonServerNoResponseException;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -61,46 +57,8 @@ public class ProblemService {
     }
 
     @Transactional
-    public ProblemGenerateTransDto generateProblem(ProblemGenerateRequestFromCli request) {
-        Spot spot = spotRepository.findById(request.getSpotId())
-                .orElseThrow(SpotNotFoundException::new);
-
-        Map<String, Object> pythonResponse;
-        try {
-            pythonResponse = pythonApiClient.requestProblemAsMapWithApache(
-                    spot.getName(),
-                    request.getGrade(),
-                    request.getProblemCnt()
-            );
-        } catch (Exception e) {
-            pythonResponse = pythonApiClient.requestProblemAsMap(
-                    spot.getName(),
-                    request.getGrade(),
-                    request.getProblemCnt()
-            );
-        }
-
-        List<QuizProblem> quizProblems = new ArrayList<>();
-
-        @SuppressWarnings("unchecked")
-        List<Map<String, Object>> problemsData = (List<Map<String, Object>>) pythonResponse.get("problems");
-
-        for (Map<String, Object> problemData : problemsData) {
-            QuizProblem quizProblem = QuizProblem.from(
-                    spot,
-                    (Integer) problemData.get("grade"),
-                    (String) problemData.get("question"),
-                    (List<String>) problemData.get("choices"),
-                    (Integer) problemData.get("correctIndex"),
-                    (String) problemData.get("explanation")
-            );
-            quizProblems.add(quizProblem);
-        }
-
-        problemRepository.saveAll(quizProblems);
-
-        ProblemGenerateDto dto = new ProblemGenerateDto(quizProblems);
-        return new ProblemGenerateTransDto(request.getGrade(), spot.getName(), dto);
+    public List<QuizProblem> saveGeneratedProblems(List<QuizProblem> quizProblems) {
+        return problemRepository.saveAll(quizProblems);
     }
 
     public Map<String, Object> testQuizGeneration(String spotName, int grade, int problemCnt) {

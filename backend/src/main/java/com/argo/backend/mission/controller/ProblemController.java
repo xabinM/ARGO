@@ -14,6 +14,7 @@ import com.argo.backend.mission.dto.problemsList.AllProblemListResponse;
 import com.argo.backend.mission.dto.selfieDetermine.SelfieRequestDto;
 import com.argo.backend.mission.dto.selfieDetermine.SelfieResultDto;
 import com.argo.backend.mission.dto.selfieDetermine.SelfieResultResponse;
+import com.argo.backend.mission.facade.ProblemFacade;
 import com.argo.backend.mission.service.ProblemService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +34,7 @@ import java.util.Map;
 public class ProblemController {
 
     private final ProblemService problemService;
+    private final ProblemFacade problemFacade;
 
     @PreAuthorize("hasRole('TEACHER')")
     @PostMapping("/register/spot/{spotId}")
@@ -48,7 +50,7 @@ public class ProblemController {
     @PreAuthorize("hasRole('TEACHER')")
     @PostMapping("/generate")
     public ResponseEntity<?> generateProblem(@RequestBody ProblemGenerateRequestFromCli request) {
-        ProblemGenerateTransDto dto = problemService.generateProblem(request);
+        ProblemGenerateTransDto dto = problemFacade.generateProblem(request);
 
         return ResponseEntity.ok(new ProblemGenerateResponse(
                         true, ResponseMessage.SUCCESS_GENERATE_PROBLEM.getMessage(), dto.getGrade(),
