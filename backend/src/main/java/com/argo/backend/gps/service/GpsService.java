@@ -71,10 +71,13 @@ public class GpsService {
         if (!gpsRedis.isTrackingActive(classId)) {
             return;
         }
-
         gpsRedis.setTrackingActive(classId, false);
 
         String destination = "/topic/class/" + classId + "/command";
         messagingTemplate.convertAndSend(destination, new GpsWebSocketCommand("STOP"));
+    }
+
+    public boolean getTrackingStatus(Long classId) {
+        return gpsRedis.isTrackingActive(classId);
     }
 }

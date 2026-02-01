@@ -2,6 +2,7 @@ package com.argo.backend.gps.controller;
 
 import com.argo.backend.global.enums.ResponseMessage;
 import com.argo.backend.gps.dto.RequestUsersCoordinatesResponse;
+import com.argo.backend.gps.dto.TrackingStatusResponse;
 import com.argo.backend.gps.dto.UpdateCoordinatesResponse;
 import com.argo.backend.gps.dto.UserCoordinatesRequest;
 import com.argo.backend.gps.dto.UserCoordinatesDto;
@@ -54,5 +55,11 @@ public class GpsController {
     public ResponseEntity<?> stopTracking(@PathVariable Long classId) {
         gpsService.stopTracking(classId);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/class/{classId}/tracking-status")
+    public ResponseEntity<TrackingStatusResponse> getTrackingStatus(@PathVariable Long classId) {
+        boolean isTracking = gpsService.getTrackingStatus(classId);
+        return ResponseEntity.ok(new TrackingStatusResponse(isTracking));
     }
 }
