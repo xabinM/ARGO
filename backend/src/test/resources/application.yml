@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+# 테스트용 JWT 설정
+jwt:
+  secret: "testSecretKeyForJwtTokenProviderMustBeLongEnoughToSatisfySecurityRequirements12345"
+  accessTokenExpirationMs: 3600000
+  refreshTokenExpirationMs: 86400000
+
+# 테스트용 FCM 설정 (더미 값)
+fcm:
+  service-account-file: classpath:firebase/dummy-service-account.json
+  project-id: "test-project-id"
+
+# 테스트용 AI API 설정 (더미 값)
+python:
+  api:
+    base-url: http://localhost:8000
