@@ -27,6 +27,7 @@ public class GpsRedis {
 
     private static final Duration USER_COORDINATES_TTL = Duration.ofSeconds(1800);
     private static final Duration USER_CLASS_IDS_TTL = Duration.ofHours(1);
+    private static final Duration TRACKING_STATUS_TTL = Duration.ofHours(2);
 
     public void saveUserCoordinates(Long userId, UserCoordinatesRequest userCoordinatesRequest, List<Long> classIds) {
         if (classIds == null || classIds.isEmpty()) {
@@ -94,5 +95,20 @@ public class GpsRedis {
         });
 
         return result;
+    }
+
+    public boolean isTrackingActive(Long classId) {
+        String key = redisKeyFactory.getTrackingStatusKey(classId);
+        Object status = redisTemplate.opsForValue().get(key);
+        return status != null && Boolean.parseBoolean(status.toString());
+    }
+
+    public void setTrackingActive(Long classId, boolean isActive) {
+        String key = redisKeyFactory.getTrackingStatusKey(classId);
+        if (isActive) {
+            redisTemplate.opsForValue().set(key, "true", TRACKING_STATUS_TTL);
+        } else {
+            redisTemplate.delete(key);
+        }
     }
 }

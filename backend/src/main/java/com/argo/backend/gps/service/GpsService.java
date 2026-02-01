@@ -2,10 +2,12 @@ package com.argo.backend.gps.service;
 
 import com.argo.backend.domain.classroom.enums.ApplicationStatus;
 import com.argo.backend.domain.classroom.repository.ClassApplicationRepository;
+import com.argo.backend.gps.dto.GpsWebSocketCommand;
 import com.argo.backend.gps.dto.UserCoordinatesRequest;
 import com.argo.backend.gps.dto.UserCoordinatesDto;
 import com.argo.backend.redis.logic.GpsRedis;
 import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -18,6 +20,7 @@ public class GpsService {
 
     private final GpsRedis gpsRedis;
     private final ClassApplicationRepository classApplicationRepository;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public void saveUserCoordinates(Long userId, UserCoordinatesRequest request) {
 
@@ -54,4 +57,24 @@ public class GpsService {
                 .toList();
     }
 
+    public void startTracking(Long classId) {
+        if (gpsRedis.isTrackingActive(classId)) {
+            return;
+        }
+        gpsRedis.setTrackingActive(classId, true);
+
+        String destination = "/topic/class/" + classId + "/command";
+        messagingTemplate.convertAndSend(destination, new GpsWebSocketCommand("START"));
+    }
+
+    public void stopTracking(Long classId) {
+        if (!gpsRedis.isTrackingActive(classId)) {
+            return;
+        }
+
+        gpsRedis.setTrackingActive(classId, false);
+
+        String destination = "/topic/class/" + classId + "/command";
+        messagingTemplate.convertAndSend(destination, new GpsWebSocketCommand("STOP"));
+    }
 }
