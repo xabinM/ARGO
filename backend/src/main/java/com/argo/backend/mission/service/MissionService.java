@@ -42,7 +42,7 @@ public class MissionService {
     @Transactional
     public MissionCreateDto createMission(Long teamId, Long spotId) {
         Spot spot = getSpotById(spotId);
-        Team team = getTeamByIdWithPessimisticLock(teamId);
+        Team team = getTeamById(teamId);
 
         MissionSession missionSession = getOrCreateMissionSession(team, spot);
         ProblemDetail problemDetail = ProblemDetail.from(missionSession.getProblem());
@@ -57,11 +57,6 @@ public class MissionService {
 
     private Team getTeamById(Long teamId) {
         return teamRepository.findById(teamId)
-                .orElseThrow(TeamNotFoundException::new);
-    }
-
-    private Team getTeamByIdWithPessimisticLock(Long teamId) {
-        return teamRepository.findByIdWithPessimisticLock(teamId)
                 .orElseThrow(TeamNotFoundException::new);
     }
 
@@ -113,11 +108,7 @@ public class MissionService {
 
     @Transactional
     public MissionSubmitDto submitMission(Long missionId, boolean isSuccessful) {
-        MissionSession missionSession = getMissionSession(missionId);
-
-        if (!missionSession.isStatusStarted()) {
-            throw new InvalidMissionSessionException();
-        }
+        MissionSession missionSession = getActiveMissionSessionWithLock(missionId);
 
         if (isSuccessful) {
             return handleSuccessfulMission(missionSession);
@@ -126,9 +117,9 @@ public class MissionService {
         }
     }
 
-    private MissionSession getMissionSession(Long missionId) {
-        return missionSessionRepository.findById(missionId)
-                .orElseThrow(MissionSessionNotFoundException::new);
+    private MissionSession getActiveMissionSessionWithLock(Long missionId) {
+        return missionSessionRepository.findBySessionIdAndStatusWithLock(missionId, MissionSessionStatus.STARTED)
+                .orElseThrow(InvalidMissionSessionException::new);
     }
 
     private MissionSubmitDto handleSuccessfulMission(MissionSession missionSession) {

@@ -9,9 +9,17 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "mission_sessions", indexes = {
-        @Index(name = "idx_team_spot", columnList = "team_id, spot_id")
-})
+@Table(name = "mission_sessions",
+        indexes = {
+                @Index(name = "idx_team_spot", columnList = "team_id, spot_id")
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_team_spot_active",
+                        columnNames = {"team_id", "spot_id"}
+                )
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -65,4 +73,3 @@ public class MissionSession extends CreatedAtEntity {
         this.status = MissionSessionStatus.COMPLETED;
     }
 }
-
