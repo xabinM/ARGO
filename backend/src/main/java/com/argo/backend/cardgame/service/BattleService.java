@@ -25,6 +25,7 @@ import com.argo.backend.organization.exception.types.TeamNotFoundException;
 import com.argo.backend.organization.exception.types.UnauthorizedClassAccessException;
 import com.argo.backend.organization.exception.types.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -96,56 +97,58 @@ public class BattleService {
 
     @Transactional
     public BattleResponse respondToBattle(Long matchId, BattleResponseDto request, Long userId) {
+        try {
+            CardGameMatch match = cardGameMatchRepository.findById(matchId)
+                    .orElseThrow(BattleNotFoundException::new);
 
-        CardGameMatch match = cardGameMatchRepository.findById(matchId)
-                .orElseThrow(BattleNotFoundException::new);
+            if (match.getStatus() != MatchStatus.PENDING) {
+                throw new AlreadyProcessedBattleException();
+            }
 
-        if (match.getStatus() != MatchStatus.PENDING) {
+            validateChallengeAccess(match.getChallengedTeam(), userId);
+
+            if ("ACCEPT".equals(request.action())) {
+                TeamCard challengedCard = validateAndLockCard(request.selectedCard().teamCardId(), match.getChallengedTeam());
+
+                match.setChallengedCard(challengedCard);
+                match.setChallengedStrategy(request.selectedCard().battleStance());
+                match.setStartedAt(LocalDateTime.now());
+                match.setStatus(MatchStatus.COMPLETED);
+
+                processBattleResult(match);
+                cardGameMatchRepository.save(match);
+
+                // 신청자 팀장에게 수락 알림 전송
+                User challengerLeader = match.getChallengerTeam().getLeader();
+                if (challengerLeader != null && challengerLeader.getFcmToken() != null) {
+                    fcmService.sendChallengeAcceptedNotification(
+                            challengerLeader.getFcmToken(),
+                            match.getChallengedTeam().getTeamName()
+                    );
+                }
+
+                return BattleResponse.success(ResponseMessage.BATTLE_ACCEPTED.getMessage());
+            } else {
+                match.setStatus(MatchStatus.CANCELLED);
+                cardGameMatchRepository.save(match);
+                // 신청자 카드 잠금 해제
+                if (match.getChallengerCard() != null) {
+                    match.getChallengerCard().setIsLocked(false);
+                }
+
+                // 신청자 팀장에게 거절 알림 전송
+                User challengerLeader = match.getChallengerTeam().getLeader();
+                if (challengerLeader != null && challengerLeader.getFcmToken() != null) {
+                    fcmService.sendChallengeCancelledNotification(
+                            challengerLeader.getFcmToken(),
+                            match.getChallengedTeam().getTeamName()
+                    );
+                }
+
+                return BattleResponse.success(ResponseMessage.BATTLE_REJECTED.getMessage());
+            }
+        } catch (ObjectOptimisticLockingFailureException e) {
             throw new AlreadyProcessedBattleException();
-        }
-
-        validateChallengeAccess(match.getChallengedTeam(), userId);
-
-        if ("ACCEPT".equals(request.action())) {
-            TeamCard challengedCard = validateAndLockCard(request.selectedCard().teamCardId(), match.getChallengedTeam());
-
-            match.setChallengedCard(challengedCard);
-            match.setChallengedStrategy(request.selectedCard().battleStance());
-            match.setStartedAt(LocalDateTime.now());
-            match.setStatus(MatchStatus.COMPLETED);
-
-            processBattleResult(match);
-            cardGameMatchRepository.save(match);
-
-            // 신청자 팀장에게 수락 알림 전송
-            User challengerLeader = match.getChallengerTeam().getLeader();
-            if (challengerLeader != null && challengerLeader.getFcmToken() != null) {
-                fcmService.sendChallengeAcceptedNotification(
-                        challengerLeader.getFcmToken(),
-                        match.getChallengedTeam().getTeamName()
-                );
-            }
-
-
-            return BattleResponse.success(ResponseMessage.BATTLE_ACCEPTED.getMessage());
-        } else {
-            match.setStatus(MatchStatus.CANCELLED);
-            cardGameMatchRepository.save(match);
-            // 신청자 카드 잠금 해제
-            if (match.getChallengerCard() != null) {
-                match.getChallengerCard().setIsLocked(false);
-            }
-
-            // 신청자 팀장에게 거절 알림 전송
-            User challengerLeader = match.getChallengerTeam().getLeader();
-            if (challengerLeader != null && challengerLeader.getFcmToken() != null) {
-                fcmService.sendChallengeCancelledNotification(
-                        challengerLeader.getFcmToken(),
-                        match.getChallengedTeam().getTeamName()
-                );
-            }
-
-            return BattleResponse.success(ResponseMessage.BATTLE_REJECTED.getMessage());
         }
     }
 
@@ -193,24 +196,28 @@ public class BattleService {
 
     @Transactional
     public BattleResponse cancelBattle(Long matchId, Long userId) {
+        try {
+            CardGameMatch match = cardGameMatchRepository.findById(matchId)
+                    .orElseThrow(BattleNotFoundException::new);
 
-        CardGameMatch match = cardGameMatchRepository.findById(matchId)
-                .orElseThrow(BattleNotFoundException::new);
+            if (match.getStatus() != MatchStatus.PENDING) {
+                throw new ProcessedBattleCancelException();
+            }
 
-        if (match.getStatus() != MatchStatus.PENDING) {
+            validateChallengeAccess(match.getChallengerTeam(), userId);
+
+            match.setStatus(MatchStatus.CANCELLED);
+
+            // 신청자 카드 잠금 해제
+            if (match.getChallengerCard() != null) {
+                match.getChallengerCard().setIsLocked(false);
+            }
+            cardGameMatchRepository.save(match);
+
+            return BattleResponse.success(ResponseMessage.BATTLE_CANCELLED.getMessage());
+        } catch (ObjectOptimisticLockingFailureException e) {
             throw new ProcessedBattleCancelException();
         }
-
-        validateChallengeAccess(match.getChallengerTeam(), userId);
-
-        match.setStatus(MatchStatus.CANCELLED);
-
-        // 신청자 카드 잠금 해제
-        if (match.getChallengerCard() != null) {
-            match.getChallengerCard().setIsLocked(false);
-        }
-
-        return BattleResponse.success(ResponseMessage.BATTLE_CANCELLED.getMessage());
     }
 
     @Transactional

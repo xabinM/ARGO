@@ -24,6 +24,9 @@ public class CardGameMatch extends CreatedAtEntity {
     @Column(name = "match_id")
     private Long matchId;
 
+    @Version
+    private Long version; // 낙관적 락을 위한 버전 필드
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "challenger_team_id", nullable = false)
     private Team challengerTeam;
