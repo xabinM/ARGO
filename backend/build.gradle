@@ -55,6 +55,10 @@ dependencies {
 	// Firebase FCM
 	implementation 'com.google.firebase:firebase-admin:9.1.1'
 
+	// Spring Retry
+	implementation 'org.springframework.retry:spring-retry'
+	implementation 'org.springframework:spring-aspects'
+
 	// 테스트 의존성
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
