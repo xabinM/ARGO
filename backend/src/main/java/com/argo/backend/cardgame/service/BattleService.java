@@ -166,6 +166,16 @@ public class BattleService {
                 match.getChallengerCard().setIsLocked(false);
             }
             cardGameMatchRepository.save(match);
+
+            // 만료 알림 이벤트 발행 (신청자에게 알림)
+            User challengerLeader = match.getChallengerTeam().getLeader();
+            if (challengerLeader != null && challengerLeader.getFcmToken() != null) {
+                eventPublisher.publishEvent(new BattleStatusChangedEvent(
+                        challengerLeader.getFcmToken(),
+                        match.getChallengedTeam().getTeamName(),
+                        MatchStatus.EXPIRED
+                ));
+            }
         }
     }
 
@@ -370,6 +380,16 @@ public class BattleService {
         return new BattleResult(false, 0, 0, false, false, false); // 기본값
     }
 
+    private record BattleResult(
+            boolean challengerWins,
+            int challengerScore,
+            int challengedScore,
+            boolean challengerLoseCard,
+            boolean challengedLoseCard,
+            boolean isDraw
+    ) {
+    }
+
     private void applyBattleResult(CardGameMatch match, BattleResult result) {
         Team challengerTeam = match.getChallengerTeam();
         Team challengedTeam = match.getChallengedTeam();
@@ -468,15 +488,5 @@ public class BattleService {
             case BOTH_SEE:
                 break;
         }
-    }
-
-    private record BattleResult(
-            boolean challengerWins,
-            int challengerScore,
-            int challengedScore,
-            boolean challengerLoseCard,
-            boolean challengedLoseCard,
-            boolean isDraw
-    ) {
     }
 }

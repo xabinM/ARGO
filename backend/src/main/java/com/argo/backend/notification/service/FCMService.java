@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 public class FCMService {
 
     private static final Logger logger = LoggerFactory.getLogger(FCMService.class);
-
+    
     // 재시도 스케줄링을 위한 실행기 (단일 스레드로 충분)
     private final ScheduledExecutorService retryExecutor = Executors.newSingleThreadScheduledExecutor();
     private static final int MAX_RETRY_ATTEMPTS = 3;
@@ -68,6 +68,20 @@ public class FCMService {
         sendFcmMessageWithRetry(targetFcmToken, "대전 거절", cancellerTeamName + " 팀이 대전을 거절했습니다.", data, 1);
     }
 
+    public void sendChallengeExpiredNotification(String targetFcmToken, String opponentTeamName) {
+        if (targetFcmToken == null || targetFcmToken.trim().isEmpty()) {
+            logger.warn("FCM token is null or empty for challenge expired notification.");
+            return;
+        }
+
+        Map<String, String> data = new HashMap<>();
+        data.put("command", "challenge_expired");
+        data.put("challenge_team", opponentTeamName);
+
+        logger.info("[FCM 시도] 대전 만료 알림 발송. To: {}", targetFcmToken);
+        sendFcmMessageWithRetry(targetFcmToken, "대전 만료", "상대방이 응답하지 않아 " + opponentTeamName + " 팀과의 대전 신청이 만료되었습니다.", data, 1);
+    }
+
     private void sendFcmMessageWithRetry(String token, String title, String body, Map<String, String> data, int attempt) {
         Message message = Message.builder()
                 .setToken(token)
@@ -93,9 +107,9 @@ public class FCMService {
             public void onFailure(Throwable t) {
                 if (attempt < MAX_RETRY_ATTEMPTS) {
                     logger.warn("FCM 발송 실패. {}ms 후 재시도합니다. (시도 {}/{}) Error: {}", RETRY_DELAY_MS, attempt, MAX_RETRY_ATTEMPTS, t.getMessage());
-
+                    
                     // 비동기 지연 재시도
-                    retryExecutor.schedule(() ->
+                    retryExecutor.schedule(() -> 
                         sendFcmMessageWithRetry(token, title, body, data, attempt + 1),
                         RETRY_DELAY_MS,
                         TimeUnit.MILLISECONDS
