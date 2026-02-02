@@ -5,6 +5,7 @@ import com.argo.backend.cardgame.dto.battle.BattleRequestDto;
 import com.argo.backend.cardgame.dto.battle.BattleResponse;
 import com.argo.backend.cardgame.dto.battle.BattleResponseDto;
 import com.argo.backend.cardgame.exception.types.*;
+import com.argo.backend.cardgame.scheduler.BattleExpirationUtil;
 import com.argo.backend.domain.cardgame.entity.Card;
 import com.argo.backend.domain.cardgame.entity.CardGameMatch;
 import com.argo.backend.domain.cardgame.entity.TeamCard;
@@ -45,6 +46,8 @@ public class BattleService {
     private final TeamCardRepository teamCardRepository;
     private final CardGameMatchRepository cardGameMatchRepository;
     private final FCMService fcmService;
+    private final BattleExpirationUtil battleExpirationService;
+
 
     public List<BattleOpponentDto> getBattleOpponents(Long teamId, Long userId) {
 
@@ -81,7 +84,10 @@ public class BattleService {
                 request.selectedCard().battleStance()
         );
 
-        cardGameMatchRepository.save(match);
+        CardGameMatch savedMatch = cardGameMatchRepository.save(match);
+
+        // 30초 후 만료 작업 등록
+        battleExpirationService.registerBattleExpiration(savedMatch.getMatchId(), 30000);
 
         // 상대 팀장에게 FCM 알림 전송
         User challengedLeader = challengedTeam.getLeader();
@@ -149,6 +155,20 @@ public class BattleService {
             }
         } catch (ObjectOptimisticLockingFailureException e) {
             throw new AlreadyProcessedBattleException();
+        }
+    }
+
+    @Transactional
+    public synchronized void expireMatch(Long matchId) {
+        CardGameMatch match = cardGameMatchRepository.findById(matchId).orElse(null);
+
+        if (match != null && match.getStatus() == MatchStatus.PENDING) {
+            match.setStatus(MatchStatus.EXPIRED);
+
+            if (match.getChallengerCard() != null) {
+                match.getChallengerCard().setIsLocked(false);
+            }
+            cardGameMatchRepository.save(match);
         }
     }
 
