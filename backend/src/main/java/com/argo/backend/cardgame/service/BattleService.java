@@ -1,5 +1,6 @@
 package com.argo.backend.cardgame.service;
 
+import com.argo.backend.cardgame.dto.BattleStatusChangedEvent;
 import com.argo.backend.cardgame.dto.battle.BattleOpponentDto;
 import com.argo.backend.cardgame.dto.battle.BattleRequestDto;
 import com.argo.backend.cardgame.dto.battle.BattleResponse;
@@ -21,11 +22,11 @@ import com.argo.backend.domain.user.entity.UserTeam;
 import com.argo.backend.domain.user.repository.UserRepository;
 import com.argo.backend.domain.user.repository.UserTeamRepository;
 import com.argo.backend.global.enums.ResponseMessage;
-import com.argo.backend.notification.service.FCMService;
 import com.argo.backend.organization.exception.types.TeamNotFoundException;
 import com.argo.backend.organization.exception.types.UnauthorizedClassAccessException;
 import com.argo.backend.organization.exception.types.UserNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,21 +46,19 @@ public class BattleService {
     private final UserTeamRepository userTeamRepository;
     private final TeamCardRepository teamCardRepository;
     private final CardGameMatchRepository cardGameMatchRepository;
-    private final FCMService fcmService;
-    private final BattleExpirationUtil battleExpirationService;
-
+    private final BattleExpirationUtil battleExpirationUtil;
+    private final ApplicationEventPublisher eventPublisher;
 
     public List<BattleOpponentDto> getBattleOpponents(Long teamId, Long userId) {
 
         Team currentTeam = validateTeamAccess(teamId, userId);
 
-        // N+1 문제 해결: 팀과 리더를 한 번에 조회 (FETCH JOIN)
         List<Team> allTeams = teamRepository.findByClassRoomWithLeaderOrderByCreatedAtAsc(currentTeam.getClassRoom());
 
         return allTeams.stream()
                 .filter(team -> !team.getTeamId().equals(teamId))
                 .map(team -> {
-                    String leaderName = getTeamLeaderName(team); // 이미 FETCH JOIN으로 로딩됨 (추가 쿼리 없음)
+                    String leaderName = getTeamLeaderName(team);
                     return BattleOpponentDto.from(team, leaderName);
                 })
                 .collect(Collectors.toList());
@@ -86,16 +85,15 @@ public class BattleService {
 
         CardGameMatch savedMatch = cardGameMatchRepository.save(match);
 
-        // 30초 후 만료 작업 등록
-        battleExpirationService.registerBattleExpiration(savedMatch.getMatchId(), 30000);
+        battleExpirationUtil.registerBattleExpiration(savedMatch.getMatchId(), 30000);
 
-        // 상대 팀장에게 FCM 알림 전송
         User challengedLeader = challengedTeam.getLeader();
         if (challengedLeader != null && challengedLeader.getFcmToken() != null) {
-            fcmService.sendChallengeNotification(
+            eventPublisher.publishEvent(new BattleStatusChangedEvent(
                     challengedLeader.getFcmToken(),
-                    challengerTeam.getTeamName()
-            );
+                    challengerTeam.getTeamName(),
+                    MatchStatus.PENDING
+            ));
         }
 
         return BattleResponse.success(ResponseMessage.BATTLE_REQUEST_SENT.getMessage());
@@ -113,6 +111,8 @@ public class BattleService {
 
             validateChallengeAccess(match.getChallengedTeam(), userId);
 
+            User challengerLeader = match.getChallengerTeam().getLeader();
+
             if ("ACCEPT".equals(request.action())) {
                 TeamCard challengedCard = validateAndLockCard(request.selectedCard().teamCardId(), match.getChallengedTeam());
 
@@ -124,31 +124,28 @@ public class BattleService {
                 processBattleResult(match);
                 cardGameMatchRepository.save(match);
 
-                // 신청자 팀장에게 수락 알림 전송
-                User challengerLeader = match.getChallengerTeam().getLeader();
                 if (challengerLeader != null && challengerLeader.getFcmToken() != null) {
-                    fcmService.sendChallengeAcceptedNotification(
+                    eventPublisher.publishEvent(new BattleStatusChangedEvent(
                             challengerLeader.getFcmToken(),
-                            match.getChallengedTeam().getTeamName()
-                    );
+                            match.getChallengedTeam().getTeamName(),
+                            MatchStatus.COMPLETED
+                    ));
                 }
 
                 return BattleResponse.success(ResponseMessage.BATTLE_ACCEPTED.getMessage());
-            } else {
+            } else { // REJECT
                 match.setStatus(MatchStatus.CANCELLED);
                 cardGameMatchRepository.save(match);
-                // 신청자 카드 잠금 해제
                 if (match.getChallengerCard() != null) {
                     match.getChallengerCard().setIsLocked(false);
                 }
 
-                // 신청자 팀장에게 거절 알림 전송
-                User challengerLeader = match.getChallengerTeam().getLeader();
                 if (challengerLeader != null && challengerLeader.getFcmToken() != null) {
-                    fcmService.sendChallengeCancelledNotification(
+                    eventPublisher.publishEvent(new BattleStatusChangedEvent(
                             challengerLeader.getFcmToken(),
-                            match.getChallengedTeam().getTeamName()
-                    );
+                            match.getChallengedTeam().getTeamName(),
+                            MatchStatus.CANCELLED
+                    ));
                 }
 
                 return BattleResponse.success(ResponseMessage.BATTLE_REJECTED.getMessage());
@@ -173,8 +170,6 @@ public class BattleService {
     }
 
     private void validateChallengeAccess(Team challengedTeam, Long userId) {
-
-        // N+1 문제 해결: Repository 메서드로 대체 (FETCH JOIN 사용)
         Optional<UserTeam> userTeamOpt = userTeamRepository.findActiveByUserIdAndClassId(userId, challengedTeam.getClassRoom().getClassId());
         Team userTeam = userTeamOpt.map(UserTeam::getTeam).orElse(null);
 
@@ -187,29 +182,22 @@ public class BattleService {
         TeamCard challengerCard = match.getChallengerCard();
         TeamCard challengedCard = match.getChallengedCard();
 
-        // 전략 가져오기
         var challengerStrategy = match.getChallengerStrategy();
         var challengedStrategy = match.getChallengedStrategy();
 
-        // 전략에 따른 카드 능력치 계산
         double challengerPower = calculateCardPower(challengerCard, challengerStrategy);
         double challengedPower = calculateCardPower(challengedCard, challengedStrategy);
 
-        // 대전 결과 계산
         BattleResult result = determineBattleResult(
                 challengerPower, challengedPower,
                 challengerStrategy, challengedStrategy
         );
 
-        // 점수 및 카드 상태 업데이트
         applyBattleResult(match, result);
 
-        // 매치 상태 완료로 변경
         match.setStatus(MatchStatus.COMPLETED);
         match.setEndedAt(LocalDateTime.now());
 
-
-        // 카드 잠금 해제
         challengerCard.setIsLocked(false);
         challengedCard.setIsLocked(false);
     }
@@ -228,7 +216,6 @@ public class BattleService {
 
             match.setStatus(MatchStatus.CANCELLED);
 
-            // 신청자 카드 잠금 해제
             if (match.getChallengerCard() != null) {
                 match.getChallengerCard().setIsLocked(false);
             }
@@ -242,7 +229,6 @@ public class BattleService {
 
     @Transactional
     public BattleResponse viewBattleResult(Long matchId, Long userId) {
-
         CardGameMatch match = cardGameMatchRepository.findById(matchId)
                 .orElseThrow(BattleNotFoundException::new);
 
@@ -262,12 +248,10 @@ public class BattleService {
 
         Long userTeamId = userTeam.getTeamId();
 
-        // resultView 상태 업데이트 로직
         updateResultViewStatus(match, userTeamId);
         cardGameMatchRepository.save(match);
         return BattleResponse.success(ResponseMessage.BATTLE_RESULT_VIEWED.getMessage());
     }
-
 
     private TeamCard validateAndLockCard(Long teamCardId, Team challengerTeam) {
         TeamCard teamCard = teamCardRepository.findById(teamCardId)
@@ -305,7 +289,6 @@ public class BattleService {
         User user = userRepository.findById(userId)
                 .orElseThrow(UserNotFoundException::new);
 
-        // N+1 문제 해결: Repository 메서드로 대체 (FETCH JOIN 사용)
         Optional<UserTeam> userTeamOpt = userTeamRepository.findActiveByUserIdAndClassId(userId, team.getClassRoom().getClassId());
         Team userTeam = userTeamOpt.map(UserTeam::getTeam).orElse(null);
 
@@ -327,9 +310,9 @@ public class BattleService {
         double tierWeight = teamCard.getTier().getWeight();
 
         if (strategy == BattleStrategy.ATTACK) {
-            return card.getBaseAttack() * tierWeight;  // 최종 공격력
+            return card.getBaseAttack() * tierWeight;
         } else {
-            return card.getBaseDefense() * tierWeight; // 최종 방어력
+            return card.getBaseDefense() * tierWeight;
         }
     }
 
@@ -391,32 +374,26 @@ public class BattleService {
         Team challengerTeam = match.getChallengerTeam();
         Team challengedTeam = match.getChallengedTeam();
 
-        // 카드 능력치 비교 (무승부 판단용)
         TeamCard challengerCard = match.getChallengerCard();
         TeamCard challengedCard = match.getChallengedCard();
 
-        // 팀 점수 및 통계 업데이트
         if (result.isDraw()) {
-            // 무승부 처리
             updateTeamScoreForDraw(challengerTeam, result.challengerScore());
             updateTeamScoreForDraw(challengedTeam, result.challengedScore());
         } else {
-            // 승부 결과에 따른 처리
-            // 점수가 0인 팀은 패배자
             if (result.challengerScore() > 0) {
-                updateTeamScore(challengerTeam, result.challengerScore(), true); // 승리자
+                updateTeamScore(challengerTeam, result.challengerScore(), true);
             } else {
-                updateTeamScore(challengerTeam, 0, false); // 패배자
+                updateTeamScore(challengerTeam, 0, false);
             }
 
             if (result.challengedScore() > 0) {
-                updateTeamScore(challengedTeam, result.challengedScore(), true); // 승리자
+                updateTeamScore(challengedTeam, result.challengedScore(), true);
             } else {
-                updateTeamScore(challengedTeam, 0, false); // 패배자
+                updateTeamScore(challengedTeam, 0, false);
             }
         }
 
-        // 카드 제거 처리
         if (result.challengerLoseCard() && match.getChallengerCard() != null) {
             match.getChallengerCard().setIsLost(true);
             teamCardRepository.save(match.getChallengerCard());
@@ -426,9 +403,7 @@ public class BattleService {
             teamCardRepository.save(match.getChallengedCard());
         }
 
-        // 승부 결과 설정
         if (result.isDraw()) {
-            // 무승부
             match.setWinnerTeam(null);
             match.setLoserTeam(null);
             match.setDraw(true);
@@ -445,24 +420,15 @@ public class BattleService {
             match.setLoserCard(challengerCard);
             match.setDraw(false);
         }
-
     }
 
     private void updateTeamScore(Team team, int score, boolean isWinner) {
-        if (score > 0) {
-            team.initializeGameResult();
-
-            if (isWinner) {
-                team.getGameResult().addWin(score);
-            } else {
-                // 점수는 받지만 패배한 경우
-                team.getGameResult().addLoss();
-                team.getGameResult().setTotalPoints(team.getGameResult().getTotalPoints() + score);
-            }
+        team.initializeGameResult();
+        if (isWinner) {
+            team.getGameResult().addWin(score);
         } else {
-            // 점수를 못받은 패배자
-            team.initializeGameResult();
             team.getGameResult().addLoss();
+            team.getGameResult().setTotalPoints(team.getGameResult().getTotalPoints() + score);
         }
     }
 
@@ -489,25 +455,21 @@ public class BattleService {
                     match.setResultView(ResultView.SEE_CHALLENGED);
                 }
                 break;
-
             case SEE_CHALLENGER:
                 if (isChallengedViewing) {
                     match.setResultView(ResultView.BOTH_SEE);
                 }
                 break;
-
             case SEE_CHALLENGED:
                 if (isChallengerViewing) {
                     match.setResultView(ResultView.BOTH_SEE);
                 }
                 break;
-
             case BOTH_SEE:
                 break;
         }
     }
 
-    // 대전 결과를 담는 내부 클래스
     private record BattleResult(
             boolean challengerWins,
             int challengerScore,
