@@ -16,6 +16,9 @@ public interface ClassApplicationRepository extends JpaRepository<ClassApplicati
 
     boolean existsByUserAndClassRoom(User user, ClassRoom classRoom);
 
+    // 학생이 특정 반에 승인된 상태로 속해있는지 확인 (GPS 권한 확인용)
+    boolean existsByUser_UserIdAndClassRoom_ClassIdAndStatus(Long userId, Long classId, ApplicationStatus status);
+
     // 특정 반의 모든 신청 조회 (페이징)
     @Query("SELECT ca FROM ClassApplication ca JOIN FETCH ca.user WHERE ca.classRoom.classId = :classId")
     Page<ClassApplication> findByClassRoomClassId(@Param("classId") Long classId, Pageable pageable);
