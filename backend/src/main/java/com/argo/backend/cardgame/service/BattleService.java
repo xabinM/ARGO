@@ -6,7 +6,7 @@ import com.argo.backend.cardgame.dto.battle.BattleRequestDto;
 import com.argo.backend.cardgame.dto.battle.BattleResponse;
 import com.argo.backend.cardgame.dto.battle.BattleResponseDto;
 import com.argo.backend.cardgame.exception.types.*;
-import com.argo.backend.cardgame.scheduler.BattleExpirationUtil;
+import com.argo.backend.cardgame.scheduler.BattleExpirationManager;
 import com.argo.backend.domain.cardgame.entity.Card;
 import com.argo.backend.domain.cardgame.entity.CardGameMatch;
 import com.argo.backend.domain.cardgame.entity.TeamCard;
@@ -46,7 +46,7 @@ public class BattleService {
     private final UserTeamRepository userTeamRepository;
     private final TeamCardRepository teamCardRepository;
     private final CardGameMatchRepository cardGameMatchRepository;
-    private final BattleExpirationUtil battleExpirationUtil;
+    private final BattleExpirationManager battleExpirationManager;
     private final ApplicationEventPublisher eventPublisher;
 
     public List<BattleOpponentDto> getBattleOpponents(Long teamId, Long userId) {
@@ -85,7 +85,7 @@ public class BattleService {
 
         CardGameMatch savedMatch = cardGameMatchRepository.save(match);
 
-        battleExpirationUtil.registerBattleExpiration(savedMatch.getMatchId(), 30000);
+        battleExpirationManager.registerBattleExpiration(savedMatch.getMatchId(), 30000);
 
         User challengedLeader = challengedTeam.getLeader();
         if (challengedLeader != null && challengedLeader.getFcmToken() != null) {
@@ -152,30 +152,6 @@ public class BattleService {
             }
         } catch (ObjectOptimisticLockingFailureException e) {
             throw new AlreadyProcessedBattleException();
-        }
-    }
-
-    @Transactional
-    public synchronized void expireMatch(Long matchId) {
-        CardGameMatch match = cardGameMatchRepository.findById(matchId).orElse(null);
-
-        if (match != null && match.getStatus() == MatchStatus.PENDING) {
-            match.setStatus(MatchStatus.EXPIRED);
-
-            if (match.getChallengerCard() != null) {
-                match.getChallengerCard().setIsLocked(false);
-            }
-            cardGameMatchRepository.save(match);
-
-            // 만료 알림 이벤트 발행 (신청자에게 알림)
-            User challengerLeader = match.getChallengerTeam().getLeader();
-            if (challengerLeader != null && challengerLeader.getFcmToken() != null) {
-                eventPublisher.publishEvent(new BattleStatusChangedEvent(
-                        challengerLeader.getFcmToken(),
-                        match.getChallengedTeam().getTeamName(),
-                        MatchStatus.EXPIRED
-                ));
-            }
         }
     }
 
