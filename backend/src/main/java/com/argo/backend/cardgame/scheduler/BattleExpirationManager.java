@@ -1,17 +1,18 @@
 package com.argo.backend.cardgame.scheduler;
 
-import com.argo.backend.cardgame.service.BattleService;
+import com.argo.backend.cardgame.service.BattleExpireService;
 import com.argo.backend.domain.cardgame.entity.CardGameMatch;
 import com.argo.backend.domain.cardgame.enums.MatchStatus;
 import com.argo.backend.domain.cardgame.repository.CardGameMatchRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ExecutorService;
@@ -19,29 +20,33 @@ import java.util.concurrent.Executors;
 
 @Slf4j
 @Component
-public class BattleExpirationUtil {
+@RequiredArgsConstructor
+public class BattleExpirationManager {
 
     private static final long BATTLE_EXPIRE_MILLIS = 30000L;
 
     private final DelayQueue<DelayedBattle> expirationQueue = new DelayQueue<>();
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
-    private final BattleService battleService;
+    private final BattleExpireService battleExpireService;
     private final CardGameMatchRepository cardGameMatchRepository;
-
-    public BattleExpirationUtil(@Lazy BattleService battleService, CardGameMatchRepository cardGameMatchRepository) {
-        this.battleService = battleService;
-        this.cardGameMatchRepository = cardGameMatchRepository;
-    }
 
     @PostConstruct
     public void init() {
         recoverPendingMatches();
+        startExpirationProcessor();
+    }
+
+    public void registerBattleExpiration(Long matchId, long delayInMillis) {
+        expirationQueue.put(new DelayedBattle(matchId, delayInMillis));
+    }
+
+    private void startExpirationProcessor() {
         executorService.submit(() -> {
             while (!Thread.currentThread().isInterrupted()) {
                 DelayedBattle expiredBattle = null;
                 try {
                     expiredBattle = expirationQueue.take();
-                    battleService.expireMatch(expiredBattle.getMatchId());
+                    battleExpireService.expireMatch(expiredBattle.getMatchId());
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 } catch (Exception e) {
@@ -54,7 +59,7 @@ public class BattleExpirationUtil {
     private void recoverPendingMatches() {
         List<CardGameMatch> pendingMatches = cardGameMatchRepository.findAllByStatus(MatchStatus.PENDING);
 
-        List<CardGameMatch> alreadyExpired = new java.util.ArrayList<>();
+        List<CardGameMatch> alreadyExpired = new ArrayList<>();
 
         for (CardGameMatch match : pendingMatches) {
             long elapsed = Duration.between(match.getCreatedAt(), LocalDateTime.now()).toMillis();
@@ -81,10 +86,6 @@ public class BattleExpirationUtil {
         if (reregistered > 0) {
             log.info("서버 재시작 복구: {}개의 PENDING 배틀을 DelayQueue에 재등록했습니다.", reregistered);
         }
-    }
-
-    public void registerBattleExpiration(Long matchId, long delayInMillis) {
-        expirationQueue.put(new DelayedBattle(matchId, delayInMillis));
     }
 
     @PreDestroy
