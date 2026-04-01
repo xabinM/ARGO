@@ -1,13 +1,10 @@
 package com.argo.backend.cardgame.scheduler;
 
-import com.argo.backend.cardgame.dto.BattleStatusChangedEvent;
 import com.argo.backend.domain.cardgame.entity.CardGameMatch;
 import com.argo.backend.domain.cardgame.enums.MatchStatus;
 import com.argo.backend.domain.cardgame.repository.CardGameMatchRepository;
-import com.argo.backend.domain.user.entity.User;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,13 +18,12 @@ import java.util.List;
 public class BattleScheduler {
 
     private final CardGameMatchRepository cardGameMatchRepository;
-    private final ApplicationEventPublisher eventPublisher;
 
-    @Scheduled(fixedRate = 300000) // 5분마다 실행
+    @Scheduled(fixedRate = 3600000) // 1시간마다 실행 (DelayQueue 처리 실패 안전망)
     @Transactional
     public void expireOldBattles() {
         LocalDateTime thirtySecondsAgo = LocalDateTime.now().minusSeconds(30);
-        
+
         List<CardGameMatch> expiredMatches = cardGameMatchRepository.findAllByStatusAndCreatedAtBefore(MatchStatus.PENDING, thirtySecondsAgo);
 
         if (expiredMatches.isEmpty()) {
@@ -40,18 +36,9 @@ public class BattleScheduler {
             if (match.getChallengerCard() != null) {
                 match.getChallengerCard().setIsLocked(false);
             }
-
-            // 만료 알림 이벤트 발행 (누락된 알림 발송)
-            User challengerLeader = match.getChallengerTeam().getLeader();
-            if (challengerLeader != null && challengerLeader.getFcmToken() != null) {
-                eventPublisher.publishEvent(new BattleStatusChangedEvent(
-                        challengerLeader.getFcmToken(),
-                        match.getChallengedTeam().getTeamName(),
-                        MatchStatus.EXPIRED
-                ));
-            }
         }
 
+        log.warn("안전망 스케줄러 동작: {}개의 미처리 만료 배틀을 정리했습니다.", expiredMatches.size());
         cardGameMatchRepository.saveAll(expiredMatches);
     }
 }

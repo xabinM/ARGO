@@ -27,4 +27,6 @@ public interface CardGameMatchRepository extends JpaRepository<CardGameMatch, Lo
     Page<CardGameMatch> findByTeamIdOrderByCreatedAtDescWithTeams(@Param("teamId") Long teamId, Pageable pageable);
 
     List<CardGameMatch> findAllByStatusAndCreatedAtBefore(MatchStatus status, LocalDateTime cutoff);
+
+    List<CardGameMatch> findAllByStatus(MatchStatus status);
 }
