@@ -1,12 +1,18 @@
 package com.argo.backend.cardgame.scheduler;
 
 import com.argo.backend.cardgame.service.BattleService;
+import com.argo.backend.domain.cardgame.entity.CardGameMatch;
+import com.argo.backend.domain.cardgame.enums.MatchStatus;
+import com.argo.backend.domain.cardgame.repository.CardGameMatchRepository;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -15,26 +21,46 @@ import java.util.concurrent.Executors;
 @Component
 public class BattleExpirationUtil {
 
+    private static final long BATTLE_EXPIRE_MILLIS = 30000L;
+
     private final DelayQueue<DelayedBattle> expirationQueue = new DelayQueue<>();
     private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final BattleService battleService;
+    private final CardGameMatchRepository cardGameMatchRepository;
 
-    public BattleExpirationUtil(@Lazy BattleService battleService) {
+    public BattleExpirationUtil(@Lazy BattleService battleService, CardGameMatchRepository cardGameMatchRepository) {
         this.battleService = battleService;
+        this.cardGameMatchRepository = cardGameMatchRepository;
     }
 
     @PostConstruct
     public void init() {
+        recoverPendingMatches();
         executorService.submit(() -> {
             while (!Thread.currentThread().isInterrupted()) {
+                DelayedBattle expiredBattle = null;
                 try {
-                    DelayedBattle expiredBattle = expirationQueue.take();
+                    expiredBattle = expirationQueue.take();
                     battleService.expireMatch(expiredBattle.getMatchId());
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
+                } catch (Exception e) {
+                    log.error("만료 처리 중 예외 발생: matchId={}", expiredBattle != null ? expiredBattle.getMatchId() : "unknown", e);
                 }
             }
         });
+    }
+
+    private void recoverPendingMatches() {
+        List<CardGameMatch> pendingMatches = cardGameMatchRepository.findAllByStatus(MatchStatus.PENDING);
+
+        for (CardGameMatch match : pendingMatches) {
+            long elapsed = Duration.between(match.getCreatedAt(), LocalDateTime.now()).toMillis();
+            long remaining = Math.max(BATTLE_EXPIRE_MILLIS - elapsed, 0);
+            registerBattleExpiration(match.getMatchId(), remaining);
+        }
+
+        log.info("서버 재시작 복구: {}개의 PENDING 배틀을 DelayQueue에 재등록했습니다.", pendingMatches.size());
     }
 
     public void registerBattleExpiration(Long matchId, long delayInMillis) {
