@@ -14,7 +14,9 @@ import lombok.Setter;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "card_game_matches")
+@Table(name = "card_game_matches", indexes = {
+        @Index(name = "idx_card_game_matches_status_created_at", columnList = "status, created_at")
+})
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
