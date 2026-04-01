@@ -54,13 +54,33 @@ public class BattleExpirationUtil {
     private void recoverPendingMatches() {
         List<CardGameMatch> pendingMatches = cardGameMatchRepository.findAllByStatus(MatchStatus.PENDING);
 
+        List<CardGameMatch> alreadyExpired = new java.util.ArrayList<>();
+
         for (CardGameMatch match : pendingMatches) {
             long elapsed = Duration.between(match.getCreatedAt(), LocalDateTime.now()).toMillis();
-            long remaining = Math.max(BATTLE_EXPIRE_MILLIS - elapsed, 0);
-            registerBattleExpiration(match.getMatchId(), remaining);
+
+            if (elapsed >= BATTLE_EXPIRE_MILLIS) {
+                // 만료 기준을 이미 넘긴 경우: 알림 없이 직접 처리
+                match.setStatus(MatchStatus.EXPIRED);
+                if (match.getChallengerCard() != null) {
+                    match.getChallengerCard().setIsLocked(false);
+                }
+                alreadyExpired.add(match);
+            } else {
+                // 아직 만료 전: 남은 시간으로 DelayQueue 등록 (정상 경로)
+                registerBattleExpiration(match.getMatchId(), BATTLE_EXPIRE_MILLIS - elapsed);
+            }
         }
 
-        log.info("서버 재시작 복구: {}개의 PENDING 배틀을 DelayQueue에 재등록했습니다.", pendingMatches.size());
+        if (!alreadyExpired.isEmpty()) {
+            cardGameMatchRepository.saveAll(alreadyExpired);
+            log.info("서버 재시작 복구: {}개의 이미 만료된 배틀을 알림 없이 처리했습니다.", alreadyExpired.size());
+        }
+
+        long reregistered = pendingMatches.size() - alreadyExpired.size();
+        if (reregistered > 0) {
+            log.info("서버 재시작 복구: {}개의 PENDING 배틀을 DelayQueue에 재등록했습니다.", reregistered);
+        }
     }
 
     public void registerBattleExpiration(Long matchId, long delayInMillis) {
